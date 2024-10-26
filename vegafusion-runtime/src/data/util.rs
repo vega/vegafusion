@@ -5,13 +5,12 @@ use datafusion::prelude::{DataFrame, SessionContext};
 use datafusion_common::TableReference;
 use datafusion_common::tree_node::{Transformed, TreeNode, TreeNodeRewriter};
 use datafusion_expr::{col, Expr, LogicalPlanBuilder, UNNAMED_TABLE};
-use datafusion_expr::expr::{AggregateFunction, WildcardOptions};
+use datafusion_expr::expr::WildcardOptions;
 use datafusion_functions_window::row_number::row_number;
 use vegafusion_common::arrow::array::RecordBatch;
 use vegafusion_common::arrow::compute::concat_batches;
-use vegafusion_common::arrow::datatypes::SchemaRef;
 use vegafusion_common::data::table::VegaFusionTable;
-use vegafusion_common::error::{ResultWithContext, VegaFusionError};
+use vegafusion_common::error::ResultWithContext;
 
 #[async_trait]
 pub trait SessionContextUtils {

@@ -20,7 +20,6 @@ pub mod window;
 use crate::expression::compiler::config::CompilationConfig;
 
 use async_trait::async_trait;
-use std::sync::Arc;
 use datafusion::prelude::DataFrame;
 use vegafusion_core::error::Result;
 use vegafusion_core::proto::gen::transforms::transform::TransformKind;

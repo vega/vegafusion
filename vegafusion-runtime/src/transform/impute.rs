@@ -6,7 +6,7 @@ use datafusion_common::{JoinType, ScalarValue};
 use itertools::Itertools;
 use std::sync::Arc;
 use datafusion::prelude::DataFrame;
-use datafusion_expr::{col, Expr, expr, ExprSchemable, lit, SortExpr, WindowFrame, WindowFunctionDefinition};
+use datafusion_expr::{Expr, expr, lit, SortExpr, WindowFrame, WindowFunctionDefinition};
 use datafusion_functions::expr_fn::coalesce;
 use datafusion_functions_aggregate::expr_fn::min;
 use datafusion_functions_window::row_number::RowNumber;

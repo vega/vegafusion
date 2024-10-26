@@ -2,10 +2,9 @@ use crate::expression::compiler::config::CompilationConfig;
 use crate::transform::TransformTrait;
 use async_trait::async_trait;
 use datafusion_common::DFSchema;
-use datafusion_functions::expr_fn::{date_part, date_trunc, floor, from_unixtime, to_timestamp_millis};
+use datafusion_functions::expr_fn::{date_part, date_trunc};
 use std::collections::HashSet;
-use std::ops::{Add, Div, Mul, Rem, Sub};
-use std::sync::Arc;
+use std::ops::{Add, Mul, Rem, Sub};
 use datafusion::prelude::DataFrame;
 use vegafusion_common::arrow::datatypes::{DataType, TimeUnit as ArrowTimeUnit};
 use vegafusion_core::error::{Result, ResultWithContext, VegaFusionError};
@@ -19,7 +18,7 @@ use vegafusion_common::datatypes::{cast_to, is_numeric_datatype};
 use vegafusion_datafusion_udfs::udfs::datetime::make_timestamptz::{make_timestamptz};
 use vegafusion_datafusion_udfs::udfs::datetime::timeunit::TIMEUNIT_START_UDF;
 use crate::expression::compiler::utils::ExprHelpers;
-use crate::transform::utils::{from_epoch_millis, make_timestamp_parse_formats, str_to_timestamp};
+use crate::transform::utils::{from_epoch_millis, str_to_timestamp};
 
 /// Implementation of timeunit start using the SQL date_trunc function
 fn timeunit_date_trunc(

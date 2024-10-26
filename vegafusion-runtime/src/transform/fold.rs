@@ -6,7 +6,7 @@ use std::sync::Arc;
 use datafusion::prelude::DataFrame;
 use datafusion_common::ScalarValue;
 use datafusion_expr::{Expr, expr, lit, WindowFrame, WindowFunctionDefinition};
-use datafusion_functions_window::row_number::{row_number, RowNumber};
+use datafusion_functions_window::row_number::RowNumber;
 use sqlparser::ast::NullTreatment;
 use vegafusion_common::column::flat_col;
 use vegafusion_common::data::ORDER_COL;

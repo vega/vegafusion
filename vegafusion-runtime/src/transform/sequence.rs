@@ -16,7 +16,6 @@ use vegafusion_common::error::Result;
 use vegafusion_core::proto::gen::transforms::Sequence;
 use vegafusion_core::task_graph::task_value::TaskValue;
 use crate::data::util::SessionContextUtils;
-use crate::task_graph::context::make_datafusion_context;
 
 #[async_trait]
 impl TransformTrait for Sequence {

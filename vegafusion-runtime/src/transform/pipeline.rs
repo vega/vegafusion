@@ -6,7 +6,6 @@ use std::collections::HashMap;
 
 use async_trait::async_trait;
 use datafusion_expr::expr;
-use std::sync::Arc;
 use datafusion::prelude::DataFrame;
 use vegafusion_common::column::flat_col;
 use vegafusion_common::data::table::VegaFusionTable;

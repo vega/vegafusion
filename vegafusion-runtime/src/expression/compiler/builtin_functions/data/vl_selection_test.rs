@@ -8,8 +8,7 @@ use datafusion_expr::expr::Case;
 use datafusion_expr::{expr, lit, Between, Expr, ExprSchemable};
 use datafusion_functions::expr_fn::ceil;
 use std::str::FromStr;
-use std::sync::Arc;
-use vegafusion_common::arrow::datatypes::{DataType, TimeUnit};
+use vegafusion_common::arrow::datatypes::DataType;
 use vegafusion_common::column::flat_col;
 use vegafusion_common::data::scalar::{ArrayRefHelpers, ScalarValue};
 use vegafusion_common::data::table::VegaFusionTable;
@@ -23,7 +22,7 @@ use vegafusion_core::proto::gen::expression::literal::Value;
 use vegafusion_core::proto::gen::{
     expression::expression::Expr as ProtoExpr, expression::Expression, expression::Literal,
 };
-use crate::transform::utils::{str_to_timestamp, to_epoch_millis};
+use crate::transform::utils::to_epoch_millis;
 
 /// Op
 #[derive(Debug, Clone)]

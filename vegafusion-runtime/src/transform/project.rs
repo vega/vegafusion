@@ -3,7 +3,6 @@ use crate::transform::TransformTrait;
 
 use async_trait::async_trait;
 use std::collections::HashSet;
-use std::sync::Arc;
 use datafusion::prelude::DataFrame;
 use vegafusion_common::column::flat_col;
 use vegafusion_common::data::ORDER_COL;

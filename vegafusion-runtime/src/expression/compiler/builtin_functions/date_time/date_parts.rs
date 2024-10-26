@@ -1,11 +1,11 @@
 use crate::expression::compiler::call::TzTransformFn;
 use crate::task_graph::timezone::RuntimeTzConfig;
-use datafusion_expr::{expr, lit, Expr, ExprSchemable};
+use datafusion_expr::{lit, Expr};
 use datafusion_functions::expr_fn::{date_part, floor};
 use std::sync::Arc;
 use vegafusion_common::arrow::datatypes::{DataType, TimeUnit};
 use vegafusion_common::datafusion_common::DFSchema;
-use vegafusion_core::error::{Result, VegaFusionError};
+use vegafusion_core::error::Result;
 use crate::expression::compiler::utils::ExprHelpers;
 use crate::transform::timeunit::to_timestamp_col;
 

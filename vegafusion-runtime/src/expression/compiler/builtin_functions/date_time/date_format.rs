@@ -1,17 +1,11 @@
 use std::collections::HashMap;
 use crate::task_graph::timezone::RuntimeTzConfig;
-use datafusion_expr::{expr, lit, Expr, ExprSchemable};
-use std::sync::Arc;
-use datafusion_functions::expr_fn::{to_char, to_local_time};
+use datafusion_expr::{lit, Expr};
+use datafusion_functions::expr_fn::to_char;
 use vegafusion_common::arrow::datatypes::DataType;
 use vegafusion_common::datafusion_common::{DFSchema, ScalarValue};
-use vegafusion_common::datatypes::{cast_to, is_numeric_datatype};
 use vegafusion_core::arrow::datatypes::TimeUnit;
 use vegafusion_core::error::{Result, VegaFusionError};
-use vegafusion_datafusion_udfs::udfs::datetime::epoch_to_utc_timestamp::EPOCH_MS_TO_UTC_TIMESTAMP_UDF;
-use vegafusion_datafusion_udfs::udfs::datetime::format_timestamp::FORMAT_TIMESTAMP_UDF;
-use vegafusion_datafusion_udfs::udfs::datetime::str_to_utc_timestamp::STR_TO_UTC_TIMESTAMP_UDF;
-use vegafusion_datafusion_udfs::udfs::datetime::utc_timestamp_to_str::UTC_TIMESTAMP_TO_STR_UDF;
 use crate::expression::compiler::utils::ExprHelpers;
 use crate::transform::timeunit::to_timestamp_col;
 

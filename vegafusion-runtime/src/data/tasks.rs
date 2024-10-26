@@ -6,7 +6,7 @@ use crate::task_graph::task::TaskCall;
 
 use async_trait::async_trait;
 
-use datafusion_expr::{expr, lit, Expr, ExprSchemable};
+use datafusion_expr::{expr, lit, Expr};
 use std::collections::{HashMap, HashSet};
 use std::path::Path;
 use vegafusion_core::data::dataset::VegaFusionDataset;
@@ -18,7 +18,7 @@ use datafusion::execution::options::{ArrowReadOptions, ReadOptions};
 use datafusion::parquet::data_type::AsBytes;
 use datafusion::prelude::{CsvReadOptions, DataFrame, ParquetReadOptions, SessionContext};
 use datafusion_common::config::TableOptions;
-use datafusion_functions::expr_fn::{make_date, to_timestamp_millis};
+use datafusion_functions::expr_fn::make_date;
 use tokio::io::AsyncReadExt;
 
 use crate::task_graph::timezone::RuntimeTzConfig;
@@ -48,8 +48,7 @@ use vegafusion_common::datatypes::{is_integer_datatype, is_string_datatype};
 use vegafusion_core::proto::gen::transforms::transform::TransformKind;
 use vegafusion_core::spec::visitors::extract_inline_dataset;
 use crate::data::util::{DataFrameUtils, SessionContextUtils};
-use crate::expression::compiler::builtin_functions::date_time::date_format::d3_to_chrono_format;
-use crate::transform::utils::{make_timestamp_parse_formats, str_to_timestamp};
+use crate::transform::utils::str_to_timestamp;
 
 pub fn build_compilation_config(
     input_vars: &[InputVariable],

@@ -10,7 +10,6 @@ use std::sync::Arc;
 use datafusion::arrow::array::RecordBatch;
 use datafusion::prelude::DataFrame;
 use vegafusion_common::column::unescaped_col;
-use vegafusion_common::data::table::VegaFusionTable;
 use vegafusion_common::datatypes::to_numeric;
 use vegafusion_common::error::{Result, ResultWithContext};
 use vegafusion_core::proto::gen::transforms::Extent;

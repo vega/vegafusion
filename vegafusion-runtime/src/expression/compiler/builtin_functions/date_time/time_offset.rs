@@ -1,11 +1,9 @@
 use std::ops::Add;
 use crate::task_graph::timezone::RuntimeTzConfig;
 use datafusion_common::{DFSchema, ScalarValue};
-use datafusion_expr::{expr, lit, Expr, interval_datetime_lit, interval_year_month_lit};
-use std::sync::Arc;
+use datafusion_expr::{Expr, interval_datetime_lit, interval_year_month_lit};
 use vegafusion_common::data::scalar::ScalarValueHelpers;
 use vegafusion_common::error::VegaFusionError;
-use vegafusion_datafusion_udfs::udfs::datetime::date_add_tz::DATE_ADD_TZ_UDF;
 use crate::transform::timeunit::to_timestamp_col;
 
 pub fn time_offset_fn(

@@ -2,7 +2,6 @@ use crate::expression::compiler::compile;
 use crate::expression::compiler::config::CompilationConfig;
 use crate::transform::TransformTrait;
 
-use std::sync::Arc;
 use vegafusion_core::error::{Result, ResultWithContext};
 use vegafusion_core::proto::gen::transforms::Formula;
 

@@ -5,7 +5,6 @@ use async_trait::async_trait;
 use datafusion_common::ScalarValue;
 use datafusion_expr::{expr, lit, Expr, WindowFrame, WindowFunctionDefinition};
 use datafusion_functions_aggregate::variance::{var_pop_udaf, var_samp_udaf};
-use sqlparser::ast::NullTreatment;
 use std::sync::Arc;
 use datafusion::prelude::DataFrame;
 use vegafusion_core::error::Result;

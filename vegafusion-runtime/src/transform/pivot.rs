@@ -4,7 +4,6 @@ use crate::transform::TransformTrait;
 use async_trait::async_trait;
 use datafusion_expr::{lit, when};
 use datafusion_functions_aggregate::expr_fn::min;
-use std::sync::Arc;
 use datafusion::prelude::DataFrame;
 use vegafusion_common::arrow::array::StringArray;
 use vegafusion_common::arrow::datatypes::DataType;

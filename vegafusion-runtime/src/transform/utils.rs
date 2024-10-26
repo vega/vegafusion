@@ -1,10 +1,9 @@
-use std::ops::{Add, Mul};
 use datafusion::arrow::datatypes::{DataType, TimeUnit};
 use datafusion_common::DFSchema;
-use datafusion_expr::{case, Expr, ExprSchemable, lit, when};
-use datafusion_functions::expr_fn::{date_part, make_date, regexp_like, to_timestamp_millis, to_unixtime};
+use datafusion_expr::{Expr, ExprSchemable, lit, when};
+use datafusion_functions::expr_fn::{make_date, regexp_like, to_timestamp_millis};
 use vegafusion_common::arrow::record_batch::RecordBatch;
-use vegafusion_common::datatypes::{cast_to, is_numeric_datatype};
+use vegafusion_common::datatypes::is_numeric_datatype;
 use vegafusion_common::error::{Result, VegaFusionError};
 use crate::expression::compiler::builtin_functions::date_time::date_format::d3_to_chrono_format;
 use crate::expression::compiler::utils::ExprHelpers;

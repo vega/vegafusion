@@ -2,12 +2,9 @@ use crate::expression::compiler::compile;
 use crate::expression::compiler::config::CompilationConfig;
 use crate::transform::TransformTrait;
 use async_trait::async_trait;
-use datafusion_optimizer::simplify_expressions::ExprSimplifier;
-use std::sync::Arc;
 use datafusion::prelude::DataFrame;
 use vegafusion_common::datatypes::to_boolean;
 
-use crate::expression::compiler::utils::VfSimplifyInfo;
 use vegafusion_core::error::Result;
 use vegafusion_core::proto::gen::transforms::Filter;
 use vegafusion_core::task_graph::task_value::TaskValue;

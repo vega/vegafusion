@@ -1,20 +1,13 @@
 use crate::task_graph::timezone::RuntimeTzConfig;
-use datafusion_expr::{expr, lit, Expr, ExprSchemable};
+use datafusion_expr::{lit, Expr, ExprSchemable};
 use std::ops::Add;
 use std::str::FromStr;
-use std::sync::Arc;
 use vegafusion_common::arrow::datatypes::DataType;
-use vegafusion_common::arrow::datatypes::DataType::Timestamp;
-use vegafusion_common::arrow::datatypes::TimeUnit::Second;
 use vegafusion_common::datafusion_common::{DFSchema, ScalarValue};
 use vegafusion_common::datatypes::{cast_to, is_numeric_datatype, is_string_datatype};
 use vegafusion_core::error::{Result, ResultWithContext, VegaFusionError};
-use vegafusion_datafusion_udfs::udfs::datetime::epoch_to_utc_timestamp::EPOCH_MS_TO_UTC_TIMESTAMP_UDF;
 use vegafusion_datafusion_udfs::udfs::datetime::make_timestamptz::make_timestamptz;
-use vegafusion_datafusion_udfs::udfs::datetime::str_to_utc_timestamp::STR_TO_UTC_TIMESTAMP_UDF;
-use crate::expression::compiler::utils::ExprHelpers;
-use crate::transform::timeunit::to_timestamp_col;
-use crate::transform::utils::{from_epoch_millis, str_to_timestamp, to_epoch_millis};
+use crate::transform::utils::{from_epoch_millis, str_to_timestamp};
 
 pub fn to_date_transform(
     tz_config: &RuntimeTzConfig,
@@ -64,7 +57,7 @@ pub fn datetime_transform_fn(
 ) -> Result<Expr> {
     if args.len() == 1 {
         // Datetime from string or integer in milliseconds
-        let mut arg = args[0].clone();
+        let arg = args[0].clone();
         let dtype = arg
             .get_type(schema)
             .with_context(|| format!("Failed to infer type of expression: {arg:?}"))?;
