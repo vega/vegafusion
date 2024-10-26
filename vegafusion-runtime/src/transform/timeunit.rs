@@ -361,42 +361,42 @@ impl TransformTrait for TimeUnit {
             [TimeUnitUnit::Year] => timeunit_date_trunc(
                 &self.field,
                 TimeUnitUnit::Year,
-                &schema,
+                schema,
                 &default_input_tz,
                 &tz,
             )?,
             [TimeUnitUnit::Year, TimeUnitUnit::Quarter] => timeunit_date_trunc(
                 &self.field,
                 TimeUnitUnit::Quarter,
-                &schema,
+                schema,
                 &default_input_tz,
                 &tz,
             )?,
             [TimeUnitUnit::Year, TimeUnitUnit::Month] => timeunit_date_trunc(
                 &self.field,
                 TimeUnitUnit::Month,
-                &schema,
+                schema,
                 &default_input_tz,
                 &tz,
             )?,
             [TimeUnitUnit::Year, TimeUnitUnit::Week] => timeunit_date_trunc(
                 &self.field,
                 TimeUnitUnit::Week,
-                &schema,
+                schema,
                 &default_input_tz,
                 &tz,
             )?,
             [TimeUnitUnit::Year, TimeUnitUnit::Month, TimeUnitUnit::Date] => timeunit_date_trunc(
                 &self.field,
                 TimeUnitUnit::Date,
-                &schema,
+                schema,
                 &default_input_tz,
                 &tz,
             )?,
             [TimeUnitUnit::Year, TimeUnitUnit::DayOfYear] => timeunit_date_trunc(
                 &self.field,
                 TimeUnitUnit::Date,
-                &schema,
+                schema,
                 &default_input_tz,
                 &tz,
             )?,
@@ -404,7 +404,7 @@ impl TransformTrait for TimeUnit {
                 timeunit_date_trunc(
                     &self.field,
                     TimeUnitUnit::Hours,
-                    &schema,
+                    schema,
                     &default_input_tz,
                     &tz,
                 )?
@@ -413,7 +413,7 @@ impl TransformTrait for TimeUnit {
                 timeunit_date_trunc(
                     &self.field,
                     TimeUnitUnit::Minutes,
-                    &schema,
+                    schema,
                     &default_input_tz,
                     &tz,
                 )?
@@ -422,13 +422,13 @@ impl TransformTrait for TimeUnit {
                 timeunit_date_trunc(
                     &self.field,
                     TimeUnitUnit::Seconds,
-                    &schema,
+                    schema,
                     &default_input_tz,
                     &tz,
                 )?
             }
             [TimeUnitUnit::Day] => {
-                timeunit_weekday(&self.field, &schema, &default_input_tz, &tz)?
+                timeunit_weekday(&self.field, schema, &default_input_tz, &tz)?
             }
             _ => {
                 // Check if timeunit can be handled by make_utc_timestamp
@@ -448,7 +448,7 @@ impl TransformTrait for TimeUnit {
                     timeunit_date_part_tz(
                         &self.field,
                         &units_set,
-                        &schema,
+                        schema,
                         &default_input_tz,
                         &tz,
                     )?
@@ -457,7 +457,7 @@ impl TransformTrait for TimeUnit {
                     timeunit_custom_udf(
                         &self.field,
                         &units_set,
-                        &schema,
+                        schema,
                         &default_input_tz,
                         &tz,
                     )?

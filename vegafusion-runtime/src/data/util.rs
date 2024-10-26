@@ -124,6 +124,12 @@ pub struct PureAggRewriter {
     pub next_id: usize,
 }
 
+impl Default for PureAggRewriter {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl PureAggRewriter {
     pub fn new() -> Self {
         Self {

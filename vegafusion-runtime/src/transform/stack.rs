@@ -64,7 +64,7 @@ impl TransformTrait for Stack {
         // Build partitioning column expressions
         let partition_by: Vec<_> = group_by.iter().map(|group| flat_col(group)).collect();
         let numeric_field = coalesce(vec![
-            to_numeric(flat_col(&field), &dataframe.schema())?,
+            to_numeric(flat_col(&field), dataframe.schema())?,
             lit(0.0),
         ]);
 

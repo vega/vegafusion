@@ -48,7 +48,7 @@ impl TransformTrait for Bin {
         // Compute output signal value
         let output_value = compute_output_value(self, start, stop, step);
 
-        let numeric_field = to_numeric(unescaped_col(&self.field), &sql_df.schema())?;
+        let numeric_field = to_numeric(unescaped_col(&self.field), sql_df.schema())?;
 
         // Add column with bin index
         let bin_index_name = "__bin_index";

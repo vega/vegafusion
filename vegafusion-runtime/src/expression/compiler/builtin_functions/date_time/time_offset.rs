@@ -81,7 +81,7 @@ pub fn time_offset_fn(
     let interval = match unit.to_lowercase().as_str() {
         unit @ ("year" | "month") => interval_year_month_lit(&format!("{step} {unit}")),
         "quarter" => interval_year_month_lit(&format!("{} month", step * 3)),
-        unit@ _ => interval_datetime_lit(&format!("{step} {unit}"))
+        unit => interval_datetime_lit(&format!("{step} {unit}"))
     };
 
     Ok(timestamp.add(interval))

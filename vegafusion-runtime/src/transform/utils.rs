@@ -35,7 +35,7 @@ impl RecordBatchUtils for RecordBatch {
 }
 
 pub fn make_timestamp_parse_formats() -> Vec<Expr> {
-    return vec![
+    vec![
         // ISO 8601 with and without time and 'T' separator
         "%Y-%m-%d",
         "%Y-%m-%dT%H:%M:%S",
@@ -92,7 +92,7 @@ pub fn make_timestamp_parse_formats() -> Vec<Expr> {
 pub fn str_to_timestamp(s: Expr, default_input_tz: &str, schema: &DFSchema, fmt: Option<&str>) -> Result<Expr> {
     if let Some(fmt) = fmt {
         // Parse with single explicit format, in the specified timezone
-        let chrono_fmt = d3_to_chrono_format(&fmt);
+        let chrono_fmt = d3_to_chrono_format(fmt);
 
         if chrono_fmt == "%Y" {
             // Chrono won't parse this as years by itself, since it's not technically enough info
@@ -151,10 +151,8 @@ pub fn str_to_timestamp(s: Expr, default_input_tz: &str, schema: &DFSchema, fmt:
             schema
         )?;
 
-        let if_false = to_timestamp_millis(vec![
-            vec![s],
-            make_timestamp_parse_formats()
-        ].concat()).try_cast_to(
+        let if_false = to_timestamp_millis([vec![s],
+            make_timestamp_parse_formats()].concat()).try_cast_to(
             &DataType::Timestamp(TimeUnit::Millisecond, Some(default_input_tz.into())),
             schema
         )?;

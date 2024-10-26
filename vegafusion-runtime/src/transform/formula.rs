@@ -23,7 +23,7 @@ impl TransformTrait for Formula {
         let formula_expr = compile(
             self.expr.as_ref().unwrap(),
             config,
-            Some(&dataframe.schema()),
+            Some(dataframe.schema()),
         )?;
 
         // Simplify expression prior to evaluation

@@ -702,7 +702,7 @@ async fn read_json(url: &str, ctx: Arc<SessionContext>) -> Result<DataFrame> {
 
 
     let table = VegaFusionTable::from_json(&value)?.with_ordering()?;
-    return ctx.vegafusion_table(table).await
+    ctx.vegafusion_table(table).await
 }
 
 async fn read_arrow(url: &str, ctx: Arc<SessionContext>) -> Result<DataFrame> {
@@ -729,7 +729,7 @@ fn maybe_register_object_stores_for_url(ctx: &SessionContext, url: &str) -> Resu
 
             // Register store for url if not already registered
             let object_store_url = ObjectStoreUrl::parse(&base_url_str)?;
-            if !ctx.runtime_env().object_store(object_store_url.clone()).is_ok() {
+            if ctx.runtime_env().object_store(object_store_url.clone()).is_err() {
                 let client_options = ClientOptions::new()
                     .with_allow_http(true);
                 let http_store = HttpBuilder::new()
@@ -764,7 +764,7 @@ fn maybe_register_object_stores_for_url(ctx: &SessionContext, url: &str) -> Resu
         // Register store for url if not already registered
         let base_url_str = format!("s3://{bucket}/");
         let object_store_url = ObjectStoreUrl::parse(&base_url_str)?;
-        if !ctx.runtime_env().object_store(object_store_url.clone()).is_ok() {
+        if ctx.runtime_env().object_store(object_store_url.clone()).is_err() {
             let base_url = url::Url::parse(&base_url_str)?;
             let s3 = AmazonS3Builder::from_env().with_url(base_url.clone()).build().with_context(||
             "Failed to initialize s3 connection from environment variables.\n\

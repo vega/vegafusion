@@ -166,7 +166,7 @@ async fn pivot_case(
         let value_expr = to_numeric(unescaped_col(tx.value.as_str()), schema)?;
         let agg_col = when(predicate_expr, value_expr).otherwise(lit(ScalarValue::Null))?;
 
-        let agg_expr = make_agg_expr_for_col_expr(agg_col, &agg_op, &schema)?;
+        let agg_expr = make_agg_expr_for_col_expr(agg_col, &agg_op, schema)?;
 
         // Compute pivot column name, replacing null placeholder with "null"
         let col_name = if pivot_val == NULL_PLACEHOLDER_NAME {

@@ -37,9 +37,9 @@ impl TransformTrait for JoinAggregate {
 
             let agg_expr = if matches!(op, AggregateOp::Count) {
                 // In Vega, the provided column is always ignored if op is 'count'.
-                make_aggr_expr_for_named_col(None, &op, &schema)?
+                make_aggr_expr_for_named_col(None, &op, schema)?
             } else {
-                make_aggr_expr_for_named_col(Some(field.clone()), &op, &schema)?
+                make_aggr_expr_for_named_col(Some(field.clone()), &op, schema)?
             };
 
             // Apply alias

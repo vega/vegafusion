@@ -47,7 +47,7 @@ impl TransformTrait for Aggregate {
             .map(|c| unescaped_col(c))
             .collect();
 
-        let (mut agg_exprs, projections) = get_agg_and_proj_exprs(self, &dataframe.schema())?;
+        let (mut agg_exprs, projections) = get_agg_and_proj_exprs(self, dataframe.schema())?;
 
         // Append ordering column to aggregations
         agg_exprs.push(min(flat_col(ORDER_COL)).alias(ORDER_COL));

@@ -24,7 +24,7 @@ impl TransformTrait for Extent {
         _config: &CompilationConfig,
     ) -> Result<(DataFrame, Vec<TaskValue>)> {
         let output_values = if self.signal.is_some() {
-            let (min_expr, max_expr) = min_max_exprs(self.field.as_str(), &sql_df.schema())?;
+            let (min_expr, max_expr) = min_max_exprs(self.field.as_str(), sql_df.schema())?;
 
             let extent_df = sql_df
                 .clone()

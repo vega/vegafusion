@@ -110,7 +110,7 @@ impl TransformTrait for Window {
                         let op = AggregateOp::try_from(*op).unwrap();
 
                         let numeric_field = || -> Result<Expr> {
-                            to_numeric(unescaped_col(field), &schema_df).with_context(|| {
+                            to_numeric(unescaped_col(field), schema_df).with_context(|| {
                                 format!("Failed to convert field {field} to numeric data type")
                             })
                         };
