@@ -22,10 +22,9 @@ use vegafusion_common::error::{Result, ResultWithContext, VegaFusionError};
 use vegafusion_core::proto::gen::expression::{
     expression, literal, CallExpression, Expression, Literal,
 };
-use vegafusion_datafusion_udfs::udfs::array::indexof::IndexOfUDF;
-use vegafusion_datafusion_udfs::udfs::array::span::SpanUDF;
-
+use crate::expression::compiler::builtin_functions::array::indexof::indexof_transform;
 use crate::expression::compiler::builtin_functions::array::length::length_transform;
+use crate::expression::compiler::builtin_functions::array::span::span_transform;
 use crate::expression::compiler::builtin_functions::data::data_fn::data_fn;
 use crate::expression::compiler::builtin_functions::data::vl_selection_resolve::vl_selection_resolve_fn;
 use crate::expression::compiler::builtin_functions::data::vl_selection_test::vl_selection_test_fn;
@@ -266,18 +265,12 @@ pub fn default_callables() -> HashMap<String, VegaFusionCallable> {
 
     callables.insert(
         "span".to_string(),
-        VegaFusionCallable::ScalarUDF {
-            udf: Arc::new(ScalarUDF::from(SpanUDF::new())),
-            cast: None,
-        },
+        VegaFusionCallable::Transform(Arc::new(span_transform)),
     );
 
     callables.insert(
         "indexof".to_string(),
-        VegaFusionCallable::ScalarUDF {
-            udf: Arc::new(ScalarUDF::from(IndexOfUDF::new())),
-            cast: None,
-        },
+        VegaFusionCallable::Transform(Arc::new(indexof_transform)),
     );
 
     // Date parts

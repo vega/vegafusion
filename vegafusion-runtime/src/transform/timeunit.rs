@@ -493,7 +493,7 @@ impl TransformTrait for TimeUnit {
 
         let timeunit_end_expr = flat_col(&timeunit_start_alias)
             .add(interval)
-            .alias(&timeunit_end_alias);;
+            .alias(&timeunit_end_alias);
 
         let mut select_exprs: Vec<_> = dataframe
             .schema()

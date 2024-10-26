@@ -291,7 +291,9 @@ mod test_math_functions {
         case("log(2.718281828)"),
         case("pow(2, 3)"),
         case("isFinite(2)"),
-        case("isFinite(NaN)")
+        case("isFinite(NaN)"),
+        case("isFinite(+'Infinity')"),
+        case("isFinite(+'-Infinity')")
     )]
     fn test(expr: &str) {
         check_scalar_evaluation(expr, &config_a())
@@ -552,7 +554,9 @@ mod test_indexof {
         case("indexof(['a4', 'a3', 'a7'], 'a4')"),
         case("indexof(['a4', 'a3', 'a7'], 'a3')"),
         case("indexof(['a4', 'a3', 'a7'], 'a7')"),
-        case("indexof(['a4', 'a3', 'a7'], 'a8')")
+        case("indexof(['a4', 'a3', 'a7'], 'a8')"),
+        case("indexof('hello, world', 'w')"),
+        case("indexof('hello, world', 'z')"),
     )]
     fn test(expr: &str) {
         check_scalar_evaluation(expr, &config_a())

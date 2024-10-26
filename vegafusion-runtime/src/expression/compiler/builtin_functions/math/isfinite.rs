@@ -1,9 +1,9 @@
-use datafusion_expr::{expr, lit, Expr, ExprSchemable, ScalarUDF};
+use std::ops::Not;
+use datafusion_expr::{expr, lit, Expr, ExprSchemable, ScalarUDF, in_list};
 use std::sync::Arc;
 use vegafusion_common::arrow::datatypes::DataType;
 use vegafusion_common::datafusion_common::DFSchema;
 use vegafusion_common::error::{Result, ResultWithContext, VegaFusionError};
-use vegafusion_datafusion_udfs::udfs::math::isfinite::IsFiniteUDF;
 
 /// `isFinite(value)`
 ///
@@ -19,10 +19,11 @@ pub fn is_finite_fn(args: &[Expr], schema: &DFSchema) -> Result<Expr> {
 
         Ok(match dtype {
             DataType::Float16 | DataType::Float32 | DataType::Float64 => {
-                Expr::ScalarFunction(expr::ScalarFunction {
-                    func: Arc::new(ScalarUDF::from(IsFiniteUDF::new())),
-                    args: vec![arg],
-                })
+                in_list(
+                    arg,
+                    vec![lit(f32::NAN), lit(f32::INFINITY), lit(f32::NEG_INFINITY)],
+                    true
+                )
             }
             _ => {
                 // Non-float types cannot be non-finite

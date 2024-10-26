@@ -2,14 +2,14 @@ use chrono::{DateTime, Datelike, NaiveDate, NaiveDateTime, TimeZone, Timelike, U
 use std::any::Any;
 use std::str::FromStr;
 use std::sync::Arc;
-use vegafusion_common::arrow::array::{ArrayRef, Int64Array, TimestampMillisecondArray};
+use vegafusion_common::arrow::array::{ArrayRef, TimestampMillisecondArray};
 use vegafusion_common::arrow::compute::try_unary;
 use vegafusion_common::arrow::datatypes::{DataType, TimeUnit};
 use vegafusion_common::arrow::error::ArrowError;
 use vegafusion_common::arrow::temporal_conversions::date64_to_datetime;
 use vegafusion_common::datafusion_common::{DataFusionError, ScalarValue};
-use vegafusion_common::datafusion_expr::{ColumnarValue, ScalarUDF, ScalarUDFImpl, Signature, TypeSignature, Volatility};
-use vegafusion_core::arrow::compute::cast;
+use vegafusion_common::datafusion_expr::{ColumnarValue, ScalarUDF, ScalarUDFImpl, Signature, Volatility};
+
 
 fn extract_bool(value: &ColumnarValue) -> std::result::Result<bool, DataFusionError> {
     if let ColumnarValue::Scalar(scalar) = value {

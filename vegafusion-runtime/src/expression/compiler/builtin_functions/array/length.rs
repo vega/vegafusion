@@ -17,14 +17,12 @@ pub fn length_transform(
             .with_context(|| format!("Failed to infer type of expression: {arg:?}"))?;
 
         let len_expr = match dtype {
-            DataType::Utf8 | DataType::LargeUtf8 => Ok(Expr::Cast(expr::Cast {
-                expr: Box::new(character_length(arg)),
-                data_type: DataType::Float64
-            })),
-            DataType::List(_) | DataType::LargeList(_) | DataType::FixedSizeList(_, _) => Ok(Expr::Cast(expr::Cast {
-                expr: Box::new(array_length(arg)),
-                data_type: DataType::Float64
-            })),
+            DataType::Utf8 | DataType::LargeUtf8 => {
+                Ok(character_length(arg))
+            },
+            DataType::List(_) | DataType::LargeList(_) | DataType::FixedSizeList(_, _) => {
+                Ok(array_length(arg))
+            },
             _ => Err(VegaFusionError::parse(format!(
                 "length function support array and string arguments. Received argument with type {:?}",
                 dtype
