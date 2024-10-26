@@ -26,19 +26,17 @@ impl Default for MakeTimestamptzUDF {
 
 impl MakeTimestamptzUDF {
     pub fn new() -> Self {
-        // Use Signature::coercible instead of Signature::exact because we don't
-        // want ints and decimals to actually be converted to floats before our function
-        // is called.  Our function will cast everything to int, so we just want DataFusion to
-        // enforce that the arguments are numeric.
+        // Use Signature::coercible instead of Signature::exact so that float will be
+        // truncated to ints.
         let signature = Signature::coercible(
             vec![
-                DataType::Float64, // year
-                DataType::Float64, // month
-                DataType::Float64, // date
-                DataType::Float64, // hour
-                DataType::Float64, // minute
-                DataType::Float64, // second
-                DataType::Float64, // millisecond
+                DataType::Int64, // year
+                DataType::Int64, // month
+                DataType::Int64, // date
+                DataType::Int64, // hour
+                DataType::Int64, // minute
+                DataType::Int64, // second
+                DataType::Int64, // millisecond
                 DataType::Utf8,    // time zone
             ],
             Volatility::Immutable,
@@ -53,7 +51,7 @@ impl ScalarUDFImpl for MakeTimestamptzUDF {
     }
 
     fn name(&self) -> &str {
-        "make_utc_timestamp"
+        "make_timestamptz"
     }
 
     fn signature(&self) -> &Signature {

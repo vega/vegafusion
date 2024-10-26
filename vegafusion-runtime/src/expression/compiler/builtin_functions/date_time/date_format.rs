@@ -2,7 +2,7 @@ use std::collections::HashMap;
 use crate::task_graph::timezone::RuntimeTzConfig;
 use datafusion_expr::{expr, lit, Expr, ExprSchemable};
 use std::sync::Arc;
-use datafusion_functions::expr_fn::to_char;
+use datafusion_functions::expr_fn::{to_char, to_local_time};
 use vegafusion_common::arrow::datatypes::DataType;
 use vegafusion_common::datafusion_common::{DFSchema, ScalarValue};
 use vegafusion_common::datatypes::{cast_to, is_numeric_datatype};
@@ -13,6 +13,7 @@ use vegafusion_datafusion_udfs::udfs::datetime::format_timestamp::FORMAT_TIMESTA
 use vegafusion_datafusion_udfs::udfs::datetime::str_to_utc_timestamp::STR_TO_UTC_TIMESTAMP_UDF;
 use vegafusion_datafusion_udfs::udfs::datetime::utc_timestamp_to_str::UTC_TIMESTAMP_TO_STR_UDF;
 use crate::expression::compiler::utils::ExprHelpers;
+use crate::transform::timeunit::to_timestamp_col;
 
 pub fn time_format_fn(
     tz_config: &RuntimeTzConfig,
@@ -37,11 +38,12 @@ pub fn time_format_fn(
     };
 
     let timestamptz_expr =
-        to_timestamptz_expr(&args[0], schema, &tz_config.default_input_tz.to_string())?.try_cast_to(
+        to_timestamp_col(args[0].clone(), schema, &tz_config.default_input_tz.to_string())?.try_cast_to(
             &DataType::Timestamp(TimeUnit::Millisecond, Some(format_tz_str.into())),
             schema
         )?;
 
+    // Ok(to_char(to_local_time(vec![timestamptz_expr]), lit(format_str)))
     Ok(to_char(timestamptz_expr, lit(format_str)))
 }
 
@@ -52,42 +54,12 @@ pub fn utc_format_fn(
 ) -> Result<Expr> {
     let format_str = d3_to_chrono_format(&extract_format_str(args)?);
     let timestamptz_expr =
-        to_timestamptz_expr(&args[0], schema, &tz_config.default_input_tz.to_string())?.try_cast_to(
+        to_timestamp_col(args[0].clone(), schema, &tz_config.default_input_tz.to_string())?.try_cast_to(
             &DataType::Timestamp(TimeUnit::Millisecond, Some("UTC".into())),
             schema
         )?;
 
     Ok(to_char(timestamptz_expr, lit(format_str)))
-}
-
-fn to_timestamptz_expr(arg: &Expr, schema: &DFSchema, default_input_tz: &str) -> Result<Expr> {
-    Ok(match arg.get_type(schema)? {
-        DataType::Date32 => Expr::Cast(expr::Cast {
-            expr: Box::new(arg.clone()),
-            data_type: DataType::Timestamp(TimeUnit::Millisecond, None),
-        }),
-        DataType::Date64 => Expr::Cast(expr::Cast {
-            expr: Box::new(arg.clone()),
-            data_type: DataType::Timestamp(TimeUnit::Millisecond, None),
-        }),
-        DataType::Timestamp(_, _) => arg.clone(),
-        DataType::Utf8 => Expr::ScalarFunction(expr::ScalarFunction {
-            func: Arc::new((*STR_TO_UTC_TIMESTAMP_UDF).clone()),
-            args: vec![arg.clone(), lit(default_input_tz)],
-        }),
-        DataType::Null => arg.clone(),
-        dtype if is_numeric_datatype(&dtype) || matches!(dtype, DataType::Boolean) => {
-            Expr::ScalarFunction(expr::ScalarFunction {
-                func: Arc::new((*EPOCH_MS_TO_UTC_TIMESTAMP_UDF).clone()),
-                args: vec![cast_to(arg.clone(), &DataType::Int64, schema)?],
-            })
-        }
-        dtype => {
-            return Err(VegaFusionError::internal(format!(
-                "Invalid argument type to timeFormat function: {dtype:?}"
-            )))
-        }
-    })
 }
 
 pub fn extract_format_str(args: &[Expr]) -> Result<String> {
@@ -112,7 +84,7 @@ pub fn extract_format_str(args: &[Expr]) -> Result<String> {
 }
 
 
-fn d3_to_chrono_format(format: &str) -> String {
+pub fn d3_to_chrono_format(format: &str) -> String {
     // Initialize mapping of special cases
     let mut special_cases = HashMap::new();
     special_cases.insert("%L", "%3f");     // D3 milliseconds to Chrono's 3-digit fractional seconds

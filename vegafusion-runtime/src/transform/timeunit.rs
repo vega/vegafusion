@@ -19,7 +19,7 @@ use vegafusion_common::datatypes::{cast_to, is_numeric_datatype};
 use vegafusion_datafusion_udfs::udfs::datetime::make_timestamptz::{make_timestamptz};
 use vegafusion_datafusion_udfs::udfs::datetime::timeunit::TIMEUNIT_START_UDF;
 use crate::expression::compiler::utils::ExprHelpers;
-use crate::transform::utils::{make_timestamp_parse_formats, str_to_timestamp};
+use crate::transform::utils::{from_epoch_millis, make_timestamp_parse_formats, str_to_timestamp};
 
 /// Implementation of timeunit start using the SQL date_trunc function
 fn timeunit_date_trunc(
@@ -313,12 +313,7 @@ pub fn to_timestamp_col(expr: Expr, schema: &DFSchema, default_input_tz: &String
             str_to_timestamp(expr, default_input_tz, schema, None)?
         }
         dtype if is_numeric_datatype(&dtype) => {
-            // Convert to timestamp then localize to UTC
-            let nanos = expr * lit(1e6);
-            from_unixtime(nanos).try_cast_to(
-                &DataType::Timestamp(ArrowTimeUnit::Millisecond, Some("UTC".into())),
-                schema
-            )?
+            from_epoch_millis(expr, schema)?
         },
         dtype => {
             return Err(VegaFusionError::compilation(format!(

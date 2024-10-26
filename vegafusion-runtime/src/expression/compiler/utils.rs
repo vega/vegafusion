@@ -7,6 +7,10 @@ use std::collections::HashSet;
 use std::convert::TryFrom;
 use std::ops::Deref;
 use std::sync::Arc;
+use datafusion::arrow::datatypes::Schema;
+use datafusion::physical_expr::PhysicalExpr;
+use datafusion::physical_plan::ColumnarValue;
+use datafusion::physical_planner::{DefaultPhysicalPlanner, PhysicalPlanner};
 use datafusion_expr::expr_schema::cast_subquery;
 use vegafusion_common::arrow::array::{ArrayRef, BooleanArray};
 use vegafusion_common::arrow::compute::can_cast_types;
@@ -14,6 +18,7 @@ use vegafusion_common::arrow::datatypes::DataType;
 use vegafusion_common::arrow::record_batch::RecordBatch;
 use vegafusion_common::datafusion_common::{Column, DFSchema, DataFusionError};
 use vegafusion_core::error::{Result, ResultWithContext, VegaFusionError};
+use crate::task_graph::context::make_datafusion_context;
 
 lazy_static! {
     pub static ref UNIT_RECORD_BATCH: RecordBatch = RecordBatch::try_from_iter(vec![(
@@ -23,12 +28,11 @@ lazy_static! {
     .unwrap();
     pub static ref UNIT_SCHEMA: DFSchema =
         DFSchema::try_from(UNIT_RECORD_BATCH.schema().as_ref().clone()).unwrap();
-    // pub static ref SESSION_STATE: SessionState = default_session_builder(Default::default());
-    // pub static ref PLANNER: DefaultPhysicalPlanner = Default::default();
 }
 
 pub trait ExprHelpers {
     fn columns(&self) -> Result<HashSet<Column>>;
+    fn to_phys_expr(&self) -> Result<Arc<dyn PhysicalExpr>>;
     fn eval_to_scalar(&self) -> Result<ScalarValue>;
     fn try_cast_to(self, cast_to_type: &DataType, schema: &dyn ExprSchema) -> datafusion_common::Result<Expr>;
 }
@@ -41,15 +45,35 @@ impl ExprHelpers for Expr {
         Ok(columns)
     }
 
+    fn to_phys_expr(&self) -> Result<Arc<dyn PhysicalExpr>> {
+        let ctx = make_datafusion_context();
+        let phys_expr = ctx.create_physical_expr(self.clone(), &UNIT_SCHEMA)?;
+        Ok(phys_expr)
+    }
+
     fn eval_to_scalar(&self) -> Result<ScalarValue> {
-        let simplifier = ExprSimplifier::new(VfSimplifyInfo::from(UNIT_SCHEMA.deref().clone()));
-        let simplified_expr = simplifier.simplify(self.clone())?;
-        if let Expr::Literal(scalar) = simplified_expr {
-            Ok(scalar)
-        } else {
-            Err(VegaFusionError::internal(format!(
-                "Failed to evaluate expression to scalar value: {self}\nsimplified to: {simplified_expr}\n"
-            )))
+        if !self.columns()?.is_empty() {
+            return Err(VegaFusionError::compilation(format!(
+                "Cannot eval_to_scalar for Expr with column references: {self:?}"
+            )));
+        }
+
+        let phys_expr = self.to_phys_expr()?;
+        let col_result = phys_expr.evaluate(&UNIT_RECORD_BATCH)?;
+        match col_result {
+            ColumnarValue::Scalar(scalar) => Ok(scalar),
+            ColumnarValue::Array(array) => {
+                if array.len() != 1 {
+                    return Err(VegaFusionError::compilation(format!(
+                        "Unexpected non-scalar array result when evaluate expr: {self:?}"
+                    )));
+                }
+                ScalarValue::try_from_array(&array, 0).with_context(|| {
+                    format!(
+                        "Failed to convert scalar array result to ScalarValue in expr: {self:?}"
+                    )
+                })
+            }
         }
     }
 

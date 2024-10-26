@@ -18,7 +18,7 @@ use datafusion::execution::options::{ArrowReadOptions, ReadOptions};
 use datafusion::parquet::data_type::AsBytes;
 use datafusion::prelude::{CsvReadOptions, DataFrame, ParquetReadOptions, SessionContext};
 use datafusion_common::config::TableOptions;
-use datafusion_functions::expr_fn::make_date;
+use datafusion_functions::expr_fn::{make_date, to_timestamp_millis};
 use tokio::io::AsyncReadExt;
 
 use crate::task_graph::timezone::RuntimeTzConfig;
@@ -48,6 +48,7 @@ use vegafusion_common::datatypes::{is_integer_datatype, is_string_datatype};
 use vegafusion_core::proto::gen::transforms::transform::TransformKind;
 use vegafusion_core::spec::visitors::extract_inline_dataset;
 use crate::data::util::{DataFrameUtils, SessionContextUtils};
+use crate::expression::compiler::builtin_functions::date_time::date_format::d3_to_chrono_format;
 use crate::transform::utils::{make_timestamp_parse_formats, str_to_timestamp};
 
 pub fn build_compilation_config(
@@ -334,16 +335,35 @@ async fn process_datetimes(
         for spec in &formats.specs {
             let datatype = &spec.datatype;
             if datatype.starts_with("date") || datatype.starts_with("utc") {
+                // look for format string
+                let (typ, fmt) = if let Some((typ, fmt)) = datatype.split_once(':') {
+                    if fmt.starts_with("'") && fmt.ends_with("'") {
+                        (typ.to_lowercase(), Some(fmt[1..fmt.len() - 1].to_string()))
+                    } else {
+                        (typ.to_lowercase(), None)
+                    }
+                } else {
+                    (datatype.to_lowercase(), None)
+                };
+
                 let schema = df.schema();
                 if let Ok(date_field) = schema.field_with_unqualified_name(&spec.name) {
                     let dtype = date_field.data_type();
                     let date_expr = if is_string_datatype(dtype) {
-                        let default_input_tz_str = tz_config
-                            .map(|tz_config| tz_config.default_input_tz.to_string())
-                            .unwrap_or_else(|| "UTC".to_string());
+                        // Compute default timezone
+                        let default_input_tz_str = if typ == "utc" || tz_config.is_none() {
+                            "UTC".to_string()
+                        } else {
+                            tz_config.unwrap().default_input_tz.to_string()
+                        };
 
-                        // Parse with a variety of formats, then localize to default_input_tz
-                        str_to_timestamp(flat_col(&spec.name), &default_input_tz_str, schema)?
+                        if let Some(fmt) = fmt {
+                            // Parse with single explicit format
+                            str_to_timestamp(flat_col(&spec.name), &default_input_tz_str, schema, Some(fmt.as_str()))?
+                        } else {
+                            // Parse with auto formats, then localize to default_input_tz
+                            str_to_timestamp(flat_col(&spec.name), &default_input_tz_str, schema, None)?
+                        }
                     } else if is_integer_datatype(dtype) {
                         // Assume Year was parsed numerically, return Date32
                         make_date(flat_col(&spec.name), lit(1), lit(1))
@@ -393,7 +413,7 @@ async fn process_datetimes(
                                 tz_config.with_context(|| "No local timezone info provided")?;
 
                             flat_col(field.name()).try_cast_to(
-                                &DataType::Timestamp(TimeUnit::Nanosecond, Some(tz_config.default_input_tz.to_string().into())),
+                                &DataType::Timestamp(TimeUnit::Millisecond, Some(tz_config.default_input_tz.to_string().into())),
                                 schema
                             )?
                         }
@@ -404,10 +424,10 @@ async fn process_datetimes(
 
                         // Cast to naive timestamp, then localize to timestamp with timezone
                         flat_col(field.name()).try_cast_to(
-                            &DataType::Timestamp(TimeUnit::Nanosecond, None),
+                            &DataType::Timestamp(TimeUnit::Millisecond, None),
                             schema
                         )?.try_cast_to(
-                            &DataType::Timestamp(TimeUnit::Nanosecond, Some(tz_config.default_input_tz.to_string().into())),
+                            &DataType::Timestamp(TimeUnit::Millisecond, Some(tz_config.default_input_tz.to_string().into())),
                             schema,
                         )?
                     }

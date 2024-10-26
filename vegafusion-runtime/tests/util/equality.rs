@@ -229,20 +229,27 @@ pub fn assert_scalars_almost_equals(
 
             if lhs == rhs || lhs.is_null() && rhs.is_null() {
                 // Equal
-            } else if is_numeric_datatype(&lhs.data_type()) && is_numeric_datatype(&rhs.data_type())
-            {
-                match (numeric_to_f64(&lhs), numeric_to_f64(&rhs)) {
-                    (Ok(lhs), Ok(rhs)) => {
-                        assert!(
-                            (lhs - rhs).abs() <= tol,
-                            "{lhs} and {rhs} are not equal to within tolerance {tol}, row {index}, coloumn {name}"
-                        )
-                    }
-                    (Ok(0.0), Err(_)) | (Err(_), Ok(0.0)) if null_matches_zero => {
-                        // OK
-                    }
-                    _ => {
-                        panic!("{lhs:?} and {rhs:?} are not equal, row {index}, coloumn {name}")
+            } else if is_numeric_datatype(&lhs.data_type()) && is_numeric_datatype(&rhs.data_type()) {
+
+                let lhs_finite= numeric_to_f64(&lhs).map(|v| v.is_finite()).unwrap_or(false);
+                let rhs_finite = numeric_to_f64(&rhs).map(|v| v.is_finite()).unwrap_or(false);
+                if !lhs_finite && !rhs_finite {
+                    // both non-finite or null, consider equal
+                    return
+                } else {
+                    match (numeric_to_f64(&lhs), numeric_to_f64(&rhs)) {
+                        (Ok(lhs), Ok(rhs)) => {
+                            assert!(
+                                (lhs - rhs).abs() <= tol,
+                                "{lhs} and {rhs} are not equal to within tolerance {tol}, row {index}, coloumn {name}"
+                            )
+                        }
+                        (Ok(0.0), Err(_)) | (Err(_), Ok(0.0)) if null_matches_zero => {
+                            // OK
+                        }
+                        _ => {
+                            panic!("{lhs:?} and {rhs:?} are not equal, row {index}, coloumn {name}")
+                        }
                     }
                 }
             } else {

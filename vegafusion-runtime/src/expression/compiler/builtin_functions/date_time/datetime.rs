@@ -4,14 +4,17 @@ use std::ops::Add;
 use std::str::FromStr;
 use std::sync::Arc;
 use vegafusion_common::arrow::datatypes::DataType;
+use vegafusion_common::arrow::datatypes::DataType::Timestamp;
+use vegafusion_common::arrow::datatypes::TimeUnit::Second;
 use vegafusion_common::datafusion_common::{DFSchema, ScalarValue};
 use vegafusion_common::datatypes::{cast_to, is_numeric_datatype, is_string_datatype};
 use vegafusion_core::error::{Result, ResultWithContext, VegaFusionError};
 use vegafusion_datafusion_udfs::udfs::datetime::epoch_to_utc_timestamp::EPOCH_MS_TO_UTC_TIMESTAMP_UDF;
 use vegafusion_datafusion_udfs::udfs::datetime::make_timestamptz::make_timestamptz;
 use vegafusion_datafusion_udfs::udfs::datetime::str_to_utc_timestamp::STR_TO_UTC_TIMESTAMP_UDF;
+use crate::expression::compiler::utils::ExprHelpers;
 use crate::transform::timeunit::to_timestamp_col;
-use crate::transform::utils::str_to_timestamp;
+use crate::transform::utils::{from_epoch_millis, str_to_timestamp, to_epoch_millis};
 
 pub fn to_date_transform(
     tz_config: &RuntimeTzConfig,
@@ -45,12 +48,10 @@ pub fn to_date_transform(
             tz_config.default_input_tz
         };
 
-        str_to_timestamp(arg, &default_input_tz.to_string(), schema)
+        let ex = str_to_timestamp(arg, &default_input_tz.to_string(), schema, None)?;
+        Ok(ex)
     } else if is_numeric_datatype(&dtype) {
-        Ok(Expr::ScalarFunction(expr::ScalarFunction {
-            func: Arc::new((*EPOCH_MS_TO_UTC_TIMESTAMP_UDF).clone()),
-            args: vec![cast_to(arg, &DataType::Int64, schema)?],
-        }))
+        from_epoch_millis(arg, schema)
     } else {
         Ok(arg)
     }
@@ -70,14 +71,10 @@ pub fn datetime_transform_fn(
 
         if is_string_datatype(&dtype) {
             let default_input_tz_str = tz_config.default_input_tz.to_string();
-            arg = Expr::ScalarFunction(expr::ScalarFunction {
-                func: Arc::new((*STR_TO_UTC_TIMESTAMP_UDF).clone()),
-                args: vec![arg, lit(default_input_tz_str)],
-            })
+            str_to_timestamp(arg, &default_input_tz_str, schema, None)
+        } else {
+            from_epoch_millis(arg, schema)
         }
-
-        // cast to timestamptz column
-        to_timestamp_col(arg, schema, &tz_config.default_input_tz.to_string())
     } else {
         let udf_args =
             extract_datetime_component_args(args, &tz_config.default_input_tz.to_string(), schema)?;

@@ -62,8 +62,8 @@ pub fn make_timestamp_parse_formats() -> Vec<Expr> {
         "%Y/%m/%d %H:%M",
         // month/day/year
         "%m/%d/%Y",
-        "%Y/%m/%d %H:%M:%S",
-        "%Y/%m/%d %H:%M",
+        "%m/%d/%Y %H:%M:%S",
+        "%m/%d/%Y %H:%M",
         // e.g. May 1 2003
         "%b %-d %Y",
         "%b %-d %Y %H:%M:%S",
@@ -175,26 +175,20 @@ pub fn from_epoch_millis(expr: Expr, schema: &DFSchema) -> Result<Expr> {
 pub fn to_epoch_millis(expr: Expr, default_input_tz: &str, schema: &DFSchema) -> Result<Expr> {
     // Dispatch handling on data type
     Ok(match expr.get_type(schema)? {
-        DataType::Date32 | DataType::Date64 | DataType::Timestamp(_, None)=> {
-            // Interpret as utc milliseconds
-            let millis = date_part(lit("millisecond"), expr.clone()).cast_to(&DataType::Int64, schema)?;
-            to_unixtime(
-                vec![expr.clone()]
-            ).mul(lit(1000)).add(millis)
+        DataType::Timestamp(TimeUnit::Millisecond, None) | DataType::Date64 => expr.cast_to(&DataType::Int64, schema)?,
+        DataType::Date32 | DataType::Timestamp(_, None) => {
+            expr.try_cast_to(&DataType::Timestamp(TimeUnit::Millisecond, None), schema)?
+                .cast_to(&DataType::Int64, schema)?
         }
         DataType::Timestamp(_, Some(_)) => {
             // Convert to UTC, then drop timezone
-            let millis = date_part(lit("millisecond"), expr.clone()).cast_to(&DataType::Int64, schema)?;
-            let expr = expr.try_cast_to(&DataType::Timestamp(TimeUnit::Millisecond, Some("UTC".into())), schema)?
-                .try_cast_to(&DataType::Timestamp(TimeUnit::Millisecond, None), schema)?;
-
-            to_unixtime(vec![expr.clone()]).mul(lit(1000)).add(millis)
+            expr.try_cast_to(&DataType::Timestamp(TimeUnit::Millisecond, Some("UTC".into())), schema)?
+                .cast_to(&DataType::Int64, schema)?
         }
         DataType::Utf8 | DataType::LargeUtf8 | DataType::Utf8View => {
-            let millis = date_part(lit("millisecond"), expr.clone()).cast_to(&DataType::Int64, schema)?;
-            let expr = str_to_timestamp(expr.clone(), default_input_tz, schema, None)?
-                .try_cast_to(&DataType::Timestamp(TimeUnit::Millisecond, None), schema)?;;
-            to_unixtime(vec![expr]).mul(lit(1000)).add(millis)
+            str_to_timestamp(expr.clone(), default_input_tz, schema, None)?
+                .try_cast_to(&DataType::Timestamp(TimeUnit::Millisecond, Some("UTC".into())), schema)?
+                .cast_to(&DataType::Int64, schema)?
         }
         DataType::Int64 => {
             // Keep int argument as-is
@@ -202,7 +196,7 @@ pub fn to_epoch_millis(expr: Expr, default_input_tz: &str, schema: &DFSchema) ->
         }
         dtype if is_numeric_datatype(&dtype) || matches!(dtype, DataType::Boolean) => {
             // Cast other numeric types to Int64
-            cast_to(expr.clone(), &DataType::Int64, schema)?
+            expr.clone().try_cast_to(&DataType::Int64, schema)?
         }
         dtype => {
             return Err(VegaFusionError::internal(format!(
