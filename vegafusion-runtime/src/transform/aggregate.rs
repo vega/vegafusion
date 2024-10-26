@@ -24,8 +24,8 @@ use vegafusion_core::error::{Result, VegaFusionError};
 use vegafusion_core::proto::gen::transforms::{Aggregate, AggregateOp};
 use vegafusion_core::task_graph::task_value::TaskValue;
 use vegafusion_core::transform::aggregate::op_name;
-use vegafusion_datafusion_udfs::udafs::{Q1_UDF, Q3_UDF};
 use crate::data::util::DataFrameUtils;
+use crate::datafusion::udafs::percentile::{Q1_UDF, Q3_UDF};
 
 #[async_trait]
 impl TransformTrait for Aggregate {

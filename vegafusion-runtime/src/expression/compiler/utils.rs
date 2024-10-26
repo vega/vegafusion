@@ -14,7 +14,7 @@ use vegafusion_common::arrow::datatypes::DataType;
 use vegafusion_common::arrow::record_batch::RecordBatch;
 use vegafusion_common::datafusion_common::{Column, DFSchema, DataFusionError};
 use vegafusion_core::error::{Result, ResultWithContext, VegaFusionError};
-use crate::task_graph::context::make_datafusion_context;
+use crate::datafusion::context::make_datafusion_context;
 
 lazy_static! {
     pub static ref UNIT_RECORD_BATCH: RecordBatch = RecordBatch::try_from_iter(vec![(

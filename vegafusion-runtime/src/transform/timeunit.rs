@@ -15,8 +15,8 @@ use datafusion_expr::{lit, Expr, ExprSchemable, interval_year_month_lit, interva
 use itertools::Itertools;
 use vegafusion_common::column::{flat_col, unescaped_col};
 use vegafusion_common::datatypes::{cast_to, is_numeric_datatype};
-use vegafusion_datafusion_udfs::udfs::datetime::make_timestamptz::{make_timestamptz};
-use vegafusion_datafusion_udfs::udfs::datetime::timeunit::TIMEUNIT_START_UDF;
+use crate::datafusion::udfs::datetime::make_timestamptz::make_timestamptz;
+use crate::datafusion::udfs::datetime::timeunit::TIMEUNIT_START_UDF;
 use crate::expression::compiler::utils::ExprHelpers;
 use crate::transform::utils::{from_epoch_millis, str_to_timestamp};
 

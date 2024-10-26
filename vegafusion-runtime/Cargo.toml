@@ -89,10 +89,6 @@ path = "../vegafusion-core"
 features = ["sqlparser"]
 version = "1.6.9"
 
-[dependencies.vegafusion-datafusion-udfs]
-path = "../vegafusion-datafusion-udfs"
-version = "1.6.9"
-
 [dependencies.serde]
 version = "1.0.137"
 features = ["derive"]
