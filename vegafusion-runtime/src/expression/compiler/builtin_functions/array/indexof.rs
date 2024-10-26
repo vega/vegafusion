@@ -1,10 +1,8 @@
 use std::ops::Sub;
 use datafusion_common::DFSchema;
-use datafusion_expr::{expr, Expr, ExprSchemable, lit};
+use datafusion_expr::{Expr, ExprSchemable, lit};
 use datafusion_functions::expr_fn::{coalesce, strpos};
-use datafusion_functions::unicode::expr_fn::character_length;
 use datafusion_functions_nested::expr_fn::array_position;
-use datafusion_functions_nested::length::array_length;
 use vegafusion_common::arrow::datatypes::DataType;
 use vegafusion_common::error::{ResultWithContext, VegaFusionError};
 

@@ -2,10 +2,9 @@ use crate::expression::compiler::builtin_functions::array::length::length_transf
 use crate::expression::compiler::compile;
 use crate::expression::compiler::config::CompilationConfig;
 use crate::expression::compiler::utils::ExprHelpers;
-use datafusion_expr::{expr, lit, Expr};
+use datafusion_expr::{lit, Expr};
 use datafusion_functions::expr_fn::{get_field, substring};
 use std::convert::TryFrom;
-use std::sync::Arc;
 use datafusion_functions_nested::expr_fn::array_element;
 use vegafusion_common::arrow::array::Int64Array;
 use vegafusion_common::arrow::compute::cast;

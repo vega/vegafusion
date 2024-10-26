@@ -12,7 +12,7 @@ use vegafusion_core::proto::gen::transforms::{
 use vegafusion_core::spec::chart::ChartSpec;
 use vegafusion_core::task_graph::scope::TaskScope;
 use vegafusion_core::task_graph::task_value::TaskValue;
-use vegafusion_runtime::task_graph::context::make_datafusion_context;
+use vegafusion_runtime::datafusion::context::make_datafusion_context;
 use vegafusion_runtime::task_graph::runtime::VegaFusionRuntime;
 
 #[tokio::test(flavor = "multi_thread")]

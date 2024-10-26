@@ -12,7 +12,7 @@ use vegafusion_common::data::ORDER_COL;
 use vegafusion_common::datatypes::is_numeric_datatype;
 use vegafusion_common::error::{Result, VegaFusionError};
 use vegafusion_runtime::data::util::{DataFrameUtils, SessionContextUtils};
-use vegafusion_runtime::task_graph::context::make_datafusion_context;
+use vegafusion_runtime::datafusion::context::make_datafusion_context;
 use vegafusion_runtime::tokio_runtime::TOKIO_RUNTIME;
 
 const DROP_COLS: &[&str] = &[ORDER_COL, "_impute"];

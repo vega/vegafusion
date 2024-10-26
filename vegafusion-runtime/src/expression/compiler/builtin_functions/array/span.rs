@@ -1,6 +1,6 @@
 use std::ops::Sub;
 use datafusion_common::DFSchema;
-use datafusion_expr::{Expr, expr, ExprSchemable, lit, when};
+use datafusion_expr::{Expr, ExprSchemable, lit, when};
 use datafusion_functions_nested::expr_fn::array_element;
 use datafusion_functions_nested::length::array_length;
 use vegafusion_common::arrow::datatypes::DataType;

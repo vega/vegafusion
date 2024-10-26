@@ -68,7 +68,7 @@ mod test_compile {
     use datafusion_common::utils::array_into_list_array;
     use datafusion_common::{DFSchema, ScalarValue};
     use datafusion_expr::expr::{BinaryExpr, Case, TryCast};
-    use datafusion_expr::{expr, lit, not, Expr, Operator};
+    use datafusion_expr::{lit, not, Expr, Operator};
     use std::collections::HashMap;
     use std::convert::TryFrom;
 

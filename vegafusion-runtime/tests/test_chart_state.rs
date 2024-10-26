@@ -13,7 +13,7 @@ mod tests {
     use vegafusion_core::planning::watch::{ExportUpdateJSON, ExportUpdateNamespace};
     use vegafusion_core::proto::gen::tasks::TzConfig;
     use vegafusion_core::spec::chart::ChartSpec;
-    use vegafusion_runtime::task_graph::context::make_datafusion_context;
+    use vegafusion_runtime::datafusion::context::make_datafusion_context;
     use vegafusion_runtime::task_graph::runtime::VegaFusionRuntime;
 
     #[tokio::test]

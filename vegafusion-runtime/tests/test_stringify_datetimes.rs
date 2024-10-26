@@ -19,7 +19,7 @@ mod test_stringify_datetimes {
     use vegafusion_core::proto::gen::pretransform::PreTransformSpecOpts;
     use vegafusion_core::runtime::VegaFusionRuntimeTrait;
     use vegafusion_core::spec::chart::ChartSpec;
-    use vegafusion_runtime::task_graph::context::make_datafusion_context;
+    use vegafusion_runtime::datafusion::context::make_datafusion_context;
     use vegafusion_runtime::task_graph::runtime::VegaFusionRuntime;
 
     #[rstest(

@@ -1,5 +1,5 @@
 use datafusion_common::DFSchema;
-use datafusion_expr::{expr, Expr, ExprSchemable};
+use datafusion_expr::{Expr, ExprSchemable};
 
 use datafusion_functions::unicode::expr_fn::character_length;
 use datafusion_functions_nested::length::array_length;

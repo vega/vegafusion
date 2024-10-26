@@ -1,6 +1,4 @@
-use std::ops::Not;
-use datafusion_expr::{expr, lit, Expr, ExprSchemable, ScalarUDF, in_list};
-use std::sync::Arc;
+use datafusion_expr::{lit, Expr, ExprSchemable, in_list};
 use vegafusion_common::arrow::datatypes::DataType;
 use vegafusion_common::datafusion_common::DFSchema;
 use vegafusion_common::error::{Result, ResultWithContext, VegaFusionError};
