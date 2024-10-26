@@ -400,11 +400,7 @@ pub fn encode_inline_datasets(
     datasets
         .into_iter()
         .map(|(name, dataset)| {
-            let VegaFusionDataset::Table { table, hash: _ } = dataset else {
-                return Err(VegaFusionError::internal(
-                    "grpc runtime suppors Arrow tables only, not general Datasets".to_string(),
-                ));
-            };
+            let VegaFusionDataset::Table { table, hash: _ } = dataset;
             Ok(InlineDataset {
                 name: name.clone(),
                 table: table.to_ipc_bytes()?,

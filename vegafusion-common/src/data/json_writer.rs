@@ -35,19 +35,15 @@
 //! [`record_batches_to_json_rows`]:
 //!
 
-use serde_json::map::Map as JsonMap;
-use serde_json::Value;
-use std::iter;
-use std::str::FromStr;
-use std::{fmt::Debug, io::Write};
-
-use arrow::array::timezone::Tz;
 use arrow::array::*;
 use arrow::datatypes::*;
 use arrow::error::{ArrowError, Result};
 use arrow::json::JsonSerializable;
 use arrow::record_batch::RecordBatch;
-use chrono::{TimeZone, Timelike, Utc};
+use serde_json::map::Map as JsonMap;
+use serde_json::Value;
+use std::iter;
+use std::{fmt::Debug, io::Write};
 
 fn primitive_array_to_json<T>(array: &ArrayRef) -> Result<Vec<Value>>
 where
@@ -307,13 +303,7 @@ fn set_column_for_json_rows(
                     }
                 });
         }
-        DataType::Timestamp(TimeUnit::Second, tz) => {
-            let tz = if let Some(tz) = tz {
-                let tz = Tz::from_str(tz)?;
-                Some(tz)
-            } else {
-                None
-            };
+        DataType::Timestamp(TimeUnit::Second, _) => {
             set_temporal_column_as_millis_by_array_type!(
                 TimestampSecondArray,
                 col_name,
@@ -323,7 +313,7 @@ fn set_column_for_json_rows(
                 value_as_datetime
             );
         }
-        DataType::Timestamp(TimeUnit::Millisecond, tz) => {
+        DataType::Timestamp(TimeUnit::Millisecond, _) => {
             set_temporal_column_as_millis_by_array_type!(
                 TimestampMillisecondArray,
                 col_name,
@@ -333,7 +323,7 @@ fn set_column_for_json_rows(
                 value_as_datetime
             );
         }
-        DataType::Timestamp(TimeUnit::Microsecond, tz) => {
+        DataType::Timestamp(TimeUnit::Microsecond, _) => {
             set_temporal_column_as_millis_by_array_type!(
                 TimestampMicrosecondArray,
                 col_name,
@@ -343,7 +333,7 @@ fn set_column_for_json_rows(
                 value_as_datetime
             );
         }
-        DataType::Timestamp(TimeUnit::Nanosecond, tz) => {
+        DataType::Timestamp(TimeUnit::Nanosecond, _) => {
             set_temporal_column_as_millis_by_array_type!(
                 TimestampNanosecondArray,
                 col_name,

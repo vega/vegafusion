@@ -133,7 +133,7 @@ impl TransformTrait for Impute {
             // Build final selection that fills in missing values and adds ordering column
             let mut final_selections = Vec::new();
             for field_index in 0..schema.fields().len() {
-                let (q, f) = schema.qualified_field(field_index);
+                let (_, f) = schema.qualified_field(field_index);
 
                 if f.name().starts_with(ORDER_COL) {
                     // Skip all order cols

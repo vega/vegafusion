@@ -1,7 +1,6 @@
 use crate::datafusion::context::make_datafusion_context;
 use datafusion::physical_expr::PhysicalExpr;
 use datafusion::physical_plan::ColumnarValue;
-use datafusion::physical_planner::PhysicalPlanner;
 use datafusion_common::{ExprSchema, ScalarValue};
 use datafusion_expr::utils::expr_to_columns;
 use datafusion_expr::{Expr, ExprSchemable, TryCast};

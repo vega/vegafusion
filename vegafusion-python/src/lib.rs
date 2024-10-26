@@ -35,10 +35,9 @@ use vegafusion_core::spec::chart::ChartSpec;
 use vegafusion_core::task_graph::graph::ScopedVariable;
 use vegafusion_core::task_graph::task_value::TaskValue;
 use vegafusion_runtime::tokio_runtime::TOKIO_THREAD_STACK_SIZE;
-use vegafusion_sql::connection::datafusion_conn::DataFusionConnection;
-use vegafusion_sql::connection::Connection;
 
 use vegafusion_core::runtime::VegaFusionRuntimeTrait;
+use vegafusion_runtime::datafusion::context::make_datafusion_context;
 
 static INIT: Once = Once::new();
 
@@ -200,7 +199,6 @@ impl PyVegaFusionRuntime {
         initialize_logging();
 
         // Use DataFusion connection and multi-threaded tokio runtime
-        let conn = Arc::new(DataFusionConnection::default()) as Arc<dyn Connection>;
         let mut builder = tokio::runtime::Builder::new_multi_thread();
         if let Some(worker_threads) = worker_threads {
             builder.worker_threads(worker_threads.max(1) as usize);
@@ -214,7 +212,11 @@ impl PyVegaFusionRuntime {
             .external("Failed to create Tokio thread pool")?;
 
         Ok(Self {
-            runtime: Arc::new(VegaFusionRuntime::new(conn, max_capacity, memory_limit)),
+            runtime: Arc::new(VegaFusionRuntime::new(
+                Arc::new(make_datafusion_context()),
+                max_capacity,
+                memory_limit,
+            )),
             tokio_runtime: Arc::new(tokio_runtime_connection),
         })
     }

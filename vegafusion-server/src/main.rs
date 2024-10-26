@@ -27,7 +27,6 @@ use vegafusion_core::proto::gen::pretransform::{
     PreTransformSpecOpts, PreTransformSpecRequest, PreTransformSpecResponse,
     PreTransformValuesOpts, PreTransformValuesRequest, PreTransformValuesResponse,
 };
-use vegafusion_sql::connection::datafusion_conn::DataFusionConnection;
 
 #[derive(Clone)]
 pub struct VegaFusionRuntimeGrpc {
