@@ -78,7 +78,7 @@ fn test_bin_infs() {
         expr: "if(datum.bin0 <= -1/0, -1, if(datum.bin0 >= 1/0, 1, 0))".to_string(),
         // expr: "datum['Body Mass (g)']".to_string(),
         as_: "inf_sign".to_string(),
-        extra: Default::default()
+        extra: Default::default(),
     };
 
     let transform_specs = vec![

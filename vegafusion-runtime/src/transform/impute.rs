@@ -1,16 +1,18 @@
 use crate::expression::compiler::config::CompilationConfig;
 
+use crate::data::util::DataFrameUtils;
+use crate::expression::compiler::utils::ExprHelpers;
 use crate::transform::TransformTrait;
 use async_trait::async_trait;
-use datafusion_common::{JoinType, ScalarValue};
-use itertools::Itertools;
-use std::sync::Arc;
 use datafusion::prelude::DataFrame;
-use datafusion_expr::{Expr, expr, lit, SortExpr, WindowFrame, WindowFunctionDefinition};
+use datafusion_common::{JoinType, ScalarValue};
+use datafusion_expr::{expr, lit, Expr, SortExpr, WindowFrame, WindowFunctionDefinition};
 use datafusion_functions::expr_fn::coalesce;
 use datafusion_functions_aggregate::expr_fn::min;
 use datafusion_functions_window::row_number::RowNumber;
+use itertools::Itertools;
 use sqlparser::ast::NullTreatment;
+use std::sync::Arc;
 use vegafusion_common::column::{flat_col, relation_col};
 use vegafusion_common::data::scalar::ScalarValueHelpers;
 use vegafusion_common::data::ORDER_COL;
@@ -18,8 +20,6 @@ use vegafusion_common::error::{Result, ResultWithContext};
 use vegafusion_common::escape::unescape_field;
 use vegafusion_core::proto::gen::transforms::Impute;
 use vegafusion_core::task_graph::task_value::TaskValue;
-use crate::data::util::DataFrameUtils;
-use crate::expression::compiler::utils::ExprHelpers;
 
 #[async_trait]
 impl TransformTrait for Impute {
@@ -63,7 +63,8 @@ impl TransformTrait for Impute {
         let groupby: Vec<_> = groupby.iter().map(|f| unescape_field(f)).collect();
 
         let schema = dataframe.schema();
-        let (_, field_field) = schema.inner()
+        let (_, field_field) = schema
+            .inner()
             .column_with_name(&field)
             .with_context(|| format!("No field named {}", field))?;
         let field_type = field_field.data_type();
@@ -81,7 +82,7 @@ impl TransformTrait for Impute {
                             flat_col(&field),
                             lit(value.clone()).try_cast_to(field_type, schema)?,
                         ])
-                            .alias(col_name)
+                        .alias(col_name)
                     } else {
                         flat_col(col_name)
                     })
@@ -101,33 +102,33 @@ impl TransformTrait for Impute {
 
             // Create DataFrame with unique key values, and an internal ordering column
             let key_col = flat_col(&key);
-            let key_df = dataframe.clone()
+            let key_df = dataframe
+                .clone()
                 .filter(key_col.clone().is_not_null())?
-                .aggregate_mixed(vec![key_col.clone()], vec![min(order_col.clone()).alias(&order_key)])?;
+                .aggregate_mixed(
+                    vec![key_col.clone()],
+                    vec![min(order_col.clone()).alias(&order_key)],
+                )?;
 
             // Create DataFrame with unique combinations of group_by values, with an
             // internal ordering col
-            let group_cols = groupby.iter().map(
-                |c| flat_col(c)
-            ).collect::<Vec<_>>();
+            let group_cols = groupby.iter().map(|c| flat_col(c)).collect::<Vec<_>>();
 
-            let groups_df = dataframe.clone()
+            let groups_df = dataframe
+                .clone()
                 .aggregate_mixed(group_cols, vec![min(order_col.clone()).alias(&order_group)])?;
 
             // Build join conditions
-            let mut on_exprs = groupby.iter().map(
-                |c| relation_col(c, "lhs").eq(relation_col(c, "rhs"))
-            ).collect::<Vec<_>>();
+            let mut on_exprs = groupby
+                .iter()
+                .map(|c| relation_col(c, "lhs").eq(relation_col(c, "rhs")))
+                .collect::<Vec<_>>();
             on_exprs.push(relation_col(&key, "lhs").eq(relation_col(&key, "rhs")));
 
             let pre_ordered_df = key_df
                 .join_on(groups_df, JoinType::Inner, vec![])?
                 .alias("lhs")?
-                .join_on(
-                    dataframe.clone().alias("rhs")?,
-                    JoinType::Left,
-                    on_exprs
-                )?;
+                .join_on(dataframe.clone().alias("rhs")?, JoinType::Left, on_exprs)?;
 
             // Build final selection that fills in missing values and adds ordering column
             let mut final_selections = Vec::new();
@@ -136,14 +137,16 @@ impl TransformTrait for Impute {
 
                 if f.name().starts_with(ORDER_COL) {
                     // Skip all order cols
-                    continue
+                    continue;
                 } else if f.name() == &field {
                     // Coalesce to fill in null values in field
-                    final_selections.push(coalesce(vec![
-                        flat_col(&field),
-                        lit(value.clone()).try_cast_to(field_type, schema)?,
-                    ])
-                        .alias(f.name()));
+                    final_selections.push(
+                        coalesce(vec![
+                            flat_col(&field),
+                            lit(value.clone()).try_cast_to(field_type, schema)?,
+                        ])
+                        .alias(f.name()),
+                    );
                 } else {
                     // Keep other columns
                     if f.name() == &key || groupby.contains(f.name()) {
@@ -171,7 +174,8 @@ impl TransformTrait for Impute {
                 ],
                 window_frame: WindowFrame::new(Some(true)),
                 null_treatment: Some(NullTreatment::RespectNulls),
-            }).alias(ORDER_COL);
+            })
+            .alias(ORDER_COL);
             final_selections.push(final_order_expr);
 
             Ok((pre_ordered_df.select(final_selections)?, Default::default()))

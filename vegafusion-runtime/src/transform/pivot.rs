@@ -1,10 +1,11 @@
+use crate::data::util::DataFrameUtils;
 use crate::expression::compiler::config::CompilationConfig;
 use crate::transform::aggregate::make_agg_expr_for_col_expr;
 use crate::transform::TransformTrait;
 use async_trait::async_trait;
+use datafusion::prelude::DataFrame;
 use datafusion_expr::{lit, when};
 use datafusion_functions_aggregate::expr_fn::min;
-use datafusion::prelude::DataFrame;
 use vegafusion_common::arrow::array::StringArray;
 use vegafusion_common::arrow::datatypes::DataType;
 use vegafusion_common::column::{flat_col, unescaped_col};
@@ -15,7 +16,6 @@ use vegafusion_common::error::{Result, ResultWithContext, VegaFusionError};
 use vegafusion_common::escape::unescape_field;
 use vegafusion_core::proto::gen::transforms::{AggregateOp, Pivot};
 use vegafusion_core::task_graph::task_value::TaskValue;
-use crate::data::util::DataFrameUtils;
 
 /// NULL_PLACEHOLDER_NAME is used for sorting to match Vega, where null always comes first for
 /// limit sorting
@@ -109,12 +109,8 @@ impl TransformTrait for Pivot {
     }
 }
 
-async fn extract_sorted_pivot_values(
-    tx: &Pivot,
-    dataframe: DataFrame,
-) -> Result<Vec<String>> {
-    let agg_query = dataframe
-        .aggregate_mixed(vec![unescaped_col(&tx.field)], vec![])?;
+async fn extract_sorted_pivot_values(tx: &Pivot, dataframe: DataFrame) -> Result<Vec<String>> {
+    let agg_query = dataframe.aggregate_mixed(vec![unescaped_col(&tx.field)], vec![])?;
 
     let limit = match tx.limit {
         None | Some(0) => None,
@@ -140,10 +136,7 @@ async fn extract_sorted_pivot_values(
     Ok(pivot_vec)
 }
 
-async fn pivot_case(
-    tx: &Pivot,
-    dataframe: DataFrame,
-) -> Result<(DataFrame, Vec<TaskValue>)> {
+async fn pivot_case(tx: &Pivot, dataframe: DataFrame) -> Result<(DataFrame, Vec<TaskValue>)> {
     let pivot_vec = extract_sorted_pivot_values(tx, dataframe.clone()).await?;
 
     if pivot_vec.is_empty() {

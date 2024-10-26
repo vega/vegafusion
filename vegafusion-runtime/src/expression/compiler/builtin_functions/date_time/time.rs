@@ -1,8 +1,8 @@
 use crate::task_graph::timezone::RuntimeTzConfig;
+use crate::transform::utils::to_epoch_millis;
 use datafusion_expr::Expr;
 use vegafusion_common::datafusion_common::DFSchema;
 use vegafusion_common::error::{Result, VegaFusionError};
-use crate::transform::utils::to_epoch_millis;
 
 pub fn time_fn(tz_config: &RuntimeTzConfig, args: &[Expr], schema: &DFSchema) -> Result<Expr> {
     // Validate number of arguments
@@ -14,5 +14,9 @@ pub fn time_fn(tz_config: &RuntimeTzConfig, args: &[Expr], schema: &DFSchema) ->
     }
 
     // Extract first and only arg
-    to_epoch_millis(args[0].clone(), &tz_config.default_input_tz.to_string(), schema)
+    to_epoch_millis(
+        args[0].clone(),
+        &tz_config.default_input_tz.to_string(),
+        schema,
+    )
 }

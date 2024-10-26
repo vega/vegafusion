@@ -2,11 +2,11 @@ use crate::expression::compiler::config::CompilationConfig;
 use crate::transform::TransformTrait;
 use async_trait::async_trait;
 
+use datafusion::prelude::DataFrame;
 use datafusion_common::ScalarValue;
 use datafusion_expr::{expr, lit, Expr, WindowFrame, WindowFunctionDefinition};
 use datafusion_functions_aggregate::variance::{var_pop_udaf, var_samp_udaf};
 use std::sync::Arc;
-use datafusion::prelude::DataFrame;
 use vegafusion_core::error::Result;
 use vegafusion_core::proto::gen::transforms::{
     window_transform_op, AggregateOp, SortOrder, Window, WindowOp,
@@ -15,17 +15,16 @@ use vegafusion_core::task_graph::task_value::TaskValue;
 
 use datafusion_expr::{BuiltInWindowFunction, WindowFrameBound, WindowFrameUnits};
 use datafusion_functions_aggregate::average::avg_udaf;
+use datafusion_functions_aggregate::count::count_udaf;
 use datafusion_functions_aggregate::min_max::{max_udaf, min_udaf};
 use datafusion_functions_aggregate::stddev::{stddev_pop_udaf, stddev_udaf};
 use datafusion_functions_aggregate::sum::sum_udaf;
-use datafusion_functions_aggregate::count::count_udaf;
 use datafusion_functions_window::row_number::RowNumber;
 use vegafusion_common::column::{flat_col, unescaped_col};
 use vegafusion_common::data::ORDER_COL;
 use vegafusion_common::datatypes::to_numeric;
 use vegafusion_common::error::{ResultWithContext, VegaFusionError};
 use vegafusion_common::escape::unescape_field;
-
 
 #[async_trait]
 impl TransformTrait for Window {

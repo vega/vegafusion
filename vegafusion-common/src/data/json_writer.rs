@@ -35,19 +35,19 @@
 //! [`record_batches_to_json_rows`]:
 //!
 
-use std::iter;
-use std::{fmt::Debug, io::Write};
-use std::str::FromStr;
 use serde_json::map::Map as JsonMap;
 use serde_json::Value;
+use std::iter;
+use std::str::FromStr;
+use std::{fmt::Debug, io::Write};
 
-use arrow::array::*;
 use arrow::array::timezone::Tz;
+use arrow::array::*;
 use arrow::datatypes::*;
 use arrow::error::{ArrowError, Result};
 use arrow::json::JsonSerializable;
 use arrow::record_batch::RecordBatch;
-use chrono::{Timelike, TimeZone, Utc};
+use chrono::{TimeZone, Timelike, Utc};
 
 fn primitive_array_to_json<T>(array: &ArrayRef) -> Result<Vec<Value>>
 where

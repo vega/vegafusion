@@ -2,19 +2,19 @@ use crate::expression::compiler::config::CompilationConfig;
 use crate::transform::TransformTrait;
 use async_trait::async_trait;
 
+use crate::data::util::DataFrameUtils;
+use datafusion::arrow::array::RecordBatch;
+use datafusion::prelude::DataFrame;
 use datafusion_common::utils::array_into_list_array;
 use datafusion_common::{DFSchema, ScalarValue};
 use datafusion_expr::Expr;
 use datafusion_functions_aggregate::expr_fn::{max, min};
 use std::sync::Arc;
-use datafusion::arrow::array::RecordBatch;
-use datafusion::prelude::DataFrame;
 use vegafusion_common::column::unescaped_col;
 use vegafusion_common::datatypes::to_numeric;
 use vegafusion_common::error::{Result, ResultWithContext};
 use vegafusion_core::proto::gen::transforms::Extent;
 use vegafusion_core::task_graph::task_value::TaskValue;
-use crate::data::util::DataFrameUtils;
 
 #[async_trait]
 impl TransformTrait for Extent {

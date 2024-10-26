@@ -123,7 +123,9 @@ pub fn eval_vegafusion_transforms(
     // add ordering column
     let data = data.clone().with_ordering().unwrap();
     let pipeline = TransformPipeline::try_from(transform_specs).unwrap();
-    let sql_df = (*TOKIO_RUNTIME).block_on(ctx.vegafusion_table(data)).unwrap();
+    let sql_df = (*TOKIO_RUNTIME)
+        .block_on(ctx.vegafusion_table(data))
+        .unwrap();
 
     let (result_data, result_signals) = TOKIO_RUNTIME
         .block_on(pipeline.eval_sql(sql_df, compilation_config))

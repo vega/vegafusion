@@ -141,7 +141,14 @@ pub fn assert_tables_equal(
     let rhs_scalars = record_batch_to_scalars(&rhs_rb).unwrap();
 
     for i in 0..lhs_scalars.len() {
-        assert_scalars_almost_equals(&lhs_scalars[i], &rhs_scalars[i], config.tolerance, "row", i, config.null_matches_zero);
+        assert_scalars_almost_equals(
+            &lhs_scalars[i],
+            &rhs_scalars[i],
+            config.tolerance,
+            "row",
+            i,
+            config.null_matches_zero,
+        );
     }
 }
 
@@ -229,13 +236,13 @@ pub fn assert_scalars_almost_equals(
 
             if lhs == rhs || lhs.is_null() && rhs.is_null() {
                 // Equal
-            } else if is_numeric_datatype(&lhs.data_type()) && is_numeric_datatype(&rhs.data_type()) {
-
-                let lhs_finite= numeric_to_f64(&lhs).map(|v| v.is_finite()).unwrap_or(false);
+            } else if is_numeric_datatype(&lhs.data_type()) && is_numeric_datatype(&rhs.data_type())
+            {
+                let lhs_finite = numeric_to_f64(&lhs).map(|v| v.is_finite()).unwrap_or(false);
                 let rhs_finite = numeric_to_f64(&rhs).map(|v| v.is_finite()).unwrap_or(false);
                 if !lhs_finite && !rhs_finite {
                     // both non-finite or null, consider equal
-                    return
+                    return;
                 } else {
                     match (numeric_to_f64(&lhs), numeric_to_f64(&rhs)) {
                         (Ok(lhs), Ok(rhs)) => {

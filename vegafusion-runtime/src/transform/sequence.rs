@@ -2,10 +2,11 @@ use crate::expression::compiler::compile;
 use crate::expression::compiler::config::CompilationConfig;
 use crate::transform::TransformTrait;
 
+use crate::data::util::SessionContextUtils;
 use crate::expression::compiler::utils::ExprHelpers;
 use async_trait::async_trait;
-use std::sync::Arc;
 use datafusion::prelude::{DataFrame, SessionContext};
+use std::sync::Arc;
 use vegafusion_common::arrow::array::{ArrayRef, Float64Array};
 use vegafusion_common::arrow::datatypes::DataType;
 use vegafusion_common::arrow::datatypes::{Field, Schema, SchemaRef};
@@ -15,7 +16,6 @@ use vegafusion_common::data::table::VegaFusionTable;
 use vegafusion_common::error::Result;
 use vegafusion_core::proto::gen::transforms::Sequence;
 use vegafusion_core::task_graph::task_value::TaskValue;
-use crate::data::util::SessionContextUtils;
 
 #[async_trait]
 impl TransformTrait for Sequence {

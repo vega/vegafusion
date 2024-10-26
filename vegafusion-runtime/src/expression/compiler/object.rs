@@ -1,7 +1,7 @@
 use crate::expression::compiler::{compile, config::CompilationConfig};
 
-use datafusion_expr::{Expr, lit};
-use datafusion_functions::expr_fn::{named_struct};
+use datafusion_expr::{lit, Expr};
+use datafusion_functions::expr_fn::named_struct;
 use vegafusion_common::datafusion_common::DFSchema;
 use vegafusion_core::error::Result;
 use vegafusion_core::proto::gen::expression::ObjectExpression;

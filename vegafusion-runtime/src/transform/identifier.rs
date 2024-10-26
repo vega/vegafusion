@@ -2,18 +2,17 @@ use crate::expression::compiler::config::CompilationConfig;
 use crate::transform::TransformTrait;
 
 use async_trait::async_trait;
+use datafusion::prelude::DataFrame;
 use datafusion_expr::expr::WildcardOptions;
 use datafusion_expr::{expr, Expr, WindowFrame, WindowFunctionDefinition};
 use datafusion_functions_window::row_number::RowNumber;
 use sqlparser::ast::NullTreatment;
 use std::sync::Arc;
-use datafusion::prelude::DataFrame;
 use vegafusion_common::column::flat_col;
 use vegafusion_common::data::ORDER_COL;
 use vegafusion_common::error::Result;
 use vegafusion_core::proto::gen::transforms::Identifier;
 use vegafusion_core::task_graph::task_value::TaskValue;
-
 
 #[async_trait]
 impl TransformTrait for Identifier {
@@ -37,14 +36,13 @@ impl TransformTrait for Identifier {
         })
         .alias(&self.r#as);
 
-        let result = dataframe
-            .select(vec![
-                Expr::Wildcard {
-                    qualifier: None,
-                    options: WildcardOptions::default(),
-                },
-                row_number_expr,
-            ])?;
+        let result = dataframe.select(vec![
+            Expr::Wildcard {
+                qualifier: None,
+                options: WildcardOptions::default(),
+            },
+            row_number_expr,
+        ])?;
 
         Ok((result, Default::default()))
     }

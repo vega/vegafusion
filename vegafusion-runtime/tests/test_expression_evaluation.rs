@@ -556,7 +556,7 @@ mod test_indexof {
         case("indexof(['a4', 'a3', 'a7'], 'a7')"),
         case("indexof(['a4', 'a3', 'a7'], 'a8')"),
         case("indexof('hello, world', 'w')"),
-        case("indexof('hello, world', 'z')"),
+        case("indexof('hello, world', 'z')")
     )]
     fn test(expr: &str) {
         check_scalar_evaluation(expr, &config_a())

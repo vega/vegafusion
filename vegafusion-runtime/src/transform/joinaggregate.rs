@@ -1,3 +1,4 @@
+use crate::data::util::DataFrameUtils;
 use crate::expression::compiler::config::CompilationConfig;
 use crate::transform::aggregate::make_aggr_expr_for_named_col;
 use crate::transform::TransformTrait;
@@ -10,7 +11,6 @@ use vegafusion_core::error::Result;
 use vegafusion_core::proto::gen::transforms::{AggregateOp, JoinAggregate};
 use vegafusion_core::task_graph::task_value::TaskValue;
 use vegafusion_core::transform::aggregate::op_name;
-use crate::data::util::DataFrameUtils;
 
 #[async_trait]
 impl TransformTrait for JoinAggregate {
@@ -51,29 +51,41 @@ impl TransformTrait for JoinAggregate {
             agg_exprs.push(agg_expr);
         }
         // Perform regular aggregation on clone of input DataFrame
-        let agged_df = dataframe.clone().aggregate_mixed(group_exprs, agg_exprs)?.alias("rhs")?;
+        let agged_df = dataframe
+            .clone()
+            .aggregate_mixed(group_exprs, agg_exprs)?
+            .alias("rhs")?;
 
         // Join with the input dataframe on the grouping columns
-        let on = self.groupby.iter().map(
-            |g| relation_col(&escape_field(g), "lhs").eq(relation_col(&escape_field(g), "rhs"))
-        ).collect::<Vec<_>>();
+        let on = self
+            .groupby
+            .iter()
+            .map(|g| {
+                relation_col(&escape_field(g), "lhs").eq(relation_col(&escape_field(g), "rhs"))
+            })
+            .collect::<Vec<_>>();
 
-        let mut final_selections = dataframe.schema().fields().iter().filter_map(|f| {
-            if new_col_names.contains(f.name()) {
-                None
-            } else {
-                Some(relation_col(f.name(), "lhs"))
-            }
-        }).collect::<Vec<_>>();
+        let mut final_selections = dataframe
+            .schema()
+            .fields()
+            .iter()
+            .filter_map(|f| {
+                if new_col_names.contains(f.name()) {
+                    None
+                } else {
+                    Some(relation_col(f.name(), "lhs"))
+                }
+            })
+            .collect::<Vec<_>>();
         for col in &new_col_names {
             final_selections.push(relation_col(col, "rhs"));
         }
 
-        let result = dataframe.clone().alias("lhs")?.join_on(
-            agged_df,
-            JoinType::Left,
-            on,
-        )?.select(final_selections)?;
+        let result = dataframe
+            .clone()
+            .alias("lhs")?
+            .join_on(agged_df, JoinType::Left, on)?
+            .select(final_selections)?;
 
         Ok((result, Vec::new()))
     }

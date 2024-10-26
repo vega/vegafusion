@@ -30,7 +30,6 @@ use vegafusion_runtime::datafusion::context::make_datafusion_context;
 use vegafusion_runtime::task_graph::runtime::VegaFusionRuntime;
 use vegafusion_runtime::tokio_runtime::TOKIO_THREAD_STACK_SIZE;
 
-
 lazy_static! {
     static ref TOKIO_RUNTIME: Runtime = tokio::runtime::Builder::new_multi_thread()
         .enable_all()
@@ -157,7 +156,7 @@ mod test_custom_specs {
         case("custom/gh_456", 0.001, true),
         case("custom/facet_dots_sort_datum", 0.001, true),
         case("custom/gh_463", 0.001, true),
-        case("custom/offset_inside_x", 0.001, true),
+        case("custom/offset_inside_x", 0.001, true)
     )]
     fn test_image_comparison(spec_name: &str, tolerance: f64, extract_inline_values: bool) {
         println!("spec_name: {spec_name}");
@@ -1365,7 +1364,6 @@ async fn check_pre_transform_spec_from_files(spec_name: &str, tolerance: f64) {
         .pre_transform_spec(&full_spec, &Default::default(), &opts)
         .await
         .unwrap();
-
 
     let png_name = spec_name.replace('/', "-");
 

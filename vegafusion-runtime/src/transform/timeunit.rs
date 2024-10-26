@@ -1,24 +1,24 @@
 use crate::expression::compiler::config::CompilationConfig;
 use crate::transform::TransformTrait;
 use async_trait::async_trait;
+use datafusion::prelude::DataFrame;
 use datafusion_common::DFSchema;
 use datafusion_functions::expr_fn::{date_part, date_trunc};
 use std::collections::HashSet;
 use std::ops::{Add, Mul, Rem, Sub};
-use datafusion::prelude::DataFrame;
 use vegafusion_common::arrow::datatypes::{DataType, TimeUnit as ArrowTimeUnit};
 use vegafusion_core::error::{Result, ResultWithContext, VegaFusionError};
 use vegafusion_core::proto::gen::transforms::{TimeUnit, TimeUnitTimeZone, TimeUnitUnit};
 use vegafusion_core::task_graph::task_value::TaskValue;
 
-use datafusion_expr::{lit, Expr, ExprSchemable, interval_year_month_lit, interval_datetime_lit};
-use itertools::Itertools;
-use vegafusion_common::column::{flat_col, unescaped_col};
-use vegafusion_common::datatypes::{cast_to, is_numeric_datatype};
 use crate::datafusion::udfs::datetime::make_timestamptz::make_timestamptz;
 use crate::datafusion::udfs::datetime::timeunit::TIMEUNIT_START_UDF;
 use crate::expression::compiler::utils::ExprHelpers;
 use crate::transform::utils::{from_epoch_millis, str_to_timestamp};
+use datafusion_expr::{interval_datetime_lit, interval_year_month_lit, lit, Expr, ExprSchemable};
+use itertools::Itertools;
+use vegafusion_common::column::{flat_col, unescaped_col};
+use vegafusion_common::datatypes::{cast_to, is_numeric_datatype};
 
 /// Implementation of timeunit start using the SQL date_trunc function
 fn timeunit_date_trunc(
@@ -31,15 +31,16 @@ fn timeunit_date_trunc(
     // Convert field to timestamp in target timezone
     let field_col = to_timestamp_col(unescaped_col(field), schema, default_input_tz)?.try_cast_to(
         &DataType::Timestamp(ArrowTimeUnit::Millisecond, Some(tz.into())),
-        schema
+        schema,
     )?;
 
     // Handle Sunday-based weeks as special case
     if let TimeUnitUnit::Week = smallest_unit {
         let day_interval = interval_datetime_lit("1 day");
-        let trunc_expr = date_trunc(lit("week"), field_col.add(day_interval.clone())).sub(day_interval);
+        let trunc_expr =
+            date_trunc(lit("week"), field_col.add(day_interval.clone())).sub(day_interval);
         let interval = interval_datetime_lit("7 day");
-        return Ok((trunc_expr, interval))
+        return Ok((trunc_expr, interval));
     }
 
     // Handle uniform case
@@ -59,8 +60,6 @@ fn timeunit_date_trunc(
         }
     };
 
-
-
     // date_trunc after converting to the required timezone (will be the local_tz or UTC)
     let trunc_expr = date_trunc(lit(part_str), field_col);
 
@@ -75,7 +74,6 @@ fn timeunit_date_part_tz(
     default_input_tz: &String,
     tz: &str,
 ) -> Result<(Expr, Expr)> {
-
     let mut year_arg = lit(2012);
     let mut month_arg = lit(1);
     let mut date_arg = lit(1);
@@ -90,7 +88,7 @@ fn timeunit_date_part_tz(
     // Convert field column to timestamp
     let field_col = to_timestamp_col(unescaped_col(field), schema, default_input_tz)?.try_cast_to(
         &DataType::Timestamp(ArrowTimeUnit::Millisecond, Some(tz.into())),
-        schema
+        schema,
     )?;
 
     // Year
@@ -169,8 +167,10 @@ fn timeunit_weekday(
     default_input_tz: &String,
     tz: &str,
 ) -> Result<(Expr, Expr)> {
-    let field_col = to_timestamp_col(unescaped_col(field), schema, default_input_tz)?
-        .try_cast_to(&DataType::Timestamp(ArrowTimeUnit::Millisecond, Some(tz.into())), schema)?;
+    let field_col = to_timestamp_col(unescaped_col(field), schema, default_input_tz)?.try_cast_to(
+        &DataType::Timestamp(ArrowTimeUnit::Millisecond, Some(tz.into())),
+        schema,
+    )?;
 
     // Use DATE_PART_TZ to extract the weekday
     // where Sunday is 0, Saturday is 6
@@ -220,7 +220,7 @@ fn timeunit_custom_udf(
 
     let field_col = to_timestamp_col(unescaped_col(field), schema, default_input_tz)?.try_cast_to(
         &DataType::Timestamp(ArrowTimeUnit::Millisecond, Some("UTC".into())),
-        schema
+        schema,
     )?;
 
     let timeunit_start_value = timeunit_start_udf.call(vec![
@@ -294,26 +294,31 @@ pub fn to_timestamp_col(expr: Expr, schema: &DFSchema, default_input_tz: &String
         DataType::Timestamp(ArrowTimeUnit::Millisecond, Some(_)) => expr,
         DataType::Timestamp(_, Some(tz)) => expr.try_cast_to(
             &DataType::Timestamp(ArrowTimeUnit::Millisecond, Some(tz)),
-            schema
+            schema,
         )?,
         DataType::Timestamp(_, None) => expr.try_cast_to(
-            &DataType::Timestamp(ArrowTimeUnit::Millisecond, Some(default_input_tz.as_str().into())),
-            schema
+            &DataType::Timestamp(
+                ArrowTimeUnit::Millisecond,
+                Some(default_input_tz.as_str().into()),
+            ),
+            schema,
         )?,
         DataType::Date32 | DataType::Date64 => cast_to(
             expr,
             &DataType::Timestamp(ArrowTimeUnit::Millisecond, None),
             schema,
-        )?.try_cast_to(
-            &DataType::Timestamp(ArrowTimeUnit::Millisecond, Some(default_input_tz.as_str().into())),
-            schema
+        )?
+        .try_cast_to(
+            &DataType::Timestamp(
+                ArrowTimeUnit::Millisecond,
+                Some(default_input_tz.as_str().into()),
+            ),
+            schema,
         )?,
         DataType::Utf8 | DataType::LargeUtf8 | DataType::Utf8View => {
             str_to_timestamp(expr, default_input_tz, schema, None)?
         }
-        dtype if is_numeric_datatype(&dtype) => {
-            from_epoch_millis(expr, schema)?
-        },
+        dtype if is_numeric_datatype(&dtype) => from_epoch_millis(expr, schema)?,
         dtype => {
             return Err(VegaFusionError::compilation(format!(
                 "Invalid data type for timeunit transform: {dtype:?}"
@@ -427,9 +432,7 @@ impl TransformTrait for TimeUnit {
                     &tz,
                 )?
             }
-            [TimeUnitUnit::Day] => {
-                timeunit_weekday(&self.field, schema, &default_input_tz, &tz)?
-            }
+            [TimeUnitUnit::Day] => timeunit_weekday(&self.field, schema, &default_input_tz, &tz)?,
             _ => {
                 // Check if timeunit can be handled by make_utc_timestamp
                 let units_set = units_vec.iter().cloned().collect::<HashSet<_>>();
@@ -445,22 +448,10 @@ impl TransformTrait for TimeUnit {
                 .into_iter()
                 .collect::<HashSet<_>>();
                 if units_set.is_subset(&date_part_units) {
-                    timeunit_date_part_tz(
-                        &self.field,
-                        &units_set,
-                        schema,
-                        &default_input_tz,
-                        &tz,
-                    )?
+                    timeunit_date_part_tz(&self.field, &units_set, schema, &default_input_tz, &tz)?
                 } else {
                     // Fallback to custom UDF
-                    timeunit_custom_udf(
-                        &self.field,
-                        &units_set,
-                        schema,
-                        &default_input_tz,
-                        &tz,
-                    )?
+                    timeunit_custom_udf(&self.field, &units_set, schema, &default_input_tz, &tz)?
                 }
             }
         };

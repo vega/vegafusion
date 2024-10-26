@@ -12,7 +12,6 @@ use datafusion_optimizer::simplify_expressions::ExprSimplifier;
 use vegafusion_common::column::flat_col;
 use vegafusion_core::task_graph::task_value::TaskValue;
 
-
 #[async_trait]
 impl TransformTrait for Formula {
     async fn eval(

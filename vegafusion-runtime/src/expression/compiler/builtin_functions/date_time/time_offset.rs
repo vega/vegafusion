@@ -1,10 +1,10 @@
-use std::ops::Add;
 use crate::task_graph::timezone::RuntimeTzConfig;
+use crate::transform::timeunit::to_timestamp_col;
 use datafusion_common::{DFSchema, ScalarValue};
-use datafusion_expr::{Expr, interval_datetime_lit, interval_year_month_lit};
+use datafusion_expr::{interval_datetime_lit, interval_year_month_lit, Expr};
+use std::ops::Add;
 use vegafusion_common::data::scalar::ScalarValueHelpers;
 use vegafusion_common::error::VegaFusionError;
-use crate::transform::timeunit::to_timestamp_col;
 
 pub fn time_offset_fn(
     tz_config: &RuntimeTzConfig,
@@ -77,11 +77,15 @@ pub fn time_offset_fn(
         1
     };
 
-    let timestamp = to_timestamp_col(timestamp.clone(), schema, &tz_config.default_input_tz.to_string())?;
+    let timestamp = to_timestamp_col(
+        timestamp.clone(),
+        schema,
+        &tz_config.default_input_tz.to_string(),
+    )?;
     let interval = match unit.to_lowercase().as_str() {
         unit @ ("year" | "month") => interval_year_month_lit(&format!("{step} {unit}")),
         "quarter" => interval_year_month_lit(&format!("{} month", step * 3)),
-        unit => interval_datetime_lit(&format!("{step} {unit}"))
+        unit => interval_datetime_lit(&format!("{step} {unit}")),
     };
 
     Ok(timestamp.add(interval))

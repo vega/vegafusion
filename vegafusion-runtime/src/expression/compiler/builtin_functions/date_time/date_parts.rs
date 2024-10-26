@@ -1,58 +1,63 @@
 use crate::expression::compiler::call::TzTransformFn;
+use crate::expression::compiler::utils::ExprHelpers;
 use crate::task_graph::timezone::RuntimeTzConfig;
+use crate::transform::timeunit::to_timestamp_col;
 use datafusion_expr::{lit, Expr};
 use datafusion_functions::expr_fn::{date_part, floor};
 use std::sync::Arc;
 use vegafusion_common::arrow::datatypes::{DataType, TimeUnit};
 use vegafusion_common::datafusion_common::DFSchema;
 use vegafusion_core::error::Result;
-use crate::expression::compiler::utils::ExprHelpers;
-use crate::transform::timeunit::to_timestamp_col;
 
 pub fn make_local_datepart_transform(part: &str, tx: Option<fn(Expr) -> Expr>) -> TzTransformFn {
     let part = part.to_string();
-    let local_datepart_transform = move |tz_config: &RuntimeTzConfig,
-                                         args: &[Expr],
-                                         schema: &DFSchema| -> Result<Expr> {
+    let local_datepart_transform =
+        move |tz_config: &RuntimeTzConfig, args: &[Expr], schema: &DFSchema| -> Result<Expr> {
+            let arg = args.first().unwrap().clone();
+            let arg = to_timestamp_col(arg, schema, &tz_config.default_input_tz.to_string())?;
+            let mut expr = date_part(
+                lit(part.clone()),
+                arg.try_cast_to(
+                    &DataType::Timestamp(
+                        TimeUnit::Millisecond,
+                        Some(tz_config.local_tz.to_string().into()),
+                    ),
+                    schema,
+                )?,
+            );
 
-        let arg = args.first().unwrap().clone();
-        let arg = to_timestamp_col(arg, schema, &tz_config.default_input_tz.to_string())?;
-        let mut expr = date_part(
-            lit(part.clone()),
-            arg.try_cast_to(
-            &DataType::Timestamp(TimeUnit::Millisecond, Some(tz_config.local_tz.to_string().into())),
-            schema,
-        )?);
+            if let Some(tx) = tx {
+                expr = tx(expr)
+            }
 
-        if let Some(tx) = tx {
-            expr = tx(expr)
-        }
-
-        Ok(expr)
-    };
+            Ok(expr)
+        };
     Arc::new(local_datepart_transform)
 }
 
 pub fn make_utc_datepart_transform(part: &str, tx: Option<fn(Expr) -> Expr>) -> TzTransformFn {
     let part = part.to_string();
-    let utc_datepart_transform = move |tz_config: &RuntimeTzConfig,
-                                       args: &[Expr],
-                                       schema: &DFSchema|
-          -> Result<Expr> {
-        let arg = to_timestamp_col(args.first().unwrap().clone(), schema, &tz_config.default_input_tz.to_string())?;
-        let mut expr = date_part(
-            lit(part.clone()),
-            arg.try_cast_to(
-                &DataType::Timestamp(TimeUnit::Millisecond, Some("UTC".into())),
+    let utc_datepart_transform =
+        move |tz_config: &RuntimeTzConfig, args: &[Expr], schema: &DFSchema| -> Result<Expr> {
+            let arg = to_timestamp_col(
+                args.first().unwrap().clone(),
                 schema,
-            )?);
+                &tz_config.default_input_tz.to_string(),
+            )?;
+            let mut expr = date_part(
+                lit(part.clone()),
+                arg.try_cast_to(
+                    &DataType::Timestamp(TimeUnit::Millisecond, Some("UTC".into())),
+                    schema,
+                )?,
+            );
 
-        if let Some(tx) = tx {
-            expr = tx(expr)
-        }
+            if let Some(tx) = tx {
+                expr = tx(expr)
+            }
 
-        Ok(expr)
-    };
+            Ok(expr)
+        };
     Arc::new(utc_datepart_transform)
 }
 

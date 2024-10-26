@@ -3,25 +3,6 @@ use crate::expression::compiler::builtin_functions::date_time::datetime::{
     datetime_transform_fn, make_datetime_components_fn, to_date_transform,
 };
 
-use crate::expression::compiler::builtin_functions::type_checking::isvalid::is_valid_fn;
-use crate::expression::compiler::compile;
-use crate::expression::compiler::config::CompilationConfig;
-use datafusion_expr::{expr, Expr, ScalarUDF};
-use datafusion_functions::expr_fn::isnan;
-use datafusion_functions::math::{
-    abs, acos, asin, atan, ceil, cos, exp, floor, ln, power, round, sin, sqrt, tan,
-};
-use std::collections::HashMap;
-use std::ops::Deref;
-use std::sync::Arc;
-use vegafusion_common::arrow::datatypes::DataType;
-use vegafusion_common::data::table::VegaFusionTable;
-use vegafusion_common::datafusion_common::DFSchema;
-use vegafusion_common::datatypes::cast_to;
-use vegafusion_common::error::{Result, ResultWithContext, VegaFusionError};
-use vegafusion_core::proto::gen::expression::{
-    expression, literal, CallExpression, Expression, Literal,
-};
 use crate::expression::compiler::builtin_functions::array::indexof::indexof_transform;
 use crate::expression::compiler::builtin_functions::array::length::length_transform;
 use crate::expression::compiler::builtin_functions::array::span::span_transform;
@@ -43,10 +24,29 @@ use crate::expression::compiler::builtin_functions::date_time::time_offset::time
 use crate::expression::compiler::builtin_functions::format::format_transform;
 use crate::expression::compiler::builtin_functions::math::isfinite::is_finite_fn;
 use crate::expression::compiler::builtin_functions::type_checking::isdate::is_date_fn;
+use crate::expression::compiler::builtin_functions::type_checking::isvalid::is_valid_fn;
 use crate::expression::compiler::builtin_functions::type_coercion::to_boolean::to_boolean_transform;
 use crate::expression::compiler::builtin_functions::type_coercion::to_number::to_number_transform;
 use crate::expression::compiler::builtin_functions::type_coercion::to_string::to_string_transform;
+use crate::expression::compiler::compile;
+use crate::expression::compiler::config::CompilationConfig;
 use crate::task_graph::timezone::RuntimeTzConfig;
+use datafusion_expr::{expr, Expr, ScalarUDF};
+use datafusion_functions::expr_fn::isnan;
+use datafusion_functions::math::{
+    abs, acos, asin, atan, ceil, cos, exp, floor, ln, power, round, sin, sqrt, tan,
+};
+use std::collections::HashMap;
+use std::ops::Deref;
+use std::sync::Arc;
+use vegafusion_common::arrow::datatypes::DataType;
+use vegafusion_common::data::table::VegaFusionTable;
+use vegafusion_common::datafusion_common::DFSchema;
+use vegafusion_common::datatypes::cast_to;
+use vegafusion_common::error::{Result, ResultWithContext, VegaFusionError};
+use vegafusion_core::proto::gen::expression::{
+    expression, literal, CallExpression, Expression, Literal,
+};
 
 pub type MacroFn = Arc<dyn Fn(&[Expression]) -> Result<Expression> + Send + Sync>;
 pub type TransformFn = Arc<dyn Fn(&[Expr], &DFSchema) -> Result<Expr> + Send + Sync>;

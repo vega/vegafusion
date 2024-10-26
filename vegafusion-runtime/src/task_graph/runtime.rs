@@ -2,19 +2,18 @@ use crate::task_graph::cache::VegaFusionCache;
 use crate::task_graph::task::TaskCall;
 use crate::task_graph::timezone::RuntimeTzConfig;
 use async_recursion::async_recursion;
+use datafusion::prelude::SessionContext;
 use futures_util::{future, FutureExt};
 use std::any::Any;
 use std::collections::HashMap;
 use std::convert::TryInto;
 use std::panic::AssertUnwindSafe;
 use std::sync::Arc;
-use datafusion::prelude::SessionContext;
 use vegafusion_core::data::dataset::VegaFusionDataset;
 use vegafusion_core::error::{Result, ResultWithContext, VegaFusionError};
 use vegafusion_core::proto::gen::tasks::{task::TaskKind, NodeValueIndex, TaskGraph};
 use vegafusion_core::runtime::VegaFusionRuntimeTrait;
 use vegafusion_core::task_graph::task_value::{NamedTaskValue, TaskValue};
-
 
 type CacheValue = (TaskValue, Vec<TaskValue>);
 

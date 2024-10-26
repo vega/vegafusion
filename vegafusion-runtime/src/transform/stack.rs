@@ -1,15 +1,18 @@
-use std::ops::{Add, Div, Sub};
+use crate::data::util::DataFrameUtils;
 use crate::expression::compiler::config::CompilationConfig;
 use crate::transform::TransformTrait;
 use async_trait::async_trait;
-use datafusion_expr::{expr, Expr, lit, qualified_wildcard, when, WindowFrame, WindowFunctionDefinition};
 use datafusion::prelude::DataFrame;
 use datafusion_common::JoinType;
 use datafusion_expr::expr::WildcardOptions;
+use datafusion_expr::{
+    expr, lit, qualified_wildcard, when, Expr, WindowFrame, WindowFunctionDefinition,
+};
 use datafusion_functions::expr_fn::{abs, coalesce};
 use datafusion_functions_aggregate::expr_fn::max;
 use datafusion_functions_aggregate::sum::sum_udaf;
 use sqlparser::ast::NullTreatment;
+use std::ops::{Add, Div, Sub};
 use vegafusion_common::column::{flat_col, relation_col, unescaped_col};
 use vegafusion_common::data::ORDER_COL;
 use vegafusion_common::datatypes::to_numeric;
@@ -17,7 +20,6 @@ use vegafusion_common::error::{Result, VegaFusionError};
 use vegafusion_common::escape::unescape_field;
 use vegafusion_core::proto::gen::transforms::{SortOrder, Stack, StackOffset};
 use vegafusion_core::task_graph::task_value::TaskValue;
-use crate::data::util::DataFrameUtils;
 
 #[async_trait]
 impl TransformTrait for Stack {
@@ -80,14 +82,19 @@ impl TransformTrait for Stack {
             });
 
             // Initialize selection with all columns, minus those that conflict with start/stop fields
-            let mut select_exprs = dataframe.schema().fields().iter().filter_map(|f| {
-                if f.name() == &start_field || f.name() == &stop_field {
-                    // Skip fields to be overwritten
-                    None
-                } else {
-                    Some(flat_col(f.name()))
-                }
-            }).collect::<Vec<_>>();
+            let mut select_exprs = dataframe
+                .schema()
+                .fields()
+                .iter()
+                .filter_map(|f| {
+                    if f.name() == &start_field || f.name() == &stop_field {
+                        // Skip fields to be overwritten
+                        None
+                    } else {
+                        Some(flat_col(f.name()))
+                    }
+                })
+                .collect::<Vec<_>>();
 
             // Add stop window expr
             select_exprs.push(window_expr.alias(&stop_field));
@@ -96,11 +103,13 @@ impl TransformTrait for Stack {
             // then union the results. This is required to make sure stacks do not overlap. Negative
             // values stack in the negative direction and positive values stack in the positive
             // direction.
-            let pos_df = dataframe.clone()
+            let pos_df = dataframe
+                .clone()
                 .filter(numeric_field.clone().gt_eq(lit(0)))?
                 .select(select_exprs.clone())?;
 
-            let neg_df = dataframe.clone()
+            let neg_df = dataframe
+                .clone()
                 .filter(numeric_field.clone().lt(lit(0)))?
                 .select(select_exprs)?;
 
@@ -108,7 +117,10 @@ impl TransformTrait for Stack {
             let unioned_df = pos_df.union(neg_df)?;
 
             // Add start window expr
-            let result_df = unioned_df.with_column(&start_field, flat_col(&stop_field).sub(numeric_field.clone()))?;
+            let result_df = unioned_df.with_column(
+                &start_field,
+                flat_col(&stop_field).sub(numeric_field.clone()),
+            )?;
 
             Ok((result_df, Default::default()))
         } else {
@@ -119,14 +131,13 @@ impl TransformTrait for Stack {
 
             // Create __stack column with numeric field
             let stack_col_name = "__stack";
-            let dataframe = dataframe
-                .select(vec![
-                    Expr::Wildcard {
-                        qualifier: None,
-                        options: WildcardOptions::default(),
-                    },
-                    numeric_field.alias(stack_col_name),
-                ])?;
+            let dataframe = dataframe.select(vec![
+                Expr::Wildcard {
+                    qualifier: None,
+                    options: WildcardOptions::default(),
+                },
+                numeric_field.alias(stack_col_name),
+            ])?;
 
             // Create aggregate for total of stack value
             let total_agg = Expr::AggregateFunction(expr::AggregateFunction {
@@ -137,27 +148,33 @@ impl TransformTrait for Stack {
                 order_by: None,
                 null_treatment: Some(NullTreatment::IgnoreNulls),
             })
-                .alias("__total");
-
+            .alias("__total");
 
             let dataframe = if partition_by.is_empty() {
                 // Cross join total aggregation
-                dataframe.clone()
-                    .aggregate(vec![], vec![total_agg])?
-                    .join(dataframe, JoinType::Inner, &[], &[], None)?
+                dataframe.clone().aggregate(vec![], vec![total_agg])?.join(
+                    dataframe,
+                    JoinType::Inner,
+                    &[],
+                    &[],
+                    None,
+                )?
             } else {
                 // Join back total aggregation
-                let on_exprs = group_by.iter().map(
-                    |p| relation_col(p, "lhs").eq(relation_col(p, "rhs"))
-                ).collect::<Vec<_>>();
+                let on_exprs = group_by
+                    .iter()
+                    .map(|p| relation_col(p, "lhs").eq(relation_col(p, "rhs")))
+                    .collect::<Vec<_>>();
 
-                dataframe.clone()
+                dataframe
+                    .clone()
                     .aggregate(partition_by.clone(), vec![total_agg])?
                     .alias("lhs")?
-                    .join_on(
-                        dataframe.alias("rhs")?,
-                        JoinType::Inner, on_exprs)?
-                    .select(vec![qualified_wildcard("rhs"), relation_col("__total", "lhs")])?
+                    .join_on(dataframe.alias("rhs")?, JoinType::Inner, on_exprs)?
+                    .select(vec![
+                        qualified_wildcard("rhs"),
+                        relation_col("__total", "lhs"),
+                    ])?
             };
 
             // Build window function to compute cumulative sum of stack column
@@ -172,17 +189,16 @@ impl TransformTrait for Stack {
                 window_frame: WindowFrame::new(Some(true)),
                 null_treatment: Some(NullTreatment::IgnoreNulls),
             })
-                .alias(cumulative_field);
+            .alias(cumulative_field);
 
             // Perform selection to add new field value
-            let dataframe = dataframe
-                .select(vec![
-                    Expr::Wildcard {
-                        qualifier: None,
-                        options: WildcardOptions::default(),
-                    },
-                    window_expr,
-                ])?;
+            let dataframe = dataframe.select(vec![
+                Expr::Wildcard {
+                    qualifier: None,
+                    options: WildcardOptions::default(),
+                },
+                window_expr,
+            ])?;
 
             // Build final_selection
             let mut final_selection: Vec<_> = input_fields
@@ -201,7 +217,8 @@ impl TransformTrait for Stack {
                 StackOffset::Center => {
                     let max_total = max(flat_col("__total")).alias("__max_total");
 
-                    let dataframe = dataframe.clone()
+                    let dataframe = dataframe
+                        .clone()
                         .aggregate(vec![], vec![max_total])?
                         .join_on(dataframe, JoinType::Inner, vec![])?;
 
@@ -241,7 +258,10 @@ impl TransformTrait for Stack {
                 _ => return Err(VegaFusionError::internal("Unexpected stack mode")),
             };
 
-            Ok((dataframe.select(final_selection.clone())?, Default::default()))
+            Ok((
+                dataframe.select(final_selection.clone())?,
+                Default::default(),
+            ))
         }
     }
 }

@@ -7,6 +7,7 @@ use async_trait::async_trait;
 use datafusion_expr::expr::WildcardOptions;
 use datafusion_expr::lit;
 
+use datafusion::prelude::DataFrame;
 use datafusion_common::scalar::ScalarValue;
 use datafusion_common::utils::array_into_list_array;
 use datafusion_common::DFSchema;
@@ -15,14 +16,12 @@ use datafusion_functions::expr_fn::{abs, floor};
 use float_cmp::approx_eq;
 use std::ops::{Add, Div, Mul, Sub};
 use std::sync::Arc;
-use datafusion::prelude::DataFrame;
 use vegafusion_common::column::{flat_col, unescaped_col};
 use vegafusion_common::data::scalar::ScalarValueHelpers;
 use vegafusion_common::datatypes::to_numeric;
 use vegafusion_core::error::{Result, VegaFusionError};
 use vegafusion_core::proto::gen::transforms::Bin;
 use vegafusion_core::task_graph::task_value::TaskValue;
-
 
 #[async_trait]
 impl TransformTrait for Bin {
@@ -55,14 +54,13 @@ impl TransformTrait for Bin {
         let bin_index =
             floor((numeric_field.clone().sub(lit(start)).div(lit(step))).add(lit(1.0e-14)))
                 .alias(bin_index_name);
-        let sql_df = sql_df
-            .select(vec![
-                Expr::Wildcard {
-                    qualifier: None,
-                    options: WildcardOptions::default(),
-                },
-                bin_index,
-            ])?;
+        let sql_df = sql_df.select(vec![
+            Expr::Wildcard {
+                qualifier: None,
+                options: WildcardOptions::default(),
+            },
+            bin_index,
+        ])?;
 
         // Add column with bin start
         let bin_start = (flat_col(bin_index_name).mul(lit(step))).add(lit(start));

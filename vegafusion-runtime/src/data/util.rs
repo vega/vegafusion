@@ -1,12 +1,12 @@
-use std::sync::Arc;
 use async_trait::async_trait;
-use datafusion::datasource::{MemTable, provider_as_source};
+use datafusion::datasource::{provider_as_source, MemTable};
 use datafusion::prelude::{DataFrame, SessionContext};
-use datafusion_common::TableReference;
 use datafusion_common::tree_node::{Transformed, TreeNode, TreeNodeRewriter};
-use datafusion_expr::{col, Expr, LogicalPlanBuilder, UNNAMED_TABLE};
+use datafusion_common::TableReference;
 use datafusion_expr::expr::WildcardOptions;
+use datafusion_expr::{col, Expr, LogicalPlanBuilder, UNNAMED_TABLE};
 use datafusion_functions_window::row_number::row_number;
+use std::sync::Arc;
 use vegafusion_common::arrow::array::RecordBatch;
 use vegafusion_common::arrow::compute::concat_batches;
 use vegafusion_common::data::table::VegaFusionTable;
@@ -14,27 +14,28 @@ use vegafusion_common::error::ResultWithContext;
 
 #[async_trait]
 pub trait SessionContextUtils {
-    async fn vegafusion_table(&self, tbl: VegaFusionTable) -> vegafusion_common::error::Result<DataFrame>;
+    async fn vegafusion_table(
+        &self,
+        tbl: VegaFusionTable,
+    ) -> vegafusion_common::error::Result<DataFrame>;
 }
 
 #[async_trait]
 impl SessionContextUtils for SessionContext {
-    async fn vegafusion_table(&self, tbl: VegaFusionTable) -> vegafusion_common::error::Result<DataFrame> {
+    async fn vegafusion_table(
+        &self,
+        tbl: VegaFusionTable,
+    ) -> vegafusion_common::error::Result<DataFrame> {
         let mem_table = MemTable::try_new(tbl.schema.clone(), vec![tbl.batches])?;
 
         // Based on self.read_batch()
         Ok(DataFrame::new(
             self.state(),
-            LogicalPlanBuilder::scan(
-                UNNAMED_TABLE,
-                provider_as_source(Arc::new(mem_table)),
-                None,
-            )?
+            LogicalPlanBuilder::scan(UNNAMED_TABLE, provider_as_source(Arc::new(mem_table)), None)?
                 .build()?,
         ))
     }
 }
-
 
 #[async_trait]
 pub trait DataFrameUtils {
@@ -44,10 +45,13 @@ pub trait DataFrameUtils {
 
     /// Variant of aggregate that can handle agg expressions that include projections on top
     /// of aggregations. Also includes groupby expressions in the final result
-    fn aggregate_mixed(self, group_expr: Vec<Expr>, aggr_expr: Vec<Expr>) -> vegafusion_common::error::Result<DataFrame>;
+    fn aggregate_mixed(
+        self,
+        group_expr: Vec<Expr>,
+        aggr_expr: Vec<Expr>,
+    ) -> vegafusion_common::error::Result<DataFrame>;
     fn alias(self, name: impl Into<TableReference>) -> vegafusion_common::error::Result<DataFrame>;
 }
-
 
 #[async_trait]
 impl DataFrameUtils for DataFrame {
@@ -90,7 +94,11 @@ impl DataFrameUtils for DataFrame {
         }
     }
 
-    fn aggregate_mixed(self, group_expr: Vec<Expr>, aggr_expr: Vec<Expr>) -> vegafusion_common::error::Result<DataFrame> {
+    fn aggregate_mixed(
+        self,
+        group_expr: Vec<Expr>,
+        aggr_expr: Vec<Expr>,
+    ) -> vegafusion_common::error::Result<DataFrame> {
         let mut select_exprs: Vec<Expr> = Vec::new();
 
         // Extract pure agg expressions
@@ -111,15 +119,16 @@ impl DataFrameUtils for DataFrame {
         Ok(df.select(select_exprs)?)
     }
 
-    fn alias(self, name: impl Into<TableReference>) -> vegafusion_common::error::Result<DataFrame>{
+    fn alias(self, name: impl Into<TableReference>) -> vegafusion_common::error::Result<DataFrame> {
         let (state, plan) = self.into_parts();
-        Ok(DataFrame::new(state, LogicalPlanBuilder::new(plan).alias(name)?.build()?))
+        Ok(DataFrame::new(
+            state,
+            LogicalPlanBuilder::new(plan).alias(name)?.build()?,
+        ))
     }
 }
 
-
 pub struct PureAggRewriter {
-
     pub pure_aggs: Vec<Expr>,
     pub next_id: usize,
 }
@@ -152,9 +161,9 @@ impl TreeNodeRewriter for PureAggRewriter {
         if let Expr::AggregateFunction(agg) = node {
             // extract agg and replace with column
             let name = self.new_agg_name();
-            self.pure_aggs.push(Expr::AggregateFunction(agg).alias(&name));
+            self.pure_aggs
+                .push(Expr::AggregateFunction(agg).alias(&name));
             Ok(Transformed::new_transformed(col(name), true))
-
         } else {
             // Return expr node unchanged
             Ok(Transformed::no(node))

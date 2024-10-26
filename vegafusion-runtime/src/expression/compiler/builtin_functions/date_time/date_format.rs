@@ -1,13 +1,13 @@
-use std::collections::HashMap;
+use crate::expression::compiler::utils::ExprHelpers;
 use crate::task_graph::timezone::RuntimeTzConfig;
+use crate::transform::timeunit::to_timestamp_col;
 use datafusion_expr::{lit, Expr};
 use datafusion_functions::expr_fn::to_char;
+use std::collections::HashMap;
 use vegafusion_common::arrow::datatypes::DataType;
 use vegafusion_common::datafusion_common::{DFSchema, ScalarValue};
 use vegafusion_core::arrow::datatypes::TimeUnit;
 use vegafusion_core::error::{Result, VegaFusionError};
-use crate::expression::compiler::utils::ExprHelpers;
-use crate::transform::timeunit::to_timestamp_col;
 
 pub fn time_format_fn(
     tz_config: &RuntimeTzConfig,
@@ -31,11 +31,15 @@ pub fn time_format_fn(
         tz_config.local_tz.to_string()
     };
 
-    let timestamptz_expr =
-        to_timestamp_col(args[0].clone(), schema, &tz_config.default_input_tz.to_string())?.try_cast_to(
-            &DataType::Timestamp(TimeUnit::Millisecond, Some(format_tz_str.into())),
-            schema
-        )?;
+    let timestamptz_expr = to_timestamp_col(
+        args[0].clone(),
+        schema,
+        &tz_config.default_input_tz.to_string(),
+    )?
+    .try_cast_to(
+        &DataType::Timestamp(TimeUnit::Millisecond, Some(format_tz_str.into())),
+        schema,
+    )?;
 
     // Ok(to_char(to_local_time(vec![timestamptz_expr]), lit(format_str)))
     Ok(to_char(timestamptz_expr, lit(format_str)))
@@ -47,11 +51,15 @@ pub fn utc_format_fn(
     schema: &DFSchema,
 ) -> Result<Expr> {
     let format_str = d3_to_chrono_format(&extract_format_str(args)?);
-    let timestamptz_expr =
-        to_timestamp_col(args[0].clone(), schema, &tz_config.default_input_tz.to_string())?.try_cast_to(
-            &DataType::Timestamp(TimeUnit::Millisecond, Some("UTC".into())),
-            schema
-        )?;
+    let timestamptz_expr = to_timestamp_col(
+        args[0].clone(),
+        schema,
+        &tz_config.default_input_tz.to_string(),
+    )?
+    .try_cast_to(
+        &DataType::Timestamp(TimeUnit::Millisecond, Some("UTC".into())),
+        schema,
+    )?;
 
     Ok(to_char(timestamptz_expr, lit(format_str)))
 }
@@ -77,15 +85,14 @@ pub fn extract_format_str(args: &[Expr]) -> Result<String> {
     Ok(format_str)
 }
 
-
 pub fn d3_to_chrono_format(format: &str) -> String {
     // Initialize mapping of special cases
     let mut special_cases = HashMap::new();
-    special_cases.insert("%L", "%3f");     // D3 milliseconds to Chrono's 3-digit fractional seconds
-    special_cases.insert("%f", "%6f");     // D3 microseconds to Chrono's 6-digit fractional seconds
-    special_cases.insert("%Q", "");        // D3 milliseconds since epoch not supported
-    special_cases.insert("%q", "");        // Quarter not directly supported in Chrono
-    special_cases.insert("%Z", "%:z");     // D3's %Z is similar to Chrono's %:z (offset without colon)
+    special_cases.insert("%L", "%3f"); // D3 milliseconds to Chrono's 3-digit fractional seconds
+    special_cases.insert("%f", "%6f"); // D3 microseconds to Chrono's 6-digit fractional seconds
+    special_cases.insert("%Q", ""); // D3 milliseconds since epoch not supported
+    special_cases.insert("%q", ""); // Quarter not directly supported in Chrono
+    special_cases.insert("%Z", "%:z"); // D3's %Z is similar to Chrono's %:z (offset without colon)
 
     let mut result = String::new();
     let mut chars = format.chars().peekable();

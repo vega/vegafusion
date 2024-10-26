@@ -16,7 +16,6 @@ use vegafusion_common::column::{flat_col, unescaped_col};
 use vegafusion_common::data::ORDER_COL;
 use vegafusion_core::task_graph::task_value::TaskValue;
 
-
 #[async_trait]
 impl TransformTrait for Collect {
     async fn eval(
@@ -31,7 +30,12 @@ impl TransformTrait for Collect {
             .into_iter()
             .zip(&self.order)
             .filter_map(|(field, order)| {
-                if dataframe.schema().inner().column_with_name(&field).is_some() {
+                if dataframe
+                    .schema()
+                    .inner()
+                    .column_with_name(&field)
+                    .is_some()
+                {
                     let sort_expr = unescaped_col(&field).sort(
                         *order == SortOrder::Ascending as i32,
                         *order == SortOrder::Ascending as i32,

@@ -1,15 +1,14 @@
 use crate::task_graph::timezone::RuntimeTzConfig;
 use async_trait::async_trait;
+use datafusion::prelude::SessionContext;
 use std::collections::HashMap;
 use std::convert::TryInto;
 use std::sync::Arc;
-use datafusion::prelude::SessionContext;
 use vegafusion_core::data::dataset::VegaFusionDataset;
 use vegafusion_core::error::Result;
 use vegafusion_core::proto::gen::tasks::task::TaskKind;
 use vegafusion_core::proto::gen::tasks::Task;
 use vegafusion_core::task_graph::task_value::TaskValue;
-
 
 #[async_trait]
 pub trait TaskCall {

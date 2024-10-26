@@ -8,8 +8,9 @@ use vegafusion_common::arrow::datatypes::{DataType, TimeUnit};
 use vegafusion_common::arrow::error::ArrowError;
 use vegafusion_common::arrow::temporal_conversions::date64_to_datetime;
 use vegafusion_common::datafusion_common::{DataFusionError, ScalarValue};
-use vegafusion_common::datafusion_expr::{ColumnarValue, ScalarUDF, ScalarUDFImpl, Signature, Volatility};
-
+use vegafusion_common::datafusion_expr::{
+    ColumnarValue, ScalarUDF, ScalarUDFImpl, Signature, Volatility,
+};
 
 fn extract_bool(value: &ColumnarValue) -> std::result::Result<bool, DataFusionError> {
     if let ColumnarValue::Scalar(scalar) = value {
@@ -277,19 +278,19 @@ impl TimeunitStartUDF {
     pub fn new() -> Self {
         let signature = Signature::exact(
             vec![
-                DataType::Timestamp(TimeUnit::Millisecond, Some("UTC".into())),   // [0] timestamp
-                DataType::Utf8,    // [1] timezone
-                DataType::Boolean, // [2] Year
-                DataType::Boolean, // [3] Quarter
-                DataType::Boolean, // [4] Month
-                DataType::Boolean, // [5] Date
-                DataType::Boolean, // [6] Week
-                DataType::Boolean, // [7] Day
-                DataType::Boolean, // [8] DayOfYear
-                DataType::Boolean, // [9] Hours
-                DataType::Boolean, // [10] Minutes
-                DataType::Boolean, // [11] Seconds
-                DataType::Boolean, // [12] Milliseconds
+                DataType::Timestamp(TimeUnit::Millisecond, Some("UTC".into())), // [0] timestamp
+                DataType::Utf8,                                                 // [1] timezone
+                DataType::Boolean,                                              // [2] Year
+                DataType::Boolean,                                              // [3] Quarter
+                DataType::Boolean,                                              // [4] Month
+                DataType::Boolean,                                              // [5] Date
+                DataType::Boolean,                                              // [6] Week
+                DataType::Boolean,                                              // [7] Day
+                DataType::Boolean,                                              // [8] DayOfYear
+                DataType::Boolean,                                              // [9] Hours
+                DataType::Boolean,                                              // [10] Minutes
+                DataType::Boolean,                                              // [11] Seconds
+                DataType::Boolean,                                              // [12] Milliseconds
             ],
             Volatility::Immutable,
         );
@@ -315,16 +316,21 @@ impl ScalarUDFImpl for TimeunitStartUDF {
         &self,
         _arg_types: &[DataType],
     ) -> vegafusion_common::datafusion_common::Result<DataType> {
-        Ok(DataType::Timestamp(TimeUnit::Millisecond, Some("UTC".into())))
+        Ok(DataType::Timestamp(
+            TimeUnit::Millisecond,
+            Some("UTC".into()),
+        ))
     }
 
     fn invoke(
         &self,
         args: &[ColumnarValue],
     ) -> vegafusion_common::datafusion_common::Result<ColumnarValue> {
-
         let (timestamp, tz, units_mask) = unpack_timeunit_udf_args(args)?;
-        let array = timestamp.as_any().downcast_ref::<TimestampMillisecondArray>().unwrap();
+        let array = timestamp
+            .as_any()
+            .downcast_ref::<TimestampMillisecondArray>()
+            .unwrap();
         let result_array: TimestampMillisecondArray = try_unary(array, |value| {
             Ok(
                 perform_timeunit_start_from_utc(value, units_mask.as_slice(), tz)?
@@ -332,9 +338,9 @@ impl ScalarUDFImpl for TimeunitStartUDF {
             )
         })?;
 
-        Ok(ColumnarValue::Array(Arc::new(
-            result_array.with_timezone("UTC")
-        ) as ArrayRef))
+        Ok(ColumnarValue::Array(
+            Arc::new(result_array.with_timezone("UTC")) as ArrayRef,
+        ))
     }
 }
 

@@ -20,7 +20,7 @@ use base64::DecodeError as Base64DecodeError;
 use object_store::{path::Error as ObjectStorePathError, Error as ObjectStoreError};
 
 #[cfg(feature = "url")]
-use url::{ParseError as UrlParseError};
+use url::ParseError as UrlParseError;
 
 pub type Result<T> = result::Result<T, VegaFusionError>;
 
@@ -103,7 +103,7 @@ pub enum VegaFusionError {
 
     #[cfg(feature = "url")]
     #[error("url::ParseError Error: {0}\n{1}")]
-    UrlParseError(UrlParseError, ErrorContext)
+    UrlParseError(UrlParseError, ErrorContext),
 }
 
 impl VegaFusionError {

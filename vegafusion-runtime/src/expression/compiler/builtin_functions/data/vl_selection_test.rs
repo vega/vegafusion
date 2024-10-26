@@ -4,6 +4,7 @@ use std::collections::HashMap;
 use std::convert::TryFrom;
 
 use crate::task_graph::timezone::RuntimeTzConfig;
+use crate::transform::utils::to_epoch_millis;
 use datafusion_expr::expr::Case;
 use datafusion_expr::{expr, lit, Between, Expr, ExprSchemable};
 use datafusion_functions::expr_fn::ceil;
@@ -22,7 +23,6 @@ use vegafusion_core::proto::gen::expression::literal::Value;
 use vegafusion_core::proto::gen::{
     expression::expression::Expr as ProtoExpr, expression::Expression, expression::Literal,
 };
-use crate::transform::utils::to_epoch_millis;
 
 /// Op
 #[derive(Debug, Clone)]

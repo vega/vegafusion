@@ -1,3 +1,7 @@
+use crate::datafusion::context::make_datafusion_context;
+use datafusion::physical_expr::PhysicalExpr;
+use datafusion::physical_plan::ColumnarValue;
+use datafusion::physical_planner::PhysicalPlanner;
 use datafusion_common::{ExprSchema, ScalarValue};
 use datafusion_expr::utils::expr_to_columns;
 use datafusion_expr::{Expr, ExprSchemable, TryCast};
@@ -6,15 +10,11 @@ use datafusion_physical_expr::execution_props::ExecutionProps;
 use std::collections::HashSet;
 use std::convert::TryFrom;
 use std::sync::Arc;
-use datafusion::physical_expr::PhysicalExpr;
-use datafusion::physical_plan::ColumnarValue;
-use datafusion::physical_planner::PhysicalPlanner;
 use vegafusion_common::arrow::array::{ArrayRef, BooleanArray};
 use vegafusion_common::arrow::datatypes::DataType;
 use vegafusion_common::arrow::record_batch::RecordBatch;
 use vegafusion_common::datafusion_common::{Column, DFSchema, DataFusionError};
 use vegafusion_core::error::{Result, ResultWithContext, VegaFusionError};
-use crate::datafusion::context::make_datafusion_context;
 
 lazy_static! {
     pub static ref UNIT_RECORD_BATCH: RecordBatch = RecordBatch::try_from_iter(vec![(
@@ -30,7 +30,11 @@ pub trait ExprHelpers {
     fn columns(&self) -> Result<HashSet<Column>>;
     fn to_phys_expr(&self) -> Result<Arc<dyn PhysicalExpr>>;
     fn eval_to_scalar(&self) -> Result<ScalarValue>;
-    fn try_cast_to(self, cast_to_type: &DataType, schema: &dyn ExprSchema) -> datafusion_common::Result<Expr>;
+    fn try_cast_to(
+        self,
+        cast_to_type: &DataType,
+        schema: &dyn ExprSchema,
+    ) -> datafusion_common::Result<Expr>;
 }
 
 impl ExprHelpers for Expr {
@@ -73,13 +77,20 @@ impl ExprHelpers for Expr {
         }
     }
 
-    fn try_cast_to(self, cast_to_type: &DataType, schema: &dyn ExprSchema) -> datafusion_common::Result<Expr> {
+    fn try_cast_to(
+        self,
+        cast_to_type: &DataType,
+        schema: &dyn ExprSchema,
+    ) -> datafusion_common::Result<Expr> {
         // Based on cast_to, using TryCast instead of Cast
         let this_type = self.get_type(schema)?;
         if this_type == *cast_to_type {
             return Ok(self);
         }
-        Ok(Expr::TryCast(TryCast::new(Box::new(self), cast_to_type.clone())))
+        Ok(Expr::TryCast(TryCast::new(
+            Box::new(self),
+            cast_to_type.clone(),
+        )))
     }
 }
 

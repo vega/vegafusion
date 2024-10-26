@@ -2,15 +2,14 @@ use crate::expression::compiler::config::CompilationConfig;
 use crate::transform::TransformTrait;
 
 use async_trait::async_trait;
-use std::collections::HashSet;
 use datafusion::prelude::DataFrame;
+use std::collections::HashSet;
 use vegafusion_common::column::flat_col;
 use vegafusion_common::data::ORDER_COL;
 use vegafusion_common::escape::unescape_field;
 use vegafusion_core::error::Result;
 use vegafusion_core::proto::gen::transforms::Project;
 use vegafusion_core::task_graph::task_value::TaskValue;
-
 
 #[async_trait]
 impl TransformTrait for Project {

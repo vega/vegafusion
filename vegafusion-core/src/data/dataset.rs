@@ -3,16 +3,15 @@ use std::collections::hash_map::DefaultHasher;
 use std::hash::{Hash, Hasher};
 use vegafusion_common::data::table::VegaFusionTable;
 
-
 #[derive(Clone)]
 pub enum VegaFusionDataset {
-    Table { table: VegaFusionTable, hash: u64 }
+    Table { table: VegaFusionTable, hash: u64 },
 }
 
 impl VegaFusionDataset {
     pub fn fingerprint(&self) -> String {
         match self {
-            VegaFusionDataset::Table { hash, .. } => hash.to_string()
+            VegaFusionDataset::Table { hash, .. } => hash.to_string(),
         }
     }
 

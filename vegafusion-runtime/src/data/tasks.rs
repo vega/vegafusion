@@ -1,8 +1,8 @@
-use std::borrow::Cow;
 use crate::expression::compiler::compile;
 use crate::expression::compiler::config::CompilationConfig;
 use crate::expression::compiler::utils::ExprHelpers;
 use crate::task_graph::task::TaskCall;
+use std::borrow::Cow;
 
 use async_trait::async_trait;
 
@@ -11,7 +11,6 @@ use std::collections::{HashMap, HashSet};
 use std::path::Path;
 use vegafusion_core::data::dataset::VegaFusionDataset;
 
-use std::sync::Arc;
 use datafusion::datasource::listing::ListingTableUrl;
 use datafusion::datasource::object_store::ObjectStoreUrl;
 use datafusion::execution::options::{ArrowReadOptions, ReadOptions};
@@ -19,6 +18,7 @@ use datafusion::parquet::data_type::AsBytes;
 use datafusion::prelude::{CsvReadOptions, DataFrame, ParquetReadOptions, SessionContext};
 use datafusion_common::config::TableOptions;
 use datafusion_functions::expr_fn::make_date;
+use std::sync::Arc;
 use tokio::io::AsyncReadExt;
 
 use crate::task_graph::timezone::RuntimeTzConfig;
@@ -35,6 +35,8 @@ use vegafusion_core::proto::gen::transforms::TransformPipeline;
 use vegafusion_core::task_graph::task::{InputVariable, TaskDependencies};
 use vegafusion_core::task_graph::task_value::TaskValue;
 
+use crate::data::util::{DataFrameUtils, SessionContextUtils};
+use crate::transform::utils::str_to_timestamp;
 use object_store::aws::AmazonS3Builder;
 use object_store::http::HttpBuilder;
 use object_store::{ClientOptions, ObjectStore};
@@ -47,8 +49,6 @@ use vegafusion_common::data::ORDER_COL;
 use vegafusion_common::datatypes::{is_integer_datatype, is_string_datatype};
 use vegafusion_core::proto::gen::transforms::transform::TransformKind;
 use vegafusion_core::spec::visitors::extract_inline_dataset;
-use crate::data::util::{DataFrameUtils, SessionContextUtils};
-use crate::transform::utils::str_to_timestamp;
 
 pub fn build_compilation_config(
     input_vars: &[InputVariable],
@@ -79,8 +79,6 @@ pub fn build_compilation_config(
         ..Default::default()
     }
 }
-
-
 
 #[async_trait]
 impl TaskCall for DataUrlTask {
@@ -192,7 +190,10 @@ async fn eval_sql_df(
         pipeline.eval_sql(sql_df, config).await?
     } else {
         // No transforms, just remove any ordering column
-        (sql_df.collect_to_table().await?.without_ordering()?, Vec::new())
+        (
+            sql_df.collect_to_table().await?.without_ordering()?,
+            Vec::new(),
+        )
     };
 
     let table_value = TaskValue::Table(transformed_df);
@@ -358,10 +359,20 @@ async fn process_datetimes(
 
                         if let Some(fmt) = fmt {
                             // Parse with single explicit format
-                            str_to_timestamp(flat_col(&spec.name), &default_input_tz_str, schema, Some(fmt.as_str()))?
+                            str_to_timestamp(
+                                flat_col(&spec.name),
+                                &default_input_tz_str,
+                                schema,
+                                Some(fmt.as_str()),
+                            )?
                         } else {
                             // Parse with auto formats, then localize to default_input_tz
-                            str_to_timestamp(flat_col(&spec.name), &default_input_tz_str, schema, None)?
+                            str_to_timestamp(
+                                flat_col(&spec.name),
+                                &default_input_tz_str,
+                                schema,
+                                None,
+                            )?
                         }
                     } else if is_integer_datatype(dtype) {
                         // Assume Year was parsed numerically, return Date32
@@ -412,8 +423,11 @@ async fn process_datetimes(
                                 tz_config.with_context(|| "No local timezone info provided")?;
 
                             flat_col(field.name()).try_cast_to(
-                                &DataType::Timestamp(TimeUnit::Millisecond, Some(tz_config.default_input_tz.to_string().into())),
-                                schema
+                                &DataType::Timestamp(
+                                    TimeUnit::Millisecond,
+                                    Some(tz_config.default_input_tz.to_string().into()),
+                                ),
+                                schema,
                             )?
                         }
                     },
@@ -422,13 +436,15 @@ async fn process_datetimes(
                             tz_config.with_context(|| "No local timezone info provided")?;
 
                         // Cast to naive timestamp, then localize to timestamp with timezone
-                        flat_col(field.name()).try_cast_to(
-                            &DataType::Timestamp(TimeUnit::Millisecond, None),
-                            schema
-                        )?.try_cast_to(
-                            &DataType::Timestamp(TimeUnit::Millisecond, Some(tz_config.default_input_tz.to_string().into())),
-                            schema,
-                        )?
+                        flat_col(field.name())
+                            .try_cast_to(&DataType::Timestamp(TimeUnit::Millisecond, None), schema)?
+                            .try_cast_to(
+                                &DataType::Timestamp(
+                                    TimeUnit::Millisecond,
+                                    Some(tz_config.default_input_tz.to_string().into()),
+                                ),
+                                schema,
+                            )?
                     }
                     _ => flat_col(field.name()),
                 };
@@ -597,7 +613,6 @@ async fn build_csv_schema(
     uri: impl Into<String>,
     ctx: &SessionContext,
 ) -> Result<Schema> {
-
     // Get HashMap of provided columns formats
     let format_specs = if let Some(parse) = parse {
         match parse {
@@ -609,7 +624,7 @@ async fn build_csv_schema(
                 .specs
                 .iter()
                 .map(|spec| (spec.name.clone(), spec.datatype.clone()))
-                .collect()
+                .collect(),
         }
     } else {
         HashMap::new()
@@ -655,51 +670,51 @@ async fn build_csv_schema(
 }
 
 async fn read_json(url: &str, ctx: Arc<SessionContext>) -> Result<DataFrame> {
-    let value: serde_json::Value = if let Some(base_url) = maybe_register_object_stores_for_url(&ctx, url)? {
-        // Create single use object store that points directly to file
-        let store = ctx.runtime_env().object_store(&base_url)?;
-        let child_url = url.strip_prefix(&base_url.to_string()).unwrap();
-        match store.get(&child_url.into()).await {
-            Ok(get_res) => {
-                let bytes = get_res.bytes().await?;
-                let text: Cow<str> = String::from_utf8_lossy(bytes.as_bytes());
-                serde_json::from_str(text.as_ref())?
-            }
-            Err(e) => {
-                if url.starts_with("http://") || url.starts_with("https://") {
-                    // Fallback to direct reqwest implementation. This is needed in some cases because
-                    // the object-store http implementation has stricter requirements on what the
-                    // server provides. For example the content-length header is required.
-                    let response = make_request_client()
-                        .get(url)
-                        .send()
-                        .await
-                        .external(format!("Failed to fetch URL: {url}"))?;
+    let value: serde_json::Value =
+        if let Some(base_url) = maybe_register_object_stores_for_url(&ctx, url)? {
+            // Create single use object store that points directly to file
+            let store = ctx.runtime_env().object_store(&base_url)?;
+            let child_url = url.strip_prefix(&base_url.to_string()).unwrap();
+            match store.get(&child_url.into()).await {
+                Ok(get_res) => {
+                    let bytes = get_res.bytes().await?;
+                    let text: Cow<str> = String::from_utf8_lossy(bytes.as_bytes());
+                    serde_json::from_str(text.as_ref())?
+                }
+                Err(e) => {
+                    if url.starts_with("http://") || url.starts_with("https://") {
+                        // Fallback to direct reqwest implementation. This is needed in some cases because
+                        // the object-store http implementation has stricter requirements on what the
+                        // server provides. For example the content-length header is required.
+                        let response = make_request_client()
+                            .get(url)
+                            .send()
+                            .await
+                            .external(format!("Failed to fetch URL: {url}"))?;
 
-                    let text = response
-                        .text()
-                        .await
-                        .external("Failed to read response as text")?;
-                    serde_json::from_str(&text)?
-                } else {
-                    return Err(VegaFusionError::from(e))
+                        let text = response
+                            .text()
+                            .await
+                            .external("Failed to read response as text")?;
+                        serde_json::from_str(&text)?
+                    } else {
+                        return Err(VegaFusionError::from(e));
+                    }
                 }
             }
-        }
-    } else {
-        // Assume local file
-        let mut file = tokio::fs::File::open(url)
-            .await
-            .external(format!("Failed to open as local file: {url}"))?;
+        } else {
+            // Assume local file
+            let mut file = tokio::fs::File::open(url)
+                .await
+                .external(format!("Failed to open as local file: {url}"))?;
 
-        let mut json_str = String::new();
-        file.read_to_string(&mut json_str)
-            .await
-            .external("Failed to read file contents to string")?;
+            let mut json_str = String::new();
+            file.read_to_string(&mut json_str)
+                .await
+                .external("Failed to read file contents to string")?;
 
-        serde_json::from_str(&json_str)?
-    };
-
+            serde_json::from_str(&json_str)?
+        };
 
     let table = VegaFusionTable::from_json(&value)?.with_ordering()?;
     ctx.vegafusion_table(table).await
@@ -715,7 +730,10 @@ async fn read_parquet(url: &str, ctx: Arc<SessionContext>) -> Result<DataFrame> 
     Ok(ctx.read_parquet(url, ParquetReadOptions::default()).await?)
 }
 
-fn maybe_register_object_stores_for_url(ctx: &SessionContext, url: &str) -> Result<Option<ObjectStoreUrl>> {
+fn maybe_register_object_stores_for_url(
+    ctx: &SessionContext,
+    url: &str,
+) -> Result<Option<ObjectStoreUrl>> {
     // Handle object store registration for non-local sources
     let maybe_register_http_store = |prefix: &str| -> Result<Option<ObjectStoreUrl>> {
         if let Some(path) = url.strip_prefix(prefix) {
@@ -729,9 +747,12 @@ fn maybe_register_object_stores_for_url(ctx: &SessionContext, url: &str) -> Resu
 
             // Register store for url if not already registered
             let object_store_url = ObjectStoreUrl::parse(&base_url_str)?;
-            if ctx.runtime_env().object_store(object_store_url.clone()).is_err() {
-                let client_options = ClientOptions::new()
-                    .with_allow_http(true);
+            if ctx
+                .runtime_env()
+                .object_store(object_store_url.clone())
+                .is_err()
+            {
+                let client_options = ClientOptions::new().with_allow_http(true);
                 let http_store = HttpBuilder::new()
                     .with_url(base_url.clone())
                     .with_client_options(client_options)
@@ -739,19 +760,19 @@ fn maybe_register_object_stores_for_url(ctx: &SessionContext, url: &str) -> Resu
 
                 ctx.register_object_store(&base_url, Arc::new(http_store));
             }
-            return Ok(Some(object_store_url))
+            return Ok(Some(object_store_url));
         }
         Ok(None)
     };
 
     // Register https://
     if let Some(url) = maybe_register_http_store("https://")? {
-        return Ok(Some(url))
+        return Ok(Some(url));
     }
 
     // Register http://
     if let Some(url) = maybe_register_http_store("http://")? {
-        return Ok(Some(url))
+        return Ok(Some(url));
     }
 
     // Register s3://
@@ -764,7 +785,11 @@ fn maybe_register_object_stores_for_url(ctx: &SessionContext, url: &str) -> Resu
         // Register store for url if not already registered
         let base_url_str = format!("s3://{bucket}/");
         let object_store_url = ObjectStoreUrl::parse(&base_url_str)?;
-        if ctx.runtime_env().object_store(object_store_url.clone()).is_err() {
+        if ctx
+            .runtime_env()
+            .object_store(object_store_url.clone())
+            .is_err()
+        {
             let base_url = url::Url::parse(&base_url_str)?;
             let s3 = AmazonS3Builder::from_env().with_url(base_url.clone()).build().with_context(||
             "Failed to initialize s3 connection from environment variables.\n\
@@ -772,7 +797,7 @@ fn maybe_register_object_stores_for_url(ctx: &SessionContext, url: &str) -> Resu
             )?;
             ctx.register_object_store(&base_url, Arc::new(s3));
         }
-        return Ok(Some(object_store_url))
+        return Ok(Some(object_store_url));
     }
 
     Ok(None)

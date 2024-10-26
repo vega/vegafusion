@@ -1,4 +1,6 @@
+use crate::datafusion::udfs::datetime::make_timestamptz::make_timestamptz;
 use crate::task_graph::timezone::RuntimeTzConfig;
+use crate::transform::utils::{from_epoch_millis, str_to_timestamp};
 use datafusion_expr::{lit, Expr, ExprSchemable};
 use std::ops::Add;
 use std::str::FromStr;
@@ -6,8 +8,6 @@ use vegafusion_common::arrow::datatypes::DataType;
 use vegafusion_common::datafusion_common::{DFSchema, ScalarValue};
 use vegafusion_common::datatypes::{cast_to, is_numeric_datatype, is_string_datatype};
 use vegafusion_core::error::{Result, ResultWithContext, VegaFusionError};
-use crate::datafusion::udfs::datetime::make_timestamptz::make_timestamptz;
-use crate::transform::utils::{from_epoch_millis, str_to_timestamp};
 
 pub fn to_date_transform(
     tz_config: &RuntimeTzConfig,
@@ -73,13 +73,13 @@ pub fn datetime_transform_fn(
             extract_datetime_component_args(args, &tz_config.default_input_tz.to_string(), schema)?;
 
         Ok(make_timestamptz(
-            udf_args[0].clone(),  // year
-            udf_args[1].clone().add(lit(1)),  // month (arg 1-based, vega uses zero-based)
-            udf_args[2].clone(),  // day
-            udf_args[3].clone(),  // hour
-            udf_args[4].clone(),  // minute
-            udf_args[5].clone(),  // second
-            udf_args[6].clone(),  // millisecond
+            udf_args[0].clone(),             // year
+            udf_args[1].clone().add(lit(1)), // month (arg 1-based, vega uses zero-based)
+            udf_args[2].clone(),             // day
+            udf_args[3].clone(),             // hour
+            udf_args[4].clone(),             // minute
+            udf_args[5].clone(),             // second
+            udf_args[6].clone(),             // millisecond
             &tz_config.local_tz.to_string(),
         ))
     }
@@ -94,13 +94,13 @@ pub fn make_datetime_components_fn(
         extract_datetime_component_args(args, &tz_config.default_input_tz.to_string(), schema)?;
 
     Ok(make_timestamptz(
-        udf_args[0].clone(),  // year
-        udf_args[1].clone().add(lit(1)),  // month (arg 1-based, vega uses zero-based)
-        udf_args[2].clone(),  // day
-        udf_args[3].clone(),  // hour
-        udf_args[4].clone(),  // minute
-        udf_args[5].clone(),  // second
-        udf_args[6].clone(),  // millisecond
+        udf_args[0].clone(),             // year
+        udf_args[1].clone().add(lit(1)), // month (arg 1-based, vega uses zero-based)
+        udf_args[2].clone(),             // day
+        udf_args[3].clone(),             // hour
+        udf_args[4].clone(),             // minute
+        udf_args[5].clone(),             // second
+        udf_args[6].clone(),             // millisecond
         "UTC",
     ))
 }

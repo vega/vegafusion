@@ -37,7 +37,7 @@ mod test_window_single_agg {
             WindowTransformOpSpec::Window(WindowOpSpec::PercentileRank),
             WindowTransformOpSpec::Window(WindowOpSpec::CumeDist),
             WindowTransformOpSpec::Window(WindowOpSpec::FirstValue),
-            WindowTransformOpSpec::Window(WindowOpSpec::LastValue),
+            WindowTransformOpSpec::Window(WindowOpSpec::LastValue)
         )]
         op: WindowTransformOpSpec,
 
@@ -48,17 +48,15 @@ mod test_window_single_agg {
         )]
         frame: serde_json::Value,
 
-        #[values(
-            true,
-            false
-        )] ignore_peers: bool,
+        #[values(true, false)] ignore_peers: bool,
     ) {
         // Vega and DataFusion differ on how to handle pop variance and percentile rank of
         // single element DataFusion returns 0 while Vega returns null.
         let null_matches_zero = matches!(
-            op, WindowTransformOpSpec::Aggregate(AggregateOpSpec::Stdevp)
-            | WindowTransformOpSpec::Aggregate(AggregateOpSpec::Variancep)
-            | WindowTransformOpSpec::Window(WindowOpSpec::PercentileRank)
+            op,
+            WindowTransformOpSpec::Aggregate(AggregateOpSpec::Stdevp)
+                | WindowTransformOpSpec::Aggregate(AggregateOpSpec::Variancep)
+                | WindowTransformOpSpec::Window(WindowOpSpec::PercentileRank)
         );
 
         let dataset = vega_json_dataset("movies");

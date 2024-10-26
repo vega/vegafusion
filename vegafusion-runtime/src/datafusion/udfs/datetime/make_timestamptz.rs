@@ -2,7 +2,7 @@ use chrono::{DateTime, TimeZone, Timelike};
 use std::any::Any;
 use std::str::FromStr;
 use std::sync::Arc;
-use vegafusion_common::datafusion_expr::{Expr, expr, lit, ScalarUDFImpl};
+use vegafusion_common::datafusion_expr::{expr, lit, Expr, ScalarUDFImpl};
 use vegafusion_common::{
     arrow::{
         array::{Array, ArrayRef, Int64Array, TimestampMillisecondBuilder},
@@ -37,7 +37,7 @@ impl MakeTimestamptzUDF {
                 DataType::Int64, // minute
                 DataType::Int64, // second
                 DataType::Int64, // millisecond
-                DataType::Utf8,    // time zone
+                DataType::Utf8,  // time zone
             ],
             Volatility::Immutable,
         );
@@ -62,7 +62,10 @@ impl ScalarUDFImpl for MakeTimestamptzUDF {
         &self,
         _arg_types: &[DataType],
     ) -> vegafusion_common::datafusion_common::Result<DataType> {
-        Ok(DataType::Timestamp(TimeUnit::Millisecond, Some("UTC".into())))
+        Ok(DataType::Timestamp(
+            TimeUnit::Millisecond,
+            Some("UTC".into()),
+        ))
     }
 
     fn invoke(
@@ -195,11 +198,20 @@ pub fn make_timestamptz(
     minute: Expr,
     second: Expr,
     millisecond: Expr,
-    tz: &str
+    tz: &str,
 ) -> Expr {
     Expr::ScalarFunction(expr::ScalarFunction {
         func: Arc::new(ScalarUDF::from(MakeTimestamptzUDF::new())),
-        args: vec![year, month, date, hour, minute, second, millisecond, lit(tz)],
+        args: vec![
+            year,
+            month,
+            date,
+            hour,
+            minute,
+            second,
+            millisecond,
+            lit(tz),
+        ],
     })
 }
 

@@ -3,9 +3,9 @@ use crate::expression::compiler::compile;
 use crate::expression::compiler::utils::ExprHelpers;
 use crate::task_graph::task::TaskCall;
 use async_trait::async_trait;
+use datafusion::prelude::SessionContext;
 use std::collections::HashMap;
 use std::sync::Arc;
-use datafusion::prelude::SessionContext;
 use vegafusion_core::data::dataset::VegaFusionDataset;
 
 use crate::task_graph::timezone::RuntimeTzConfig;

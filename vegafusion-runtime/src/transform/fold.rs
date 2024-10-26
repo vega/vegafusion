@@ -2,19 +2,18 @@ use crate::expression::compiler::config::CompilationConfig;
 use crate::transform::TransformTrait;
 
 use async_trait::async_trait;
-use std::sync::Arc;
 use datafusion::prelude::DataFrame;
 use datafusion_common::ScalarValue;
-use datafusion_expr::{Expr, expr, lit, WindowFrame, WindowFunctionDefinition};
+use datafusion_expr::{expr, lit, Expr, WindowFrame, WindowFunctionDefinition};
 use datafusion_functions_window::row_number::RowNumber;
 use sqlparser::ast::NullTreatment;
+use std::sync::Arc;
 use vegafusion_common::column::flat_col;
 use vegafusion_common::data::ORDER_COL;
 use vegafusion_common::error::Result;
 use vegafusion_common::escape::unescape_field;
 use vegafusion_core::proto::gen::transforms::Fold;
 use vegafusion_core::task_graph::task_value::TaskValue;
-
 
 #[async_trait]
 impl TransformTrait for Fold {
@@ -39,7 +38,7 @@ impl TransformTrait for Fold {
                 .unwrap_or_else(|| "value".to_string()),
         );
 
-        // Build selection that includes all input fields that 
+        // Build selection that includes all input fields that
         // aren't shadowed by key/value cols
         let input_selection = dataframe
             .schema()
@@ -57,7 +56,7 @@ impl TransformTrait for Fold {
         // Build union of subqueries that select and rename each field
         let mut subquery_union: Option<DataFrame> = None;
 
-        let field_order_col  = format!("{ORDER_COL}_field");
+        let field_order_col = format!("{ORDER_COL}_field");
         for (i, field) in field_cols.iter().enumerate() {
             // Clone input selection and add key/val cols to it
             let mut subquery_selection = input_selection.clone();
@@ -84,13 +83,22 @@ impl TransformTrait for Fold {
         // Unwrap
         let Some(subquery_union) = subquery_union else {
             // Return input dataframe as-is
-            return Ok((dataframe, Default::default()))
+            return Ok((dataframe, Default::default()));
         };
 
         // Compute final selection, start with all the non-order input columns
-        let mut final_selections = dataframe.schema().fields().iter().filter_map(
-            |f| if f.name() == ORDER_COL { None } else { Some(flat_col(f.name())) }
-        ).collect::<Vec<_>>();
+        let mut final_selections = dataframe
+            .schema()
+            .fields()
+            .iter()
+            .filter_map(|f| {
+                if f.name() == ORDER_COL {
+                    None
+                } else {
+                    Some(flat_col(f.name()))
+                }
+            })
+            .collect::<Vec<_>>();
 
         // Add key and value columns
         final_selections.push(flat_col(&key_col));
@@ -115,7 +123,8 @@ impl TransformTrait for Fold {
             ],
             window_frame: WindowFrame::new(Some(true)),
             null_treatment: Some(NullTreatment::IgnoreNulls),
-        }).alias(ORDER_COL);
+        })
+        .alias(ORDER_COL);
         final_selections.push(final_order_expr);
 
         Ok((subquery_union.select(final_selections)?, Default::default()))
