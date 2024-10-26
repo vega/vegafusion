@@ -69,7 +69,7 @@ pub fn check_scalar_evaluation(expr_str: &str, config: &CompilationConfig) {
 
     println!("{result:?}");
     let tol = 1e-6;
-    assert_scalars_almost_equals(&result, &expected, tol, "scalar", 0);
+    assert_scalars_almost_equals(&result, &expected, tol, "scalar", 0, false);
 }
 
 pub fn check_transform_evaluation(

@@ -4,7 +4,7 @@ use async_trait::async_trait;
 use datafusion_common::DFSchema;
 use datafusion_functions::expr_fn::{date_part, date_trunc, floor, from_unixtime, to_timestamp_millis};
 use std::collections::HashSet;
-use std::ops::{Add, Div, Mul, Sub};
+use std::ops::{Add, Div, Mul, Rem, Sub};
 use std::sync::Arc;
 use datafusion::prelude::DataFrame;
 use vegafusion_common::arrow::datatypes::{DataType, TimeUnit as ArrowTimeUnit};
@@ -144,7 +144,7 @@ fn timeunit_date_part_tz(
 
     // Millisecond
     if units_set.contains(&TimeUnitUnit::Seconds) {
-        millisecond_arg = date_part(lit("millisecond"), field_col.clone());
+        millisecond_arg = date_part(lit("millisecond"), field_col.clone()).rem(lit(1000));
         interval = interval_datetime_lit("1 millisecond");
     }
 
@@ -289,7 +289,7 @@ fn timeunit_custom_udf(
     Ok((timeunit_start_value, interval))
 }
 
-/// Convert a column to a timezone aware timestamp with Millisecond precision
+/// Convert a column to a timezone aware timestamp with Millisecond precision, in UTC
 pub fn to_timestamp_col(expr: Expr, schema: &DFSchema, default_input_tz: &String) -> Result<Expr> {
     Ok(match expr.get_type(schema)? {
         DataType::Timestamp(ArrowTimeUnit::Millisecond, Some(_)) => expr,
@@ -310,7 +310,7 @@ pub fn to_timestamp_col(expr: Expr, schema: &DFSchema, default_input_tz: &String
             schema
         )?,
         DataType::Utf8 | DataType::LargeUtf8 | DataType::Utf8View => {
-            str_to_timestamp(expr, default_input_tz, schema)?
+            str_to_timestamp(expr, default_input_tz, schema, None)?
         }
         dtype if is_numeric_datatype(&dtype) => {
             // Convert to timestamp then localize to UTC

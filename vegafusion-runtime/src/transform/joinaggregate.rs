@@ -25,7 +25,7 @@ impl TransformTrait for JoinAggregate {
         let schema = dataframe.schema();
 
         let mut agg_exprs = Vec::new();
-        let mut new_col_exprs = Vec::new();
+        let mut new_col_names = Vec::new();
         for (i, (field, op)) in self.fields.iter().zip(&self.ops).enumerate() {
             let op = AggregateOp::try_from(*op).unwrap();
             let alias = if let Some(alias) = self.aliases.get(i).filter(|a| !a.is_empty()) {
@@ -37,8 +37,6 @@ impl TransformTrait for JoinAggregate {
                 format!("{}_{}", op_name(op), field)
             };
 
-            new_col_exprs.push(flat_col(&alias));
-
             let agg_expr = if matches!(op, AggregateOp::Count) {
                 // In Vega, the provided column is always ignored if op is 'count'.
                 make_aggr_expr_for_named_col(None, &op, &schema)?
@@ -48,6 +46,9 @@ impl TransformTrait for JoinAggregate {
 
             // Apply alias
             let agg_expr = agg_expr.alias(&alias);
+
+            // Collect new column aliases
+            new_col_names.push(alias);
 
             agg_exprs.push(agg_expr);
         }
@@ -59,14 +60,22 @@ impl TransformTrait for JoinAggregate {
             |g| relation_col(&escape_field(g), "lhs").eq(relation_col(&escape_field(g), "rhs"))
         ).collect::<Vec<_>>();
 
+        let mut final_selections = dataframe.schema().fields().iter().filter_map(|f| {
+            if new_col_names.contains(f.name()) {
+                None
+            } else {
+                Some(relation_col(f.name(), "lhs"))
+            }
+        }).collect::<Vec<_>>();
+        for col in &new_col_names {
+            final_selections.push(relation_col(col, "rhs"));
+        }
+
         let result = dataframe.clone().alias("lhs")?.join_on(
             agged_df,
             JoinType::Left,
             on,
-        )?.select(vec![
-            vec![qualified_wildcard("lhs")],
-            new_col_exprs
-        ].concat())?;
+        )?.select(final_selections)?;
 
         Ok((result, Vec::new()))
     }

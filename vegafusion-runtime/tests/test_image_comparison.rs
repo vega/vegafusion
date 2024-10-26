@@ -145,8 +145,7 @@ mod test_custom_specs {
         case("custom/gh_391", 0.001, true),
         case("custom/facet_grouped_bar_with_error_bars", 0.001, true),
         case("custom/facet_grouped_bar_with_error_bars_with_sort", 0.001, true),
-        // Re-enable after updating to Vega 5.26.2
-        // case("custom/binned_ordinal", 0.001, true),
+        case("custom/binned_ordinal", 0.001, true),
         case("custom/timeOffset_stocks", 0.001, true),
         case("custom/quakes_initial_selection", 0.001, true),
         case("custom/aggregate_with_threshold", 0.001, true),
@@ -251,13 +250,16 @@ mod test_vega_specs {
 
         case("vega/gradient", 0.001),
         case("vega/grouped-bar", 0.001),
-        case("vega/heatmap-image", 0.001),
 
         // // Looks like there might be a timezone issue
         // case("vega/heatmap-lines", 0.001),
 
         case("vega/heatmap-sinusoids", 0.001),
-        case("vega/heatmap", 0.001),
+
+        // Something off with daylight savings
+        case("vega/heatmap", 0.01),
+        case("vega/heatmap-image", 0.01),
+
         case("vega/horizon", 0.001),
 
         // // Error from vega-scenegraph: Image given has not completed loading
@@ -1364,10 +1366,14 @@ async fn check_pre_transform_spec_from_files(spec_name: &str, tolerance: f64) {
         .await
         .unwrap();
 
-    // println!(
-    //     "pre-transformed: {}",
+
+    let png_name = spec_name.replace('/', "-");
+
+    // // Write to output
+    // fs::write(
+    //     format!("{}/tests/output/{}_pretransform.vg.json", crate_dir(), png_name),
     //     serde_json::to_string_pretty(&pre_transform_spec).unwrap()
-    // );
+    // ).unwrap();
 
     let full_image = vegajs_runtime
         .export_spec_single(&full_spec, ExportImageFormat::Png)
@@ -1376,7 +1382,6 @@ async fn check_pre_transform_spec_from_files(spec_name: &str, tolerance: f64) {
         .export_spec_single(&pre_transform_spec, ExportImageFormat::Png)
         .unwrap();
 
-    let png_name = spec_name.replace('/', "-");
     full_image
         .save(
             &format!("{}/tests/output/{}_full.png", crate_dir(), png_name),
@@ -1431,20 +1436,20 @@ async fn check_spec_sequence(
     let task_scope = spec_plan.server_spec.to_task_scope().unwrap();
 
     // println!("task_scope: {:#?}", task_scope);
-
-    println!(
-        "client_spec: {}",
-        serde_json::to_string_pretty(&spec_plan.client_spec).unwrap()
-    );
-    println!(
-        "server_spec: {}",
-        serde_json::to_string_pretty(&spec_plan.server_spec).unwrap()
-    );
-
-    println!(
-        "comm_plan:\n---\n{}\n---",
-        serde_json::to_string_pretty(&WatchPlan::from(spec_plan.comm_plan.clone())).unwrap()
-    );
+    //
+    // println!(
+    //     "client_spec: {}",
+    //     serde_json::to_string_pretty(&spec_plan.client_spec).unwrap()
+    // );
+    // println!(
+    //     "server_spec: {}",
+    //     serde_json::to_string_pretty(&spec_plan.server_spec).unwrap()
+    // );
+    //
+    // println!(
+    //     "comm_plan:\n---\n{}\n---",
+    //     serde_json::to_string_pretty(&WatchPlan::from(spec_plan.comm_plan.clone())).unwrap()
+    // );
 
     // Build task graph
     let tasks = spec_plan

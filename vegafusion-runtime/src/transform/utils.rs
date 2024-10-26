@@ -2,10 +2,11 @@ use std::ops::{Add, Mul};
 use datafusion::arrow::datatypes::{DataType, TimeUnit};
 use datafusion_common::DFSchema;
 use datafusion_expr::{case, Expr, ExprSchemable, lit, when};
-use datafusion_functions::expr_fn::{date_part, regexp_like, to_timestamp_millis, to_unixtime};
+use datafusion_functions::expr_fn::{date_part, make_date, regexp_like, to_timestamp_millis, to_unixtime};
 use vegafusion_common::arrow::record_batch::RecordBatch;
 use vegafusion_common::datatypes::{cast_to, is_numeric_datatype};
 use vegafusion_common::error::{Result, VegaFusionError};
+use crate::expression::compiler::builtin_functions::date_time::date_format::d3_to_chrono_format;
 use crate::expression::compiler::utils::ExprHelpers;
 
 pub trait RecordBatchUtils {
@@ -59,6 +60,10 @@ pub fn make_timestamp_parse_formats() -> Vec<Expr> {
         "%Y/%m/%d",
         "%Y/%m/%d %H:%M:%S",
         "%Y/%m/%d %H:%M",
+        // month/day/year
+        "%m/%d/%Y",
+        "%Y/%m/%d %H:%M:%S",
+        "%Y/%m/%d %H:%M",
         // e.g. May 1 2003
         "%b %-d %Y",
         "%b %-d %Y %H:%M:%S",
@@ -85,41 +90,87 @@ pub fn make_timestamp_parse_formats() -> Vec<Expr> {
 /// Build an expression that converts string to timestamps, following the browser's unfortunate
 /// convention where ISO8601 dates (not timestamps) are always interpreted as UTC,
 /// but all other formats are interpreted as the local timezone.
-pub fn str_to_timestamp(s: Expr, default_input_tz: &str, schema: &DFSchema) -> Result<Expr> {
-    // Create condition for whether the parsed timestamp (which always starts as naive) should
-    // be interpreted as UTC, or as the default_input_tz.
-    // There are two cases where we always use UTC:
-    //   1. To follow the browser, timestamps of the form 2020-01-01 are always interpreted as UTC
-    //   2. Timestamps that have an offset suffix (e.g. '+05:00', '-09:00', or 'Z') are parsed by
-    //      datafusion as UTC
-    let is_utc_condition = regexp_like(s.clone(), lit(r"^\d{4}-\d{2}-\d{2}$"), None).or(
-        regexp_like(s.clone(), lit(r"[+-]\d{2}:\d{2}$"), None)
-    ).or(
-        regexp_like(s.clone(), lit(r"Z$"), None)
-    );
+pub fn str_to_timestamp(s: Expr, default_input_tz: &str, schema: &DFSchema, fmt: Option<&str>) -> Result<Expr> {
+    if let Some(fmt) = fmt {
+        // Parse with single explicit format, in the specified timezone
+        let chrono_fmt = d3_to_chrono_format(&fmt);
 
-    // Note: it's important for the express to always return values in the same timezone,
-    // so we cast the UTC case back to the local timezone
-    let if_true = to_timestamp_millis(vec![s.clone()]).try_cast_to(
-        &DataType::Timestamp(TimeUnit::Millisecond, Some("UTC".into())),
-        schema
-    )?.try_cast_to(
-        &DataType::Timestamp(TimeUnit::Millisecond, Some(default_input_tz.into())),
-        schema
-    )?;
+        if chrono_fmt == "%Y" {
+            // Chrono won't parse this as years by itself, since it's not technically enough info
+            // to make a timestamp, so instead we'll make date on the first of the year
+            Ok(make_date(s.try_cast_to(&DataType::Int64, schema)?, lit(1), lit(1)))
+        } else {
+            // Interpret as utc if the input has a timezone offset
+            let is_utc_condition = regexp_like(s.clone(), lit(r"[+-]\d{2}:\d{2}$"), None).or(
+                regexp_like(s.clone(), lit(r"Z$"), None)
+            );
 
-    let if_false = to_timestamp_millis(vec![
-        vec![s],
-        make_timestamp_parse_formats()
-    ].concat()).try_cast_to(
-        &DataType::Timestamp(TimeUnit::Millisecond, Some(default_input_tz.into())),
-        schema
-    )?;
+            let naive_timestamp = to_timestamp_millis(vec![
+                s,
+                lit(chrono_fmt)
+            ]);
 
-    let expr = when(is_utc_condition, if_true).otherwise(if_false)?;
-    Ok(expr)
+            // Interpret as UTC then convert to default_iput
+            let if_true = naive_timestamp.clone().try_cast_to(
+                &DataType::Timestamp(TimeUnit::Millisecond, Some("UTC".into())),
+                schema
+            )?.try_cast_to(
+                &DataType::Timestamp(TimeUnit::Millisecond, Some(default_input_tz.into())),
+                schema
+            )?;
+
+            // Interpret as default input
+            let if_false = naive_timestamp.try_cast_to(
+                &DataType::Timestamp(TimeUnit::Millisecond, Some(default_input_tz.into())),
+                schema
+            )?;
+
+            let expr = when(is_utc_condition, if_true).otherwise(if_false)?;
+            Ok(expr)
+        }
+    } else {
+        // Auto formatting;
+        // Create condition for whether the parsed timestamp (which always starts as naive) should
+        // be interpreted as UTC, or as the default_input_tz.
+        // There are two cases where we always use UTC:
+        //   1. To follow the browser, timestamps of the form 2020-01-01 are always interpreted as UTC
+        //   2. Timestamps that have an offset suffix (e.g. '+05:00', '-09:00', or 'Z') are parsed by
+        //      datafusion as UTC
+        let is_utc_condition = regexp_like(s.clone(), lit(r"^\d{4}-\d{2}-\d{2}$"), None).or(
+            regexp_like(s.clone(), lit(r"[+-]\d{2}:\d{2}$"), None)
+        ).or(
+            regexp_like(s.clone(), lit(r"Z$"), None)
+        );
+
+        // Note: it's important for the express to always return values in the same timezone,
+        // so we cast the UTC case back to the local timezone
+        let if_true = to_timestamp_millis(vec![s.clone()]).try_cast_to(
+            &DataType::Timestamp(TimeUnit::Millisecond, Some("UTC".into())),
+            schema
+        )?.try_cast_to(
+            &DataType::Timestamp(TimeUnit::Millisecond, Some(default_input_tz.into())),
+            schema
+        )?;
+
+        let if_false = to_timestamp_millis(vec![
+            vec![s],
+            make_timestamp_parse_formats()
+        ].concat()).try_cast_to(
+            &DataType::Timestamp(TimeUnit::Millisecond, Some(default_input_tz.into())),
+            schema
+        )?;
+
+        let expr = when(is_utc_condition, if_true).otherwise(if_false)?;
+        Ok(expr)
+    }
 }
 
+pub fn from_epoch_millis(expr: Expr, schema: &DFSchema) -> Result<Expr> {
+    Ok(
+        expr.try_cast_to(&DataType::Int64, schema)?
+            .try_cast_to(&DataType::Timestamp(TimeUnit::Millisecond, Some("UTC".into())), schema)?
+    )
+}
 
 pub fn to_epoch_millis(expr: Expr, default_input_tz: &str, schema: &DFSchema) -> Result<Expr> {
     // Dispatch handling on data type
@@ -141,7 +192,7 @@ pub fn to_epoch_millis(expr: Expr, default_input_tz: &str, schema: &DFSchema) ->
         }
         DataType::Utf8 | DataType::LargeUtf8 | DataType::Utf8View => {
             let millis = date_part(lit("millisecond"), expr.clone()).cast_to(&DataType::Int64, schema)?;
-            let expr = str_to_timestamp(expr.clone(), default_input_tz, schema)?
+            let expr = str_to_timestamp(expr.clone(), default_input_tz, schema, None)?
                 .try_cast_to(&DataType::Timestamp(TimeUnit::Millisecond, None), schema)?;;
             to_unixtime(vec![expr]).mul(lit(1000)).add(millis)
         }

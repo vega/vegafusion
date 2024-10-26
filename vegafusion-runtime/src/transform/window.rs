@@ -226,7 +226,7 @@ impl TransformTrait for Window {
                     partition_by: partition_by.clone(),
                     order_by: order_by.clone(),
                     window_frame: window_frame.clone(),
-                    null_treatment: Some(NullTreatment::IgnoreNulls),
+                    null_treatment: None,
                 });
 
                 if let Some(alias) = self.aliases.get(i) {

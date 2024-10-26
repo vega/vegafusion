@@ -158,7 +158,6 @@ async fn pivot_case(
         .op
         .map(|op_code| AggregateOp::try_from(op_code).unwrap())
         .unwrap_or(AggregateOp::Sum);
-    let fill_zero = should_fill_zero(&agg_op);
 
     // Build vector of aggregates
     let mut agg_exprs: Vec<_> = Vec::new();
@@ -166,12 +165,7 @@ async fn pivot_case(
     for pivot_val in pivot_vec.iter() {
         let predicate_expr = unescaped_col(&tx.field).eq(lit(pivot_val.as_str()));
         let value_expr = to_numeric(unescaped_col(tx.value.as_str()), schema)?;
-        let agg_col = when(predicate_expr, value_expr).otherwise(if fill_zero {
-            // Replace null with zero for certain aggregates
-            lit(0)
-        } else {
-            lit(ScalarValue::Null)
-        })?;
+        let agg_col = when(predicate_expr, value_expr).otherwise(lit(ScalarValue::Null))?;
 
         let agg_expr = make_agg_expr_for_col_expr(agg_col, &agg_op, &schema)?;
 
@@ -194,9 +188,4 @@ async fn pivot_case(
 
     let pivoted = dataframe.aggregate_mixed(group_expr, agg_exprs)?;
     Ok((pivoted, Default::default()))
-}
-
-/// Test whether null values should be replaced by zero for the specified aggregation
-fn should_fill_zero(op: &AggregateOp) -> bool {
-    matches!(op, AggregateOp::Sum)
 }
