@@ -2,57 +2,57 @@
 
 import altair as alt
 import pandas as pd
+from datetime import date
 
 source = [
-    {"year": "1875", "population": 1309},
-    {"year": "1890", "population": 1558},
-    {"year": "1910", "population": 4512},
-    {"year": "1925", "population": 8180},
-    {"year": "1933", "population": 15915},
-    {"year": "1939", "population": 24824},
-    {"year": "1946", "population": 28275},
-    {"year": "1950", "population": 29189},
-    {"year": "1964", "population": 29881},
-    {"year": "1971", "population": 26007},
-    {"year": "1981", "population": 24029},
-    {"year": "1985", "population": 23340},
-    {"year": "1989", "population": 22307},
-    {"year": "1990", "population": 22087},
-    {"year": "1991", "population": 22139},
-    {"year": "1992", "population": 22105},
-    {"year": "1993", "population": 22242},
-    {"year": "1994", "population": 22801},
-    {"year": "1995", "population": 24273},
-    {"year": "1996", "population": 25640},
-    {"year": "1997", "population": 27393},
-    {"year": "1998", "population": 29505},
-    {"year": "1999", "population": 32124},
-    {"year": "2000", "population": 33791},
-    {"year": "2001", "population": 35297},
-    {"year": "2002", "population": 36179},
-    {"year": "2003", "population": 36829},
-    {"year": "2004", "population": 37493},
-    {"year": "2005", "population": 38376},
-    {"year": "2006", "population": 39008},
-    {"year": "2007", "population": 39366},
-    {"year": "2008", "population": 39821},
-    {"year": "2009", "population": 40179},
-    {"year": "2010", "population": 40511},
-    {"year": "2011", "population": 40465},
-    {"year": "2012", "population": 40905},
-    {"year": "2013", "population": 41258},
-    {"year": "2014", "population": 41777},
+    {"year": date(1875, 1, 1), "population": 1309},
+    {"year": date(1890, 1, 1), "population": 1558},
+    {"year": date(1910, 1, 1), "population": 4512},
+    {"year": date(1925, 1, 1), "population": 8180},
+    {"year": date(1933, 1, 1), "population": 15915},
+    {"year": date(1939, 1, 1), "population": 24824},
+    {"year": date(1946, 1, 1), "population": 28275},
+    {"year": date(1950, 1, 1), "population": 29189},
+    {"year": date(1964, 1, 1), "population": 29881},
+    {"year": date(1971, 1, 1), "population": 26007},
+    {"year": date(1981, 1, 1), "population": 24029},
+    {"year": date(1985, 1, 1), "population": 23340},
+    {"year": date(1989, 1, 1), "population": 22307},
+    {"year": date(1990, 1, 1), "population": 22087},
+    {"year": date(1991, 1, 1), "population": 22139},
+    {"year": date(1992, 1, 1), "population": 22105},
+    {"year": date(1993, 1, 1), "population": 22242},
+    {"year": date(1994, 1, 1), "population": 22801},
+    {"year": date(1995, 1, 1), "population": 24273},
+    {"year": date(1996, 1, 1), "population": 25640},
+    {"year": date(1997, 1, 1), "population": 27393},
+    {"year": date(1998, 1, 1), "population": 29505},
+    {"year": date(1999, 1, 1), "population": 32124},
+    {"year": date(2000, 1, 1), "population": 33791},
+    {"year": date(2001, 1, 1), "population": 35297},
+    {"year": date(2002, 1, 1), "population": 36179},
+    {"year": date(2003, 1, 1), "population": 36829},
+    {"year": date(2004, 1, 1), "population": 37493},
+    {"year": date(2005, 1, 1), "population": 38376},
+    {"year": date(2006, 1, 1), "population": 39008},
+    {"year": date(2007, 1, 1), "population": 39366},
+    {"year": date(2008, 1, 1), "population": 39821},
+    {"year": date(2009, 1, 1), "population": 40179},
+    {"year": date(2010, 1, 1), "population": 40511},
+    {"year": date(2011, 1, 1), "population": 40465},
+    {"year": date(2012, 1, 1), "population": 40905},
+    {"year": date(2013, 1, 1), "population": 41258},
+    {"year": date(2014, 1, 1), "population": 41777},
 ]
 
 source2 = [
-    {"start": "1933", "end": "1945", "event": "Nazi Rule"},
-    {"start": "1948", "end": "1989", "event": "GDR (East Germany)"},
+    {"start": date(1933, 1, 1), "end": date(1945, 1, 1), "event": "Nazi Rule"},
+    {"start": date(1948, 1, 1), "end": date(1989, 1, 1), "event": "GDR (East Germany)"},
 ]
 
 
 source = pd.DataFrame(source)
 source2 = pd.DataFrame(source2)
-
 
 line = (
     alt.Chart(source)

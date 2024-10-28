@@ -39,49 +39,49 @@ version = "1.0.91"
 default-features = false
 
 [workspace.dependencies.datafusion]
-version = "42.0.0"
+version = "42.1.0"
 default-features = false
 features = ["parquet", "nested_expressions"]
 
 [workspace.dependencies.datafusion-common]
-version = "42.0.0"
+version = "42.1.0"
 # no default features
 
 [workspace.dependencies.datafusion-expr]
-version = "42.0.0"
+version = "42.1.0"
 # no default features
 
 [workspace.dependencies.datafusion-proto]
-version = "42.0.0"
+version = "42.1.0"
 default-features = false
 features = ["parquet"]
 
 [workspace.dependencies.datafusion-proto-common]
-version = "42.0.0"
+version = "42.1.0"
 default-features = false
 
 [workspace.dependencies.datafusion-physical-expr]
-version = "42.0.0"
+version = "42.1.0"
 default-features = false
 
 [workspace.dependencies.datafusion-optimizer]
-version = "42.0.0"
+version = "42.1.0"
 default-features = false
 
 [workspace.dependencies.datafusion-functions]
-version = "42.0.0"
+version = "42.1.0"
 default-features = false
 
 [workspace.dependencies.datafusion-functions-nested]
-version = "42.0.0"
+version = "42.1.0"
 # no default features
 
 [workspace.dependencies.datafusion-functions-aggregate]
-version = "42.0.0"
+version = "42.1.0"
 # no default features
 
 [workspace.dependencies.datafusion-functions-window]
-version = "42.0.0"
+version = "42.1.0"
 # no default features
 
 # Profile with good speed for local development and testing
