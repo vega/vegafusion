@@ -20,11 +20,7 @@ use datafusion_functions_aggregate::min_max::{max_udaf, min_udaf};
 use datafusion_functions_aggregate::stddev::{stddev_pop_udaf, stddev_udaf};
 use datafusion_functions_aggregate::sum::sum_udaf;
 
-use datafusion_functions_window::{
-    row_number::RowNumber,
-    rank::Rank,
-    cume_dist::CumeDist,
-};
+use datafusion_functions_window::{cume_dist::CumeDist, rank::Rank, row_number::RowNumber};
 
 use vegafusion_common::column::{flat_col, unescaped_col};
 use vegafusion_common::data::ORDER_COL;
@@ -179,9 +175,7 @@ impl TransformTrait for Window {
                                 Vec::new(),
                             ),
                             WindowOp::Rank => (
-                                WindowFunctionDefinition::WindowUDF(Arc::new(
-                                    Rank::basic().into(),
-                                )),
+                                WindowFunctionDefinition::WindowUDF(Arc::new(Rank::basic().into())),
                                 Vec::new(),
                             ),
                             WindowOp::DenseRank => (
