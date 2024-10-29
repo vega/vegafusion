@@ -44,6 +44,7 @@ use serde_json::map::Map as JsonMap;
 use serde_json::Value;
 use std::iter;
 use std::{fmt::Debug, io::Write};
+use datafusion_common::cast::as_string_view_array;
 
 fn primitive_array_to_json<T>(array: &ArrayRef) -> Result<Vec<Value>>
 where
@@ -270,6 +271,20 @@ fn set_column_for_json_rows(
         }
         DataType::LargeUtf8 => {
             set_column_by_array_type!(as_largestring_array, col_name, rows, array, row_count);
+        }
+        DataType::Utf8View => {
+            let arr = as_string_view_array(array)?;
+            rows
+                .iter_mut()
+                .zip(arr.iter())
+                .take(row_count)
+                .for_each(|(row, maybe_value)| {
+                    if let Some(v) = maybe_value {
+                        row.insert(col_name.to_string(), v.into());
+                    } else {
+                        row.insert(col_name.to_string(), Value::Null);
+                    }
+                });
         }
         DataType::Date32 => {
             // Write as integer UTC milliseconds
