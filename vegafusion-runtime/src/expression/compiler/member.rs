@@ -84,7 +84,7 @@ pub fn compile_member(
             } else if matches!(dtype, DataType::Utf8 | DataType::LargeUtf8) {
                 if let Some(index) = index {
                     // SQL substr function is 1-indexed so add one
-                    substring(compiled_object, lit((index + 1) as u32), lit(1i64))
+                    substring(compiled_object, lit((index + 1) as i32), lit(1i64))
                 } else {
                     return Err(VegaFusionError::compilation(format!(
                         "Non-numeric element index: {property_string}"
@@ -92,7 +92,7 @@ pub fn compile_member(
                 }
             } else if matches!(dtype, DataType::List(_) | DataType::FixedSizeList(_, _)) {
                 if let Some(index) = index {
-                    array_element(compiled_object, lit((index + 1) as u32))
+                    array_element(compiled_object, lit((index + 1) as i32))
                 } else {
                     return Err(VegaFusionError::compilation(format!(
                         "Non-numeric element index: {property_string}"

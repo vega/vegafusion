@@ -402,10 +402,8 @@ mod test_time_and_utc_format {
         case("utcFormat(1589603400000, '%Y-%m-%d %G %g %s')"),
         case("timeFormat(datetime(87, 3, 10, 7, 35, 10, 123), '%a %A %b %B %d %e %g')"),
         case("utcFormat(datetime(87, 3, 10, 7, 35, 10, 123), '%a %A %b %B %d %e %g')"),
-
-        // // bug where millis are dropped: https://github.com/apache/datafusion/issues/13125
-        // case("timeFormat(datetime(87, 3, 10, 7, 35, 10, 123), '%Y-%m-%d %H:%M:%S.%L')"),
-        // case("utcFormat(datetime(87, 3, 10, 7, 35, 10, 123), '%Y-%m-%d %H:%M:%S.%f')")
+        case("timeFormat(datetime(87, 3, 10, 7, 35, 10, 123), '%Y-%m-%d %H:%M:%S.%L')"),
+        case("utcFormat(datetime(87, 3, 10, 7, 35, 10, 123), '%Y-%m-%d %H:%M:%S.%f')")
     )]
     fn test(expr: &str) {
         check_scalar_evaluation(expr, &config_a())
