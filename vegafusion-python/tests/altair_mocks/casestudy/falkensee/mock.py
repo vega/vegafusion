@@ -1,7 +1,7 @@
 # https://altair-viz.github.io/gallery/falkensee.html
 
 import altair as alt
-import pandas as pd
+import polars as pl
 from datetime import date
 
 source = [
@@ -51,8 +51,8 @@ source2 = [
 ]
 
 
-source = pd.DataFrame(source)
-source2 = pd.DataFrame(source2)
+source = pl.DataFrame(source)
+source2 = pl.DataFrame(source2)
 
 line = (
     alt.Chart(source)
