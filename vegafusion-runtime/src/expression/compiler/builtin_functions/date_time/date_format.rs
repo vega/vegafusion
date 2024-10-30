@@ -41,7 +41,6 @@ pub fn time_format_fn(
         schema,
     )?;
 
-    // Ok(to_char(to_local_time(vec![timestamptz_expr]), lit(format_str)))
     Ok(to_char(timestamptz_expr, lit(format_str)))
 }
 

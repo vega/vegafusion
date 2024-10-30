@@ -121,7 +121,6 @@ impl TaskCall for DataUrlTask {
             file_type.as_deref()
         };
 
-        // let registered_tables = ctx.tables().await?;
         let df = if let Some(inline_name) = extract_inline_dataset(&url) {
             let inline_name = inline_name.trim().to_string();
             if let Some(inline_dataset) = inline_datasets.get(&inline_name) {
