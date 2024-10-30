@@ -56,10 +56,6 @@ version = "1.6.9"
 [dependencies.datafusion-common]
 workspace = true
 
-[dependencies.vegafusion-dataframe]
-path = "../vegafusion-dataframe"
-version = "1.6.9"
-
 [dependencies.pyo3]
 workspace = true
 optional = true

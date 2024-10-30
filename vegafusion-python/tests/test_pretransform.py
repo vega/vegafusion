@@ -1,10 +1,12 @@
 import base64
+import datetime
 import json
 from datetime import date
 from importlib.util import find_spec
 
 import pandas as pd
 import polars as pl
+import polars.testing as pl_testing
 import pyarrow as pa
 import pytest
 from pandas import NaT, Timestamp
@@ -1470,7 +1472,7 @@ def test_pre_transform_planner_warning2():
 
 
 def test_date32_pre_transform_dataset():
-    # Test to make sure that date32 columns are interpreted in the local timezone
+    # Test to make sure that date32 columns round trip as dates
     dates_df = pd.DataFrame(
         {
             "date_col": [date(2022, 1, 1), date(2022, 1, 2), date(2022, 1, 3)],
@@ -1487,15 +1489,11 @@ def test_date32_pre_transform_dataset():
     )
 
     # Timestamps are in the local timezone, so they should be midnight local time
-    assert list(output_ds.date_col) == [
-        pd.Timestamp("2022-01-01 00:00:00-0500", tz="America/New_York"),
-        pd.Timestamp("2022-01-02 00:00:00-0500", tz="America/New_York"),
-        pd.Timestamp("2022-01-03 00:00:00-0500", tz="America/New_York"),
-    ]
+    pd.testing.assert_series_equal(output_ds.date_col, dates_df.date_col)
 
 
 def test_date32_pre_transform_dataset_polars():
-    # Test to make sure that date32 columns are interpreted in the local timezone
+    # Test to make sure that date32 columns round trip as dates
     dates_df = pl.DataFrame(
         {
             "date_col": [date(2022, 1, 1), date(2022, 1, 2), date(2022, 1, 3)],
@@ -1511,12 +1509,7 @@ def test_date32_pre_transform_dataset_polars():
         inline_datasets={"dates": dates_df},
     )
 
-    # Timestamps are in the local timezone, so they should be midnight local time
-    assert list(output_ds["date_col"]) == [
-        pd.Timestamp("2022-01-01 00:00:00-0500", tz="America/New_York"),
-        pd.Timestamp("2022-01-02 00:00:00-0500", tz="America/New_York"),
-        pd.Timestamp("2022-01-03 00:00:00-0500", tz="America/New_York"),
-    ]
+    pl_testing.assert_series_equal(output_ds["date_col"], dates_df["date_col"])
 
 
 def test_date32_in_timeunit_crash():
@@ -1605,7 +1598,7 @@ def test_nat_values():
     dataset = datasets[0]
     assert dataset.to_dict("records")[0] == {
         "NULL_TEST": pd.Timestamp("2011-03-01 00:00:00+0000", tz="UTC"),
-        "ORDER_DATE": Timestamp("2011-03-01 00:00:00+0000", tz="UTC"),
+        "ORDER_DATE": datetime.date(2011, 3, 1),
         "SALES": 457.568,
         "SALES_end": 457.568,
         "SALES_start": 0.0,
@@ -1644,6 +1637,8 @@ def test_pre_transform_dataset_dataframe_interface_protocol():
 def test_gh_268_hang():
     """
     Tests for hang reported in https://github.com/hex-inc/vegafusion/issues/268
+
+    Also tests Utf8View input from Polars
     """
     # Load movies into polars
     movies = pd.read_json(

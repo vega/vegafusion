@@ -2,10 +2,10 @@ use crate::expression::compiler::builtin_functions::array::length::length_transf
 use crate::expression::compiler::compile;
 use crate::expression::compiler::config::CompilationConfig;
 use crate::expression::compiler::utils::ExprHelpers;
-use datafusion_expr::{expr, lit, Expr};
-use datafusion_functions::expr_fn::substring;
+use datafusion_expr::{lit, Expr};
+use datafusion_functions::expr_fn::{get_field, substring};
+use datafusion_functions_nested::expr_fn::array_element;
 use std::convert::TryFrom;
-use std::sync::Arc;
 use vegafusion_common::arrow::array::Int64Array;
 use vegafusion_common::arrow::compute::cast;
 use vegafusion_common::arrow::datatypes::DataType;
@@ -14,7 +14,6 @@ use vegafusion_common::datafusion_common::{DFSchema, ScalarValue};
 use vegafusion_common::datatypes::{data_type, is_numeric_datatype};
 use vegafusion_core::error::{Result, ResultWithContext, VegaFusionError};
 use vegafusion_core::proto::gen::expression::{Identifier, MemberExpression};
-use vegafusion_datafusion_udfs::udfs::member::{make_get_element_udf, make_get_object_member_udf};
 
 pub fn compile_member(
     node: &MemberExpression,
@@ -73,10 +72,7 @@ pub fn compile_member(
     let expr = match dtype {
         DataType::Struct(ref fields) => {
             if fields.iter().any(|f| f.name() == &property_string) {
-                Expr::ScalarFunction(expr::ScalarFunction {
-                    func: Arc::new(make_get_object_member_udf(&dtype, &property_string)?),
-                    args: vec![compiled_object],
-                })
+                get_field(compiled_object, property_string)
             } else {
                 // Property does not exist, return null
                 return Ok(lit(ScalarValue::try_from(&DataType::Float64).unwrap()));
@@ -88,7 +84,7 @@ pub fn compile_member(
             } else if matches!(dtype, DataType::Utf8 | DataType::LargeUtf8) {
                 if let Some(index) = index {
                     // SQL substr function is 1-indexed so add one
-                    substring(compiled_object, lit((index + 1) as i64), lit(1i64))
+                    substring(compiled_object, lit((index + 1) as i32), lit(1i64))
                 } else {
                     return Err(VegaFusionError::compilation(format!(
                         "Non-numeric element index: {property_string}"
@@ -96,10 +92,7 @@ pub fn compile_member(
                 }
             } else if matches!(dtype, DataType::List(_) | DataType::FixedSizeList(_, _)) {
                 if let Some(index) = index {
-                    Expr::ScalarFunction(expr::ScalarFunction {
-                        func: Arc::new(make_get_element_udf(index as i32)),
-                        args: vec![compiled_object],
-                    })
+                    array_element(compiled_object, lit((index + 1) as i32))
                 } else {
                     return Err(VegaFusionError::compilation(format!(
                         "Non-numeric element index: {property_string}"

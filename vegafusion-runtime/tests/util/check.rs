@@ -15,14 +15,14 @@ use vegafusion_common::error::Result;
 use vegafusion_core::expression::parser::parse;
 use vegafusion_core::proto::gen::transforms::TransformPipeline;
 use vegafusion_core::spec::transform::TransformSpec;
-use vegafusion_dataframe::connection::Connection;
+use vegafusion_runtime::data::util::SessionContextUtils;
+use vegafusion_runtime::datafusion::context::make_datafusion_context;
 use vegafusion_runtime::expression::compiler::compile;
 use vegafusion_runtime::expression::compiler::config::CompilationConfig;
 use vegafusion_runtime::expression::compiler::utils::ExprHelpers;
 use vegafusion_runtime::task_graph::timezone::RuntimeTzConfig;
 use vegafusion_runtime::tokio_runtime::TOKIO_RUNTIME;
 use vegafusion_runtime::transform::pipeline::TransformPipelineUtils;
-use vegafusion_sql::connection::datafusion_conn::{make_datafusion_context, DataFusionConnection};
 
 pub fn check_expr_supported(expr_str: &str) {
     let expr = parse(expr_str).unwrap();
@@ -69,7 +69,7 @@ pub fn check_scalar_evaluation(expr_str: &str, config: &CompilationConfig) {
 
     println!("{result:?}");
     let tol = 1e-6;
-    assert_scalars_almost_equals(&result, &expected, tol, "scalar", 0);
+    assert_scalars_almost_equals(&result, &expected, tol, "scalar", 0, false);
 }
 
 pub fn check_transform_evaluation(
@@ -118,13 +118,14 @@ pub fn eval_vegafusion_transforms(
     transform_specs: &[TransformSpec],
     compilation_config: &CompilationConfig,
 ) -> (VegaFusionTable, Vec<ScalarValue>) {
-    let ctx = make_datafusion_context();
-    let conn = Arc::new(DataFusionConnection::new(Arc::new(ctx))) as Arc<dyn Connection>;
+    let ctx = Arc::new(make_datafusion_context());
 
     // add ordering column
     let data = data.clone().with_ordering().unwrap();
     let pipeline = TransformPipeline::try_from(transform_specs).unwrap();
-    let sql_df = (*TOKIO_RUNTIME).block_on(conn.scan_arrow(data)).unwrap();
+    let sql_df = (*TOKIO_RUNTIME)
+        .block_on(ctx.vegafusion_table(data))
+        .unwrap();
 
     let (result_data, result_signals) = TOKIO_RUNTIME
         .block_on(pipeline.eval_sql(sql_df, compilation_config))

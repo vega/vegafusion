@@ -133,7 +133,7 @@ pub trait VegaFusionRuntimeTrait: Send + Sync {
             )
             .await?;
 
-        apply_pre_transform_datasets(input_spec, &plan, init, options.row_limit.map(|l| l as u32))
+        apply_pre_transform_datasets(input_spec, &plan, init, options.row_limit)
     }
 
     async fn pre_transform_extract(
@@ -398,13 +398,9 @@ pub fn encode_inline_datasets(
     datasets: &HashMap<String, VegaFusionDataset>,
 ) -> Result<Vec<InlineDataset>> {
     datasets
-        .into_iter()
+        .iter()
         .map(|(name, dataset)| {
-            let VegaFusionDataset::Table { table, hash: _ } = dataset else {
-                return Err(VegaFusionError::internal(
-                    "grpc runtime suppors Arrow tables only, not general Datasets".to_string(),
-                ));
-            };
+            let VegaFusionDataset::Table { table, hash: _ } = dataset;
             Ok(InlineDataset {
                 name: name.clone(),
                 table: table.to_ipc_bytes()?,

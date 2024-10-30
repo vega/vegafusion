@@ -19,8 +19,8 @@ mod test_stringify_datetimes {
     use vegafusion_core::proto::gen::pretransform::PreTransformSpecOpts;
     use vegafusion_core::runtime::VegaFusionRuntimeTrait;
     use vegafusion_core::spec::chart::ChartSpec;
+    use vegafusion_runtime::datafusion::context::make_datafusion_context;
     use vegafusion_runtime::task_graph::runtime::VegaFusionRuntime;
-    use vegafusion_sql::connection::datafusion_conn::DataFusionConnection;
 
     #[rstest(
         local_tz,
@@ -83,7 +83,7 @@ mod test_stringify_datetimes {
 
         // Initialize task graph runtime
         let runtime = VegaFusionRuntime::new(
-            Arc::new(DataFusionConnection::default()),
+            Arc::new(make_datafusion_context()),
             Some(16),
             Some(1024_i32.pow(3) as usize),
         );
@@ -140,7 +140,7 @@ mod test_stringify_datetimes {
 
         // Initialize task graph runtime
         let runtime = VegaFusionRuntime::new(
-            Arc::new(DataFusionConnection::default()),
+            Arc::new(make_datafusion_context()),
             Some(16),
             Some(1024_i32.pow(3) as usize),
         );
@@ -230,7 +230,7 @@ mod test_stringify_datetimes {
         let spec: ChartSpec = serde_json::from_str(&spec_str).unwrap();
         // Initialize task graph runtime
         let runtime = VegaFusionRuntime::new(
-            Arc::new(DataFusionConnection::default()),
+            Arc::new(make_datafusion_context()),
             Some(16),
             Some(1024_i32.pow(3) as usize),
         );
@@ -299,7 +299,7 @@ mod test_stringify_datetimes {
 
         // Initialize task graph runtime
         let runtime = VegaFusionRuntime::new(
-            Arc::new(DataFusionConnection::default()),
+            Arc::new(make_datafusion_context()),
             Some(16),
             Some(1024_i32.pow(3) as usize),
         );
@@ -348,7 +348,7 @@ mod test_stringify_datetimes {
 
         // Initialize task graph runtime
         let runtime = VegaFusionRuntime::new(
-            Arc::new(DataFusionConnection::default()),
+            Arc::new(make_datafusion_context()),
             Some(16),
             Some(1024_i32.pow(3) as usize),
         );

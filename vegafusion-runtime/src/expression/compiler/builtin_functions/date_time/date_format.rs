@@ -1,27 +1,24 @@
+use crate::expression::compiler::utils::ExprHelpers;
 use crate::task_graph::timezone::RuntimeTzConfig;
-use datafusion_expr::{expr, lit, Expr, ExprSchemable};
-use std::sync::Arc;
+use crate::transform::timeunit::to_timestamp_col;
+use datafusion_expr::{lit, Expr};
+use datafusion_functions::expr_fn::to_char;
+use std::collections::HashMap;
 use vegafusion_common::arrow::datatypes::DataType;
 use vegafusion_common::datafusion_common::{DFSchema, ScalarValue};
-use vegafusion_common::datatypes::{cast_to, is_numeric_datatype};
 use vegafusion_core::arrow::datatypes::TimeUnit;
 use vegafusion_core::error::{Result, VegaFusionError};
-use vegafusion_datafusion_udfs::udfs::datetime::epoch_to_utc_timestamp::EPOCH_MS_TO_UTC_TIMESTAMP_UDF;
-use vegafusion_datafusion_udfs::udfs::datetime::format_timestamp::FORMAT_TIMESTAMP_UDF;
-use vegafusion_datafusion_udfs::udfs::datetime::from_utc_timestamp::FROM_UTC_TIMESTAMP_UDF;
-use vegafusion_datafusion_udfs::udfs::datetime::str_to_utc_timestamp::STR_TO_UTC_TIMESTAMP_UDF;
-use vegafusion_datafusion_udfs::udfs::datetime::utc_timestamp_to_str::UTC_TIMESTAMP_TO_STR_UDF;
 
 pub fn time_format_fn(
     tz_config: &RuntimeTzConfig,
     args: &[Expr],
     schema: &DFSchema,
 ) -> Result<Expr> {
-    let format_str = extract_format_str(args)?;
+    let format_str = d3_to_chrono_format(&extract_format_str(args)?);
 
     // Handle format timezone override
     let format_tz_str = if args.len() >= 3 {
-        // Second argument is a an override local timezone string
+        // Second argument is an override local timezone string
         let format_tz_expr = &args[2];
         if let Expr::Literal(ScalarValue::Utf8(Some(format_tz_str))) = format_tz_expr {
             format_tz_str.clone()
@@ -34,33 +31,17 @@ pub fn time_format_fn(
         tz_config.local_tz.to_string()
     };
 
-    let mut timestamptz_expr =
-        to_timestamptz_expr(&args[0], schema, &tz_config.default_input_tz.to_string())?;
+    let timestamptz_expr = to_timestamp_col(
+        args[0].clone(),
+        schema,
+        &tz_config.default_input_tz.to_string(),
+    )?
+    .try_cast_to(
+        &DataType::Timestamp(TimeUnit::Millisecond, Some(format_tz_str.into())),
+        schema,
+    )?;
 
-    if format_str == "%Y-%m-%dT%H:%M:%S.%L" {
-        // Special case for ISO-8601 format with milliseconds. The UTC_TIMESTAMP_TO_STR_UDF
-        // is compatible with more SQL dialects, so we want to use it if possible
-        let udf_args = vec![timestamptz_expr, lit(&format_tz_str)];
-        Ok(Expr::ScalarFunction(expr::ScalarFunction {
-            func: Arc::new((*UTC_TIMESTAMP_TO_STR_UDF).clone()),
-            args: udf_args,
-        }))
-    } else {
-        // General case
-        if format_tz_str.to_ascii_lowercase() != "utc" {
-            timestamptz_expr = Expr::ScalarFunction(expr::ScalarFunction {
-                func: Arc::new((*FROM_UTC_TIMESTAMP_UDF).clone()),
-                args: vec![timestamptz_expr, lit(format_tz_str)],
-            })
-        }
-
-        let udf_args = vec![timestamptz_expr, lit(format_str)];
-
-        Ok(Expr::ScalarFunction(expr::ScalarFunction {
-            func: Arc::new((*FORMAT_TIMESTAMP_UDF).clone()),
-            args: udf_args,
-        }))
-    }
+    Ok(to_char(timestamptz_expr, lit(format_str)))
 }
 
 pub fn utc_format_fn(
@@ -68,56 +49,18 @@ pub fn utc_format_fn(
     args: &[Expr],
     schema: &DFSchema,
 ) -> Result<Expr> {
-    let format_str = extract_format_str(args)?;
-    let timestamptz_expr =
-        to_timestamptz_expr(&args[0], schema, &tz_config.default_input_tz.to_string())?;
+    let format_str = d3_to_chrono_format(&extract_format_str(args)?);
+    let timestamptz_expr = to_timestamp_col(
+        args[0].clone(),
+        schema,
+        &tz_config.default_input_tz.to_string(),
+    )?
+    .try_cast_to(
+        &DataType::Timestamp(TimeUnit::Millisecond, Some("UTC".into())),
+        schema,
+    )?;
 
-    if format_str == "%Y-%m-%dT%H:%M:%S.%L" {
-        // Special case for ISO-8601 format with milliseconds. The UTC_TIMESTAMP_TO_STR_UDF
-        // is compatible with more SQL dialects, so we want to use it if possible
-        let udf_args = vec![timestamptz_expr, lit("UTC")];
-        Ok(Expr::ScalarFunction(expr::ScalarFunction {
-            func: Arc::new((*UTC_TIMESTAMP_TO_STR_UDF).clone()),
-            args: udf_args,
-        }))
-    } else {
-        // General case
-        let udf_args = vec![timestamptz_expr, lit(format_str)];
-        Ok(Expr::ScalarFunction(expr::ScalarFunction {
-            func: Arc::new((*FORMAT_TIMESTAMP_UDF).clone()),
-            args: udf_args,
-        }))
-    }
-}
-
-fn to_timestamptz_expr(arg: &Expr, schema: &DFSchema, default_input_tz: &str) -> Result<Expr> {
-    Ok(match arg.get_type(schema)? {
-        DataType::Date32 => Expr::Cast(expr::Cast {
-            expr: Box::new(arg.clone()),
-            data_type: DataType::Timestamp(TimeUnit::Millisecond, None),
-        }),
-        DataType::Date64 => Expr::Cast(expr::Cast {
-            expr: Box::new(arg.clone()),
-            data_type: DataType::Timestamp(TimeUnit::Millisecond, None),
-        }),
-        DataType::Timestamp(_, _) => arg.clone(),
-        DataType::Utf8 => Expr::ScalarFunction(expr::ScalarFunction {
-            func: Arc::new((*STR_TO_UTC_TIMESTAMP_UDF).clone()),
-            args: vec![arg.clone(), lit(default_input_tz)],
-        }),
-        DataType::Null => arg.clone(),
-        dtype if is_numeric_datatype(&dtype) || matches!(dtype, DataType::Boolean) => {
-            Expr::ScalarFunction(expr::ScalarFunction {
-                func: Arc::new((*EPOCH_MS_TO_UTC_TIMESTAMP_UDF).clone()),
-                args: vec![cast_to(arg.clone(), &DataType::Int64, schema)?],
-            })
-        }
-        dtype => {
-            return Err(VegaFusionError::internal(format!(
-                "Invalid argument type to timeFormat function: {dtype:?}"
-            )))
-        }
-    })
+    Ok(to_char(timestamptz_expr, lit(format_str)))
 }
 
 pub fn extract_format_str(args: &[Expr]) -> Result<String> {
@@ -139,4 +82,64 @@ pub fn extract_format_str(args: &[Expr]) -> Result<String> {
         ))
     }?;
     Ok(format_str)
+}
+
+pub fn d3_to_chrono_format(format: &str) -> String {
+    // Initialize mapping of special cases
+    let mut special_cases = HashMap::new();
+    special_cases.insert("%L", "%3f"); // D3 milliseconds to Chrono's 3-digit fractional seconds
+    special_cases.insert("%f", "%6f"); // D3 microseconds to Chrono's 6-digit fractional seconds
+    special_cases.insert("%Q", ""); // D3 milliseconds since epoch not supported
+    special_cases.insert("%q", ""); // Quarter not directly supported in Chrono
+    special_cases.insert("%Z", "%:z"); // D3's %Z is similar to Chrono's %:z (offset without colon)
+
+    let mut result = String::new();
+    let mut chars = format.chars().peekable();
+
+    while let Some(c) = chars.next() {
+        if c == '%' {
+            if let Some(&next_char) = chars.peek() {
+                let specifier = format!(r"%{next_char}");
+                if let Some(replacement) = special_cases.get(specifier.as_str()) {
+                    result.push_str(replacement);
+                } else {
+                    result.push_str(&specifier);
+                }
+                chars.next();
+            }
+        } else {
+            result.push(c);
+        }
+    }
+
+    result
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_basic_conversion() {
+        assert_eq!(d3_to_chrono_format("%Y-%m-%d"), "%Y-%m-%d");
+        assert_eq!(d3_to_chrono_format("%H:%M:%S"), "%H:%M:%S");
+        assert_eq!(d3_to_chrono_format("%%"), "%%");
+    }
+
+    #[test]
+    fn test_special_cases() {
+        assert_eq!(d3_to_chrono_format("%L"), "%3f");
+        assert_eq!(d3_to_chrono_format("%f"), "%6f");
+        assert_eq!(d3_to_chrono_format("%Z"), "%:z");
+        assert_eq!(d3_to_chrono_format("%Q"), "");
+        assert_eq!(d3_to_chrono_format("%q"), "");
+    }
+
+    #[test]
+    fn test_complex_format() {
+        assert_eq!(
+            d3_to_chrono_format("%Y-%m-%d %H:%M:%S.%L %Z"),
+            "%Y-%m-%d %H:%M:%S.%3f %:z"
+        );
+    }
 }

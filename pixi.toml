@@ -68,7 +68,7 @@ build-wasm = { cmd = "cd vegafusion-wasm && npm install && wasm-pack build --rel
   "install-wasm-toolchain",
   "install-wasm-pack",
 ] }
-pack-wasm = { cmd = "cd vegafusion-wasm && wasm-pack pack", depends_on = [
+pack-wasm = { cmd = "cd vegafusion-wasm && wasm-pack pack && node scripts/update-pkg.js", depends_on = [
   "build-wasm",
 ] }
 

@@ -4,12 +4,12 @@ use std::collections::HashMap;
 use std::convert::TryFrom;
 
 use crate::task_graph::timezone::RuntimeTzConfig;
+use crate::transform::utils::to_epoch_millis;
 use datafusion_expr::expr::Case;
 use datafusion_expr::{expr, lit, Between, Expr, ExprSchemable};
 use datafusion_functions::expr_fn::ceil;
 use std::str::FromStr;
-use std::sync::Arc;
-use vegafusion_common::arrow::datatypes::{DataType, TimeUnit};
+use vegafusion_common::arrow::datatypes::DataType;
 use vegafusion_common::column::flat_col;
 use vegafusion_common::data::scalar::{ArrayRefHelpers, ScalarValue};
 use vegafusion_common::data::table::VegaFusionTable;
@@ -23,8 +23,6 @@ use vegafusion_core::proto::gen::expression::literal::Value;
 use vegafusion_core::proto::gen::{
     expression::expression::Expr as ProtoExpr, expression::Expression, expression::Literal,
 };
-use vegafusion_datafusion_udfs::udfs::datetime::str_to_utc_timestamp::STR_TO_UTC_TIMESTAMP_UDF;
-use vegafusion_datafusion_udfs::udfs::datetime::utc_timestamp_to_epoch::UTC_TIMESTAMP_TO_EPOCH_MS;
 
 /// Op
 #[derive(Debug, Clone)]
@@ -129,12 +127,9 @@ impl FieldSpec {
         // Convert timestamp column to integer milliseconds before comparisons.
         let field_col = if matches!(
             field_col.get_type(schema)?,
-            DataType::Timestamp(TimeUnit::Millisecond, _)
+            DataType::Timestamp(_, _) | DataType::Date32 | DataType::Date64
         ) {
-            Expr::ScalarFunction(expr::ScalarFunction {
-                func: Arc::new((*UTC_TIMESTAMP_TO_EPOCH_MS).clone()),
-                args: vec![field_col],
-            })
+            to_epoch_millis(field_col, default_input_tz, schema)?
         } else {
             field_col
         };
@@ -267,20 +262,19 @@ impl FieldSpec {
     ) -> Result<Expr> {
         match scalar {
             ScalarValue::Utf8(Some(s))
+            | ScalarValue::LargeUtf8(Some(s))
+            | ScalarValue::Utf8View(Some(s))
                 if parse_datetime(&s, &Some(chrono_tz::UTC)).is_some()
                     && is_numeric_datatype(field_type) =>
             {
-                let timestamp_expr = Expr::ScalarFunction(expr::ScalarFunction {
-                    func: Arc::new((*STR_TO_UTC_TIMESTAMP_UDF).clone()),
-                    args: vec![lit(s), lit(default_input_tz)],
-                });
-                let ms_expr = Expr::ScalarFunction(expr::ScalarFunction {
-                    func: Arc::new((*UTC_TIMESTAMP_TO_EPOCH_MS).clone()),
-                    args: vec![timestamp_expr],
-                });
+                let ms_expr = to_epoch_millis(lit(s), default_input_tz, schema)?;
                 cast_to(ms_expr, field_type, schema)
             }
-            ScalarValue::Utf8(Some(s)) if field_type == &DataType::Boolean => {
+            ScalarValue::Utf8(Some(s))
+            | ScalarValue::LargeUtf8(Some(s))
+            | ScalarValue::Utf8View(Some(s))
+                if field_type == &DataType::Boolean =>
+            {
                 // If comparing string to boolean, treat "false" and "" as false,
                 // all others as true
                 Ok(match s.as_str() {

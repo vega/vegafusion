@@ -2,6 +2,7 @@ use crate::expression::compiler::compile;
 use crate::expression::compiler::config::CompilationConfig;
 use crate::expression::compiler::utils::ExprHelpers;
 use crate::task_graph::task::TaskCall;
+use std::borrow::Cow;
 
 use async_trait::async_trait;
 
@@ -10,6 +11,13 @@ use std::collections::{HashMap, HashSet};
 use std::path::Path;
 use vegafusion_core::data::dataset::VegaFusionDataset;
 
+use datafusion::datasource::listing::ListingTableUrl;
+use datafusion::datasource::object_store::ObjectStoreUrl;
+use datafusion::execution::options::{ArrowReadOptions, ReadOptions};
+use datafusion::parquet::data_type::AsBytes;
+use datafusion::prelude::{CsvReadOptions, DataFrame, ParquetReadOptions, SessionContext};
+use datafusion_common::config::TableOptions;
+use datafusion_functions::expr_fn::make_date;
 use std::sync::Arc;
 use tokio::io::AsyncReadExt;
 
@@ -27,24 +35,20 @@ use vegafusion_core::proto::gen::transforms::TransformPipeline;
 use vegafusion_core::task_graph::task::{InputVariable, TaskDependencies};
 use vegafusion_core::task_graph::task_value::TaskValue;
 
+use crate::data::util::{DataFrameUtils, SessionContextUtils};
+use crate::transform::utils::str_to_timestamp;
 use object_store::aws::AmazonS3Builder;
-use object_store::ObjectStore;
+use object_store::http::HttpBuilder;
+use object_store::{ClientOptions, ObjectStore};
 use reqwest_middleware::{ClientBuilder, ClientWithMiddleware};
 use reqwest_retry::{policies::ExponentialBackoff, RetryTransientMiddleware};
-use vegafusion_common::arrow::datatypes::{DataType, Field, Schema};
+use vegafusion_common::arrow::datatypes::{DataType, Field, Schema, TimeUnit};
 use vegafusion_common::column::flat_col;
 use vegafusion_common::data::table::VegaFusionTable;
 use vegafusion_common::data::ORDER_COL;
 use vegafusion_common::datatypes::{is_integer_datatype, is_string_datatype};
 use vegafusion_core::proto::gen::transforms::transform::TransformKind;
 use vegafusion_core::spec::visitors::extract_inline_dataset;
-use vegafusion_dataframe::connection::Connection;
-use vegafusion_dataframe::csv::CsvReadOptions;
-use vegafusion_dataframe::dataframe::DataFrame;
-use vegafusion_datafusion_udfs::udfs::datetime::date_to_utc_timestamp::DATE_TO_UTC_TIMESTAMP_UDF;
-use vegafusion_datafusion_udfs::udfs::datetime::make_utc_timestamp::MAKE_UTC_TIMESTAMP;
-use vegafusion_datafusion_udfs::udfs::datetime::str_to_utc_timestamp::STR_TO_UTC_TIMESTAMP_UDF;
-use vegafusion_datafusion_udfs::udfs::datetime::to_utc_timestamp::TO_UTC_TIMESTAMP_UDF;
 
 pub fn build_compilation_config(
     input_vars: &[InputVariable],
@@ -83,7 +87,7 @@ impl TaskCall for DataUrlTask {
         values: &[TaskValue],
         tz_config: &Option<RuntimeTzConfig>,
         inline_datasets: HashMap<String, VegaFusionDataset>,
-        conn: Arc<dyn Connection>,
+        ctx: Arc<SessionContext>,
     ) -> Result<(TaskValue, Vec<TaskValue>)> {
         // Build compilation config for url signal (if any) and transforms (if any)
         let config = build_compilation_config(&self.input_vars(), values, tz_config);
@@ -117,37 +121,36 @@ impl TaskCall for DataUrlTask {
             file_type.as_deref()
         };
 
-        let registered_tables = conn.tables().await?;
         let df = if let Some(inline_name) = extract_inline_dataset(&url) {
             let inline_name = inline_name.trim().to_string();
             if let Some(inline_dataset) = inline_datasets.get(&inline_name) {
                 match inline_dataset {
                     VegaFusionDataset::Table { table, .. } => {
-                        conn.scan_arrow(table.clone().with_ordering()?).await?
+                        let table = table.clone().with_ordering()?;
+                        ctx.vegafusion_table(table).await?
                     }
-                    VegaFusionDataset::DataFrame(df) => df.clone(),
                 }
-            } else if registered_tables.contains_key(&inline_name) {
-                conn.scan_table(&inline_name).await?
+            } else if let Ok(df) = ctx.table(&inline_name).await {
+                df
             } else {
                 return Err(VegaFusionError::internal(format!(
                     "No inline dataset named {inline_name}"
                 )));
             }
         } else if file_type == Some("csv") || (file_type.is_none() && url.ends_with(".csv")) {
-            read_csv(&url, &parse, conn, false).await?
+            read_csv(&url, &parse, ctx, false).await?
         } else if file_type == Some("tsv") || (file_type.is_none() && url.ends_with(".tsv")) {
-            read_csv(&url, &parse, conn, true).await?
+            read_csv(&url, &parse, ctx, true).await?
         } else if file_type == Some("json") || (file_type.is_none() && url.ends_with(".json")) {
-            read_json(&url, conn).await?
+            read_json(&url, ctx).await?
         } else if file_type == Some("arrow")
             || (file_type.is_none() && (url.ends_with(".arrow") || url.ends_with(".feather")))
         {
-            read_arrow(&url, conn).await?
+            read_arrow(&url, ctx).await?
         } else if file_type == Some("parquet")
             || (file_type.is_none() && (url.ends_with(".parquet")))
         {
-            read_parquet(&url, conn).await?
+            read_parquet(&url, ctx).await?
         } else {
             return Err(VegaFusionError::internal(format!(
                 "Invalid url file extension {url}"
@@ -155,7 +158,7 @@ impl TaskCall for DataUrlTask {
         };
 
         // Ensure there is an ordering column present
-        let df = if df.schema().column_with_name(ORDER_COL).is_none() {
+        let df = if df.schema().inner().column_with_name(ORDER_COL).is_none() {
             df.with_index(ORDER_COL).await?
         } else {
             df
@@ -172,7 +175,7 @@ impl TaskCall for DataUrlTask {
 }
 
 async fn eval_sql_df(
-    sql_df: Arc<dyn DataFrame>,
+    sql_df: DataFrame,
     pipeline: &Option<TransformPipeline>,
     config: &CompilationConfig,
 ) -> Result<(TaskValue, Vec<TaskValue>)> {
@@ -186,7 +189,10 @@ async fn eval_sql_df(
         pipeline.eval_sql(sql_df, config).await?
     } else {
         // No transforms, just remove any ordering column
-        (sql_df.collect().await?.without_ordering()?, Vec::new())
+        (
+            sql_df.collect_to_table().await?.without_ordering()?,
+            Vec::new(),
+        )
     };
 
     let table_value = TaskValue::Table(transformed_df);
@@ -289,10 +295,10 @@ fn check_builtin_dataset(url: String) -> String {
     }
 }
 
-async fn pre_process_column_types(df: Arc<dyn DataFrame>) -> Result<Arc<dyn DataFrame>> {
+async fn pre_process_column_types(df: DataFrame) -> Result<DataFrame> {
     let mut selections: Vec<Expr> = Vec::new();
     let mut pre_proc_needed = false;
-    for field in df.schema().fields.iter() {
+    for field in df.schema().fields().iter() {
         if field.data_type() == &DataType::LargeUtf8 {
             // Work around https://github.com/apache/arrow-rs/issues/2654 by converting
             // LargeUtf8 to Utf8
@@ -309,17 +315,18 @@ async fn pre_process_column_types(df: Arc<dyn DataFrame>) -> Result<Arc<dyn Data
         }
     }
     if pre_proc_needed {
-        df.select(selections).await
+        Ok(df.select(selections)?)
     } else {
         Ok(df)
     }
 }
 
+/// After processing, all datetime columns are converted to Timestamptz and Date32
 async fn process_datetimes(
     parse: &Option<Parse>,
-    sql_df: Arc<dyn DataFrame>,
+    sql_df: DataFrame,
     tz_config: &Option<RuntimeTzConfig>,
-) -> Result<Arc<dyn DataFrame>> {
+) -> Result<DataFrame> {
     // Perform specialized date parsing
     let mut date_fields: Vec<String> = Vec::new();
     let mut df = sql_df;
@@ -327,35 +334,48 @@ async fn process_datetimes(
         for spec in &formats.specs {
             let datatype = &spec.datatype;
             if datatype.starts_with("date") || datatype.starts_with("utc") {
-                let schema = df.schema_df()?;
+                // look for format string
+                let (typ, fmt) = if let Some((typ, fmt)) = datatype.split_once(':') {
+                    if fmt.starts_with("'") && fmt.ends_with("'") {
+                        (typ.to_lowercase(), Some(fmt[1..fmt.len() - 1].to_string()))
+                    } else {
+                        (typ.to_lowercase(), None)
+                    }
+                } else {
+                    (datatype.to_lowercase(), None)
+                };
+
+                let schema = df.schema();
                 if let Ok(date_field) = schema.field_with_unqualified_name(&spec.name) {
                     let dtype = date_field.data_type();
                     let date_expr = if is_string_datatype(dtype) {
-                        let default_input_tz_str = tz_config
-                            .map(|tz_config| tz_config.default_input_tz.to_string())
-                            .unwrap_or_else(|| "UTC".to_string());
+                        // Compute default timezone
+                        let default_input_tz_str = if typ == "utc" || tz_config.is_none() {
+                            "UTC".to_string()
+                        } else {
+                            tz_config.unwrap().default_input_tz.to_string()
+                        };
 
-                        Expr::ScalarFunction(expr::ScalarFunction {
-                            func: Arc::new((*STR_TO_UTC_TIMESTAMP_UDF).clone()),
-                            args: vec![flat_col(&spec.name), lit(default_input_tz_str)],
-                        })
+                        if let Some(fmt) = fmt {
+                            // Parse with single explicit format
+                            str_to_timestamp(
+                                flat_col(&spec.name),
+                                &default_input_tz_str,
+                                schema,
+                                Some(fmt.as_str()),
+                            )?
+                        } else {
+                            // Parse with auto formats, then localize to default_input_tz
+                            str_to_timestamp(
+                                flat_col(&spec.name),
+                                &default_input_tz_str,
+                                schema,
+                                None,
+                            )?
+                        }
                     } else if is_integer_datatype(dtype) {
-                        // Assume Year was parsed numerically, use local time
-                        let tz_config =
-                            tz_config.with_context(|| "No local timezone info provided")?;
-                        Expr::ScalarFunction(expr::ScalarFunction {
-                            func: Arc::new((*MAKE_UTC_TIMESTAMP).clone()),
-                            args: vec![
-                                flat_col(&spec.name),                        // year
-                                lit(0),                                      // month
-                                lit(1),                                      // day
-                                lit(0),                                      // hour
-                                lit(0),                                      // minute
-                                lit(0),                                      // second
-                                lit(0),                                      // millisecond
-                                lit(tz_config.default_input_tz.to_string()), // time zone
-                            ],
-                        })
+                        // Assume Year was parsed numerically, return Date32
+                        make_date(flat_col(&spec.name), lit(1), lit(1))
                     } else {
                         continue;
                     };
@@ -376,7 +396,7 @@ async fn process_datetimes(
                         })
                         .collect();
                     columns.push(date_expr.alias(&spec.name));
-                    df = df.select(columns).await?
+                    df = df.select(columns)?
                 }
             }
         }
@@ -392,47 +412,38 @@ async fn process_datetimes(
             if !date_fields.contains(field.name()) {
                 let expr = match field.data_type() {
                     DataType::Timestamp(_, tz) => match tz {
-                        Some(tz) => {
-                            // Timestamp has explicit timezone
-                            Expr::ScalarFunction(expr::ScalarFunction {
-                                func: Arc::new((*TO_UTC_TIMESTAMP_UDF).clone()),
-                                args: vec![flat_col(field.name()), lit(tz.as_ref())],
-                            })
+                        Some(_) => {
+                            // Timestamp has explicit timezone, all good
+                            flat_col(field.name())
                         }
                         _ => {
-                            // Naive timestamp, interpret as default_input_tz
+                            // Naive timestamp, localize to default_input_tz
                             let tz_config =
                                 tz_config.with_context(|| "No local timezone info provided")?;
 
-                            Expr::ScalarFunction(expr::ScalarFunction {
-                                func: Arc::new((*TO_UTC_TIMESTAMP_UDF).clone()),
-                                args: vec![
-                                    flat_col(field.name()),
-                                    lit(tz_config.default_input_tz.to_string()),
-                                ],
-                            })
+                            flat_col(field.name()).try_cast_to(
+                                &DataType::Timestamp(
+                                    TimeUnit::Millisecond,
+                                    Some(tz_config.default_input_tz.to_string().into()),
+                                ),
+                                schema,
+                            )?
                         }
                     },
                     DataType::Date64 => {
                         let tz_config =
                             tz_config.with_context(|| "No local timezone info provided")?;
 
-                        Expr::ScalarFunction(expr::ScalarFunction {
-                            func: Arc::new((*TO_UTC_TIMESTAMP_UDF).clone()),
-                            args: vec![
-                                flat_col(field.name()),
-                                lit(tz_config.default_input_tz.to_string()),
-                            ],
-                        })
-                    }
-                    DataType::Date32 => {
-                        let tz_config =
-                            tz_config.with_context(|| "No local timezone info provided")?;
-
-                        Expr::ScalarFunction(expr::ScalarFunction {
-                            func: Arc::new((*DATE_TO_UTC_TIMESTAMP_UDF).clone()),
-                            args: vec![flat_col(field.name()), lit(tz_config.local_tz.to_string())],
-                        })
+                        // Cast to naive timestamp, then localize to timestamp with timezone
+                        flat_col(field.name())
+                            .try_cast_to(&DataType::Timestamp(TimeUnit::Millisecond, None), schema)?
+                            .try_cast_to(
+                                &DataType::Timestamp(
+                                    TimeUnit::Millisecond,
+                                    Some(tz_config.default_input_tz.to_string().into()),
+                                ),
+                                schema,
+                            )?
                     }
                     _ => flat_col(field.name()),
                 };
@@ -448,7 +459,7 @@ async fn process_datetimes(
         })
         .collect::<Result<Vec<_>>>()?;
 
-    df.select(selection).await
+    Ok(df.select(selection)?)
 }
 
 #[async_trait]
@@ -458,7 +469,7 @@ impl TaskCall for DataValuesTask {
         values: &[TaskValue],
         tz_config: &Option<RuntimeTzConfig>,
         _inline_datasets: HashMap<String, VegaFusionDataset>,
-        conn: Arc<dyn Connection>,
+        ctx: Arc<SessionContext>,
     ) -> Result<(TaskValue, Vec<TaskValue>)> {
         // Deserialize data into table
         let values_table = VegaFusionTable::from_ipc_bytes(&self.values)?;
@@ -496,7 +507,7 @@ impl TaskCall for DataValuesTask {
             let config = build_compilation_config(&self.input_vars(), values, tz_config);
 
             // Process datetime columns
-            let df = conn.scan_arrow(values_table).await?;
+            let df = ctx.vegafusion_table(values_table).await?;
             let sql_df = process_datetimes(&parse, df, &config.tz_config).await?;
 
             let (table, output_values) = pipeline.eval_sql(sql_df, &config).await?;
@@ -504,9 +515,9 @@ impl TaskCall for DataValuesTask {
             (table, output_values)
         } else {
             // No transforms
-            let values_df = conn.scan_arrow(values_table).await?;
+            let values_df = ctx.vegafusion_table(values_table).await?;
             let values_df = process_datetimes(&parse, values_df, tz_config).await?;
-            (values_df.collect().await?, Vec::new())
+            (values_df.collect_to_table().await?, Vec::new())
         };
 
         let table_value = TaskValue::Table(transformed_table);
@@ -522,7 +533,7 @@ impl TaskCall for DataSourceTask {
         values: &[TaskValue],
         tz_config: &Option<RuntimeTzConfig>,
         _inline_datasets: HashMap<String, VegaFusionDataset>,
-        conn: Arc<dyn Connection>,
+        ctx: Arc<SessionContext>,
     ) -> Result<(TaskValue, Vec<TaskValue>)> {
         let input_vars = self.input_vars();
         let mut config = build_compilation_config(&input_vars, values, tz_config);
@@ -546,7 +557,7 @@ impl TaskCall for DataSourceTask {
             .unwrap_or(false)
         {
             let pipeline = self.pipeline.as_ref().unwrap();
-            let sql_df = conn.scan_arrow(source_table).await?;
+            let sql_df = ctx.vegafusion_table(source_table).await?;
             let (table, output_values) = pipeline.eval_sql(sql_df, &config).await?;
 
             (table, output_values)
@@ -563,9 +574,9 @@ impl TaskCall for DataSourceTask {
 async fn read_csv(
     url: &str,
     parse: &Option<Parse>,
-    conn: Arc<dyn Connection>,
+    ctx: Arc<SessionContext>,
     is_tsv: bool,
-) -> Result<Arc<dyn DataFrame>> {
+) -> Result<DataFrame> {
     // Build base CSV options
     let mut csv_opts = if is_tsv {
         CsvReadOptions {
@@ -577,26 +588,36 @@ async fn read_csv(
     };
 
     // Add file extension based on URL
-    if let Some(ext) = Path::new(url).extension().and_then(|ext| ext.to_str()) {
-        csv_opts.file_extension = ext.to_string();
+    let ext = if let Some(ext) = Path::new(url).extension().and_then(|ext| ext.to_str()) {
+        ext.to_string()
     } else {
-        csv_opts.file_extension = "".to_string();
-    }
+        "".to_string()
+    };
+
+    csv_opts.file_extension = ext.as_str();
+
+    maybe_register_object_stores_for_url(&ctx, url)?;
 
     // Build schema from Vega parse options
-    let schema = build_csv_schema(parse);
-    csv_opts.schema = schema;
+    let schema = build_csv_schema(&csv_opts, parse, url, &ctx).await?;
+    csv_opts.schema = Some(&schema);
 
-    conn.scan_csv(url, csv_opts).await
+    Ok(ctx.read_csv(url, csv_opts).await?)
 }
 
-fn build_csv_schema(parse: &Option<Parse>) -> Option<Schema> {
+/// Build final schema by combining the input and inferred schemas
+async fn build_csv_schema(
+    csv_opts: &CsvReadOptions<'_>,
+    parse: &Option<Parse>,
+    uri: impl Into<String>,
+    ctx: &SessionContext,
+) -> Result<Schema> {
     // Get HashMap of provided columns formats
     let format_specs = if let Some(parse) = parse {
         match parse {
             Parse::String(_) => {
                 // auto, use inferred schema
-                return None;
+                HashMap::new()
             }
             Parse::Object(field_specs) => field_specs
                 .specs
@@ -608,7 +629,8 @@ fn build_csv_schema(parse: &Option<Parse>) -> Option<Schema> {
         HashMap::new()
     };
 
-    let new_fields: Vec<_> = format_specs
+    // Map formats to fields
+    let field_types: HashMap<_, _> = format_specs
         .iter()
         .map(|(name, vega_type)| {
             let dtype = match vega_type.as_str() {
@@ -618,67 +640,166 @@ fn build_csv_schema(parse: &Option<Parse>) -> Option<Schema> {
                 "string" => DataType::Utf8,
                 _ => DataType::Utf8,
             };
-            Field::new(name, dtype, true)
+            (name.clone(), dtype)
         })
         .collect();
 
-    Some(Schema::new(new_fields))
+    // Get inferred schema
+    let table_path = ListingTableUrl::parse(uri.into().as_str())?;
+    let listing_options =
+        csv_opts.to_listing_options(&ctx.copied_config(), TableOptions::default());
+    let inferred_schema = listing_options
+        .infer_schema(&ctx.state(), &table_path)
+        .await?;
+
+    // Override inferred schema based on parse options
+    let new_fields: Vec<_> = inferred_schema
+        .fields()
+        .iter()
+        .map(|field| {
+            // Use provided field type, but fall back to string for unprovided columns
+            let dtype = field_types
+                .get(field.name())
+                .cloned()
+                .unwrap_or(DataType::Utf8);
+            Field::new(field.name(), dtype, true)
+        })
+        .collect();
+    Ok(Schema::new(new_fields))
 }
 
-async fn read_json(url: &str, conn: Arc<dyn Connection>) -> Result<Arc<dyn DataFrame>> {
-    // Read to json Value from local file or url.
-    let value: serde_json::Value = if url.starts_with("http://") || url.starts_with("https://") {
-        // Perform get request to collect file contents as text
-        let body = make_request_client()
-            .get(url)
-            .send()
-            .await
-            .external(&format!("Failed to get URL data from {url}"))?
-            .text()
-            .await
-            .external("Failed to convert URL data to text")?;
+async fn read_json(url: &str, ctx: Arc<SessionContext>) -> Result<DataFrame> {
+    let value: serde_json::Value =
+        if let Some(base_url) = maybe_register_object_stores_for_url(&ctx, url)? {
+            // Create single use object store that points directly to file
+            let store = ctx.runtime_env().object_store(&base_url)?;
+            let child_url = url.strip_prefix(&base_url.to_string()).unwrap();
+            match store.get(&child_url.into()).await {
+                Ok(get_res) => {
+                    let bytes = get_res.bytes().await?;
+                    let text: Cow<str> = String::from_utf8_lossy(bytes.as_bytes());
+                    serde_json::from_str(text.as_ref())?
+                }
+                Err(e) => {
+                    if url.starts_with("http://") || url.starts_with("https://") {
+                        // Fallback to direct reqwest implementation. This is needed in some cases because
+                        // the object-store http implementation has stricter requirements on what the
+                        // server provides. For example the content-length header is required.
+                        let response = make_request_client()
+                            .get(url)
+                            .send()
+                            .await
+                            .external(format!("Failed to fetch URL: {url}"))?;
 
-        serde_json::from_str(&body)?
-    } else if let Some(bucket_path) = url.strip_prefix("s3://") {
-        let s3= AmazonS3Builder::from_env().with_url(url).build().with_context(||
-            "Failed to initialize s3 connection from environment variables.\n\
-                See https://docs.rs/object_store/latest/object_store/aws/struct.AmazonS3Builder.html#method.from_env".to_string()
-        )?;
-        let Some((_, path)) = bucket_path.split_once('/') else {
+                        let text = response
+                            .text()
+                            .await
+                            .external("Failed to read response as text")?;
+                        serde_json::from_str(&text)?
+                    } else {
+                        return Err(VegaFusionError::from(e));
+                    }
+                }
+            }
+        } else {
+            // Assume local file
+            let mut file = tokio::fs::File::open(url)
+                .await
+                .external(format!("Failed to open as local file: {url}"))?;
+
+            let mut json_str = String::new();
+            file.read_to_string(&mut json_str)
+                .await
+                .external("Failed to read file contents to string")?;
+
+            serde_json::from_str(&json_str)?
+        };
+
+    let table = VegaFusionTable::from_json(&value)?.with_ordering()?;
+    ctx.vegafusion_table(table).await
+}
+
+async fn read_arrow(url: &str, ctx: Arc<SessionContext>) -> Result<DataFrame> {
+    maybe_register_object_stores_for_url(&ctx, url)?;
+    Ok(ctx.read_arrow(url, ArrowReadOptions::default()).await?)
+}
+
+async fn read_parquet(url: &str, ctx: Arc<SessionContext>) -> Result<DataFrame> {
+    maybe_register_object_stores_for_url(&ctx, url)?;
+    Ok(ctx.read_parquet(url, ParquetReadOptions::default()).await?)
+}
+
+fn maybe_register_object_stores_for_url(
+    ctx: &SessionContext,
+    url: &str,
+) -> Result<Option<ObjectStoreUrl>> {
+    // Handle object store registration for non-local sources
+    let maybe_register_http_store = |prefix: &str| -> Result<Option<ObjectStoreUrl>> {
+        if let Some(path) = url.strip_prefix(prefix) {
+            let Some((root, _)) = path.split_once('/') else {
+                return Err(VegaFusionError::specification(format!(
+                    "Invalid https URL: {url}"
+                )));
+            };
+            let base_url_str = format!("https://{root}");
+            let base_url = url::Url::parse(&base_url_str)?;
+
+            // Register store for url if not already registered
+            let object_store_url = ObjectStoreUrl::parse(&base_url_str)?;
+            if ctx
+                .runtime_env()
+                .object_store(object_store_url.clone())
+                .is_err()
+            {
+                let client_options = ClientOptions::new().with_allow_http(true);
+                let http_store = HttpBuilder::new()
+                    .with_url(base_url.clone())
+                    .with_client_options(client_options)
+                    .build()?;
+
+                ctx.register_object_store(&base_url, Arc::new(http_store));
+            }
+            return Ok(Some(object_store_url));
+        }
+        Ok(None)
+    };
+
+    // Register https://
+    if let Some(url) = maybe_register_http_store("https://")? {
+        return Ok(Some(url));
+    }
+
+    // Register http://
+    if let Some(url) = maybe_register_http_store("http://")? {
+        return Ok(Some(url));
+    }
+
+    // Register s3://
+    if let Some(bucket_path) = url.strip_prefix("s3://") {
+        let Some((bucket, _)) = bucket_path.split_once('/') else {
             return Err(VegaFusionError::specification(format!(
                 "Invalid s3 URL: {url}"
             )));
         };
-        let path = object_store::path::Path::from_url_path(path)?;
-        let get_result = s3.get(&path).await?;
-        let b = get_result.bytes().await?;
-        let text = String::from_utf8_lossy(b.as_ref());
-        serde_json::from_str(text.as_ref())?
-    } else {
-        // Assume local file
-        let mut file = tokio::fs::File::open(url)
-            .await
-            .external(format!("Failed to open as local file: {url}"))?;
+        // Register store for url if not already registered
+        let base_url_str = format!("s3://{bucket}/");
+        let object_store_url = ObjectStoreUrl::parse(&base_url_str)?;
+        if ctx
+            .runtime_env()
+            .object_store(object_store_url.clone())
+            .is_err()
+        {
+            let base_url = url::Url::parse(&base_url_str)?;
+            let s3 = AmazonS3Builder::from_env().with_url(base_url.clone()).build().with_context(||
+            "Failed to initialize s3 connection from environment variables.\n\
+                See https://docs.rs/object_store/latest/object_store/aws/struct.AmazonS3Builder.html#method.from_env".to_string()
+            )?;
+            ctx.register_object_store(&base_url, Arc::new(s3));
+        }
+        return Ok(Some(object_store_url));
+    }
 
-        let mut json_str = String::new();
-        file.read_to_string(&mut json_str)
-            .await
-            .external("Failed to read file contents to string")?;
-
-        serde_json::from_str(&json_str)?
-    };
-
-    let table = VegaFusionTable::from_json(&value)?.with_ordering()?;
-
-    conn.scan_arrow(table).await
-}
-
-async fn read_arrow(url: &str, conn: Arc<dyn Connection>) -> Result<Arc<dyn DataFrame>> {
-    conn.scan_arrow_file(url).await
-}
-
-async fn read_parquet(url: &str, conn: Arc<dyn Connection>) -> Result<Arc<dyn DataFrame>> {
-    conn.scan_parquet(url).await
+    Ok(None)
 }
 
 pub fn make_request_client() -> ClientWithMiddleware {

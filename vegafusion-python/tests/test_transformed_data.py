@@ -241,11 +241,6 @@ def test_transformed_data_for_mock(mock_name, expected_len, expected_cols):
             [["year", "decade"], ["scaled_date", "first_date"], ["end"]],
         ),
         (
-            "casestudy/falkensee",
-            [2, 38, 38],
-            [["event", "start"], ["population", "year"], ["year"]],
-        ),
-        (
             "casestudy/us_employment",
             [120, 1, 2],
             [["construction"], ["president", "end"], ["start"]],

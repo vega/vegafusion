@@ -3,7 +3,7 @@ name = "vegafusion-wasm"
 license = "BSD-3-Clause"
 version = "1.6.9"
 edition = "2021"
-description = "VegaFusion WASM package for embedding Vega charts in the browser with a connection to a VegaFusion Runtime\n"
+description = "VegaFusion WASM package for embedding Vega charts in the browser with a connection to a VegaFusion Runtime"
 
 [lib]
 crate-type = ["cdylib", "rlib"]

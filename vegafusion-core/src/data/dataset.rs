@@ -1,21 +1,17 @@
 use crate::error::Result;
 use std::collections::hash_map::DefaultHasher;
 use std::hash::{Hash, Hasher};
-use std::sync::Arc;
 use vegafusion_common::data::table::VegaFusionTable;
-use vegafusion_dataframe::dataframe::DataFrame;
 
 #[derive(Clone)]
 pub enum VegaFusionDataset {
     Table { table: VegaFusionTable, hash: u64 },
-    DataFrame(Arc<dyn DataFrame>),
 }
 
 impl VegaFusionDataset {
     pub fn fingerprint(&self) -> String {
         match self {
             VegaFusionDataset::Table { hash, .. } => hash.to_string(),
-            VegaFusionDataset::DataFrame(df) => df.fingerprint().to_string(),
         }
     }
 
