@@ -294,7 +294,7 @@ impl VegaFusionError {
             }
             #[cfg(feature = "url")]
             UrlParseError(err, context) => {
-                VegaFusionError::UrlParseError(err.clone(), context.clone())
+                VegaFusionError::UrlParseError(*err, context.clone())
             }
         }
     }

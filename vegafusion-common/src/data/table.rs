@@ -605,7 +605,7 @@ fn hash_array_data<H: Hasher>(array_data: &ArrayData, state: &mut H) {
     // For nested types (list, struct), recursively hash child arrays
     let child_data = array_data.child_data();
     for child in child_data {
-        hash_array_data(&child, state);
+        hash_array_data(child, state);
     }
 }
 

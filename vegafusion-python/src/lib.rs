@@ -1,5 +1,4 @@
 use lazy_static::lazy_static;
-use pyo3;
 use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
 use pyo3::types::{PyBytes, PyDict, PyList, PyTuple};
@@ -231,7 +230,7 @@ impl PyVegaFusionRuntime {
         let runtime = tokio_runtime.block_on(async move {
             let innter_url = url;
             let uri =
-                Uri::from_str(&innter_url).map_err(|e| VegaFusionError::internal(e.to_string()))?;
+                Uri::from_str(innter_url).map_err(|e| VegaFusionError::internal(e.to_string()))?;
 
             GrpcVegaFusionRuntime::try_new(Channel::builder(uri).connect().await.map_err(|e| {
                 let msg = format!("Error connecting to gRPC server at {}: {}", innter_url, e);
@@ -442,13 +441,13 @@ impl PyVegaFusionRuntime {
         for (name, scope) in keep_signals.unwrap_or_default() {
             keep_variables.push(PreTransformVariable {
                 variable: Some(Variable::new_signal(&name)),
-                scope: scope,
+                scope,
             });
         }
         for (name, scope) in keep_datasets.unwrap_or_default() {
             keep_variables.push(PreTransformVariable {
                 variable: Some(Variable::new_data(&name)),
-                scope: scope,
+                scope,
             });
         }
 
@@ -532,7 +531,8 @@ impl PyVegaFusionRuntime {
 
     pub fn clear_cache(&self) -> PyResult<()> {
         if let Some(runtime) = self.runtime.as_any().downcast_ref::<VegaFusionRuntime>() {
-            Ok(self.tokio_runtime.block_on(runtime.clear_cache()))
+            self.tokio_runtime.block_on(runtime.clear_cache());
+            Ok(())
         } else {
             Err(PyValueError::new_err(
                 "Current Runtime does not support clear_cache",

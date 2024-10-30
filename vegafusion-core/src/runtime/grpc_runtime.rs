@@ -48,7 +48,7 @@ impl VegaFusionRuntimeTrait for GrpcVegaFusionRuntime {
         indices: &[NodeValueIndex],
         inline_datasets: &HashMap<String, VegaFusionDataset>,
     ) -> Result<Vec<NamedTaskValue>> {
-        let inline_datasets = encode_inline_datasets(&inline_datasets)?;
+        let inline_datasets = encode_inline_datasets(inline_datasets)?;
         let request = QueryRequest {
             request: Some(query_request::Request::TaskGraphValues(
                 TaskGraphValueRequest {
@@ -82,7 +82,7 @@ impl VegaFusionRuntimeTrait for GrpcVegaFusionRuntime {
         inline_datasets: &HashMap<String, VegaFusionDataset>,
         options: &PreTransformSpecOpts,
     ) -> Result<(ChartSpec, Vec<PreTransformSpecWarning>)> {
-        let inline_datasets = encode_inline_datasets(&inline_datasets)?;
+        let inline_datasets = encode_inline_datasets(inline_datasets)?;
 
         let request = PreTransformSpecRequest {
             spec: serde_json::to_string(spec)?,
@@ -115,7 +115,7 @@ impl VegaFusionRuntimeTrait for GrpcVegaFusionRuntime {
         Vec<PreTransformExtractTable>,
         Vec<PreTransformExtractWarning>,
     )> {
-        let inline_datasets = encode_inline_datasets(&inline_datasets)?;
+        let inline_datasets = encode_inline_datasets(inline_datasets)?;
 
         let request = PreTransformExtractRequest {
             spec: serde_json::to_string(spec)?,
@@ -157,7 +157,7 @@ impl VegaFusionRuntimeTrait for GrpcVegaFusionRuntime {
         inline_datasets: &HashMap<String, VegaFusionDataset>,
         options: &PreTransformValuesOpts,
     ) -> Result<(Vec<TaskValue>, Vec<PreTransformValuesWarning>)> {
-        let inline_datasets = encode_inline_datasets(&inline_datasets)?;
+        let inline_datasets = encode_inline_datasets(inline_datasets)?;
 
         let request = PreTransformValuesRequest {
             spec: serde_json::to_string(spec)?,
