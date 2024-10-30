@@ -16,8 +16,8 @@ mod tests {
     use vegafusion_core::spec::chart::ChartSpec;
 
     use vegafusion_core::runtime::VegaFusionRuntimeTrait;
+    use vegafusion_runtime::datafusion::context::make_datafusion_context;
     use vegafusion_runtime::task_graph::runtime::VegaFusionRuntime;
-    use vegafusion_sql::connection::datafusion_conn::DataFusionConnection;
 
     #[tokio::test]
     async fn test_pre_transform_keep_variables() {
@@ -31,7 +31,7 @@ mod tests {
 
         // Initialize task graph runtime
         let runtime = VegaFusionRuntime::new(
-            Arc::new(DataFusionConnection::default()),
+            Arc::new(make_datafusion_context()),
             Some(16),
             Some(1024_i32.pow(3) as usize),
         );

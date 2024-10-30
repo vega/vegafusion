@@ -10,19 +10,19 @@ use vegafusion_core::error::{Result, ResultWithContext};
 use vegafusion_core::proto::gen::transforms::{Collect, SortOrder};
 
 use async_trait::async_trait;
+use datafusion::prelude::DataFrame;
 use datafusion_expr::WindowFrame;
 use vegafusion_common::column::{flat_col, unescaped_col};
 use vegafusion_common::data::ORDER_COL;
 use vegafusion_core::task_graph::task_value::TaskValue;
-use vegafusion_dataframe::dataframe::DataFrame;
 
 #[async_trait]
 impl TransformTrait for Collect {
     async fn eval(
         &self,
-        dataframe: Arc<dyn DataFrame>,
+        dataframe: DataFrame,
         _config: &CompilationConfig,
-    ) -> Result<(Arc<dyn DataFrame>, Vec<TaskValue>)> {
+    ) -> Result<(DataFrame, Vec<TaskValue>)> {
         // Build vector of sort expressions
         let sort_exprs: Vec<_> = self
             .fields
@@ -30,7 +30,12 @@ impl TransformTrait for Collect {
             .into_iter()
             .zip(&self.order)
             .filter_map(|(field, order)| {
-                if dataframe.schema().column_with_name(&field).is_some() {
+                if dataframe
+                    .schema()
+                    .inner()
+                    .column_with_name(&field)
+                    .is_some()
+                {
                     let sort_expr = unescaped_col(&field).sort(
                         *order == SortOrder::Ascending as i32,
                         *order == SortOrder::Ascending as i32,
@@ -58,6 +63,7 @@ impl TransformTrait for Collect {
         // Build vector of selections
         let mut selections = dataframe
             .schema()
+            .inner()
             .fields
             .iter()
             .filter_map(|field| {
@@ -72,7 +78,6 @@ impl TransformTrait for Collect {
 
         let result = dataframe
             .select(selections)
-            .await
             .with_context(|| "Collect transform failed".to_string())?;
         Ok((result, Default::default()))
     }

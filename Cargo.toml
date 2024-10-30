@@ -4,9 +4,6 @@ members = [
   "vegafusion-common",
   "vegafusion-core",
   "vegafusion-runtime",
-  "vegafusion-dataframe",
-  "vegafusion-datafusion-udfs",
-  "vegafusion-sql",
   "vegafusion-python",
   "vegafusion-wasm",
   "vegafusion-server",
@@ -15,14 +12,16 @@ members = [
 [workspace.dependencies]
 arrow = { version = "53.1.0", default-features = false }
 
-sqlparser = { version = "0.50.0" }
+sqlparser = { version = "0.51.0" }
 chrono = { version = "0.4.35", default-features = false }
 chrono-tz = { version = "0.9.0", features = [
   "case-insensitive",
   "filter-by-regex",
 ] }
 deterministic-hash = "1.0.1"
-reqwest = { version = "0.11.22", default-features = false }
+reqwest = { version = "0.12.8", default-features = false }
+reqwest-middleware = { version = "0.3" }
+reqwest-retry = "0.6"
 tokio = { version = "1.36.0" }
 pyo3 = { version = "0.22.4" }
 pythonize = { version = "0.22" }
@@ -33,55 +32,67 @@ object_store = { version = "0.11.0" }
 lazy_static = { version = "1.5" }
 async-trait = "0.1.73"
 futures = "0.3.21"
+url = "2.3.1"
 
 [workspace.dependencies.serde_json]
 version = "1.0.91"
 default-features = false
 
 [workspace.dependencies.datafusion]
-version = "42.0.0"
+git = "https://github.com/apache/datafusion.git"
+rev = "b30d12a73fb9867180c2fdf8ddc818b45f957bac"
 default-features = false
 features = ["parquet", "nested_expressions"]
 
 [workspace.dependencies.datafusion-common]
-version = "42.0.0"
+git = "https://github.com/apache/datafusion.git"
+rev = "b30d12a73fb9867180c2fdf8ddc818b45f957bac"
 # no default features
 
 [workspace.dependencies.datafusion-expr]
-version = "42.0.0"
+git = "https://github.com/apache/datafusion.git"
+rev = "b30d12a73fb9867180c2fdf8ddc818b45f957bac"
 # no default features
 
 [workspace.dependencies.datafusion-proto]
-version = "42.0.0"
+git = "https://github.com/apache/datafusion.git"
+rev = "b30d12a73fb9867180c2fdf8ddc818b45f957bac"
 default-features = false
 features = ["parquet"]
 
 [workspace.dependencies.datafusion-proto-common]
-version = "42.0.0"
+git = "https://github.com/apache/datafusion.git"
+rev = "b30d12a73fb9867180c2fdf8ddc818b45f957bac"
 default-features = false
 
 [workspace.dependencies.datafusion-physical-expr]
-version = "42.0.0"
+git = "https://github.com/apache/datafusion.git"
+rev = "b30d12a73fb9867180c2fdf8ddc818b45f957bac"
 default-features = false
 
 [workspace.dependencies.datafusion-optimizer]
-version = "42.0.0"
+git = "https://github.com/apache/datafusion.git"
+rev = "b30d12a73fb9867180c2fdf8ddc818b45f957bac"
 default-features = false
 
 [workspace.dependencies.datafusion-functions]
-version = "42.0.0"
+git = "https://github.com/apache/datafusion.git"
+rev = "b30d12a73fb9867180c2fdf8ddc818b45f957bac"
 default-features = false
 
 [workspace.dependencies.datafusion-functions-nested]
-version = "42.0.0"
+git = "https://github.com/apache/datafusion.git"
+rev = "b30d12a73fb9867180c2fdf8ddc818b45f957bac"
 # no default features
 
 [workspace.dependencies.datafusion-functions-aggregate]
-version = "42.0.0"
+git = "https://github.com/apache/datafusion.git"
+rev = "b30d12a73fb9867180c2fdf8ddc818b45f957bac"
 # no default features
 
 [workspace.dependencies.datafusion-functions-window]
-version = "42.0.0"
+git = "https://github.com/apache/datafusion.git"
+rev = "b30d12a73fb9867180c2fdf8ddc818b45f957bac"
 # no default features
 
 # Profile with good speed for local development and testing

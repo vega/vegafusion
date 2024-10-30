@@ -2,10 +2,10 @@ use crate::expression::compiler::config::CompilationConfig;
 use crate::transform::TransformTrait;
 use async_trait::async_trait;
 
+use datafusion::prelude::DataFrame;
 use datafusion_common::ScalarValue;
 use datafusion_expr::{expr, lit, Expr, WindowFrame, WindowFunctionDefinition};
 use datafusion_functions_aggregate::variance::{var_pop_udaf, var_samp_udaf};
-use sqlparser::ast::NullTreatment;
 use std::sync::Arc;
 use vegafusion_core::error::Result;
 use vegafusion_core::proto::gen::transforms::{
@@ -13,27 +13,28 @@ use vegafusion_core::proto::gen::transforms::{
 };
 use vegafusion_core::task_graph::task_value::TaskValue;
 
-use datafusion_expr::test::function_stub::count_udaf;
 use datafusion_expr::{BuiltInWindowFunction, WindowFrameBound, WindowFrameUnits};
 use datafusion_functions_aggregate::average::avg_udaf;
+use datafusion_functions_aggregate::count::count_udaf;
 use datafusion_functions_aggregate::min_max::{max_udaf, min_udaf};
 use datafusion_functions_aggregate::stddev::{stddev_pop_udaf, stddev_udaf};
 use datafusion_functions_aggregate::sum::sum_udaf;
-use datafusion_functions_window::row_number::RowNumber;
+
+use datafusion_functions_window::{cume_dist::CumeDist, rank::Rank, row_number::RowNumber};
+
 use vegafusion_common::column::{flat_col, unescaped_col};
 use vegafusion_common::data::ORDER_COL;
 use vegafusion_common::datatypes::to_numeric;
 use vegafusion_common::error::{ResultWithContext, VegaFusionError};
 use vegafusion_common::escape::unescape_field;
-use vegafusion_dataframe::dataframe::DataFrame;
 
 #[async_trait]
 impl TransformTrait for Window {
     async fn eval(
         &self,
-        dataframe: Arc<dyn DataFrame>,
+        dataframe: DataFrame,
         _config: &CompilationConfig,
-    ) -> Result<(Arc<dyn DataFrame>, Vec<TaskValue>)> {
+    ) -> Result<(DataFrame, Vec<TaskValue>)> {
         let mut order_by: Vec<_> = self
             .sort_fields
             .iter()
@@ -46,7 +47,7 @@ impl TransformTrait for Window {
             .collect();
 
         let mut selections: Vec<_> = dataframe
-            .schema_df()?
+            .schema()
             .fields()
             .iter()
             .map(|f| flat_col(f.name()))
@@ -67,6 +68,7 @@ impl TransformTrait for Window {
             .filter(|c| {
                 dataframe
                     .schema()
+                    .inner()
                     .column_with_name(&unescape_field(c))
                     .is_some()
             })
@@ -97,7 +99,7 @@ impl TransformTrait for Window {
         };
         let window_frame = WindowFrame::new_bounds(units, start_bound, end_bound);
 
-        let schema_df = dataframe.schema_df()?;
+        let schema_df = dataframe.schema();
         let window_exprs = self
             .ops
             .iter()
@@ -109,7 +111,7 @@ impl TransformTrait for Window {
                         let op = AggregateOp::try_from(*op).unwrap();
 
                         let numeric_field = || -> Result<Expr> {
-                            to_numeric(unescaped_col(field), &schema_df).with_context(|| {
+                            to_numeric(unescaped_col(field), schema_df).with_context(|| {
                                 format!("Failed to convert field {field} to numeric data type")
                             })
                         };
@@ -173,28 +175,26 @@ impl TransformTrait for Window {
                                 Vec::new(),
                             ),
                             WindowOp::Rank => (
-                                WindowFunctionDefinition::BuiltInWindowFunction(
-                                    BuiltInWindowFunction::Rank,
-                                ),
+                                WindowFunctionDefinition::WindowUDF(Arc::new(Rank::basic().into())),
                                 Vec::new(),
                             ),
                             WindowOp::DenseRank => (
-                                WindowFunctionDefinition::BuiltInWindowFunction(
-                                    BuiltInWindowFunction::DenseRank,
-                                ),
+                                WindowFunctionDefinition::WindowUDF(Arc::new(
+                                    Rank::dense_rank().into(),
+                                )),
                                 Vec::new(),
                             ),
                             WindowOp::PercentileRank => (
-                                WindowFunctionDefinition::BuiltInWindowFunction(
-                                    BuiltInWindowFunction::PercentRank,
-                                ),
-                                vec![],
+                                WindowFunctionDefinition::WindowUDF(Arc::new(
+                                    Rank::percent_rank().into(),
+                                )),
+                                Vec::new(),
                             ),
                             WindowOp::CumeDist => (
-                                WindowFunctionDefinition::BuiltInWindowFunction(
-                                    BuiltInWindowFunction::CumeDist,
-                                ),
-                                vec![],
+                                WindowFunctionDefinition::WindowUDF(Arc::new(
+                                    CumeDist::new().into(),
+                                )),
+                                Vec::new(),
                             ),
                             WindowOp::FirstValue => (
                                 WindowFunctionDefinition::BuiltInWindowFunction(
@@ -224,7 +224,7 @@ impl TransformTrait for Window {
                     partition_by: partition_by.clone(),
                     order_by: order_by.clone(),
                     window_frame: window_frame.clone(),
-                    null_treatment: Some(NullTreatment::IgnoreNulls),
+                    null_treatment: None,
                 });
 
                 if let Some(alias) = self.aliases.get(i) {
@@ -238,7 +238,7 @@ impl TransformTrait for Window {
         // Add window expressions to original selections
         selections.extend(window_exprs);
 
-        let dataframe = dataframe.select(selections).await?;
+        let dataframe = dataframe.select(selections)?;
 
         Ok((dataframe, Vec::new()))
     }

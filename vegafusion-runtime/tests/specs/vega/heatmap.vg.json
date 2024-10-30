@@ -158,8 +158,8 @@
         "enter": {
           "x": {"scale": "x", "field": "day"},
           "y": {"scale": "y", "field": "hour"},
-          "width": {"value": 5},
-          "height": {"scale": "y", "band": 1},
+          "width": {"value": 1},
+          "height": {"scale": "y", "band": 0.9},
           "tooltip": {"signal": "timeFormat(datum.date, '%b %d %I:00 %p') + ': ' + datum.temperature + '°'"}
         },
         "update": {

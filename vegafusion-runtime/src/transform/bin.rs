@@ -7,6 +7,7 @@ use async_trait::async_trait;
 use datafusion_expr::expr::WildcardOptions;
 use datafusion_expr::lit;
 
+use datafusion::prelude::DataFrame;
 use datafusion_common::scalar::ScalarValue;
 use datafusion_common::utils::array_into_list_array;
 use datafusion_common::DFSchema;
@@ -21,16 +22,15 @@ use vegafusion_common::datatypes::to_numeric;
 use vegafusion_core::error::{Result, VegaFusionError};
 use vegafusion_core::proto::gen::transforms::Bin;
 use vegafusion_core::task_graph::task_value::TaskValue;
-use vegafusion_dataframe::dataframe::DataFrame;
 
 #[async_trait]
 impl TransformTrait for Bin {
     async fn eval(
         &self,
-        sql_df: Arc<dyn DataFrame>,
+        sql_df: DataFrame,
         config: &CompilationConfig,
-    ) -> Result<(Arc<dyn DataFrame>, Vec<TaskValue>)> {
-        let schema = sql_df.schema_df()?;
+    ) -> Result<(DataFrame, Vec<TaskValue>)> {
+        let schema = sql_df.schema().clone();
 
         // Compute binning solution
         let params = calculate_bin_params(self, &schema, config)?;
@@ -47,22 +47,20 @@ impl TransformTrait for Bin {
         // Compute output signal value
         let output_value = compute_output_value(self, start, stop, step);
 
-        let numeric_field = to_numeric(unescaped_col(&self.field), &sql_df.schema_df()?)?;
+        let numeric_field = to_numeric(unescaped_col(&self.field), sql_df.schema())?;
 
         // Add column with bin index
         let bin_index_name = "__bin_index";
         let bin_index =
             floor((numeric_field.clone().sub(lit(start)).div(lit(step))).add(lit(1.0e-14)))
                 .alias(bin_index_name);
-        let sql_df = sql_df
-            .select(vec![
-                Expr::Wildcard {
-                    qualifier: None,
-                    options: WildcardOptions::default(),
-                },
-                bin_index,
-            ])
-            .await?;
+        let sql_df = sql_df.select(vec![
+            Expr::Wildcard {
+                qualifier: None,
+                options: WildcardOptions::default(),
+            },
+            bin_index,
+        ])?;
 
         // Add column with bin start
         let bin_start = (flat_col(bin_index_name).mul(lit(step))).add(lit(start));
@@ -88,6 +86,7 @@ impl TransformTrait for Bin {
 
         let mut select_exprs = sql_df
             .schema()
+            .inner()
             .fields
             .iter()
             .filter_map(|field| {
@@ -100,7 +99,7 @@ impl TransformTrait for Bin {
             .collect::<Vec<_>>();
         select_exprs.push(bin_start);
 
-        let sql_df = sql_df.select(select_exprs).await?;
+        let sql_df = sql_df.select(select_exprs)?;
 
         // Add bin end column
         let bin_end_name = self.alias_1.clone().unwrap_or_else(|| "bin1".to_string());
@@ -122,7 +121,7 @@ impl TransformTrait for Bin {
         select_exprs.push(flat_col(&bin_start_name));
         select_exprs.push(bin_end);
 
-        let sql_df = sql_df.select(select_exprs).await?;
+        let sql_df = sql_df.select(select_exprs)?;
 
         Ok((sql_df, output_value.into_iter().collect()))
     }

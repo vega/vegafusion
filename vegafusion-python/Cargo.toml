@@ -61,15 +61,6 @@ version = "1.6.9"
 path = "../vegafusion-runtime"
 version = "1.6.9"
 
-[dependencies.vegafusion-sql]
-path = "../vegafusion-sql"
-version = "1.6.9"
-features = ["datafusion-conn"]
-
-[dependencies.vegafusion-dataframe]
-path = "../vegafusion-dataframe"
-version = "1.6.9"
-
 [dependencies.tokio]
 workspace = true
 features = ["macros", "rt-multi-thread"]

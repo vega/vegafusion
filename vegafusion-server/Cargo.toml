@@ -46,14 +46,12 @@ version = "1.6.9"
 path = "../vegafusion-runtime"
 version = "1.6.9"
 
-[dependencies.vegafusion-sql]
-path = "../vegafusion-sql"
-version = "1.6.9"
-features = ["datafusion-conn"]
-
 [dependencies.tokio]
 workspace = true
 features = ["rt-multi-thread", "macros"]
+
+[dependencies.datafusion]
+workspace = true
 
 [dependencies.tonic-web]
 version = "0.10.2"

@@ -2,8 +2,10 @@ use crate::expression::compiler::compile;
 use crate::expression::compiler::config::CompilationConfig;
 use crate::transform::TransformTrait;
 
+use crate::data::util::SessionContextUtils;
 use crate::expression::compiler::utils::ExprHelpers;
 use async_trait::async_trait;
+use datafusion::prelude::{DataFrame, SessionContext};
 use std::sync::Arc;
 use vegafusion_common::arrow::array::{ArrayRef, Float64Array};
 use vegafusion_common::arrow::datatypes::DataType;
@@ -14,15 +16,14 @@ use vegafusion_common::data::table::VegaFusionTable;
 use vegafusion_common::error::Result;
 use vegafusion_core::proto::gen::transforms::Sequence;
 use vegafusion_core::task_graph::task_value::TaskValue;
-use vegafusion_dataframe::dataframe::DataFrame;
 
 #[async_trait]
 impl TransformTrait for Sequence {
     async fn eval(
         &self,
-        dataframe: Arc<dyn DataFrame>,
+        dataframe: DataFrame,
         config: &CompilationConfig,
-    ) -> Result<(Arc<dyn DataFrame>, Vec<TaskValue>)> {
+    ) -> Result<(DataFrame, Vec<TaskValue>)> {
         let start_expr = compile(self.start.as_ref().unwrap(), config, None)?;
         let start_scalar = start_expr.eval_to_scalar()?;
         let start = start_scalar.to_f64()?;
@@ -30,9 +31,6 @@ impl TransformTrait for Sequence {
         let stop_expr = compile(self.stop.as_ref().unwrap(), config, None)?;
         let stop_scalar = stop_expr.eval_to_scalar()?;
         let stop = stop_scalar.to_f64()?;
-
-        // Use input DataFrame's connection to create the new dataset
-        let conn = dataframe.connection();
 
         let step = if let Some(step_signal) = &self.step {
             let step_expr = compile(step_signal, config, None)?;
@@ -67,7 +65,11 @@ impl TransformTrait for Sequence {
         )])) as SchemaRef;
         let data_batch = RecordBatch::try_new(data_schema, vec![data_array])?;
         let data_table = VegaFusionTable::from(data_batch);
-        let result = conn.scan_arrow(data_table.with_ordering()?).await?;
+
+        // Build session context from input DataFrame
+        let (state, _) = dataframe.into_parts();
+        let ctx = SessionContext::from(state);
+        let result = ctx.vegafusion_table(data_table.with_ordering()?).await?;
 
         Ok((result, Default::default()))
     }

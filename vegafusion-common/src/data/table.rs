@@ -70,15 +70,15 @@ impl VegaFusionTable {
             .map(|f| f.as_ref().clone().with_nullable(true))
             .collect();
         let schema = Arc::new(Schema::new(schema_fields));
-        if partitions.iter().all(|batches| {
-            let batch_schema_fields: Vec<_> = batches
+        if partitions.iter().all(|batch| {
+            let batch_schema_fields: Vec<_> = batch
                 .schema()
                 .fields
                 .iter()
                 .map(|f| f.as_ref().clone().with_nullable(true))
                 .collect();
             let batch_schema = Arc::new(Schema::new(batch_schema_fields));
-            schema.contains(&batch_schema)
+            schema.fields.contains(&batch_schema.fields)
         }) {
             Ok(Self {
                 schema,
@@ -605,7 +605,7 @@ fn hash_array_data<H: Hasher>(array_data: &ArrayData, state: &mut H) {
     // For nested types (list, struct), recursively hash child arrays
     let child_data = array_data.child_data();
     for child in child_data {
-        hash_array_data(&child, state);
+        hash_array_data(child, state);
     }
 }
 

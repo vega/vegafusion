@@ -31,8 +31,8 @@ mod tests {
     use vegafusion_core::runtime::VegaFusionRuntimeTrait;
     use vegafusion_core::spec::chart::ChartSpec;
     use vegafusion_core::spec::values::StringOrSignalSpec;
+    use vegafusion_runtime::datafusion::context::make_datafusion_context;
     use vegafusion_runtime::task_graph::runtime::VegaFusionRuntime;
-    use vegafusion_sql::connection::datafusion_conn::DataFusionConnection;
 
     #[tokio::test]
     async fn test_pre_transform_dataset() {
@@ -43,7 +43,7 @@ mod tests {
 
         // Initialize task graph runtime
         let runtime = VegaFusionRuntime::new(
-            Arc::new(DataFusionConnection::default()),
+            Arc::new(make_datafusion_context()),
             Some(16),
             Some(1024_i32.pow(3) as usize),
         );
@@ -99,7 +99,7 @@ mod tests {
 
         // Initialize task graph runtime
         let runtime = VegaFusionRuntime::new(
-            Arc::new(DataFusionConnection::default()),
+            Arc::new(make_datafusion_context()),
             Some(16),
             Some(1024_i32.pow(3) as usize),
         );
@@ -155,7 +155,7 @@ mod tests {
 
         // Initialize task graph runtime
         let runtime = VegaFusionRuntime::new(
-            Arc::new(DataFusionConnection::default()),
+            Arc::new(make_datafusion_context()),
             Some(16),
             Some(1024_i32.pow(3) as usize),
         );
@@ -223,7 +223,7 @@ mod tests {
 
         // Initialize task graph runtime
         let runtime = VegaFusionRuntime::new(
-            Arc::new(DataFusionConnection::default()),
+            Arc::new(make_datafusion_context()),
             Some(16),
             Some(1024_i32.pow(3) as usize),
         );
@@ -286,7 +286,7 @@ mod tests {
 
         // Initialize task graph runtime
         let runtime = VegaFusionRuntime::new(
-            Arc::new(DataFusionConnection::default()),
+            Arc::new(make_datafusion_context()),
             Some(16),
             Some(1024_i32.pow(3) as usize),
         );
@@ -340,7 +340,7 @@ mod tests {
 
         // Initialize task graph runtime
         let runtime = VegaFusionRuntime::new(
-            Arc::new(DataFusionConnection::default()),
+            Arc::new(make_datafusion_context()),
             Some(16),
             Some(1024_i32.pow(3) as usize),
         );
@@ -380,12 +380,12 @@ mod tests {
         println!("{}", click_selected.pretty_format(None).unwrap());
 
         let expected = "\
-+---------------------+---------------------+---------+---------+---------------+-------------+
-| yearmonth_date      | yearmonth_date_end  | weather | __count | __count_start | __count_end |
-+---------------------+---------------------+---------+---------+---------------+-------------+
-| 2013-11-01T00:00:00 | 2013-12-01T00:00:00 | rain    | 15      | 12.0          | 27.0        |
-| 2014-01-01T00:00:00 | 2014-02-01T00:00:00 | sun     | 16      | 0.0           | 16.0        |
-+---------------------+---------------------+---------+---------+---------------+-------------+";
++----------------------+----------------------+---------+---------+-------------+---------------+
+| yearmonth_date       | yearmonth_date_end   | weather | __count | __count_end | __count_start |
++----------------------+----------------------+---------+---------+-------------+---------------+
+| 2013-11-01T00:00:00Z | 2013-12-01T00:00:00Z | rain    | 15      | 27.0        | 12.0          |
+| 2014-01-01T00:00:00Z | 2014-02-01T00:00:00Z | sun     | 16      | 16.0        | 0.0           |
++----------------------+----------------------+---------+---------+-------------+---------------+";
         assert_eq!(click_selected.pretty_format(None).unwrap(), expected);
 
         // Check drag_selected
@@ -393,20 +393,20 @@ mod tests {
         println!("{}", drag_selected.pretty_format(None).unwrap());
 
         let expected = "\
-+---------------------+---------------------+---------+---------+---------------+-------------+
-| yearmonth_date      | yearmonth_date_end  | weather | __count | __count_start | __count_end |
-+---------------------+---------------------+---------+---------+---------------+-------------+
-| 2013-11-01T00:00:00 | 2013-12-01T00:00:00 | sun     | 12      | 0.0           | 12.0        |
-| 2013-11-01T00:00:00 | 2013-12-01T00:00:00 | rain    | 15      | 12.0          | 27.0        |
-| 2013-11-01T00:00:00 | 2013-12-01T00:00:00 | fog     | 2       | 27.0          | 29.0        |
-| 2013-11-01T00:00:00 | 2013-12-01T00:00:00 | drizzle | 1       | 29.0          | 30.0        |
-| 2013-12-01T00:00:00 | 2014-01-01T00:00:00 | sun     | 17      | 0.0           | 17.0        |
-| 2013-12-01T00:00:00 | 2014-01-01T00:00:00 | snow    | 1       | 17.0          | 18.0        |
-| 2013-12-01T00:00:00 | 2014-01-01T00:00:00 | rain    | 13      | 18.0          | 31.0        |
-| 2014-01-01T00:00:00 | 2014-02-01T00:00:00 | sun     | 16      | 0.0           | 16.0        |
-| 2014-01-01T00:00:00 | 2014-02-01T00:00:00 | rain    | 13      | 16.0          | 29.0        |
-| 2014-01-01T00:00:00 | 2014-02-01T00:00:00 | fog     | 2       | 29.0          | 31.0        |
-+---------------------+---------------------+---------+---------+---------------+-------------+";
++----------------------+----------------------+---------+---------+-------------+---------------+
+| yearmonth_date       | yearmonth_date_end   | weather | __count | __count_end | __count_start |
++----------------------+----------------------+---------+---------+-------------+---------------+
+| 2013-11-01T00:00:00Z | 2013-12-01T00:00:00Z | sun     | 12      | 12.0        | 0.0           |
+| 2013-11-01T00:00:00Z | 2013-12-01T00:00:00Z | rain    | 15      | 27.0        | 12.0          |
+| 2013-11-01T00:00:00Z | 2013-12-01T00:00:00Z | fog     | 2       | 29.0        | 27.0          |
+| 2013-11-01T00:00:00Z | 2013-12-01T00:00:00Z | drizzle | 1       | 30.0        | 29.0          |
+| 2013-12-01T00:00:00Z | 2014-01-01T00:00:00Z | sun     | 17      | 17.0        | 0.0           |
+| 2013-12-01T00:00:00Z | 2014-01-01T00:00:00Z | snow    | 1       | 18.0        | 17.0          |
+| 2013-12-01T00:00:00Z | 2014-01-01T00:00:00Z | rain    | 13      | 31.0        | 18.0          |
+| 2014-01-01T00:00:00Z | 2014-02-01T00:00:00Z | sun     | 16      | 16.0        | 0.0           |
+| 2014-01-01T00:00:00Z | 2014-02-01T00:00:00Z | rain    | 13      | 29.0        | 16.0          |
+| 2014-01-01T00:00:00Z | 2014-02-01T00:00:00Z | fog     | 2       | 31.0        | 29.0          |
++----------------------+----------------------+---------+---------+-------------+---------------+";
         assert_eq!(drag_selected.pretty_format(None).unwrap(), expected);
     }
 
@@ -434,7 +434,7 @@ mod tests {
 
             // Initialize task graph runtime
             let runtime = VegaFusionRuntime::new(
-                Arc::new(DataFusionConnection::default()),
+                Arc::new(make_datafusion_context()),
                 Some(16),
                 Some(1024_i32.pow(3) as usize),
             );

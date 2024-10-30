@@ -1,100 +1,64 @@
 use crate::expression::compiler::call::TzTransformFn;
+use crate::expression::compiler::utils::ExprHelpers;
 use crate::task_graph::timezone::RuntimeTzConfig;
-use datafusion_expr::{expr, lit, Expr, ExprSchemable};
-use datafusion_functions::expr_fn::floor;
+use crate::transform::timeunit::to_timestamp_col;
+use datafusion_expr::{lit, Expr};
+use datafusion_functions::expr_fn::{date_part, floor};
 use std::sync::Arc;
 use vegafusion_common::arrow::datatypes::{DataType, TimeUnit};
 use vegafusion_common::datafusion_common::DFSchema;
-use vegafusion_common::datatypes::{cast_to, is_numeric_datatype};
-use vegafusion_core::error::{Result, VegaFusionError};
-use vegafusion_datafusion_udfs::udfs::datetime::date_part_tz::DATE_PART_TZ_UDF;
-use vegafusion_datafusion_udfs::udfs::datetime::epoch_to_utc_timestamp::EPOCH_MS_TO_UTC_TIMESTAMP_UDF;
-use vegafusion_datafusion_udfs::udfs::datetime::str_to_utc_timestamp::STR_TO_UTC_TIMESTAMP_UDF;
+use vegafusion_core::error::Result;
 
 pub fn make_local_datepart_transform(part: &str, tx: Option<fn(Expr) -> Expr>) -> TzTransformFn {
     let part = part.to_string();
-    let local_datepart_transform = move |tz_config: &RuntimeTzConfig,
-                                         args: &[Expr],
-                                         schema: &DFSchema|
-          -> Result<Expr> {
-        let arg =
-            extract_timestamp_arg(&part, args, schema, &tz_config.default_input_tz.to_string())?;
-        let udf_args = vec![lit(part.clone()), arg, lit(tz_config.local_tz.to_string())];
-        let mut expr = Expr::ScalarFunction(expr::ScalarFunction {
-            func: Arc::new(DATE_PART_TZ_UDF.clone()),
-            args: udf_args,
-        });
+    let local_datepart_transform =
+        move |tz_config: &RuntimeTzConfig, args: &[Expr], schema: &DFSchema| -> Result<Expr> {
+            let arg = args.first().unwrap().clone();
+            let arg = to_timestamp_col(arg, schema, &tz_config.default_input_tz.to_string())?;
+            let mut expr = date_part(
+                lit(part.clone()),
+                arg.try_cast_to(
+                    &DataType::Timestamp(
+                        TimeUnit::Millisecond,
+                        Some(tz_config.local_tz.to_string().into()),
+                    ),
+                    schema,
+                )?,
+            );
 
-        if let Some(tx) = tx {
-            expr = tx(expr)
-        }
+            if let Some(tx) = tx {
+                expr = tx(expr)
+            }
 
-        Ok(expr)
-    };
+            Ok(expr)
+        };
     Arc::new(local_datepart_transform)
 }
 
 pub fn make_utc_datepart_transform(part: &str, tx: Option<fn(Expr) -> Expr>) -> TzTransformFn {
     let part = part.to_string();
-    let utc_datepart_transform = move |tz_config: &RuntimeTzConfig,
-                                       args: &[Expr],
-                                       schema: &DFSchema|
-          -> Result<Expr> {
-        let arg =
-            extract_timestamp_arg(&part, args, schema, &tz_config.default_input_tz.to_string())?;
-        let udf_args = vec![lit(part.clone()), arg, lit("UTC")];
-        let mut expr = Expr::ScalarFunction(expr::ScalarFunction {
-            func: Arc::new(DATE_PART_TZ_UDF.clone()),
-            args: udf_args,
-        });
+    let utc_datepart_transform =
+        move |tz_config: &RuntimeTzConfig, args: &[Expr], schema: &DFSchema| -> Result<Expr> {
+            let arg = to_timestamp_col(
+                args.first().unwrap().clone(),
+                schema,
+                &tz_config.default_input_tz.to_string(),
+            )?;
+            let mut expr = date_part(
+                lit(part.clone()),
+                arg.try_cast_to(
+                    &DataType::Timestamp(TimeUnit::Millisecond, Some("UTC".into())),
+                    schema,
+                )?,
+            );
 
-        if let Some(tx) = tx {
-            expr = tx(expr)
-        }
-
-        Ok(expr)
-    };
-    Arc::new(utc_datepart_transform)
-}
-
-fn extract_timestamp_arg(
-    part: &str,
-    args: &[Expr],
-    schema: &DFSchema,
-    default_input_tz: &str,
-) -> Result<Expr> {
-    if let Some(arg) = args.first() {
-        Ok(match arg.get_type(schema)? {
-            DataType::Date32 => Expr::Cast(expr::Cast {
-                expr: Box::new(arg.clone()),
-                data_type: DataType::Timestamp(TimeUnit::Millisecond, None),
-            }),
-            DataType::Date64 => Expr::Cast(expr::Cast {
-                expr: Box::new(arg.clone()),
-                data_type: DataType::Timestamp(TimeUnit::Millisecond, None),
-            }),
-            DataType::Timestamp(_, _) => arg.clone(),
-            DataType::Utf8 => Expr::ScalarFunction(expr::ScalarFunction {
-                func: Arc::new((*STR_TO_UTC_TIMESTAMP_UDF).clone()),
-                args: vec![arg.clone(), lit(default_input_tz)],
-            }),
-            dtype if is_numeric_datatype(&dtype) => Expr::ScalarFunction(expr::ScalarFunction {
-                func: Arc::new((*EPOCH_MS_TO_UTC_TIMESTAMP_UDF).clone()),
-                args: vec![cast_to(arg.clone(), &DataType::Int64, schema)?],
-            }),
-            dtype => {
-                return Err(VegaFusionError::compilation(format!(
-                    "Invalid data type for {part} function: {dtype:?}"
-                )))
+            if let Some(tx) = tx {
+                expr = tx(expr)
             }
-        })
-    } else {
-        Err(VegaFusionError::compilation(format!(
-            "{} expects a single argument, received {}",
-            part,
-            args.len()
-        )))
-    }
+
+            Ok(expr)
+        };
+    Arc::new(utc_datepart_transform)
 }
 
 lazy_static! {
@@ -103,10 +67,13 @@ lazy_static! {
         make_local_datepart_transform("year", None);
     pub static ref QUARTER_TRANSFORM: TzTransformFn =
         make_local_datepart_transform("quarter", None);
+
+    // Months are zero-based in Vega
     pub static ref MONTH_TRANSFORM: TzTransformFn =
         make_local_datepart_transform(
             "month", Some(|expr| expr - lit(1.0))
         );
+
     pub static ref DAYOFYEAR_TRANSFORM: TzTransformFn =
         make_local_datepart_transform("doy", None);
     pub static ref DATE_TRANSFORM: TzTransformFn =
@@ -131,10 +98,13 @@ lazy_static! {
         make_utc_datepart_transform("year", None);
     pub static ref UTCQUARTER_TRANSFORM: TzTransformFn =
         make_utc_datepart_transform("quarter", None);
+
+    // Months are zero-based in Vega
     pub static ref UTCMONTH_TRANSFORM: TzTransformFn =
         make_utc_datepart_transform(
             "month", Some(|expr| expr - lit(1.0))
         );
+
     pub static ref UTCDAYOFYEAR_TRANSFORM: TzTransformFn =
         make_utc_datepart_transform("doy", None);
     pub static ref UTCDATE_TRANSFORM: TzTransformFn =

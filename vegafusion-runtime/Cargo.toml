@@ -28,8 +28,6 @@ deterministic-hash = "1.0.1"
 log = "0.4.17"
 env_logger = "0.10.0"
 ordered-float = "3.6.0"
-reqwest-retry = "0.3.0"
-reqwest-middleware = "0.2.0"
 
 [dev-dependencies]
 futures-util = "0.3.21"
@@ -40,7 +38,16 @@ pixelmatch = "0.1.0"
 rgb = "0.8.32"
 lodepng = "3.6.1"
 
+[dependencies.url]
+workspace = true
+
 [dependencies.serde_json]
+workspace = true
+
+[dependencies.reqwest-middleware]
+workspace = true
+
+[dependencies.reqwest-retry]
 workspace = true
 
 [dependencies.async-trait]
@@ -54,7 +61,7 @@ workspace = true
 
 [dependencies.object_store]
 workspace = true
-features = ["aws"]
+features = ["aws", "http"]
 
 [dependencies.chrono]
 workspace = true
@@ -74,7 +81,7 @@ workspace = true
 
 [dependencies.vegafusion-common]
 path = "../vegafusion-common"
-features = ["json", "sqlparser", "prettyprint", "object_store"]
+features = ["json", "sqlparser", "prettyprint", "object_store", "url"]
 version = "1.6.9"
 
 [dependencies.vegafusion-core]
@@ -82,17 +89,12 @@ path = "../vegafusion-core"
 features = ["sqlparser"]
 version = "1.6.9"
 
-[dependencies.vegafusion-datafusion-udfs]
-path = "../vegafusion-datafusion-udfs"
-version = "1.6.9"
-
-[dependencies.vegafusion-dataframe]
-path = "../vegafusion-dataframe"
-version = "1.6.9"
-
 [dependencies.serde]
 version = "1.0.137"
 features = ["derive"]
+
+[dependencies.datafusion]
+workspace = true
 
 [dependencies.datafusion-common]
 workspace = true
@@ -135,8 +137,3 @@ features = ["blocking", "rustls-tls"]
 [dev-dependencies.criterion]
 version = "0.4.0"
 features = ["async_tokio"]
-
-[dev-dependencies.vegafusion-sql]
-path = "../vegafusion-sql"
-version = "1.6.9"
-features = ["datafusion-conn"]

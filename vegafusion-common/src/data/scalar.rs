@@ -24,6 +24,7 @@ pub trait ScalarValueHelpers {
     #[cfg(feature = "json")]
     fn to_json(&self) -> Result<Value>;
 
+    fn to_i32(&self) -> Result<i32>;
     fn to_f64(&self) -> Result<f64>;
     fn to_f64x2(&self) -> Result<[f64; 2]>;
     fn to_scalar_string(&self) -> Result<String>;
@@ -161,6 +162,26 @@ impl ScalarValueHelpers for ScalarValue {
             _ => Value::Null,
         };
         Ok(res)
+    }
+
+    fn to_i32(&self) -> Result<i32> {
+        Ok(match self {
+            ScalarValue::Float32(Some(e)) => *e as i32,
+            ScalarValue::Float64(Some(e)) => *e as i32,
+            ScalarValue::Int8(Some(e)) => *e as i32,
+            ScalarValue::Int16(Some(e)) => *e as i32,
+            ScalarValue::Int32(Some(e)) => *e,
+            ScalarValue::Int64(Some(e)) => *e as i32,
+            ScalarValue::UInt8(Some(e)) => *e as i32,
+            ScalarValue::UInt16(Some(e)) => *e as i32,
+            ScalarValue::UInt32(Some(e)) => *e as i32,
+            ScalarValue::UInt64(Some(e)) => *e as i32,
+            _ => {
+                return Err(VegaFusionError::internal(format!(
+                    "Cannot convert {self} to i32"
+                )))
+            }
+        })
     }
 
     fn to_f64(&self) -> Result<f64> {

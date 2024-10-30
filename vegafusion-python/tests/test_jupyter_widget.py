@@ -184,7 +184,8 @@ def setup_module(module):
         ("line/layer_line_color_rule", 1.0, 0.25),
         ("line/multi_series", 1.0, 0.25),
         ("line/with_ci", 1.0, 0.25),
-        ("line/trail_marker", 1.0, 0.25),
+        # Altair not rendering x-axis ticks as expected
+        ("line/trail_marker", 0.95, 0.25),
         ("line/with_datum", 1.0, 0.25),
         ("line/with_color_datum", 1.0, 0.25),
         ("maps/choropleth", 1.0, 0.25),

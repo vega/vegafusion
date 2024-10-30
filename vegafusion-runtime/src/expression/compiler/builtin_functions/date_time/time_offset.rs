@@ -1,15 +1,15 @@
 use crate::task_graph::timezone::RuntimeTzConfig;
+use crate::transform::timeunit::to_timestamp_col;
 use datafusion_common::{DFSchema, ScalarValue};
-use datafusion_expr::{expr, lit, Expr};
-use std::sync::Arc;
+use datafusion_expr::{interval_datetime_lit, interval_year_month_lit, Expr};
+use std::ops::Add;
 use vegafusion_common::data::scalar::ScalarValueHelpers;
 use vegafusion_common::error::VegaFusionError;
-use vegafusion_datafusion_udfs::udfs::datetime::date_add_tz::DATE_ADD_TZ_UDF;
 
 pub fn time_offset_fn(
     tz_config: &RuntimeTzConfig,
     args: &[Expr],
-    _schema: &DFSchema,
+    schema: &DFSchema,
 ) -> vegafusion_common::error::Result<Expr> {
     if args.len() < 2 || args.len() > 3 {
         return Err(VegaFusionError::compilation(format!(
@@ -40,12 +40,12 @@ pub fn time_offset_fn(
                 let dtype = scalar_value.data_type();
                 if dtype.is_integer() {
                     // Negate inner integer
-                    lit(scalar_value.negate())
+                    scalar_value.negate().to_i32()?
                 } else if dtype.is_floating() {
                     let step_float = scalar_value.to_f64()?;
                     if step_float.fract() == 0.0 {
                         // cast to negative integer literal
-                        lit(-step_float as i32)
+                        -step_float as i32
                     } else {
                         return make_err();
                     }
@@ -58,12 +58,12 @@ pub fn time_offset_fn(
         } else if let Expr::Literal(scalar_value) = step_arg {
             let dtype = scalar_value.data_type();
             if dtype.is_integer() {
-                lit(scalar_value.clone())
+                scalar_value.clone().to_i32()?
             } else if dtype.is_floating() {
                 let step_float = scalar_value.to_f64()?;
                 if step_float.fract() == 0.0 {
                     // cast to integer literal
-                    lit(step_float as i32)
+                    step_float as i32
                 } else {
                     return make_err();
                 }
@@ -74,18 +74,19 @@ pub fn time_offset_fn(
             return make_err();
         }
     } else {
-        lit(1)
+        1
     };
 
-    let mut udf_args = vec![lit(tz_config.local_tz.to_string())];
-    udf_args.extend(Vec::from(args));
-    Ok(Expr::ScalarFunction(expr::ScalarFunction {
-        func: Arc::new((*DATE_ADD_TZ_UDF).clone()),
-        args: vec![
-            lit(unit),
-            step,
-            timestamp.clone(),
-            lit(tz_config.local_tz.to_string()),
-        ],
-    }))
+    let timestamp = to_timestamp_col(
+        timestamp.clone(),
+        schema,
+        &tz_config.default_input_tz.to_string(),
+    )?;
+    let interval = match unit.to_lowercase().as_str() {
+        unit @ ("year" | "month") => interval_year_month_lit(&format!("{step} {unit}")),
+        "quarter" => interval_year_month_lit(&format!("{} month", step * 3)),
+        unit => interval_datetime_lit(&format!("{step} {unit}")),
+    };
+
+    Ok(timestamp.add(interval))
 }

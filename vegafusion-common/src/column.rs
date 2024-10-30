@@ -6,6 +6,10 @@ pub fn flat_col(col_name: &str) -> Expr {
     Expr::Column(Column::from_name(col_name))
 }
 
+pub fn relation_col(col_name: &str, relation_name: &str) -> Expr {
+    Expr::Column(Column::new(Some(relation_name), col_name))
+}
+
 pub fn unescaped_col(col_name: &str) -> Expr {
     flat_col(&unescape_field(col_name))
 }

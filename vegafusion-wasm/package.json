@@ -1,11 +1,7 @@
 {
   "name": "vegafusion-wasm",
   "version": "1.6.9",
-  "author": {
-    "name": "Jon Mease",
-    "email": "jon@vegafusion.io",
-    "url": "https://jonmmease.dev"
-  },
+  "author": "Jon Mease <jon@vegafusion.io> (https://jonmmease.dev)",
   "license": "BSD-3-Clause",
   "description": "Wasm library for interfacing with VegaFusion",
   "keywords": [
@@ -26,20 +22,5 @@
   ],
   "module": "vegafusion_wasm.js",
   "types": "vegafusion_wasm.d.ts",
-  "sideEffects": false,
-  "scripts": {
-    "build": "wasm-pack build --release && cp package.json pkg/",
-    "build:protobuf-src": "wasm-pack build --release --features=protobuf-src && cp package.json pkg/",
-    "build-web": "wasm-pack build --release --target web -d pkg-web/ && cp package.json pkg-web/",
-    "publish": "wasm-pack publish",
-    "prerelease-publish": "wasm-pack publish --tag next"
-  },
-  "dependencies": {
-    "bootstrap": "^5.1.3",
-    "grpc-web": "^1.3.1",
-    "lodash": "^4.17.21",
-    "vega": "^5.22.1",
-    "vega-tooltip": "^0.27.0",
-    "vega-util": "^1.17.0"
-  }
+  "sideEffects": false
 }
