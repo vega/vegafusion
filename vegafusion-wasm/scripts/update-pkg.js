@@ -18,11 +18,9 @@ const pkg = require(pkgPath);
 
 // Add your dependencies
 pkg.dependencies = {
-  "bootstrap": "^5.1.3",
-  "grpc-web": "^1.3.1",
+  "grpc-web": "^1.5.0",
   "lodash": "^4.17.21",
-  "vega": "^5.22.1",
-  "vega-tooltip": "^0.27.0",
+  "vega-embed": "^6.26.0",
   "vega-util": "^1.17.0"
 };
 
