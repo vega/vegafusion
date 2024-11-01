@@ -9,13 +9,12 @@ use vegafusion_core::proto::gen::tasks::{
 use vegafusion_core::task_graph::task_value::NamedTaskValue;
 use wasm_bindgen::prelude::*;
 
+use futures::channel::{mpsc as async_mpsc, oneshot};
 use js_sys::Promise;
 use std::any::Any;
 use std::collections::HashMap;
 use std::rc::Rc;
 use std::sync::Arc;
-// use std::sync::mpsc;
-use futures::channel::{mpsc as async_mpsc, oneshot};
 
 use wasm_bindgen_futures::JsFuture;
 
@@ -143,6 +142,7 @@ impl VegaFusionRuntimeTrait for VegaFusionWasmRuntime {
 
 #[wasm_bindgen]
 #[derive(Clone)]
+/// Handle to an embedded VegaFusion chart
 pub struct ChartHandle {
     state: ChartState,
     embed: Rc<EmbedResult>,
@@ -154,77 +154,19 @@ pub struct ChartHandle {
 
 #[wasm_bindgen]
 impl ChartHandle {
-    fn view(&self) -> View {
+    /// Get the Vega-Embed view
+    /// @returns The Vega-Embed view
+    pub fn view(&self) -> View {
         self.embed.view()
     }
 
-    #[wasm_bindgen(js_name = getSignal)]
-    pub fn get_signal(&self, name: &str, scope: &[u32]) -> JsValue {
-        get_signal_value(&self.view(), name, scope)
-    }
-
-    #[wasm_bindgen(js_name = getData)]
-    pub fn get_data(&self, name: &str, scope: &[u32]) -> JsValue {
-        get_data_value(&self.view(), name, scope)
-    }
-
-    #[wasm_bindgen(js_name = setSignal)]
-    pub fn set_signal(&self, name: &str, scope: &[u32], value: JsValue) {
-        set_signal_value(&self.view(), name, scope, value);
-    }
-
-    #[wasm_bindgen(js_name = setData)]
-    pub fn set_data(&self, name: &str, scope: &[u32], value: JsValue) {
-        set_data_value(&self.view(), name, scope, value);
-    }
-
-    #[wasm_bindgen(js_name = getState)]
-    pub fn get_state(&self) -> JsValue {
-        self.view().get_state()
-    }
-
-    #[wasm_bindgen(js_name = setState)]
-    pub fn set_state(&self, state: JsValue) {
-        self.view().set_state(state)
-    }
-
-    pub fn run(&self) {
-        self.view().run()
-    }
-
-    #[wasm_bindgen(js_name = runAsync)]
-    pub fn run_async(&self) -> Promise {
-        self.view().run_async()
-    }
-
-    #[wasm_bindgen(js_name = addSignalListener)]
-    pub fn add_signal_listener(&self, name: &str, scope: &[u32], handler: JsValue) {
-        add_signal_listener(
-            &self.view(),
-            name,
-            scope,
-            handler,
-            self.debounce_wait,
-            self.debounce_max_wait,
-        );
-    }
-
-    #[wasm_bindgen(js_name = addDataListener)]
-    pub fn add_data_listener(&self, name: &str, scope: &[u32], handler: JsValue) {
-        add_data_listener(
-            &self.view(),
-            name,
-            scope,
-            handler,
-            self.debounce_wait,
-            self.debounce_max_wait,
-        );
-    }
-
+    /// Finalize the chart
     pub fn finalize(&self) {
         self.embed.finalize()
     }
 
+    /// Get the client specification
+    /// @returns The client specification
     #[wasm_bindgen(js_name = clientSpec)]
     pub fn client_spec(&self) -> JsValue {
         self.state
@@ -233,6 +175,8 @@ impl ChartHandle {
             .unwrap()
     }
 
+    /// Get the server specification
+    /// @returns The server specification
     #[wasm_bindgen(js_name = serverSpec)]
     pub fn server_spec(&self) -> JsValue {
         self.state
@@ -241,17 +185,13 @@ impl ChartHandle {
             .unwrap()
     }
 
+    /// Get the communication plan
+    /// @returns The communication plan
     #[wasm_bindgen(js_name = commPlan)]
     pub fn comm_plan(&self) -> JsValue {
         WatchPlan::from(self.state.get_comm_plan().clone())
             .serialize(&serde_wasm_bindgen::Serializer::json_compatible())
             .unwrap()
-    }
-
-    #[wasm_bindgen(js_name = toImageUrl)]
-    pub fn to_image_url(&self, img_type: &str, scale_factor: Option<f64>) -> Promise {
-        self.view()
-            .to_image_url(img_type, scale_factor.unwrap_or(1.0))
     }
 
     fn register_callbacks(&self) {
@@ -293,7 +233,14 @@ impl ChartHandle {
                     let ret_cb = closure.as_ref().clone();
                     closure.forget();
 
-                    self.add_signal_listener(&var_name, scoped_var.1.as_slice(), ret_cb);
+                    add_signal_listener(
+                        &self.view(),
+                        &var_name,
+                        scoped_var.1.as_slice(),
+                        ret_cb,
+                        self.debounce_wait,
+                        self.debounce_max_wait,
+                    );
                 }
                 VariableNamespace::Data => {
                     let closure = Closure::wrap(Box::new(move |name: String, val: JsValue| {
@@ -321,7 +268,14 @@ impl ChartHandle {
                     let ret_cb = closure.as_ref().clone();
                     closure.forget();
 
-                    self.add_data_listener(&var_name, scoped_var.1.as_slice(), ret_cb);
+                    add_data_listener(
+                        &self.view(),
+                        &var_name,
+                        scoped_var.1.as_slice(),
+                        ret_cb,
+                        self.debounce_wait,
+                        self.debounce_max_wait,
+                    );
                 }
                 VariableNamespace::Scale => {}
             }
@@ -336,14 +290,24 @@ impl ChartHandle {
                         .value
                         .serialize(&serde_wasm_bindgen::Serializer::json_compatible())
                         .unwrap();
-                    self.set_signal(&update.name, update.scope.as_slice(), js_value);
+                    set_signal_value(
+                        &self.view(),
+                        &update.name,
+                        update.scope.as_slice(),
+                        js_value,
+                    );
                 }
                 ExportUpdateNamespace::Data => {
                     let js_value = update
                         .value
                         .serialize(&serde_wasm_bindgen::Serializer::json_compatible())
                         .unwrap();
-                    self.set_data(&update.name, update.scope.as_slice(), js_value);
+                    set_data_value(
+                        &self.view(),
+                        &update.name,
+                        update.scope.as_slice(),
+                        js_value,
+                    );
                 }
             }
         }
@@ -385,6 +349,12 @@ impl Default for VegaFusionEmbedConfig {
     }
 }
 
+/// Embed a Vega chart and accelerate with VegaFusion
+/// @param element - The DOM element to embed the visualization into
+/// @param spec - The Vega specification (as string or object)
+/// @param query_fn - Function to handle server-side query requests
+/// @param config - Optional configuration options
+/// @returns A ChartHandle instance for the embedded visualization
 #[wasm_bindgen(js_name = vegaFusionEmbed)]
 pub async fn vegafusion_embed(
     element: Element,
@@ -464,6 +434,10 @@ pub async fn vegafusion_embed(
     handle
 }
 
+/// Create a function for sending VegaFusion queries to VegaFusion server over gRPC-Web
+/// @param client - The gRPC client instance
+/// @param hostname - The hostname to connect to
+/// @returns A function that can be used to send gRPC messages
 #[wasm_bindgen(js_name = "makeGrpcSendMessageFn")]
 pub fn make_grpc_send_message_fn(client: JsValue, hostname: String) -> js_sys::Function {
     inner_make_grpc_send_message_fn(client, hostname)
@@ -530,7 +504,7 @@ extern "C" {
     fn finalize(this: &EmbedResult);
 
     // View
-    type View;
+    pub type View;
 
     #[wasm_bindgen(method, js_name = "run")]
     fn run(this: &View);
