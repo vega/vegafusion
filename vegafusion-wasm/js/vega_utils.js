@@ -1,13 +1,7 @@
-import { version } from "vega"
 import { truthy } from "vega-util"
-import {Handler } from 'vega-tooltip';
 import * as grpcWeb from 'grpc-web';
 
 import _ from "lodash"
-
-export function vega_version() {
-    return version
-}
 
 export function localTimezone() {
     return Intl.DateTimeFormat().resolvedOptions().timeZone
@@ -88,12 +82,6 @@ export function addDataListener(view, name, scope, handler, wait, maxWait) {
     );
 }
 
-export function setupTooltip(view) {
-    let tooltip_opts = {};
-    let handler = new Handler(tooltip_opts).call;
-    view.tooltip(handler)
-}
-
 // Private helpers from Vega
 function findOperatorHandler(op, handler) {
     const h = (op._targets || [])
@@ -123,20 +111,20 @@ function trap(view, fn) {
 
 // Other utility functions
 export function make_grpc_send_message_fn(client, hostname) {
-    let send_message_grpc = async (send_msg_bytes, receiver) => {
+    let send_message_grpc = async (send_msg_bytes) => {
         let grpc_route = '/services.VegaFusionRuntime/TaskGraphQuery'
 
-        // Make custom MethodDescriptor that does not perform serialization
+        // Make custom MethodDescriptor with all required properties
         const methodDescriptor = new grpcWeb.MethodDescriptor(
             grpc_route,
             grpcWeb.MethodType.UNARY,
             Uint8Array,
             Uint8Array,
-            (v) => v,
-            (v) => v,
+            (req) => req,
+            (res) => res,
         );
 
-        return await client.unaryCall(
+        return await client.thenableCall(
             hostname + grpc_route,
             send_msg_bytes,
             {},

@@ -1,4 +1,5 @@
-import * as vfEmbed from "vegafusion-embed";
+const { vegaFusionEmbed, makeGrpcSendMessageFn } = await import("vegafusion-wasm");
+
 import * as Monaco from 'monaco-editor/esm/vs/editor/editor.api';
 import _ from "lodash"
 import * as grpcWeb from 'grpc-web';
@@ -46,26 +47,28 @@ async function init() {
 
     const hostname = 'http://127.0.0.1:50051';
     let client = new grpcWeb.GrpcWebClientBase({format: "binary"});
-    let send_message_grpc = vfEmbed.makeGrpcSendMessageFn(client, hostname);
+    let send_message_grpc = makeGrpcSendMessageFn(client, hostname);
 
     async function update_chart() {
-        let msg_receiver;
         try {
             let element = document.getElementById("vega-chart");
             let config = {
                 verbose: false,
                 debounce_wait: 30,
                 debounce_max_wait: 60,
+                embed_opts: {
+                    mode: "vega",
+                },
             };
-            msg_receiver = await vfEmbed.embedVegaFusion(
+            let chart_handle = await vegaFusionEmbed(
                 element,
                 editor.getValue(),
                 send_message_grpc,
-                config
+                config,
             );
-            server_spec_monaco.setValue(msg_receiver.server_spec_json());
-            client_spec_monaco.setValue(msg_receiver.client_spec_json());
-            comm_plan_monaco.setValue(msg_receiver.comm_plan_json());
+            server_spec_monaco.setValue(JSON.stringify(chart_handle.serverSpec(), null, 2));
+            client_spec_monaco.setValue(JSON.stringify(chart_handle.clientSpec(), null, 2));
+            comm_plan_monaco.setValue(JSON.stringify(chart_handle.commPlan(), null, 2));
         } catch (e) {
             console.error("Failed to render spec");
             server_spec_monaco.setValue("");
