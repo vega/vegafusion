@@ -54,10 +54,6 @@ use object_store::{
     http::{HttpBuilder}
 };
 
-#[cfg(feature = "http-wasm")]
-use {
-    object_store_wasm::http::HttpStore
-};
 
 #[cfg(feature = "fs")]
 use tokio::io::AsyncReadExt;

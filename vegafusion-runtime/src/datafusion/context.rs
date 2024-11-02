@@ -5,7 +5,7 @@ use datafusion::execution::SessionStateBuilder;
 use datafusion::prelude::SessionContext;
 use cfg_if::cfg_if;
 use datafusion::execution::{
-    config::SessionConfig, disk_manager::DiskManagerConfig,
+    config::SessionConfig,
     runtime_env::RuntimeEnvBuilder,
 };
 
