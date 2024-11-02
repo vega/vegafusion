@@ -14,13 +14,11 @@ use vegafusion_core::data::dataset::VegaFusionDataset;
 use datafusion::datasource::listing::ListingTableUrl;
 use datafusion::datasource::object_store::ObjectStoreUrl;
 use datafusion::execution::options::{ArrowReadOptions, ReadOptions};
-use datafusion::parquet::data_type::AsBytes;
 use datafusion::prelude::{CsvReadOptions, DataFrame, ParquetReadOptions, SessionContext};
 use datafusion_common::config::TableOptions;
 use datafusion_functions::expr_fn::make_date;
 use std::sync::Arc;
-use tokio::io::AsyncReadExt;
-
+use cfg_if::cfg_if;
 use crate::task_graph::timezone::RuntimeTzConfig;
 use crate::transform::pipeline::TransformPipelineUtils;
 
@@ -37,11 +35,8 @@ use vegafusion_core::task_graph::task_value::TaskValue;
 
 use crate::data::util::{DataFrameUtils, SessionContextUtils};
 use crate::transform::utils::str_to_timestamp;
-use object_store::aws::AmazonS3Builder;
-use object_store::http::HttpBuilder;
-use object_store::{ClientOptions, ObjectStore};
-use reqwest_middleware::{ClientBuilder, ClientWithMiddleware};
-use reqwest_retry::{policies::ExponentialBackoff, RetryTransientMiddleware};
+
+use object_store::ObjectStore;
 use vegafusion_common::arrow::datatypes::{DataType, Field, Schema, TimeUnit};
 use vegafusion_common::column::flat_col;
 use vegafusion_common::data::table::VegaFusionTable;
@@ -49,6 +44,23 @@ use vegafusion_common::data::ORDER_COL;
 use vegafusion_common::datatypes::{is_integer_datatype, is_string_datatype};
 use vegafusion_core::proto::gen::transforms::transform::TransformKind;
 use vegafusion_core::spec::visitors::extract_inline_dataset;
+
+#[cfg(feature = "s3")]
+use object_store::aws::AmazonS3Builder;
+
+#[cfg(feature = "http")]
+use object_store::{
+    ClientOptions,
+    http::{HttpBuilder}
+};
+
+#[cfg(feature = "http-wasm")]
+use {
+    object_store_wasm::http::HttpStore
+};
+
+#[cfg(feature = "fs")]
+use tokio::io::AsyncReadExt;
 
 pub fn build_compilation_config(
     input_vars: &[InputVariable],
@@ -150,7 +162,15 @@ impl TaskCall for DataUrlTask {
         } else if file_type == Some("parquet")
             || (file_type.is_none() && (url.ends_with(".parquet")))
         {
-            read_parquet(&url, ctx).await?
+            cfg_if! {
+                if #[cfg(any(feature = "parquet"))] {
+                    read_parquet(&url, ctx).await?
+                } else {
+                    return Err(VegaFusionError::internal(format!(
+                        "Enable parquet support by enabling the `parquet` feature flag"
+                    )))
+                }
+            }
         } else {
             return Err(VegaFusionError::internal(format!(
                 "Invalid url file extension {url}"
@@ -676,43 +696,58 @@ async fn read_json(url: &str, ctx: Arc<SessionContext>) -> Result<DataFrame> {
             let child_url = url.strip_prefix(&base_url.to_string()).unwrap();
             match store.get(&child_url.into()).await {
                 Ok(get_res) => {
-                    let bytes = get_res.bytes().await?;
-                    let text: Cow<str> = String::from_utf8_lossy(bytes.as_bytes());
+                    let bytes = get_res.bytes().await?.to_vec();
+                    let text: Cow<str> = String::from_utf8_lossy(&bytes);
                     serde_json::from_str(text.as_ref())?
                 }
                 Err(e) => {
-                    if url.starts_with("http://") || url.starts_with("https://") {
-                        // Fallback to direct reqwest implementation. This is needed in some cases because
-                        // the object-store http implementation has stricter requirements on what the
-                        // server provides. For example the content-length header is required.
-                        let response = make_request_client()
-                            .get(url)
-                            .send()
-                            .await
-                            .external(format!("Failed to fetch URL: {url}"))?;
+                    cfg_if::cfg_if! {
+                        if #[cfg(feature="http")] {
+                            if url.starts_with("http://") || url.starts_with("https://") {
+                                // Fallback to direct reqwest implementation. This is needed in some cases because
+                                // the object-store http implementation has stricter requirements on what the
+                                // server provides. For example the content-length header is required.
+                                let client = reqwest::Client::new();
+                                let response = client
+                                    .get(url)
+                                    .send()
+                                    .await
+                                    .external(format!("Failed to fetch URL: {url}"))?;
 
-                        let text = response
-                            .text()
-                            .await
-                            .external("Failed to read response as text")?;
-                        serde_json::from_str(&text)?
-                    } else {
-                        return Err(VegaFusionError::from(e));
+                                let text = response
+                                    .text()
+                                    .await
+                                    .external("Failed to read response as text")?;
+                                serde_json::from_str(&text)?
+                            } else {
+                                return Err(VegaFusionError::from(e));
+                            }
+                        } else {
+                            return Err(VegaFusionError::from(e));
+                        }
                     }
                 }
             }
         } else {
-            // Assume local file
-            let mut file = tokio::fs::File::open(url)
-                .await
-                .external(format!("Failed to open as local file: {url}"))?;
+            cfg_if::cfg_if! {
+                if #[cfg(feature="fs")] {
+                    // Assume local file
+                    let mut file = tokio::fs::File::open(url)
+                        .await
+                        .external(format!("Failed to open as local file: {url}"))?;
 
-            let mut json_str = String::new();
-            file.read_to_string(&mut json_str)
-                .await
-                .external("Failed to read file contents to string")?;
+                    let mut json_str = String::new();
+                    file.read_to_string(&mut json_str)
+                        .await
+                        .external("Failed to read file contents to string")?;
 
-            serde_json::from_str(&json_str)?
+                    serde_json::from_str(&json_str)?
+                } else {
+                    return Err(VegaFusionError::internal(
+                        "The `fs` feature flag must be enabled for file system support"
+                    ));
+                }
+            }
         };
 
     let table = VegaFusionTable::from_json(&value)?.with_ordering()?;
@@ -724,6 +759,7 @@ async fn read_arrow(url: &str, ctx: Arc<SessionContext>) -> Result<DataFrame> {
     Ok(ctx.read_arrow(url, ArrowReadOptions::default()).await?)
 }
 
+#[cfg(feature = "parquet")]
 async fn read_parquet(url: &str, ctx: Arc<SessionContext>) -> Result<DataFrame> {
     maybe_register_object_stores_for_url(&ctx, url)?;
     Ok(ctx.read_parquet(url, ParquetReadOptions::default()).await?)
@@ -734,47 +770,57 @@ fn maybe_register_object_stores_for_url(
     url: &str,
 ) -> Result<Option<ObjectStoreUrl>> {
     // Handle object store registration for non-local sources
-    let maybe_register_http_store = |prefix: &str| -> Result<Option<ObjectStoreUrl>> {
-        if let Some(path) = url.strip_prefix(prefix) {
-            let Some((root, _)) = path.split_once('/') else {
-                return Err(VegaFusionError::specification(format!(
-                    "Invalid https URL: {url}"
-                )));
-            };
-            let base_url_str = format!("https://{root}");
-            let base_url = url::Url::parse(&base_url_str)?;
+    #[cfg(any(feature = "http", feature = "http-wasm"))]
+    {
+        let maybe_register_http_store = |prefix: &str| -> Result<Option<ObjectStoreUrl>> {
+            if let Some(path) = url.strip_prefix(prefix) {
+                let Some((root, _)) = path.split_once('/') else {
+                    return Err(VegaFusionError::specification(format!(
+                        "Invalid https URL: {url}"
+                    )));
+                };
+                let base_url_str = format!("https://{root}");
+                let base_url = url::Url::parse(&base_url_str)?;
 
-            // Register store for url if not already registered
-            let object_store_url = ObjectStoreUrl::parse(&base_url_str)?;
-            if ctx
-                .runtime_env()
-                .object_store(object_store_url.clone())
-                .is_err()
-            {
-                let client_options = ClientOptions::new().with_allow_http(true);
-                let http_store = HttpBuilder::new()
-                    .with_url(base_url.clone())
-                    .with_client_options(client_options)
-                    .build()?;
-
-                ctx.register_object_store(&base_url, Arc::new(http_store));
+                // Register store for url if not already registered
+                let object_store_url = ObjectStoreUrl::parse(&base_url_str)?;
+                if ctx
+                    .runtime_env()
+                    .object_store(object_store_url.clone())
+                    .is_err()
+                {
+                    cfg_if! {
+                        if #[cfg(feature="http")] {
+                            let client_options = ClientOptions::new().with_allow_http(true);
+                            let http_store = HttpBuilder::new()
+                                .with_url(base_url.clone())
+                                .with_client_options(client_options)
+                                .build()?;
+                            ctx.register_object_store(&base_url, Arc::new(http_store));
+                        } else {
+                            let http_store = HttpStore::new(base_url.clone());
+                            ctx.register_object_store(&base_url, Arc::new(http_store));
+                        }
+                    }
+                }
+                return Ok(Some(object_store_url));
             }
-            return Ok(Some(object_store_url));
+            Ok(None)
+        };
+
+        // Register https://
+        if let Some(url) = maybe_register_http_store("https://")? {
+            return Ok(Some(url));
         }
-        Ok(None)
-    };
 
-    // Register https://
-    if let Some(url) = maybe_register_http_store("https://")? {
-        return Ok(Some(url));
-    }
-
-    // Register http://
-    if let Some(url) = maybe_register_http_store("http://")? {
-        return Ok(Some(url));
+        // Register http://
+        if let Some(url) = maybe_register_http_store("http://")? {
+            return Ok(Some(url));
+        }
     }
 
     // Register s3://
+    #[cfg(feature = "s3")]
     if let Some(bucket_path) = url.strip_prefix("s3://") {
         let Some((bucket, _)) = bucket_path.split_once('/') else {
             return Err(VegaFusionError::specification(format!(
@@ -800,12 +846,4 @@ fn maybe_register_object_stores_for_url(
     }
 
     Ok(None)
-}
-
-pub fn make_request_client() -> ClientWithMiddleware {
-    // Retry up to 3 times with increasing intervals between attempts.
-    let retry_policy = ExponentialBackoff::builder().build_with_max_retries(3);
-    ClientBuilder::new(reqwest::Client::new())
-        .with(RetryTransientMiddleware::new_with_policy(retry_policy))
-        .build()
 }

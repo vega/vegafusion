@@ -10,8 +10,16 @@ version = "1.6.9"
 description = "VegaFusion Runtime"
 
 [features]
+default = ["fs", "multi-thread", "rustls-tls", "s3", "http", "parquet"]
 py = ["vegafusion-core/py"]
 protobuf-src = ["vegafusion-core/protobuf-src"]
+s3 = ["object_store/aws"]
+http = ["object_store/http"]
+http-wasm = [ "object-store-wasm/http"]
+fs = ["tokio/fs"]
+parquet = ["datafusion-common/parquet", "datafusion/parquet"]
+multi-thread = ["tokio/rt-multi-thread"]
+rustls-tls = ["reqwest/rustls-tls"]
 
 [dependencies]
 regex = "^1.5.5"
@@ -41,13 +49,10 @@ lodepng = "3.6.1"
 [dependencies.url]
 workspace = true
 
+[dependencies.cfg-if]
+workspace = true
+
 [dependencies.serde_json]
-workspace = true
-
-[dependencies.reqwest-middleware]
-workspace = true
-
-[dependencies.reqwest-retry]
 workspace = true
 
 [dependencies.async-trait]
@@ -61,7 +66,9 @@ workspace = true
 
 [dependencies.object_store]
 workspace = true
-features = ["aws", "http"]
+
+[dependencies.object-store-wasm]
+workspace = true
 
 [dependencies.chrono]
 workspace = true
@@ -95,9 +102,11 @@ features = ["derive"]
 
 [dependencies.datafusion]
 workspace = true
+default-features = false
 
 [dependencies.datafusion-common]
 workspace = true
+default-features = false
 
 [dependencies.datafusion-expr]
 workspace = true
@@ -122,12 +131,12 @@ workspace = true
 
 [dependencies.tokio]
 workspace = true
-features = ["macros", "rt-multi-thread", "fs"]
+features = ["macros"]
 
 [dependencies.reqwest]
 workspace = true
 default-features = false
-features = ["rustls-tls"]
+features = ["json"]
 
 [dev-dependencies.reqwest]
 workspace = true

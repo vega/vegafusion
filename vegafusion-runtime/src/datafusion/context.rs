@@ -1,16 +1,33 @@
 use crate::datafusion::udafs::percentile::{Q1_UDF, Q3_UDF};
 use crate::datafusion::udfs::datetime::make_timestamptz::MAKE_UTC_TIMESTAMP;
 use crate::datafusion::udfs::datetime::timeunit::TIMEUNIT_START_UDF;
-use datafusion::execution::runtime_env::RuntimeEnv;
 use datafusion::execution::SessionStateBuilder;
-use datafusion::prelude::{SessionConfig, SessionContext};
-use std::sync::Arc;
+use datafusion::prelude::SessionContext;
+use cfg_if::cfg_if;
+use datafusion::execution::{
+    config::SessionConfig, disk_manager::DiskManagerConfig,
+    runtime_env::RuntimeEnvBuilder,
+};
+
 
 pub fn make_datafusion_context() -> SessionContext {
     let mut config = SessionConfig::new();
+
     let options = config.options_mut();
     options.optimizer.skip_failed_rules = true;
-    let runtime = Arc::new(RuntimeEnv::default());
+
+    cfg_if! {
+        if #[cfg(target_arch = "wasm32")] {
+            // Disable disk manager for wasm runtime since local files aren't supported
+            let runtime = RuntimeEnvBuilder::new()
+                .with_disk_manager(DiskManagerConfig::Disabled)
+                .build_arc()
+                .unwrap();
+        } else {
+            let runtime = RuntimeEnvBuilder::new().build_arc().unwrap();
+        }
+    }
+
     let session_state = SessionStateBuilder::new()
         .with_config(config)
         .with_runtime_env(runtime)

@@ -39,6 +39,12 @@ version = "1.6.9"
 path = "../vegafusion-core"
 version = "1.6.9"
 
+[dependencies.vegafusion-runtime]
+path = "../vegafusion-runtime"
+version = "1.6.9"
+default-features = false
+features = ["http-wasm"]
+
 [dependencies.serde]
 version = "1.0.137"
 features = ["derive"]
