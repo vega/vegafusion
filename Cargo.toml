@@ -11,14 +11,10 @@ cfg-if = "1.0.0"
 
 [profile.release]
 opt-level = 3
-codegen-units = 1
-lto = "fat"
-strip = "debuginfo"
 
 [profile.release-dev]
 inherits = "release"
 opt-level = 3
-codegen-units = 16
 
 [profile.release-opt]
 inherits = "release"
