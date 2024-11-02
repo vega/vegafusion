@@ -31,9 +31,9 @@ use vegafusion_core::spec::chart::ChartSpec;
 
 use vegafusion_core::chart_state::ChartState;
 use vegafusion_core::data::dataset::VegaFusionDataset;
-use web_sys::Element;
 use vegafusion_runtime::datafusion::context::make_datafusion_context;
 use vegafusion_runtime::task_graph::runtime::VegaFusionRuntime;
+use web_sys::Element;
 
 fn set_panic_hook() {
     // When the `console_error_panic_hook` feature is enabled, we can call the
@@ -82,19 +82,29 @@ impl QueryFnVegaFusionRuntime {
                 let promise = match query_fn.call1(&context, &js_buffer) {
                     Ok(p) => p,
                     Err(e) => {
-                        response_tx.send(Err(vegafusion_common::error::VegaFusionError::internal(
-                            format!("Failed to call send query functions: {}", js_sys::JSON::stringify(&e).unwrap())
-                        ))).unwrap();
-                        continue
+                        response_tx
+                            .send(Err(vegafusion_common::error::VegaFusionError::internal(
+                                format!(
+                                    "Failed to call send query functions: {}",
+                                    js_sys::JSON::stringify(&e).unwrap()
+                                ),
+                            )))
+                            .unwrap();
+                        continue;
                     }
                 };
                 let promise = match promise.dyn_into::<Promise>() {
                     Ok(p) => p,
                     Err(e) => {
-                        response_tx.send(Err(vegafusion_common::error::VegaFusionError::internal(
-                            format!("send query function did not return a promise: {}", js_sys::JSON::stringify(&e).unwrap())
-                        ))).unwrap();
-                        continue
+                        response_tx
+                            .send(Err(vegafusion_common::error::VegaFusionError::internal(
+                                format!(
+                                    "send query function did not return a promise: {}",
+                                    js_sys::JSON::stringify(&e).unwrap()
+                                ),
+                            )))
+                            .unwrap();
+                        continue;
                     }
                 };
                 let response = match JsFuture::from(promise).await {
@@ -103,16 +113,21 @@ impl QueryFnVegaFusionRuntime {
                         response_tx.send(Err(vegafusion_common::error::VegaFusionError::internal(
                             format!("Error when resolving promise returned by send query function: {}", js_sys::JSON::stringify(&e).unwrap())
                         ))).unwrap();
-                        continue
+                        continue;
                     }
                 };
                 let response_array = match response.dyn_into::<js_sys::Uint8Array>() {
                     Ok(response_array) => response_array,
                     Err(e) => {
-                        response_tx.send(Err(vegafusion_common::error::VegaFusionError::internal(
-                            format!("send query function did not return a Uint8Array: {}", js_sys::JSON::stringify(&e).unwrap())
-                        ))).unwrap();
-                        continue
+                        response_tx
+                            .send(Err(vegafusion_common::error::VegaFusionError::internal(
+                                format!(
+                                    "send query function did not return a Uint8Array: {}",
+                                    js_sys::JSON::stringify(&e).unwrap()
+                                ),
+                            )))
+                            .unwrap();
+                        continue;
                     }
                 };
 
@@ -420,20 +435,25 @@ pub async fn vegafusion_embed(
         default_input_tz: None,
     };
 
-    let runtime: Box<dyn VegaFusionRuntimeTrait> = if query_fn.is_undefined() || query_fn.is_null() {
+    let runtime: Box<dyn VegaFusionRuntimeTrait> = if query_fn.is_undefined() || query_fn.is_null()
+    {
         // Use embedded runtime
         let ctx = make_datafusion_context();
         Box::new(VegaFusionRuntime::new(Arc::new(ctx), None, None))
     } else {
-        let query_fn = query_fn.dyn_into::<js_sys::Function>()
-            .map_err(|e| JsError::new(
-                &format!("Expected query_fn to be a Function: {}", js_sys::JSON::stringify(&e).unwrap())
-            ))?;
+        let query_fn = query_fn.dyn_into::<js_sys::Function>().map_err(|e| {
+            JsError::new(&format!(
+                "Expected query_fn to be a Function: {}",
+                js_sys::JSON::stringify(&e).unwrap()
+            ))
+        })?;
         Box::new(QueryFnVegaFusionRuntime::new(query_fn))
     };
 
-    let chart_state = ChartState::try_new(runtime.as_ref(), spec, Default::default(), tz_config, None)
-        .await.map_err(|e| JsError::new(&e.to_string()))?;
+    let chart_state =
+        ChartState::try_new(runtime.as_ref(), spec, Default::default(), tz_config, None)
+            .await
+            .map_err(|e| JsError::new(&e.to_string()))?;
 
     // Serializer that can be used to convert serde types to JSON compatible objects
     let serializer = serde_wasm_bindgen::Serializer::json_compatible();
@@ -450,9 +470,12 @@ pub async fn vegafusion_embed(
         .serialize(&serializer)
         .expect("Failed to convert embed_opts to JsValue");
 
-    let embed = embed(element, spec_value, opts).await.map_err(|e| JsError::new(
-        &format!("Failed to embed chart: {}", js_sys::JSON::stringify(&e).unwrap())
-    ))?;
+    let embed = embed(element, spec_value, opts).await.map_err(|e| {
+        JsError::new(&format!(
+            "Failed to embed chart: {}",
+            js_sys::JSON::stringify(&e).unwrap()
+        ))
+    })?;
 
     let (sender, mut receiver) = async_mpsc::channel::<ExportUpdateJSON>(16);
 

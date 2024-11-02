@@ -2,6 +2,7 @@ use async_lock::{Mutex, MutexGuard, RwLock};
 use futures::FutureExt;
 use lru::LruCache;
 
+use cfg_if::cfg_if;
 use std::collections::HashMap;
 use std::future::Future;
 use std::panic::{resume_unwind, AssertUnwindSafe};
@@ -9,7 +10,6 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
 use vegafusion_core::error::{DuplicateResult, Result, ToExternalError, VegaFusionError};
 use vegafusion_core::task_graph::task_value::TaskValue;
-use cfg_if::cfg_if;
 
 #[cfg(not(target_arch = "wasm32"))]
 use std::time::Instant;
@@ -219,7 +219,12 @@ impl VegaFusionCache {
             .store(protected.len() + probationary.len(), Ordering::Relaxed);
     }
 
-    async fn set_value(&self, state_fingerprint: u64, value: NodeValue, calculation_millis: Option<u128>) {
+    async fn set_value(
+        &self,
+        state_fingerprint: u64,
+        value: NodeValue,
+        calculation_millis: Option<u128>,
+    ) {
         let cache_value = CachedValue {
             value,
             _calculation_millis: calculation_millis,

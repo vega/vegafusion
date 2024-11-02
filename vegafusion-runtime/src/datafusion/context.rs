@@ -1,14 +1,10 @@
 use crate::datafusion::udafs::percentile::{Q1_UDF, Q3_UDF};
 use crate::datafusion::udfs::datetime::make_timestamptz::MAKE_UTC_TIMESTAMP;
 use crate::datafusion::udfs::datetime::timeunit::TIMEUNIT_START_UDF;
-use datafusion::execution::SessionStateBuilder;
-use datafusion::prelude::SessionContext;
 use cfg_if::cfg_if;
-use datafusion::execution::{
-    config::SessionConfig,
-    runtime_env::RuntimeEnvBuilder,
-};
-
+use datafusion::execution::SessionStateBuilder;
+use datafusion::execution::{config::SessionConfig, runtime_env::RuntimeEnvBuilder};
+use datafusion::prelude::SessionContext;
 
 pub fn make_datafusion_context() -> SessionContext {
     let mut config = SessionConfig::new();

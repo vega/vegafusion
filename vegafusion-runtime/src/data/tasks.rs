@@ -11,6 +11,9 @@ use std::collections::{HashMap, HashSet};
 use std::path::Path;
 use vegafusion_core::data::dataset::VegaFusionDataset;
 
+use crate::task_graph::timezone::RuntimeTzConfig;
+use crate::transform::pipeline::TransformPipelineUtils;
+use cfg_if::cfg_if;
 use datafusion::datasource::listing::ListingTableUrl;
 use datafusion::datasource::object_store::ObjectStoreUrl;
 use datafusion::execution::options::{ArrowReadOptions, ReadOptions};
@@ -18,9 +21,6 @@ use datafusion::prelude::{CsvReadOptions, DataFrame, ParquetReadOptions, Session
 use datafusion_common::config::TableOptions;
 use datafusion_functions::expr_fn::make_date;
 use std::sync::Arc;
-use cfg_if::cfg_if;
-use crate::task_graph::timezone::RuntimeTzConfig;
-use crate::transform::pipeline::TransformPipelineUtils;
 
 use vegafusion_common::data::scalar::{ScalarValue, ScalarValueHelpers};
 use vegafusion_common::error::{Result, ResultWithContext, ToExternalError, VegaFusionError};
@@ -49,11 +49,7 @@ use vegafusion_core::spec::visitors::extract_inline_dataset;
 use object_store::aws::AmazonS3Builder;
 
 #[cfg(feature = "http")]
-use object_store::{
-    ClientOptions,
-    http::{HttpBuilder}
-};
-
+use object_store::{http::HttpBuilder, ClientOptions};
 
 #[cfg(feature = "fs")]
 use tokio::io::AsyncReadExt;
