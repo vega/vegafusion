@@ -1,38 +1,84 @@
 [workspace]
 resolver = "2"
-members = [
-  "vegafusion-common",
-  "vegafusion-core",
-  "vegafusion-runtime",
-  "vegafusion-python",
-  "vegafusion-wasm",
-  "vegafusion-server",
-]
+members = [ "vegafusion-common", "vegafusion-core", "vegafusion-runtime", "vegafusion-python", "vegafusion-wasm", "vegafusion-server",]
 
 [workspace.dependencies]
-arrow = { version = "53.1.0", default-features = false }
-
-sqlparser = { version = "0.51.0" }
-chrono = { version = "0.4.35", default-features = false }
-chrono-tz = { version = "0.9.0", features = [
-  "case-insensitive",
-  "filter-by-regex",
-] }
 deterministic-hash = "1.0.1"
-reqwest = { version = "0.12.8", default-features = false }
-tokio = { version = "1.36.0" }
-pyo3 = { version = "0.22.4" }
-pythonize = { version = "0.22" }
-pyo3-arrow = { version = "0.5.1", default-features = false }
-prost = { version = "0.12.3" }
-prost-types = { version = "0.12.3" }
-object_store = { version = "0.11.0" }
-object-store-wasm = { version = "0.0.6" }
-lazy_static = { version = "1.5" }
 async-trait = "0.1.73"
 futures = "0.3.21"
 url = "2.3.1"
 cfg-if = "1.0.0"
+
+[profile.release]
+inherits = "release"
+opt-level = 3
+codegen-units = 1
+lto = "fat"
+strip = "debuginfo"
+
+[profile.release-dev]
+inherits = "release"
+opt-level = 3
+codegen-units = 16
+
+[profile.release-opt]
+inherits = "release"
+opt-level = 3
+codegen-units = 1
+lto = "fat"
+strip = "debuginfo"
+
+[profile.release-small]
+inherits = "release"
+opt-level = "z"
+codegen-units = 1
+
+[workspace.dependencies.arrow]
+version = "53.1.0"
+default-features = false
+
+[workspace.dependencies.sqlparser]
+version = "0.51.0"
+
+[workspace.dependencies.chrono]
+version = "0.4.35"
+default-features = false
+
+[workspace.dependencies.chrono-tz]
+version = "0.9.0"
+features = [ "case-insensitive", "filter-by-regex",]
+
+[workspace.dependencies.reqwest]
+version = "0.12.8"
+default-features = false
+
+[workspace.dependencies.tokio]
+version = "1.36.0"
+
+[workspace.dependencies.pyo3]
+version = "0.22.4"
+
+[workspace.dependencies.pythonize]
+version = "0.22"
+
+[workspace.dependencies.pyo3-arrow]
+version = "0.5.1"
+default-features = false
+
+[workspace.dependencies.prost]
+version = "0.12.3"
+
+[workspace.dependencies.prost-types]
+version = "0.12.3"
+
+[workspace.dependencies.object_store]
+version = "0.11.0"
+
+[workspace.dependencies.object-store-wasm]
+version = "0.0.6"
+
+[workspace.dependencies.lazy_static]
+version = "1.5"
 
 [workspace.dependencies.serde_json]
 version = "1.0.91"
@@ -42,7 +88,7 @@ default-features = false
 git = "https://github.com/apache/datafusion.git"
 rev = "b30d12a73fb9867180c2fdf8ddc818b45f957bac"
 default-features = false
-features = ["nested_expressions"]
+features = [ "nested_expressions",]
 
 [workspace.dependencies.datafusion-common]
 git = "https://github.com/apache/datafusion.git"
@@ -52,13 +98,12 @@ default-features = false
 [workspace.dependencies.datafusion-expr]
 git = "https://github.com/apache/datafusion.git"
 rev = "b30d12a73fb9867180c2fdf8ddc818b45f957bac"
-# no default features
 
 [workspace.dependencies.datafusion-proto]
 git = "https://github.com/apache/datafusion.git"
 rev = "b30d12a73fb9867180c2fdf8ddc818b45f957bac"
 default-features = false
-features = ["parquet"]
+features = [ "parquet",]
 
 [workspace.dependencies.datafusion-proto-common]
 git = "https://github.com/apache/datafusion.git"
@@ -83,35 +128,11 @@ default-features = false
 [workspace.dependencies.datafusion-functions-nested]
 git = "https://github.com/apache/datafusion.git"
 rev = "b30d12a73fb9867180c2fdf8ddc818b45f957bac"
-# no default features
 
 [workspace.dependencies.datafusion-functions-aggregate]
 git = "https://github.com/apache/datafusion.git"
 rev = "b30d12a73fb9867180c2fdf8ddc818b45f957bac"
-# no default features
 
 [workspace.dependencies.datafusion-functions-window]
 git = "https://github.com/apache/datafusion.git"
 rev = "b30d12a73fb9867180c2fdf8ddc818b45f957bac"
-# no default features
-
-# Profile with good speed for local development and testing
-[profile.release]
-opt-level = 3
-
-# Profile optimized for speed and small size,
-# but takes a long time to compile
-[profile.release-opt]
-inherits = "release"
-opt-level = 3
-codegen-units = 1
-lto = "fat"
-strip = "debuginfo"
-
-# Profile optimized for minimizing size for wasm builds
-# Unfortunately, wasm-pack can't use this directly yet.
-# See https://github.com/rustwasm/wasm-pack/issues/1111
-[profile.release-small]
-inherits = "release"
-opt-level = "z"
-codegen-units = 1
