@@ -8,11 +8,11 @@ use std::future::Future;
 use std::panic::{resume_unwind, AssertUnwindSafe};
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
-use vegafusion_core::error::{DuplicateResult, Result, ToExternalError, VegaFusionError};
+use vegafusion_core::error::{DuplicateResult, Result, VegaFusionError};
 use vegafusion_core::task_graph::task_value::TaskValue;
 
 #[cfg(not(target_arch = "wasm32"))]
-use std::time::Instant;
+use {std::time::Instant, vegafusion_core::error::ToExternalError};
 
 #[derive(Debug, Clone)]
 struct CachedValue {

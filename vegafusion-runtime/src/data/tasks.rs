@@ -17,13 +17,13 @@ use cfg_if::cfg_if;
 use datafusion::datasource::listing::ListingTableUrl;
 use datafusion::datasource::object_store::ObjectStoreUrl;
 use datafusion::execution::options::{ArrowReadOptions, ReadOptions};
-use datafusion::prelude::{CsvReadOptions, DataFrame, ParquetReadOptions, SessionContext};
+use datafusion::prelude::{CsvReadOptions, DataFrame, SessionContext};
 use datafusion_common::config::TableOptions;
 use datafusion_functions::expr_fn::make_date;
 use std::sync::Arc;
 
 use vegafusion_common::data::scalar::{ScalarValue, ScalarValueHelpers};
-use vegafusion_common::error::{Result, ResultWithContext, ToExternalError, VegaFusionError};
+use vegafusion_common::error::{Result, ResultWithContext, VegaFusionError};
 
 use vegafusion_core::proto::gen::tasks::data_url_task::Url;
 use vegafusion_core::proto::gen::tasks::scan_url_format;
@@ -53,6 +53,12 @@ use object_store::{http::HttpBuilder, ClientOptions};
 
 #[cfg(feature = "fs")]
 use tokio::io::AsyncReadExt;
+
+#[cfg(feature = "parquet")]
+use {datafusion::prelude::ParquetReadOptions, vegafusion_common::error::ToExternalError};
+
+#[cfg(target_arch = "wasm32")]
+use object_store_wasm::HttpStore;
 
 pub fn build_compilation_config(
     input_vars: &[InputVariable],

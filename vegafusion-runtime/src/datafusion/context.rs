@@ -6,6 +6,9 @@ use datafusion::execution::SessionStateBuilder;
 use datafusion::execution::{config::SessionConfig, runtime_env::RuntimeEnvBuilder};
 use datafusion::prelude::SessionContext;
 
+#[cfg(target_arch = "wasm32")]
+use datafusion::execution::disk_manager::DiskManagerConfig;
+
 pub fn make_datafusion_context() -> SessionContext {
     let mut config = SessionConfig::new();
 
