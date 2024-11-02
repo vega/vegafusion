@@ -28,7 +28,7 @@ dev-py = { cmd = [
 ] }
 
 # Build Python packages
-build-py = { cmd = "rm -rf target/wheels && maturin build -m vegafusion-python/Cargo.toml --release --strip --sdist $0" }
+build-py = { cmd = "rm -rf target/wheels && maturin build -m vegafusion-python/Cargo.toml --profile release-opt --strip --sdist $0" }
 
 fmt-py = { cmd = "ruff format", cwd="vegafusion-python" }
 lint-fix-py = { cmd = "ruff format && ruff check --fix", cwd="vegafusion-python" }
@@ -66,14 +66,19 @@ run-rs-server = "cargo run --release -p vegafusion-server "
 # Build Wasm
 install-wasm-toolchain = "python automation/download_rust_target.py wasm32-unknown-unknown"
 install-wasm-pack = "export CARGO_HOME=$PIXI_PROJECT_ROOT/.pixi/envs/default && cargo install wasm-pack"
-build-wasm = { cmd = "cd vegafusion-wasm && rm -rf pkg/ && wasm-pack build --release && node scripts/update-pkg.js && cd pkg/ && npm install", depends_on = [
+build-wasm = { cmd = """
+python automation/set_default_release_profile.py small &&
+cd vegafusion-wasm && 
+rm -rf pkg/ && 
+wasm-pack build --release && 
+node scripts/update-pkg.js && 
+cd pkg/ && npm install &&
+python ../../automation/set_default_release_profile.py dev
+""", depends_on = [
   "install-wasm-toolchain",
   "install-wasm-pack",
 ] }
-build-wasm-dev = { cmd = "cd vegafusion-wasm && rm -rf pkg/ && wasm-pack build --dev && node scripts/update-pkg.js && cd pkg/ && npm install", depends_on = [
-  "install-wasm-toolchain",
-  "install-wasm-pack",
-] }
+
 pack-wasm = { cmd = "cd vegafusion-wasm && wasm-pack pack", depends_on = [
   "build-wasm",
 ] }
@@ -84,7 +89,7 @@ build-js-embed = { cmd = "cd javascript/vegafusion-embed && npm install && npm r
 ] }
 
 # VegaFusion Server
-build-rs-vegafusion-server = { cmd = "cargo build -p vegafusion-server --release $0" }
+build-rs-server = { cmd = "cargo build -p vegafusion-server --profile release-opt $0" }
 
 # minio
 start-minio = "python automation/start_minio.py"

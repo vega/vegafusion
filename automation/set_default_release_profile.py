@@ -1,7 +1,7 @@
 import sys
 import toml
 from pathlib import Path
-
+import copy
 def set_default_release_profile(profile_type: str):    
     # Compute project root path (2 levels up from script location)
     script_path = Path(__file__).resolve()
@@ -23,7 +23,8 @@ def set_default_release_profile(profile_type: str):
         sys.exit(1)
     
     # Replace release profile with selected profile
-    cargo_config['profile']['release'] = cargo_config['profile'][source_profile]
+    cargo_config['profile']['release'] = copy.deepcopy(cargo_config['profile'][source_profile])
+    del cargo_config['profile']["release"]["inherits"]
     
     # Write updated config back to file
     with open(cargo_path, 'w') as f:
