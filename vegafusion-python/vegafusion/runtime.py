@@ -4,7 +4,7 @@ import sys
 from types import ModuleType
 from typing import TYPE_CHECKING, Any, Literal, TypedDict, Union, cast
 
-import narwhals as nw
+import narwhals.stable.v1 as nw
 from arro3.core import Table
 
 from vegafusion._vegafusion import get_cpu_count, get_virtual_memory
@@ -570,14 +570,11 @@ class VegaFusionRuntime:
         # to return
         processed_datasets = []
         for df in nw_dataframes:
-            for name in df.columns:
-                dtype = df[name].dtype
-                if dtype == nw.Datetime:
-                    df = df.with_columns(
-                        df[name]
-                        .dt.replace_time_zone("UTC")
-                        .dt.convert_time_zone(local_tz)
-                    )
+            df = df.with_columns(
+                nw.col(col).dt.replace_time_zone("UTC").dt.convert_time_zone(local_tz)
+                for col, dtype in df.schema.items()
+                if dtype == nw.Datetime
+            )
             processed_datasets.append(df.to_native())
 
         return processed_datasets, warnings
