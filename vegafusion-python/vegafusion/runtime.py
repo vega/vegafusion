@@ -566,12 +566,12 @@ class VegaFusionRuntime:
                     "transformed data"
                 )
 
-        # Localize datetime columns to UTC, then extract the native DataFrame
-        # to return
+        # Convert to `local_tz` (or, set to UTC and then convert if starting
+        # from time-zone-naive data), then extract the native DataFrame to return.
         processed_datasets = []
         for df in nw_dataframes:
             df = df.with_columns(
-                nw.col(col).dt.replace_time_zone("UTC").dt.convert_time_zone(local_tz)
+                nw.col(col).dt.convert_time_zone(local_tz)
                 for col, dtype in df.schema.items()
                 if dtype == nw.Datetime
             )
