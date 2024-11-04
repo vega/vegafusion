@@ -18,7 +18,8 @@
     "vegafusion_wasm.js",
     "vegafusion_wasm_bg.js",
     "vegafusion_wasm.d.ts",
-    "snippets/**/*.js"
+    "snippets/**/*.js",
+    "js/worker.js"
   ],
   "module": "vegafusion_wasm.js",
   "types": "vegafusion_wasm.d.ts",

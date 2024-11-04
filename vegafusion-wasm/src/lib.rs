@@ -12,6 +12,7 @@ use wasm_bindgen::prelude::*;
 use futures::channel::{mpsc as async_mpsc, oneshot};
 use js_sys::Promise;
 use std::any::Any;
+use std::cell::RefCell;
 use std::collections::HashMap;
 use std::rc::Rc;
 use std::sync::Arc;
@@ -33,7 +34,7 @@ use vegafusion_core::chart_state::ChartState;
 use vegafusion_core::data::dataset::VegaFusionDataset;
 use vegafusion_runtime::datafusion::context::make_datafusion_context;
 use vegafusion_runtime::task_graph::runtime::VegaFusionRuntime;
-use web_sys::Element;
+use web_sys::{console, Element, MessageEvent, Worker, ErrorEvent};
 
 fn set_panic_hook() {
     // When the `console_error_panic_hook` feature is enabled, we can call the
@@ -414,6 +415,9 @@ pub async fn vegafusion_embed(
     query_fn: JsValue,
 ) -> Result<ChartHandle, JsValue> {
     set_panic_hook();
+
+    start_workers(wasm_bindgen::module(),).await;
+
     let spec: ChartSpec = if spec.is_string() {
         serde_json::from_str(&spec.as_string().unwrap())
             .map_err(|_e| JsError::new("Failed to convert JsValue to ChartSpec"))?
@@ -514,6 +518,39 @@ pub async fn vegafusion_embed(
 #[wasm_bindgen(js_name = "makeGrpcSendMessageFn")]
 pub fn make_grpc_send_message_fn(client: JsValue, hostname: String) -> js_sys::Function {
     inner_make_grpc_send_message_fn(client, hostname)
+}
+
+#[wasm_bindgen]
+#[allow(clippy::not_unsafe_ptr_arg_deref)]
+#[doc(hidden)]
+pub fn wbg_vegafusion_start_worker() {
+    console::log_1(&"wbg_vegafusion_start_worker".into());
+    // // This is safe, because we know it came from a reference to PoolBuilder,
+    // // allocated on the heap by wasm-bindgen and dropped only once all the
+    // // threads are running.
+    // //
+    // // The only way to violate safety is if someone externally calls
+    // // `exports.wbg_rayon_start_worker(garbageValue)`, but then no Rust tools
+    // // would prevent us from issues anyway.
+    // let receiver = unsafe { &*receiver };
+    // // Wait for a task (`ThreadBuilder`) on the channel, and, once received,
+    // // start executing it.
+    // //
+    // // On practice this will start running Rayon's internal event loop.
+    // receiver.recv().unwrap_throw().run()
+}
+
+#[wasm_bindgen(module = "/js/workerHelpers.js")]
+extern "C" {
+    #[wasm_bindgen(js_name = startWorkers)]
+    async fn start_workers(module: JsValue);
+}
+
+// Just ensure that the worker is emitted into the output folder, but don't actually use the URL.
+#[wasm_bindgen(module = "/js/workerHelpers.worker.js")]
+extern "C" {
+    #[wasm_bindgen(js_name = _ensure_worker_emitted)]
+    fn _ensure_worker_emitted(module: JsValue);
 }
 
 #[wasm_bindgen(module = "/js/vega_utils.js")]

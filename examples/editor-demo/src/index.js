@@ -1,4 +1,4 @@
-const { vegaFusionEmbed, makeGrpcSendMessageFn } = await import("vegafusion-wasm");
+import init, { vegaFusionEmbed, makeGrpcSendMessageFn } from "vegafusion-wasm";
 
 import * as Monaco from 'monaco-editor/esm/vs/editor/editor.api';
 import _ from "lodash"
@@ -7,7 +7,8 @@ import 'bootstrap';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import './style.css';
 
-async function init() {
+async function init_editor() {
+    await init();
     monaco_init()
 
     let initial_spec = JSON.stringify(flights_spec, null, 2);
@@ -1483,4 +1484,4 @@ let flights_spec = {
     ]
 }
 
-await init();
+await init_editor();

@@ -70,7 +70,7 @@ build-wasm = { cmd = """
 python automation/set_default_release_profile.py small &&
 cd vegafusion-wasm && 
 rm -rf pkg/ && 
-wasm-pack build --release && 
+wasm-pack build --release --target web && 
 node scripts/update-pkg.js && 
 cd pkg/ && npm install &&
 python ../../automation/set_default_release_profile.py dev

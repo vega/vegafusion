@@ -14,14 +14,31 @@ module.exports = {
       {
         test: /\.css$/,
         use: ['style-loader', 'css-loader']
-      }, {
+      },
+      {
         test: /\.svg$/,
         loader: 'svg-inline-loader'
       },
+      // {
+      //   test: /\.wasm$/,
+      //   type: "webassembly/async",
+      // }
     ]
   },
   plugins: [
-    new CopyWebpackPlugin({patterns: ['src/index.html']}),
+    new CopyWebpackPlugin({
+      patterns: [
+        'src/index.html',
+        // {
+        //   from: '../../vegafusion-wasm/pkg/workerHelpers.worker.js',
+        //   to: 'pkg/workerHelpers.worker.js'
+        // }
+        // {
+        //   from: '../../vegafusion-wasm/pkg',
+        //   to: 'pkg'
+        // }
+      ]
+    }),
     new MonacoWebpackPlugin({
       languages: ['typescript', 'javascript', 'css', "json"]
     })

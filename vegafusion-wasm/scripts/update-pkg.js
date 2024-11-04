@@ -24,5 +24,16 @@ pkg.dependencies = {
   "vega-util": "^1.17.0"
 };
 
+// // Create js directory in pkg if it doesn't exist
+// const pkgJsDir = path.join(__dirname, '../pkg/js');
+// if (!fs.existsSync(pkgJsDir)) {
+//     fs.mkdirSync(pkgJsDir, { recursive: true });
+// }
+
+// // Copy workerHelpers.worker.js to pkg directory
+// const workerSrc = path.join(__dirname, '../js/workerHelpers.worker.js');
+// const workerDest = path.join(__dirname, 'workerHelpers.worker.js');
+// fs.copyFileSync(workerSrc, workerDest);
+
 // Write back to pkg/package.json
 fs.writeFileSync(pkgPath, JSON.stringify(pkg, null, 2)); 
