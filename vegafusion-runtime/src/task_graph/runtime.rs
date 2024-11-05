@@ -2,6 +2,7 @@ use crate::task_graph::cache::VegaFusionCache;
 use crate::task_graph::task::TaskCall;
 use crate::task_graph::timezone::RuntimeTzConfig;
 use async_recursion::async_recursion;
+use cfg_if::cfg_if;
 use datafusion::prelude::SessionContext;
 use futures_util::{future, FutureExt};
 use std::any::Any;
@@ -159,13 +160,23 @@ async fn get_or_compute_node_value(
             // Create future to compute node value (will only be executed if not present in cache)
             let mut inputs_futures = Vec::new();
             for input_node_index in input_node_indexes {
-                inputs_futures.push(tokio::spawn(get_or_compute_node_value(
+                let node_fut = get_or_compute_node_value(
                     task_graph.clone(),
                     input_node_index,
                     cloned_cache.clone(),
                     inline_datasets.clone(),
                     ctx.clone(),
-                )));
+                );
+
+                cfg_if! {
+                    if #[cfg(target_arch = "wasm32")] {
+                        // Add future directly
+                        inputs_futures.push(node_fut);
+                    } else {
+                        // In non-wasm environment, use tokio::spawn for multi-threading
+                        inputs_futures.push(tokio::spawn(node_fut));
+                    }
+                }
             }
 
             let input_values = futures::future::join_all(inputs_futures).await;
@@ -175,13 +186,24 @@ async fn get_or_compute_node_value(
                 .into_iter()
                 .zip(input_edges)
                 .map(|(value, edge)| {
-                    // Convert outer JoinHandle error to internal VegaFusionError so we can propagate it.
-                    let mut value = match value {
-                        Ok(value) => value?,
-                        Err(join_err) => {
-                            return Err(VegaFusionError::internal(join_err.to_string()))
+                    cfg_if! {
+                        if #[cfg(target_arch = "wasm32")] {
+                            let mut value = match value {
+                                Ok(value) => value,
+                                Err(join_err) => {
+                                    return Err(join_err)
+                                }
+                            };
+                        } else {
+                            // Convert outer JoinHandle error to internal VegaFusionError so we can propagate it.
+                            let mut value = match value {
+                                Ok(value) => value?,
+                                Err(join_err) => {
+                                    return Err(VegaFusionError::internal(join_err.to_string()))
+                                }
+                            };
                         }
-                    };
+                    }
 
                     let value = match edge.output {
                         None => value.0,

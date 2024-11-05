@@ -45,9 +45,27 @@ async function init() {
         readOnly: true,
     });
 
-    const hostname = 'http://127.0.0.1:50051';
-    let client = new grpcWeb.GrpcWebClientBase({format: "binary"});
-    let send_message_grpc = makeGrpcSendMessageFn(client, hostname);
+    // Add checkbox for toggling VegaFusion server
+    const container = document.createElement('div');
+    container.className = 'pb-3';  // Add padding-bottom
+
+    const serverCheckbox = document.createElement('input');
+    serverCheckbox.type = 'checkbox';
+    serverCheckbox.id = 'use-server';
+    serverCheckbox.checked = false;
+    serverCheckbox.className = 'form-check-input me-2';
+    
+    const label = document.createElement('label');
+    label.htmlFor = 'use-server';
+    label.textContent = 'Use VegaFusion Server';
+    label.className = 'form-check-label';
+    
+    // Add elements to container
+    container.appendChild(serverCheckbox);
+    container.appendChild(label);
+    
+    // Insert container before the chart element
+    document.getElementById('vega-chart').insertAdjacentElement("beforebegin", container);
 
     async function update_chart() {
         try {
@@ -60,12 +78,38 @@ async function init() {
                     mode: "vega",
                 },
             };
-            let chart_handle = await vegaFusionEmbed(
-                element,
-                editor.getValue(),
-                send_message_grpc,
-                config,
-            );
+
+            let chart_handle;
+            if (serverCheckbox.checked) {
+                const hostname = 'http://127.0.0.1:50051';
+                try {
+                    let client = new grpcWeb.GrpcWebClientBase({format: "binary"});
+                    let send_message_grpc = makeGrpcSendMessageFn(client, hostname);
+                    
+                    chart_handle = await vegaFusionEmbed(
+                        element,
+                        editor.getValue(),
+                        config,
+                        send_message_grpc,
+                    );
+                
+                } catch (e) {
+                    // Clear the chart and display an error message
+                    element.innerHTML = `
+                        <div class="alert alert-danger m-3" role="alert">
+                            Failed to connect to VegaFusion server using gRPC at ${hostname}. 
+                            Please ensure the server is running and accessible.
+                        </div>`;
+                    return;
+                }
+            } else {
+                chart_handle = await vegaFusionEmbed(
+                    element,
+                    editor.getValue(),
+                    config,
+                );
+            }
+
             server_spec_monaco.setValue(JSON.stringify(chart_handle.serverSpec(), null, 2));
             client_spec_monaco.setValue(JSON.stringify(chart_handle.clientSpec(), null, 2));
             comm_plan_monaco.setValue(JSON.stringify(chart_handle.commPlan(), null, 2));
@@ -75,9 +119,16 @@ async function init() {
             client_spec_monaco.setValue("");
             comm_plan_monaco.setValue("");
             console.log(e);
-            return
+            return;
         }
     }
+
+    // Update chart when checkbox changes
+    serverCheckbox.addEventListener('change', async () => {
+        let cardElement = document.getElementById('vega-chart').closest('.card');  // Find the parent card
+        cardElement.classList.toggle('border-success');
+        await update_chart();
+    });
 
     // Update chart (with debounce) when editor value changes
     await update_chart()
@@ -109,6 +160,8 @@ let flights_spec = {
         {
             "name": "source_0",
             "url": "https://raw.githubusercontent.com/vega/vega-datasets/main/data/flights-2k.json",
+            // "url": "https://vegafusion-datasets.s3.amazonaws.com/vega/flights_200k.json",
+            // "url": "https://vegafusion-datasets.s3.amazonaws.com/vega/flights_200k.parquet",
             "format": {"type": "json", "parse": {"date": "date"}},
             "transform": [
                 {

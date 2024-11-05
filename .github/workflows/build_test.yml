@@ -404,7 +404,7 @@ jobs:
             .pixi
       - name: Build vegafusion-server
         run: |
-          pixi run build-rs-vegafusion-server
+          pixi run build-rs-server
       - name: zip executable
         uses: vimtor/action-zip@26a249fb00d43ca98dad77a4b3838025fc226aa1 # pin@v1.1
         with:
@@ -441,7 +441,7 @@ jobs:
 #          pixi run python automation/download_rust_target.py aarch64-unknown-linux-gnu
 #          pixi add gcc_linux-aarch64 -p linux-64
 #          export RUSTFLAGS="-C linker=aarch64-linux-gnu-gcc"
-#          pixi run build-rs-vegafusion-server --features=protobuf-src --target aarch64-unknown-linux-gnu
+#          pixi run build-rs-server --features=protobuf-src --target aarch64-unknown-linux-gnu
 #      - name: zip executable
 #        uses: vimtor/action-zip@26a249fb00d43ca98dad77a4b3838025fc226aa1 # pin@v1.1
 #        with:
@@ -514,7 +514,7 @@ jobs:
       - name: Build vegafusion-server
         run: |
           pixi install -vvv
-          pixi run build-rs-vegafusion-server
+          pixi run build-rs-server
       - name: zip executable
         uses: vimtor/action-zip@26a249fb00d43ca98dad77a4b3838025fc226aa1 # pin@v1.1
         with:
@@ -545,7 +545,7 @@ jobs:
             .pixi
       - name: Build vegafusion-server
         run: |
-          pixi run build-rs-vegafusion-server
+          pixi run build-rs-server
       - name: zip executable
         uses: vimtor/action-zip@26a249fb00d43ca98dad77a4b3838025fc226aa1 # pin@v1.1
         with:
@@ -576,7 +576,7 @@ jobs:
             .pixi
       - name: Build vegafusion-server
         run: |
-          pixi run build-rs-vegafusion-server --target aarch64-apple-darwin
+          pixi run build-rs-server --target aarch64-apple-darwin
       - name: zip executable
         uses: vimtor/action-zip@26a249fb00d43ca98dad77a4b3838025fc226aa1 # pin@v1.1
         with:
