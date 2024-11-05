@@ -6,7 +6,7 @@ use vegafusion_common::{
     error::{Result, ResultWithContext, VegaFusionError},
 };
 
-use crate::proto::gen::pretransform::pre_transform_values_warning::WarningType as ValuesWarningType;
+use crate::proto::{gen::pretransform::pre_transform_values_warning::WarningType as ValuesWarningType, gen::{errors::{error::Errorkind, Error, TaskGraphValueError}, services::{query_request, query_result, QueryRequest, QueryResult}, tasks::TaskGraphValueResponse}};
 use crate::{
     data::dataset::VegaFusionDataset,
     planning::{
@@ -48,6 +48,49 @@ pub trait VegaFusionRuntimeTrait: Send + Sync {
         inline_datasets: &HashMap<String, VegaFusionDataset>,
     ) -> Result<Vec<NamedTaskValue>>;
 
+    async fn query_request_message(
+        &self,
+        request: QueryRequest,
+    ) -> Result<QueryResult> {
+        match request.request {
+            Some(query_request::Request::TaskGraphValues(task_graph_values)) => {
+                let task_graph = Arc::new(task_graph_values.task_graph.unwrap());
+                let indices = &task_graph_values.indices;
+                let inline_datasets = decode_inline_datasets(task_graph_values.inline_datasets)?;
+
+                match self.query_request(task_graph, indices.as_slice(), &inline_datasets).await
+                {
+                    Ok(response_values) => {
+                        let response_msg = QueryResult {
+                            response: Some(query_result::Response::TaskGraphValues(
+                                TaskGraphValueResponse {
+                                    response_values: response_values
+                                        .into_iter()
+                                        .map(|v| v.into())
+                                        .collect::<Vec<_>>(),
+                                },
+                            )),
+                        };
+                        Ok(response_msg)
+                    }
+                    Err(e) => {
+                        let response_msg = QueryResult {
+                            response: Some(query_result::Response::Error(Error {
+                                errorkind: Some(Errorkind::Error(TaskGraphValueError {
+                                    msg: e.to_string(),
+                                })),
+                            })),
+                        };
+                        Ok(response_msg)
+                    }
+                }
+            }
+            _ => Err(VegaFusionError::internal(
+                "Invalid VegaFusionRuntimeRequest request",
+            )),
+        }
+    }
+    
     async fn pre_transform_spec_plan(
         &self,
         spec: &ChartSpec,

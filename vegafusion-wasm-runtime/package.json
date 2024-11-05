@@ -1,0 +1,27 @@
+{
+  "name": "vegafusion-wasm",
+  "version": "1.6.9",
+  "author": "Jon Mease <jon@vegafusion.io> (https://jonmmease.dev)",
+  "license": "BSD-3-Clause",
+  "description": "Wasm library for interfacing with VegaFusion",
+  "keywords": [
+    "Vega",
+    "Vega-Lite",
+    "visualization"
+  ],
+  "homepage": "https://github.com/hex-inc/vegafusion",
+  "bugs": {
+    "url": "https://github.com/hex-inc/vegafusion/issues"
+  },
+  "files": [
+    "vegafusion_wasm_runtime_bg.wasm",
+    "vegafusion_wasm_runtime.js",
+    "vegafusion_wasm_runtime_bg.js",
+    "vegafusion_wasm_runtime.d.ts",
+    "js/makeRuntimeQueryFn.js",
+    "js/workerHelpers.worker.js"
+  ],
+  "module": "vegafusion_wasm_runtime.js",
+  "types": "vegafusion_wasm_runtime.d.ts",
+  "sideEffects": false
+}

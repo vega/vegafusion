@@ -1,3 +1,4 @@
+import initRuntime, { VegaFusionRuntimeHandle } from "vegafusion-wasm-runtime";
 import init, { vegaFusionEmbed, makeGrpcSendMessageFn } from "vegafusion-wasm";
 
 import * as Monaco from 'monaco-editor/esm/vs/editor/editor.api';
@@ -9,6 +10,7 @@ import './style.css';
 
 async function init_editor() {
     await init();
+    await initRuntime();
     monaco_init()
 
     let initial_spec = JSON.stringify(flights_spec, null, 2);
@@ -104,10 +106,13 @@ async function init_editor() {
                     return;
                 }
             } else {
+                let runtime = new VegaFusionRuntimeHandle();
+                const query_fn = (d) => runtime.query(d);
                 chart_handle = await vegaFusionEmbed(
                     element,
                     editor.getValue(),
                     config,
+                    query_fn,
                 );
             }
 

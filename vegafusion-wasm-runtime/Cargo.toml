@@ -1,0 +1,59 @@
+[package]
+name = "vegafusion-wasm-runtime"
+license = "BSD-3-Clause"
+version = "1.6.9"
+edition = "2021"
+description = "VegaFusion WASM package for embedding Vega charts in the browser with a connection to a VegaFusion Runtime"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[features]
+default = ["console_error_panic_hook"]
+
+[dependencies]
+wasm-bindgen-futures = "0.4.28"
+js-sys = "0.3.55"
+
+[dependencies.getrandom]
+version = "0.2.8"
+features = ["js"]
+
+[dependencies.prost]
+workspace = true
+
+[dependencies.chrono]
+version = "0.4.31"
+features = ["wasmbind"]
+
+[dependencies.vegafusion-common]
+path = "../vegafusion-common"
+features = ["json"]
+version = "1.6.9"
+
+[dependencies.vegafusion-core]
+path = "../vegafusion-core"
+version = "1.6.9"
+
+[dependencies.vegafusion-runtime]
+path = "../vegafusion-runtime"
+version = "1.6.9"
+default-features = false
+features = ["http-wasm"]
+
+[dependencies.wasm-bindgen]
+version = "0.2.78"
+
+[dependencies.console_error_panic_hook]
+version = "0.1.6"
+optional = true
+
+[dependencies.web-sys]
+version = "0.3.55"
+features = ["console"]
+
+[package.metadata.wasm-pack.profile.release]
+wasm-opt = ["-Os"]
+
+[package.metadata.wasm-pack.profile.dev]
+wasm-opt = false

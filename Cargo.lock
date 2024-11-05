@@ -4758,6 +4758,23 @@ dependencies = [
 ]
 
 [[package]]
+name = "vegafusion-wasm-runtime"
+version = "1.6.9"
+dependencies = [
+ "chrono",
+ "console_error_panic_hook",
+ "getrandom",
+ "js-sys",
+ "prost 0.12.6",
+ "vegafusion-common",
+ "vegafusion-core",
+ "vegafusion-runtime",
+ "wasm-bindgen",
+ "wasm-bindgen-futures",
+ "web-sys",
+]
+
+[[package]]
 name = "version_check"
 version = "0.9.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"

@@ -33,6 +33,7 @@
     "monaco-editor-webpack-plugin": "^6.0.0",
     "node-forge": ">=1.0.0",
     "vegafusion-wasm": "../../vegafusion-wasm/pkg",
+    "vegafusion-wasm-runtime": "../../vegafusion-wasm-runtime/pkg",
     "grpc-web": "^1.5.0"
   },
   "devDependencies": {
