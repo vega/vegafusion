@@ -2,19 +2,22 @@ use async_lock::{Mutex, MutexGuard, RwLock};
 use futures::FutureExt;
 use lru::LruCache;
 
+use cfg_if::cfg_if;
 use std::collections::HashMap;
 use std::future::Future;
 use std::panic::{resume_unwind, AssertUnwindSafe};
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
-use std::time::Instant;
-use vegafusion_core::error::{DuplicateResult, Result, ToExternalError, VegaFusionError};
+use vegafusion_core::error::{DuplicateResult, Result, VegaFusionError};
 use vegafusion_core::task_graph::task_value::TaskValue;
+
+#[cfg(not(target_arch = "wasm32"))]
+use {std::time::Instant, vegafusion_core::error::ToExternalError};
 
 #[derive(Debug, Clone)]
 struct CachedValue {
     value: NodeValue,
-    _calculation_millis: u128,
+    _calculation_millis: Option<u128>,
 }
 
 impl CachedValue {
@@ -216,7 +219,12 @@ impl VegaFusionCache {
             .store(protected.len() + probationary.len(), Ordering::Relaxed);
     }
 
-    async fn set_value(&self, state_fingerprint: u64, value: NodeValue, calculation_millis: u128) {
+    async fn set_value(
+        &self,
+        state_fingerprint: u64,
+        value: NodeValue,
+        calculation_millis: Option<u128>,
+    ) {
         let cache_value = CachedValue {
             value,
             _calculation_millis: calculation_millis,
@@ -305,51 +313,91 @@ impl VegaFusionCache {
             .await
             .insert(state_fingerprint, initializer.clone());
 
-        // Record start time
-        let start = Instant::now();
-
         // Invoke future to initialize
-        match AssertUnwindSafe(tokio::spawn(init)).catch_unwind().await {
-            // Resolved.
-            Ok(Ok(value)) => {
-                // If result Ok, clone to values
-                match value {
+        cfg_if! {
+            if #[cfg(target_arch = "wasm32")] {
+                // In WASM we await the future directly since multi-threading with tokio::spawn
+                // is not available.
+                match AssertUnwindSafe(init).catch_unwind().await {
+                    // Resolved.
                     Ok(value) => {
-                        *initializer_lock = Some(Ok(value.clone()));
+                        // If result Ok, clone to values
+                        match value {
+                            Ok(value) => {
+                                *initializer_lock = Some(Ok(value.clone()));
+                                self.set_value(state_fingerprint, value.clone(), None).await;
 
-                        // Check if we should add value to long-term cache
-                        let duration = start.elapsed();
-                        let millis = duration.as_millis();
-                        self.set_value(state_fingerprint, value.clone(), millis)
-                            .await;
-
-                        // Stored initializer no longer required. Initializers are Arc
-                        // pointers, so it's fine to drop initializer from here even if
-                        // other tasks are still awaiting on it.
-                        self.remove_initializer(state_fingerprint).await;
-                        Ok(value)
+                                // Stored initializer no longer required. Initializers are Arc
+                                // pointers, so it's fine to drop initializer from here even if
+                                // other tasks are still awaiting on it.
+                                self.remove_initializer(state_fingerprint).await;
+                                Ok(value)
+                            }
+                            Err(e) => {
+                                // Remove initializer so that another future can try again
+                                *initializer_lock = Some(Err(e.duplicate()));
+                                self.remove_initializer(state_fingerprint).await;
+                                Err(e)
+                            }
+                        }
                     }
-                    Err(e) => {
-                        // Remove initializer so that another future can try again
-                        *initializer_lock = Some(Err(e.duplicate()));
+                    // Panicked.
+                    Err(payload) => {
+                        *initializer_lock = Some(Err(VegaFusionError::internal("Panic error")));
+
+                        // Remove the waiter so that others can retry.
                         self.remove_initializer(state_fingerprint).await;
-                        Err(e)
+                        // triggers panic, so no return value in this branch
+                        resume_unwind(payload);
                     }
                 }
-            }
-            Ok(Err(err)) => {
-                *initializer_lock = Some(Err(VegaFusionError::internal(err.to_string())));
-                self.remove_initializer(state_fingerprint).await;
-                Err(err).external("tokio error")
-            }
-            // Panicked.
-            Err(payload) => {
-                *initializer_lock = Some(Err(VegaFusionError::internal("Panic error")));
+            } else {
+                // When not in WASM, use tokio::spawn for multi-threading
+                let start = Instant::now();
+                match AssertUnwindSafe(tokio::spawn(init)).catch_unwind().await {
+                    // Resolved.
+                    Ok(Ok(value)) => {
+                        // If result Ok, clone to values
+                        match value {
+                            Ok(value) => {
+                                *initializer_lock = Some(Ok(value.clone()));
 
-                // Remove the waiter so that others can retry.
-                self.remove_initializer(state_fingerprint).await;
-                // triggers panic, so no return value in this branch
-                resume_unwind(payload);
+                                // Check if we should add value to long-term cache
+                                let duration = start.elapsed();
+                                let millis = duration.as_millis();
+
+                                self.set_value(state_fingerprint, value.clone(), Some(millis))
+                                    .await;
+
+                                // Stored initializer no longer required. Initializers are Arc
+                                // pointers, so it's fine to drop initializer from here even if
+                                // other tasks are still awaiting on it.
+                                self.remove_initializer(state_fingerprint).await;
+                                Ok(value)
+                            }
+                            Err(e) => {
+                                // Remove initializer so that another future can try again
+                                *initializer_lock = Some(Err(e.duplicate()));
+                                self.remove_initializer(state_fingerprint).await;
+                                Err(e)
+                            }
+                        }
+                    }
+                    Ok(Err(err)) => {
+                        *initializer_lock = Some(Err(VegaFusionError::internal(err.to_string())));
+                        self.remove_initializer(state_fingerprint).await;
+                        Err(err).external("tokio error")
+                    }
+                    // Panicked.
+                    Err(payload) => {
+                        *initializer_lock = Some(Err(VegaFusionError::internal("Panic error")));
+
+                        // Remove the waiter so that others can retry.
+                        self.remove_initializer(state_fingerprint).await;
+                        // triggers panic, so no return value in this branch
+                        resume_unwind(payload);
+                    }
+                }
             }
         }
     }
