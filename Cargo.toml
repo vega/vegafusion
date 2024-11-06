@@ -1,6 +1,6 @@
 [workspace]
 resolver = "2"
-members = [ "vegafusion-common", "vegafusion-core", "vegafusion-runtime", "vegafusion-python", "vegafusion-wasm", "vegafusion-server",]
+members = [ "vegafusion-common", "vegafusion-core", "vegafusion-runtime", "vegafusion-python", "vegafusion-wasm", "vegafusion-server", "examples/rust-examples",]
 
 [workspace.dependencies]
 deterministic-hash = "1.0.1"

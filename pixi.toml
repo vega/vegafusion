@@ -30,9 +30,9 @@ dev-py = { cmd = [
 # Build Python packages
 build-py = { cmd = "rm -rf target/wheels && maturin build -m vegafusion-python/Cargo.toml --profile release-opt --strip --sdist $0" }
 
-fmt-py = { cmd = "ruff format", cwd="vegafusion-python" }
-lint-fix-py = { cmd = "ruff format && ruff check --fix", cwd="vegafusion-python" }
-lint-check-py = { cmd = "ruff format --check && ruff check", cwd="vegafusion-python" }
+fmt-py = { cmd = "ruff format" }
+lint-fix-py = { cmd = "ruff format && ruff check --fix" }
+lint-check-py = { cmd = "ruff format --check && ruff check" }
 type-check-py = { cmd = "mypy", cwd="vegafusion-python" }
 
 # test python
@@ -94,6 +94,11 @@ build-rs-server = { cmd = "cargo build -p vegafusion-server --profile release-op
 # minio
 start-minio = "python automation/start_minio.py"
 
+# Docs
+docs-build = { cmd = "sphinx-build -b html docs/source docs/build/html" }
+docs-clean = { cmd = "rm -rf docs/build" }
+docs-rebuild = { depends_on = ["docs-clean", "docs-build"] }
+docs-serve = { cmd = "python -m http.server --directory docs/build/html 8000" }
 
 # Note: the `--no-verify` flag below for `vegafusion-core` is due to this cargo publish error:
 #
@@ -143,6 +148,13 @@ pixi-pycharm = ">=0.0.8,<0.0.9"
 scipy = "1.14.1.*"
 flaky = ">=3.8.1,<4"
 
+# Docs dependencies
+sphinx = ">=7,<8"
+sphinx-copybutton = ">=0.5.0,<1"
+myst-parser = ">=4.0.0,<5"
+furo = ">=2024.8.6"
+
+
 # Dependencies are those required at runtime by the Python packages
 [dependencies]
 psutil = "5.9.5.*"
@@ -168,21 +180,3 @@ jpeg = "9e.*"
 giflib = "5.2.1.*"
 libglib = "2.76.4.*"
 glib = "2.76.4.*"
-
-# Docs environment
-[feature.docs.dependencies]
-sphinx = ">=8.1.0,<9"
-sphinx-copybutton = ">=0.5.0,<1"
-myst-parser = ">=4.0.0,<5"
-furo = ">=2024.8.6"
-
-python = "3.10.*"
-
-[environments]
-docs = ["docs"]
-
-[feature.docs.tasks]
-docs-build = { cmd = "sphinx-build -b html docs/source docs/build/html" }
-docs-clean = { cmd = "rm -rf docs/build" }
-docs-rebuild = { depends_on = ["docs-clean", "docs-build"] }
-docs-serve = { cmd = "python -m http.server --directory docs/build/html 8000" }
