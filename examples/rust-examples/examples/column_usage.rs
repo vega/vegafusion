@@ -1,7 +1,7 @@
-    use vegafusion_core::{spec::chart::ChartSpec, get_column_usage};
+use vegafusion_core::{get_column_usage, spec::chart::ChartSpec};
 
-    /// This example demonstrates how to use the `get_column_usage` function to get the names 
-    /// of columns of each root dataset that are referenced in a Vega specification.
+/// This example demonstrates how to use the `get_column_usage` function to get the names
+/// of columns of each root dataset that are referenced in a Vega specification.
 fn main() {
     let spec = get_spec();
     let column_usage = get_column_usage(&spec).unwrap();
@@ -19,7 +19,6 @@ fn main() {
         )])
     );
 }
-
 
 fn get_spec() -> ChartSpec {
     let spec_str = r##"

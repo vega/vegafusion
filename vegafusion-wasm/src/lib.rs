@@ -517,10 +517,10 @@ pub fn wasm_get_column_usage(spec: JsValue) -> Result<JsValue, JsValue> {
         serde_wasm_bindgen::from_value(spec)
             .map_err(|_e| JsError::new("Failed to convert JsValue to ChartSpec"))?
     };
-    let usage = get_column_usage(&spec)
-        .map_err(|_e| JsError::new("Failed to get column usage"))?;
+    let usage = get_column_usage(&spec).map_err(|_e| JsError::new("Failed to get column usage"))?;
 
-    Ok(usage.serialize(&serde_wasm_bindgen::Serializer::json_compatible())
+    Ok(usage
+        .serialize(&serde_wasm_bindgen::Serializer::json_compatible())
         .map_err(|_e| JsError::new("Failed to serialize column usage"))?)
 }
 
