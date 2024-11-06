@@ -31,6 +31,7 @@ use vegafusion_core::spec::chart::ChartSpec;
 
 use vegafusion_core::chart_state::ChartState;
 use vegafusion_core::data::dataset::VegaFusionDataset;
+use vegafusion_core::get_column_usage;
 use vegafusion_runtime::datafusion::context::make_datafusion_context;
 use vegafusion_runtime::task_graph::runtime::VegaFusionRuntime;
 use web_sys::Element;
@@ -505,6 +506,22 @@ pub async fn vegafusion_embed(
     });
 
     Ok(handle)
+}
+
+#[wasm_bindgen(js_name = "getColumnUsage")]
+pub fn wasm_get_column_usage(spec: JsValue) -> Result<JsValue, JsValue> {
+    let spec: ChartSpec = if spec.is_string() {
+        serde_json::from_str(&spec.as_string().unwrap())
+            .map_err(|_e| JsError::new("Failed to convert JsValue to ChartSpec"))?
+    } else {
+        serde_wasm_bindgen::from_value(spec)
+            .map_err(|_e| JsError::new("Failed to convert JsValue to ChartSpec"))?
+    };
+    let usage = get_column_usage(&spec).map_err(|_e| JsError::new("Failed to get column usage"))?;
+
+    Ok(usage
+        .serialize(&serde_wasm_bindgen::Serializer::json_compatible())
+        .map_err(|_e| JsError::new("Failed to serialize column usage"))?)
 }
 
 /// Create a function for sending VegaFusion queries to VegaFusion server over gRPC-Web
