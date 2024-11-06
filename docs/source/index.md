@@ -12,3 +12,10 @@ The VegaFusion project provides Rust, Python, and JavaScript libraries for analy
 :::{note}
 If you've arrived here looking for information on how to scale Vega-Altair visualizations to support larger datasets, see the Vega-Altair documentation on the [`"vegafusion"` data transformer](https://altair-viz.github.io/user_guide/large_datasets.html#vegafusion-data-transformer).
 :::
+
+```{toctree}
+:maxdepth: 2
+:caption: Contents
+
+column_usage
+```

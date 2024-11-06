@@ -1,7 +1,12 @@
 line-length = 88
 indent-width = 4
-include = ["vegafusion/**/*.py", "tests/**/*.py", "checks/**/*.py"]
-exclude = ["tests/altair_mocks/**/*.py"]
+include = [
+  "vegafusion-python/vegafusion/**/*.py", 
+  "vegafusion-python/tests/**/*.py", 
+  "vegafusion-python/checks/**/*.py",
+  "examples/python-examples/**/*.py",
+]
+exclude = ["vegafusion-python/tests/altair_mocks/**/*.py"]
 target-version = "py39"
 
 [lint]
@@ -62,4 +67,5 @@ ignore = [
 
 [lint.per-file-ignores]
 # Ignore some lint checks in test directory
-"tests/*" = ["D", "ANN", "S", "I", "E501"]
+"vegafusion-python/tests/*" = ["D", "ANN", "S", "I", "E501"]
+"examples/python-examples/*" = ["D", "ANN", "S", "I", "E501"]

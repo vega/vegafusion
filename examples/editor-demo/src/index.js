@@ -1,4 +1,4 @@
-const { vegaFusionEmbed, makeGrpcSendMessageFn } = await import("vegafusion-wasm");
+const { vegaFusionEmbed, getColumnUsage, makeGrpcSendMessageFn } = await import("vegafusion-wasm");
 
 import * as Monaco from 'monaco-editor/esm/vs/editor/editor.api';
 import _ from "lodash"
@@ -45,6 +45,14 @@ async function init() {
         readOnly: true,
     });
 
+    let column_usage_monaco = Monaco.editor.create(document.getElementById('column-usage-monaco'), {
+        value: "",
+        language: 'json',
+        theme: 'vs-dark',
+        automaticLayout: true,
+        readOnly: true,
+    });
+
     // Add checkbox for toggling VegaFusion server
     const container = document.createElement('div');
     container.className = 'pb-3';  // Add padding-bottom
@@ -79,6 +87,8 @@ async function init() {
                 },
             };
 
+            let spec = editor.getValue();
+
             let chart_handle;
             if (serverCheckbox.checked) {
                 const hostname = 'http://127.0.0.1:50051';
@@ -88,7 +98,7 @@ async function init() {
                     
                     chart_handle = await vegaFusionEmbed(
                         element,
-                        editor.getValue(),
+                        spec,
                         config,
                         send_message_grpc,
                     );
@@ -105,19 +115,24 @@ async function init() {
             } else {
                 chart_handle = await vegaFusionEmbed(
                     element,
-                    editor.getValue(),
+                    spec,
                     config,
                 );
             }
 
+            // Get column usage
+            const usage = getColumnUsage(spec);
+
             server_spec_monaco.setValue(JSON.stringify(chart_handle.serverSpec(), null, 2));
             client_spec_monaco.setValue(JSON.stringify(chart_handle.clientSpec(), null, 2));
             comm_plan_monaco.setValue(JSON.stringify(chart_handle.commPlan(), null, 2));
+            column_usage_monaco.setValue(JSON.stringify(usage, null, 2));
         } catch (e) {
             console.error("Failed to render spec");
             server_spec_monaco.setValue("");
             client_spec_monaco.setValue("");
             comm_plan_monaco.setValue("");
+            column_usage_monaco.setValue("");
             console.log(e);
             return;
         }

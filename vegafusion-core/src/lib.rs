@@ -17,6 +17,9 @@ pub mod variable;
 pub use vegafusion_common::arrow;
 pub use vegafusion_common::error;
 
+// Export functions
+pub use planning::projection_pushdown::get_column_usage;
+
 #[cfg(test)]
 mod tests {
     // use crate::{create_large_shirt, serialize_shirt, deserialize_shirt};
