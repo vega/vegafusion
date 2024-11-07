@@ -30,7 +30,7 @@ UnaryUnaryMultiCallable = Any
 
 
 def _get_common_namespace(inline_datasets: dict[str, Any] | None) -> ModuleType | None:
-    namespaces = set()
+    namespaces: set[ModuleType] = set()
     try:
         if inline_datasets is not None:
             for df in inline_datasets.values():
@@ -544,7 +544,9 @@ class VegaFusionRuntime:
             inline_datasets=inline_arrow_dataset,
         )
 
-        def normalize_timezones(dfs: list[nw.DataFrame]) -> list[DataFrameLike]:
+        def normalize_timezones(
+            dfs: list[nw.DataFrame[IntoFrameT] | nw.LazyFrame[IntoFrameT]],
+        ) -> list[DataFrameLike]:
             # Convert to `local_tz` (or, set to UTC and then convert if starting
             # from time-zone-naive data), then extract the native DataFrame to return.
             processed_datasets = []
@@ -560,33 +562,29 @@ class VegaFusionRuntime:
         # Wrap result dataframes in Narwhals, using the input type and arrow
         # PyCapsule interface
         if dataset_format != "auto":
-            match dataset_format:
-                case "polars":
-                    import polars as pl
+            if dataset_format == "polars":
+                import polars as pl
 
-                    datasets = normalize_timezones(
-                        [nw.from_native(pl.DataFrame(value)) for value in values]
-                    )
-                case "pandas":
-                    import pyarrow as pa
+                datasets = normalize_timezones(
+                    [nw.from_native(pl.DataFrame(value)) for value in values]
+                )
+            elif dataset_format == "pandas":
+                import pyarrow as pa
 
-                    datasets = normalize_timezones(
-                        [
-                            nw.from_native(pa.table(value).to_pandas())
-                            for value in values
-                        ]
-                    )
-                case "pyarrow":
-                    import pyarrow as pa
+                datasets = normalize_timezones(
+                    [nw.from_native(pa.table(value).to_pandas()) for value in values]
+                )
+            elif dataset_format == "pyarrow":
+                import pyarrow as pa
 
-                    datasets = normalize_timezones(
-                        [nw.from_native(pa.table(value)) for value in values]
-                    )
-                case "arro3":
-                    # Pass through arrof3
-                    datasets = values
-                case _:
-                    raise ValueError(f"Unrecognized dataset_format: {dataset_format}")
+                datasets = normalize_timezones(
+                    [nw.from_native(pa.table(value)) for value in values]
+                )
+            elif dataset_format == "arro3":
+                # Pass through arrof3
+                datasets = values
+            else:
+                raise ValueError(f"Unrecognized dataset_format: {dataset_format}")
         elif (namespace := _get_common_namespace(inline_datasets)) is not None:
             # Infer the type from the inline datasets
             datasets = normalize_timezones(
