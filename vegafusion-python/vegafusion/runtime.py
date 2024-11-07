@@ -318,9 +318,7 @@ class VegaFusionRuntime:
         inline_datasets: dict[str, Any] | None = None,
         keep_signals: list[Union[str, tuple[str, list[int]]]] | None = None,
         keep_datasets: list[Union[str, tuple[str, list[int]]]] | None = None,
-        data_encoding_threshold: int | None = None,
-        data_encoding_format: str = "arro3",
-    ) -> tuple[Union[dict[str, Any], str], list[dict[str, str]]]:
+    ) -> tuple[dict[str, Any], list[PreTransformWarning]]:
         """
         Evaluate supported transforms in an input Vega specification
 
@@ -338,7 +336,7 @@ class VegaFusionRuntime:
                 of rows and a RowLimitExceeded warning will be included in the
                 resulting warnings list
             preserve_interactivity: If True (default) then the interactive behavior of
-                the chart will pre preserved. This requires that all the data that
+                the chart will be preserved. This requires that all the data that
                 participates in interactions be included in the resulting spec rather
                 than being pre-transformed. If False, then all possible data
                 transformations are applied even if they break the original interactive
@@ -348,82 +346,52 @@ class VegaFusionRuntime:
                 using the following url syntax 'vegafusion+dataset://{dataset_name}' or
                 'table://{dataset_name}'.
             keep_signals: Signals from the input spec that must be included in the
-                pre-transformed spec. A list with elements that are either:
-                - The name of a top-level signal as a string
-                - A two-element tuple where the first element is the name of a signal
+                pre-transformed spec, even if they are no longer referenced.
+                A list with elements that are either:
+
+                * The name of a top-level signal as a string
+                * A two-element tuple where the first element is the name of a signal
                   as a string and the second element is the nested scope of the dataset
                   as a list of integers
             keep_datasets: Datasets from the input spec that must be included in the
-                pre-transformed spec. A list with elements that are either:
-                - The name of a top-level dataset as a string
-                - A two-element tuple where the first element is the name of a dataset
+                pre-transformed spec even if they are no longer referenced.
+                A list with elements that are either:
+
+                * The name of a top-level dataset as a string
+                * A two-element tuple where the first element is the name of a dataset
                   as a string and the second element is the nested scope of the dataset
                   as a list of integers
-            data_encoding_threshold: threshold for encoding datasets. When length of
-                pre-transformed datasets exceeds data_encoding_threshold, datasets are
-                encoded into an alternative format (as determined by the
-                data_encoding_format argument). When None (the default),
-                pre-transformed datasets are never encoded and are always included as
-                JSON compatible lists of dictionaries.
-            data_encoding_format: format of encoded datasets. Format to use to encode
-                datasets with length exceeding the data_encoding_threshold argument.
-                - "arro3": Encode datasets as arro3 Tables. Not JSON compatible.
-                - "pyarrow": Encode datasets as pyarrow Tables. Not JSON compatible.
-                - "arrow-ipc": Encode datasets as bytes in Arrow IPC format. Not JSON
-                  compatible.
-                - "arrow-ipc-base64": Encode datasets as strings in base64 encoded
-                  Arrow IPC format. JSON compatible.
 
-        Returns:
-            A tuple containing:
-            - A string containing the JSON representation of a Vega specification
-              with pre-transformed datasets included inline
-            - A list of warnings as dictionaries. Each warning dict has a 'type'
-              key indicating the warning type, and a 'message' key containing
+        Returns: Two-element tuple
+
+            * The Vega specification as a dict with pre-transformed datasets
+              included inline
+            * A list of warnings as dictionaries. Each warning dict has a ``'type'``
+              key indicating the warning type, and a ``'message'`` key containing
               a description of the warning. Potential warning types include:
-                'RowLimitExceeded': Some datasets in resulting Vega specification
-                    have been truncated to the provided row limit
-                'BrokenInteractivity': Some interactive features may have been
-                    broken in the resulting Vega specification
-                'Unsupported': No transforms in the provided Vega specification were
-                    eligible for pre-transforming
+
+              * ``'RowLimitExceeded'``: Some datasets in resulting Vega specification
+                have been truncated to the provided row limit
+              * ``'BrokenInteractivity'``: Some interactive features may have been
+                broken in the resulting Vega specification
+              * ``'Unsupported'``: No transforms in the provided Vega specification
+                were eligible for pre-transforming
         """
         local_tz = local_tz or get_local_tz()
         imported_inline_dataset = self._import_inline_datasets(
             inline_datasets, get_inline_column_usage(spec)
         )
 
-        if data_encoding_threshold is None:
-            new_spec, warnings = self.runtime.pre_transform_spec(
-                spec,
-                local_tz=local_tz,
-                default_input_tz=default_input_tz,
-                row_limit=row_limit,
-                preserve_interactivity=preserve_interactivity,
-                inline_datasets=imported_inline_dataset,
-                keep_signals=parse_variables(keep_signals),
-                keep_datasets=parse_variables(keep_datasets),
-            )
-        else:
-            # Use pre_transform_extract to extract large datasets
-            new_spec, datasets, warnings = self.runtime.pre_transform_extract(
-                spec,
-                local_tz=local_tz,
-                default_input_tz=default_input_tz,
-                preserve_interactivity=preserve_interactivity,
-                extract_threshold=data_encoding_threshold,
-                extracted_format=data_encoding_format,
-                inline_datasets=imported_inline_dataset,
-                keep_signals=parse_variables(keep_signals),
-                keep_datasets=parse_variables(keep_datasets),
-            )
-
-            # Insert encoded datasets back into spec
-            for name, scope, tbl in datasets:
-                group = get_mark_group_for_scope(new_spec, scope) or {}
-                for data in group.get("data", []):
-                    if data.get("name", None) == name:
-                        data["values"] = tbl
+        new_spec, warnings = self.runtime.pre_transform_spec(
+            spec,
+            local_tz=local_tz,
+            default_input_tz=default_input_tz,
+            row_limit=row_limit,
+            preserve_interactivity=preserve_interactivity,
+            inline_datasets=imported_inline_dataset,
+            keep_signals=parse_variables(keep_signals),
+            keep_datasets=parse_variables(keep_datasets),
+        )
 
         return new_spec, warnings
 
@@ -476,7 +444,7 @@ class VegaFusionRuntime:
         inline_datasets: dict[str, DataFrameLike] | None = None,
         trim_unused_columns: bool = False,
         dataset_format: DatasetFormat = "auto",
-    ) -> tuple[list[DataFrameLike], list[dict[str, str]]]:
+    ) -> tuple[list[DataFrameLike], list[PreTransformWarning]]:
         """
         Extract the fully evaluated form of the requested datasets from a Vega
         specification.
@@ -627,7 +595,7 @@ class VegaFusionRuntime:
         keep_signals: list[str | tuple[str, list[int]]] | None = None,
         keep_datasets: list[str | tuple[str, list[int]]] | None = None,
     ) -> tuple[
-        dict[str, Any], list[tuple[str, list[int], pa.Table]], list[dict[str, str]]
+        dict[str, Any], list[tuple[str, list[int], pa.Table]], list[PreTransformWarning]
     ]:
         """
         Evaluate supported transforms in an input Vega specification.
@@ -644,7 +612,7 @@ class VegaFusionRuntime:
             default_input_tz: Name of timezone (e.g. 'America/New_York') that naive
                 datetime strings should be interpreted in. Defaults to `local_tz`.
             preserve_interactivity: If True (default) then the interactive behavior of
-                the chart will pre preserved. This requires that all the data that
+                the chart will be preserved. This requires that all the data that
                 participates in interactions be included in the resulting spec rather
                 than being pre-transformed. If False, then all possible data
                 transformations are applied even if they break the original interactive

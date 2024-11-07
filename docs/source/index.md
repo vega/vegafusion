@@ -19,4 +19,5 @@ If you've arrived here looking for information on how to scale Vega-Altair visua
 
 column_usage
 transformed_data
+transformed_spec
 ```
