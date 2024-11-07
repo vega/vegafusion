@@ -29,15 +29,15 @@ if TYPE_CHECKING:
 UnaryUnaryMultiCallable = Any
 
 
-def _get_common_namespace(inline_datasets: dict[str, Any] | None) -> str | None:
-    namespaces = set()
+def _get_common_namespace(inline_datasets: dict[str, Any] | None) -> ModuleType | None:
+    namespaces: set[ModuleType] = set()
     try:
         if inline_datasets is not None:
             for df in inline_datasets.values():
                 namespaces.add(nw.get_native_namespace(nw.from_native(df)))
 
         if len(namespaces) == 1:
-            return str(next(iter(namespaces)).__name__)
+            return next(iter(namespaces))
         else:
             return None
     except TypeError:
@@ -78,6 +78,9 @@ class WatchPlan(TypedDict):
 class PreTransformWarning(TypedDict):
     type: Literal["RowLimitExceeded", "BrokenInteractivity", "Unsupported"]
     message: str
+
+
+DatasetFormat = Literal["auto", "polars", "pandas", "pyarrow", "arro3"]
 
 
 class ChartState:
@@ -472,8 +475,10 @@ class VegaFusionRuntime:
         row_limit: int | None = None,
         inline_datasets: dict[str, DataFrameLike] | None = None,
         trim_unused_columns: bool = False,
+        dataset_format: DatasetFormat = "auto",
     ) -> tuple[list[DataFrameLike], list[dict[str, str]]]:
-        """Extract the fully evaluated form of the requested datasets from a Vega
+        """
+        Extract the fully evaluated form of the requested datasets from a Vega
         specification.
 
         Extracts datasets as pandas DataFrames.
@@ -481,15 +486,16 @@ class VegaFusionRuntime:
         Args:
             spec: A Vega specification dict or JSON string.
             datasets: A list with elements that are either:
-                - The name of a top-level dataset as a string
-                - A two-element tuple where the first element is the name of a dataset
+
+                * The name of a top-level dataset as a string
+                * A two-element tuple where the first element is the name of a dataset
                   as a string and the second element is the nested scope of the dataset
                   as a list of integers
-            local_tz: Name of timezone to be considered local. E.g. 'America/New_York'.
-                Defaults to the value of vf.get_local_tz(), which defaults to the
-                system timezone if one can be determined.
-            default_input_tz: Name of timezone (e.g. 'America/New_York') that naive
-                datetime strings should be interpreted in. Defaults to `local_tz`.
+            local_tz: Name of timezone to be considered local. E.g.
+                ``'America/New_York'``. Defaults to the value of vf.get_local_tz(),
+                which defaults to the system timezone if one can be determined.
+            default_input_tz: Name of timezone (e.g. ``'America/New_York'``) that naive
+                datetime strings should be interpreted in. Defaults to ``local_tz``.
             row_limit: Maximum number of dataset rows to include in the returned
                 datasets. If exceeded, datasets will be truncated to this number of
                 rows and a RowLimitExceeded warning will be included in the resulting
@@ -500,19 +506,22 @@ class VegaFusionRuntime:
                 or 'table://{dataset_name}'.
             trim_unused_columns: If True, unused columns are removed from returned
                 datasets.
+            dataset_format: Format for returned datasets. One of:
 
-        Returns:
-            A tuple containing:
-                - List of pandas DataFrames corresponding to the input datasets list
-                - A list of warnings as dictionaries. Each warning dict has a 'type'
+                * ``"auto"``: (default) Infer the result type based on the types of
+                  inline datasets. If no inline datasets are provided, return type will
+                  depend on installed packages.
+                * ``"polars"``: polars.DataFrame
+                * ``"pandas"``: pandas.DataFrame
+                * ``"pyarrow"``: pyarrow.Table
+                * ``"arro3"``: arro3.Table
+
+        Returns: Two-element tuple
+                * List of pandas DataFrames corresponding to the input datasets list
+                * A list of warnings as dictionaries. Each warning dict has a 'type'
                   key indicating the warning type, and a 'message' key containing a
                   description of the warning.
         """
-        if not TYPE_CHECKING:
-            pl = sys.modules.get("polars", None)
-            pa = sys.modules.get("pyarrow", None)
-            pd = sys.modules.get("pandas", None)
-
         local_tz = local_tz or get_local_tz()
 
         # Build input variables
@@ -535,49 +544,76 @@ class VegaFusionRuntime:
             inline_datasets=inline_arrow_dataset,
         )
 
-        # Wrap result dataframes in native format, then with Narwhals so that
-        # we can manipulate them with a uniform API
-        namespace = _get_common_namespace(inline_datasets)
-        if namespace == "polars" and pl is not None:
-            nw_dataframes = [nw.from_native(pl.DataFrame(value)) for value in values]
+        def normalize_timezones(
+            dfs: list[nw.DataFrame[IntoFrameT] | nw.LazyFrame[IntoFrameT]],
+        ) -> list[DataFrameLike]:
+            # Convert to `local_tz` (or, set to UTC and then convert if starting
+            # from time-zone-naive data), then extract the native DataFrame to return.
+            processed_datasets = []
+            for df in dfs:
+                df = df.with_columns(
+                    nw.col(col).dt.convert_time_zone(local_tz)
+                    for col, dtype in df.schema.items()
+                    if dtype == nw.Datetime
+                )
+                processed_datasets.append(df.to_native())
+            return processed_datasets
 
-        elif namespace == "pyarrow" and pa is not None:
-            nw_dataframes = [nw.from_native(pa.table(value)) for value in values]
-        elif namespace == "pandas" and pd is not None and pa is not None:
-            nw_dataframes = [
-                nw.from_native(pa.table(value).to_pandas()) for value in values
-            ]
+        # Wrap result dataframes in Narwhals, using the input type and arrow
+        # PyCapsule interface
+        if dataset_format != "auto":
+            if dataset_format == "polars":
+                import polars as pl
+
+                datasets = normalize_timezones(
+                    [nw.from_native(pl.DataFrame(value)) for value in values]
+                )
+            elif dataset_format == "pandas":
+                import pyarrow as pa
+
+                datasets = normalize_timezones(
+                    [nw.from_native(pa.table(value).to_pandas()) for value in values]
+                )
+            elif dataset_format == "pyarrow":
+                import pyarrow as pa
+
+                datasets = normalize_timezones(
+                    [nw.from_native(pa.table(value)) for value in values]
+                )
+            elif dataset_format == "arro3":
+                # Pass through arrof3
+                datasets = values
+            else:
+                raise ValueError(f"Unrecognized dataset_format: {dataset_format}")
+        elif (namespace := _get_common_namespace(inline_datasets)) is not None:
+            # Infer the type from the inline datasets
+            datasets = normalize_timezones(
+                [nw.from_arrow(value, native_namespace=namespace) for value in values]
+            )
         else:
             # Either no inline datasets, inline datasets with mixed or
             # unrecognized types
-            if pa is not None and pd is not None:
-                nw_dataframes = [
-                    nw.from_native(pa.table(value).to_pandas()) for value in values
-                ]
-            elif pl is not None:
-                nw_dataframes = [
-                    nw.from_native(pl.DataFrame(value)) for value in values
-                ]
-            else:
-                # Hopefully narwhals will eventually help us fall back to whatever
-                # is installed here
-                raise ValueError(
-                    "Either polars or pandas must be installed to extract "
-                    "transformed data"
+            try:
+                # Try pandas
+                import pandas as _pd  # noqa: F401
+                import pyarrow as pa
+
+                datasets = normalize_timezones(
+                    [nw.from_native(pa.table(value).to_pandas()) for value in values]
                 )
+            except ImportError:
+                try:
+                    # Try polars
+                    import polars as pl
 
-        # Convert to `local_tz` (or, set to UTC and then convert if starting
-        # from time-zone-naive data), then extract the native DataFrame to return.
-        processed_datasets = []
-        for df in nw_dataframes:
-            df = df.with_columns(
-                nw.col(col).dt.convert_time_zone(local_tz)
-                for col, dtype in df.schema.items()
-                if dtype == nw.Datetime
-            )
-            processed_datasets.append(df.to_native())
+                    datasets = normalize_timezones(
+                        [nw.from_native(pl.DataFrame(value)) for value in values]
+                    )
+                except ImportError:
+                    # Fall back to arro3
+                    datasets = values
 
-        return processed_datasets, warnings
+        return datasets, warnings
 
     def pre_transform_extract(
         self,
@@ -597,7 +633,7 @@ class VegaFusionRuntime:
         Evaluate supported transforms in an input Vega specification.
 
         Produces a new specification with small pre-transformed datasets (under 100
-        rows) included inline and larger inline datasets (100 rows or more) extracted
+        rows) included inline and larger inline datasets (20 rows or more) extracted
         into pyarrow tables.
 
         Args:

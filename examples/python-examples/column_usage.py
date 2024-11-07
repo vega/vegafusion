@@ -1,12 +1,11 @@
 import json
 from typing import Any
-
-from vegafusion import get_column_usage
+import vegafusion as vf
 
 
 def main():
     spec = get_spec()
-    column_usage = get_column_usage(spec)
+    column_usage = vf.get_column_usage(spec)
     print(json.dumps(column_usage, indent=2))
 
     assert column_usage == {

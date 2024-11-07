@@ -1,35 +1,21 @@
 use crate::{
     data::dataset::VegaFusionDataset,
     proto::gen::{
-        pretransform::{
-            PreTransformExtractOpts, PreTransformExtractRequest, PreTransformExtractWarning,
-            PreTransformSpecOpts, PreTransformSpecRequest, PreTransformSpecWarning,
-            PreTransformValuesOpts, PreTransformValuesRequest, PreTransformValuesWarning,
-        },
         services::{
-            pre_transform_extract_result, pre_transform_spec_result, pre_transform_values_result,
             query_request, query_result, vega_fusion_runtime_client::VegaFusionRuntimeClient,
             QueryRequest,
         },
         tasks::{NodeValueIndex, TaskGraph, TaskGraphValueRequest},
     },
-    spec::chart::ChartSpec,
-    task_graph::task_value::{NamedTaskValue, TaskValue},
+    task_graph::task_value::NamedTaskValue,
 };
 
+use super::{runtime::encode_inline_datasets, VegaFusionRuntimeTrait};
 use async_mutex::Mutex;
 use async_trait::async_trait;
 use std::collections::HashMap;
 use std::{any::Any, sync::Arc};
-use vegafusion_common::{
-    data::table::VegaFusionTable,
-    error::{Result, VegaFusionError},
-};
-
-use super::{
-    runtime::{encode_inline_datasets, PreTransformExtractTable},
-    VegaFusionRuntimeTrait,
-};
+use vegafusion_common::error::{Result, VegaFusionError};
 
 #[derive(Clone)]
 pub struct GrpcVegaFusionRuntime {
@@ -72,116 +58,6 @@ impl VegaFusionRuntimeTrait for GrpcVegaFusionRuntime {
                 .collect::<Vec<_>>()),
             _ => Err(VegaFusionError::internal(
                 "Invalid response type".to_string(),
-            )),
-        }
-    }
-
-    async fn pre_transform_spec(
-        &self,
-        spec: &ChartSpec,
-        inline_datasets: &HashMap<String, VegaFusionDataset>,
-        options: &PreTransformSpecOpts,
-    ) -> Result<(ChartSpec, Vec<PreTransformSpecWarning>)> {
-        let inline_datasets = encode_inline_datasets(inline_datasets)?;
-
-        let request = PreTransformSpecRequest {
-            spec: serde_json::to_string(spec)?,
-            inline_datasets,
-            opts: Some(options.clone()),
-        };
-        let mut locked_client = self.client.lock().await;
-        let response = locked_client
-            .pre_transform_spec(request)
-            .await
-            .map_err(|e| VegaFusionError::internal(e.to_string()))?;
-
-        match response.into_inner().result.unwrap() {
-            pre_transform_spec_result::Result::Response(response) => {
-                Ok((serde_json::from_str(&response.spec)?, response.warnings))
-            }
-            _ => Err(VegaFusionError::internal(
-                "Invalid grpc response type".to_string(),
-            )),
-        }
-    }
-
-    async fn pre_transform_extract(
-        &self,
-        spec: &ChartSpec,
-        inline_datasets: &HashMap<String, VegaFusionDataset>,
-        options: &PreTransformExtractOpts,
-    ) -> Result<(
-        ChartSpec,
-        Vec<PreTransformExtractTable>,
-        Vec<PreTransformExtractWarning>,
-    )> {
-        let inline_datasets = encode_inline_datasets(inline_datasets)?;
-
-        let request = PreTransformExtractRequest {
-            spec: serde_json::to_string(spec)?,
-            inline_datasets,
-            opts: Some(options.clone()),
-        };
-
-        let mut locked_client = self.client.lock().await;
-        let response = locked_client
-            .pre_transform_extract(request)
-            .await
-            .map_err(|e| VegaFusionError::internal(e.to_string()))?;
-
-        match response.into_inner().result.unwrap() {
-            pre_transform_extract_result::Result::Response(response) => {
-                let spec: ChartSpec = serde_json::from_str(&response.spec)?;
-                let datasets = response
-                    .datasets
-                    .into_iter()
-                    .map(|ds| {
-                        Ok(PreTransformExtractTable {
-                            name: ds.name,
-                            scope: ds.scope,
-                            table: VegaFusionTable::from_ipc_bytes(&ds.table)?,
-                        })
-                    })
-                    .collect::<Result<Vec<_>>>()?;
-                Ok((spec, datasets, response.warnings))
-            }
-            _ => Err(VegaFusionError::internal(
-                "Invalid grpc response type".to_string(),
-            )),
-        }
-    }
-
-    async fn pre_transform_values(
-        &self,
-        spec: &ChartSpec,
-        inline_datasets: &HashMap<String, VegaFusionDataset>,
-        options: &PreTransformValuesOpts,
-    ) -> Result<(Vec<TaskValue>, Vec<PreTransformValuesWarning>)> {
-        let inline_datasets = encode_inline_datasets(inline_datasets)?;
-
-        let request = PreTransformValuesRequest {
-            spec: serde_json::to_string(spec)?,
-            inline_datasets,
-            opts: Some(options.clone()),
-        };
-
-        let mut locked_client = self.client.lock().await;
-        let response = locked_client
-            .pre_transform_values(request)
-            .await
-            .map_err(|e| VegaFusionError::internal(e.to_string()))?;
-
-        match response.into_inner().result.unwrap() {
-            pre_transform_values_result::Result::Response(response) => {
-                let values = response
-                    .values
-                    .into_iter()
-                    .map(|v| TaskValue::try_from(&v.value.unwrap()))
-                    .collect::<Result<Vec<_>>>()?;
-                Ok((values, response.warnings))
-            }
-            _ => Err(VegaFusionError::internal(
-                "Invalid grpc response type".to_string(),
             )),
         }
     }

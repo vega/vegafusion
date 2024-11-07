@@ -12,7 +12,6 @@ use vegafusion_core::proto::gen::transforms::{
 use vegafusion_core::spec::chart::ChartSpec;
 use vegafusion_core::task_graph::scope::TaskScope;
 use vegafusion_core::task_graph::task_value::TaskValue;
-use vegafusion_runtime::datafusion::context::make_datafusion_context;
 use vegafusion_runtime::task_graph::runtime::VegaFusionRuntime;
 
 #[tokio::test(flavor = "multi_thread")]
@@ -81,11 +80,7 @@ async fn try_it() {
     ];
 
     let graph = Arc::new(TaskGraph::new(tasks, &task_scope).unwrap());
-    let graph_runtime = VegaFusionRuntime::new(
-        Arc::new(make_datafusion_context()),
-        Some(20),
-        Some(1024_i32.pow(3) as usize),
-    );
+    let graph_runtime = VegaFusionRuntime::new(None);
     // let result = graph_runtime.get_node_value(graph, 2, None).await.unwrap();
     let result = graph_runtime
         .get_node_value(graph, &NodeValueIndex::new(2, Some(0)), Default::default())
@@ -143,11 +138,7 @@ async fn try_it_from_spec() {
 
     let graph = Arc::new(TaskGraph::new(tasks, &task_scope).unwrap());
 
-    let graph_runtime = VegaFusionRuntime::new(
-        Arc::new(make_datafusion_context()),
-        Some(20),
-        Some(1024_i32.pow(3) as usize),
-    );
+    let graph_runtime = VegaFusionRuntime::new(None);
     let result = graph_runtime
         .get_node_value(graph, &NodeValueIndex::new(2, Some(0)), Default::default())
         .await

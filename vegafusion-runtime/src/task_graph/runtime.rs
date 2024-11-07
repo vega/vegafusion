@@ -1,3 +1,4 @@
+use crate::datafusion::context::make_datafusion_context;
 use crate::task_graph::cache::VegaFusionCache;
 use crate::task_graph::task::TaskCall;
 use crate::task_graph::timezone::RuntimeTzConfig;
@@ -25,14 +26,10 @@ pub struct VegaFusionRuntime {
 }
 
 impl VegaFusionRuntime {
-    pub fn new(
-        ctx: Arc<SessionContext>,
-        capacity: Option<usize>,
-        memory_limit: Option<usize>,
-    ) -> Self {
+    pub fn new(cache: Option<VegaFusionCache>) -> Self {
         Self {
-            cache: VegaFusionCache::new(capacity, memory_limit),
-            ctx,
+            cache: cache.unwrap_or_else(|| VegaFusionCache::new(Some(32), None)),
+            ctx: Arc::new(make_datafusion_context()),
         }
     }
 
