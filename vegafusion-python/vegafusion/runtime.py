@@ -594,23 +594,20 @@ class VegaFusionRuntime:
             # Either no inline datasets, inline datasets with mixed or
             # unrecognized types
             try:
-                # Try polars
-                import polars as pl
+                # Try pandas
+                import pandas as _pd  # noqa: F401
+                import pyarrow as pa
 
                 datasets = normalize_timezones(
-                    [nw.from_native(pl.DataFrame(value)) for value in values]
+                    [nw.from_native(pa.table(value).to_pandas()) for value in values]
                 )
             except ImportError:
                 try:
-                    # Try pandas
-                    import pandas as _pd  # noqa: F401
-                    import pyarrow as pa
+                    # Try polars
+                    import polars as pl
 
                     datasets = normalize_timezones(
-                        [
-                            nw.from_native(pa.table(value).to_pandas())
-                            for value in values
-                        ]
+                        [nw.from_native(pl.DataFrame(value)) for value in values]
                     )
                 except ImportError:
                     # Fall back to arro3
