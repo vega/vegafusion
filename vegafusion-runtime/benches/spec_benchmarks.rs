@@ -143,7 +143,6 @@ async fn eval_spec_sequence(full_spec: ChartSpec, full_updates: Vec<ExportUpdate
 
 use criterion::{criterion_group, criterion_main, Criterion};
 use vegafusion_core::task_graph::graph::ScopedVariable;
-use vegafusion_runtime::datafusion::context::make_datafusion_context;
 use vegafusion_runtime::tokio_runtime::TOKIO_THREAD_STACK_SIZE;
 
 fn make_tokio_runtime() -> tokio::runtime::Runtime {

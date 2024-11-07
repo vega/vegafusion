@@ -1,7 +1,7 @@
 use vegafusion_core::proto::gen::tasks::Variable;
 use vegafusion_core::runtime::VegaFusionRuntimeTrait;
+use vegafusion_core::spec::chart::ChartSpec;
 use vegafusion_core::task_graph::task_value::TaskValue;
-use vegafusion_core::{get_column_usage, spec::chart::ChartSpec};
 use vegafusion_runtime::task_graph::runtime::VegaFusionRuntime;
 
 /// This example demonstrates how to use the `pre_transform_values` method to get

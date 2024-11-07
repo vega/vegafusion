@@ -10,6 +10,12 @@ lazy_static! {
         .unwrap();
 }
 
+fn crate_dir() -> String {
+    std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .display()
+        .to_string()
+}
+
 #[cfg(test)]
 mod test_stringify_datetimes {
     use crate::{crate_dir, TOKIO_RUNTIME};
@@ -363,10 +369,4 @@ mod test_stringify_datetimes {
             .to_string();
         assert_eq!(month_date, "2012-01-01T00:00:00.000");
     }
-}
-
-fn crate_dir() -> String {
-    std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .display()
-        .to_string()
 }
