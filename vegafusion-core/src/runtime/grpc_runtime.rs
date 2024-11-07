@@ -25,7 +25,8 @@ use vegafusion_common::{
     data::table::VegaFusionTable,
     error::{Result, VegaFusionError},
 };
-
+use crate::proto::gen::pretransform::PreTransformVariable;
+use crate::task_graph::graph::ScopedVariable;
 use super::{
     runtime::{encode_inline_datasets, PreTransformExtractTable},
     VegaFusionRuntimeTrait,
@@ -154,6 +155,7 @@ impl VegaFusionRuntimeTrait for GrpcVegaFusionRuntime {
     async fn pre_transform_values(
         &self,
         spec: &ChartSpec,
+        variables: &[ScopedVariable],
         inline_datasets: &HashMap<String, VegaFusionDataset>,
         options: &PreTransformValuesOpts,
     ) -> Result<(Vec<TaskValue>, Vec<PreTransformValuesWarning>)> {
@@ -161,6 +163,9 @@ impl VegaFusionRuntimeTrait for GrpcVegaFusionRuntime {
 
         let request = PreTransformValuesRequest {
             spec: serde_json::to_string(spec)?,
+            variables: variables.iter().map(
+                |v| PreTransformVariable { variable: Some(v.0.clone()), scope: v.1.clone() }
+            ).collect(),
             inline_datasets,
             opts: Some(options.clone()),
         };

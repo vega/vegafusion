@@ -1186,11 +1186,7 @@ mod test_pre_transform_inline {
         let vegajs_runtime = vegajs_runtime();
 
         // Initialize task graph runtime
-        let runtime = VegaFusionRuntime::new(
-            Arc::new(make_datafusion_context()),
-            Some(16),
-            Some(1024_i32.pow(3) as usize),
-        );
+        let runtime = VegaFusionRuntime::new(None);
 
         // Get timezone
         let local_tz = vegajs_runtime.nodejs_runtime.local_timezone().unwrap();
@@ -1342,11 +1338,7 @@ async fn check_pre_transform_spec_from_files(spec_name: &str, tolerance: f64) {
     let vegajs_runtime = vegajs_runtime();
 
     // Initialize task graph runtime
-    let runtime = VegaFusionRuntime::new(
-        Arc::new(make_datafusion_context()),
-        Some(16),
-        Some(1024_i32.pow(3) as usize),
-    );
+    let runtime = VegaFusionRuntime::new(None);
 
     // Get timezone
     let local_tz = vegajs_runtime.nodejs_runtime.local_timezone().unwrap();
@@ -1465,11 +1457,7 @@ async fn check_spec_sequence(
         .collect();
 
     // Initialize task graph runtime
-    let runtime = VegaFusionRuntime::new(
-        Arc::new(make_datafusion_context()),
-        Some(16),
-        Some(1024_i32.pow(3) as usize),
-    );
+    let runtime = VegaFusionRuntime::new(None);
 
     // Extract the initial values of all of the variables that should be sent from the
     // server to the client

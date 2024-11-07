@@ -36,7 +36,7 @@ use vegafusion_core::task_graph::task_value::TaskValue;
 use vegafusion_runtime::tokio_runtime::TOKIO_THREAD_STACK_SIZE;
 
 use vegafusion_core::runtime::VegaFusionRuntimeTrait;
-use vegafusion_runtime::datafusion::context::make_datafusion_context;
+use vegafusion_runtime::task_graph::cache::VegaFusionCache;
 
 static INIT: Once = Once::new();
 
@@ -210,12 +210,9 @@ impl PyVegaFusionRuntime {
             .build()
             .external("Failed to create Tokio thread pool")?;
 
+
         Ok(Self {
-            runtime: Arc::new(VegaFusionRuntime::new(
-                Arc::new(make_datafusion_context()),
-                max_capacity,
-                memory_limit,
-            )),
+            runtime: Arc::new(VegaFusionRuntime::new(Some(VegaFusionCache::new(max_capacity, memory_limit)))),
             tokio_runtime: Arc::new(tokio_runtime_connection),
         })
     }
@@ -366,15 +363,9 @@ impl PyVegaFusionRuntime {
             self.tokio_runtime.block_on(
                 self.runtime.pre_transform_values(
                     &spec,
+                    &variables,
                     &inline_datasets,
                     &PreTransformValuesOpts {
-                        variables: variables
-                            .into_iter()
-                            .map(|v| PreTransformVariable {
-                                variable: Some(v.0),
-                                scope: v.1,
-                            })
-                            .collect(),
                         local_tz,
                         default_input_tz,
                         row_limit,

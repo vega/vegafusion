@@ -27,11 +27,7 @@ mod tests {
         let spec: ChartSpec = serde_json::from_str(&spec_str).unwrap();
 
         // Initialize task graph runtime
-        let runtime = VegaFusionRuntime::new(
-            Arc::new(make_datafusion_context()),
-            Some(16),
-            Some(1024_i32.pow(3) as usize),
-        );
+        let runtime = VegaFusionRuntime::new(None);
 
         let chart_state = ChartState::try_new(
             &runtime,

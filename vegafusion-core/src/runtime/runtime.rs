@@ -30,6 +30,7 @@ use crate::{
     },
 };
 
+
 #[derive(Clone)]
 pub struct PreTransformExtractTable {
     pub name: String,
@@ -244,13 +245,14 @@ pub trait VegaFusionRuntimeTrait: Send + Sync {
     async fn pre_transform_values(
         &self,
         spec: &ChartSpec,
+        variables: &[ScopedVariable],
         inline_datasets: &HashMap<String, VegaFusionDataset>,
         options: &PreTransformValuesOpts,
     ) -> Result<(Vec<TaskValue>, Vec<PreTransformValuesWarning>)> {
         // Check that requested variables exist and collect indices
-        for var in &options.variables {
-            let scope = var.scope.as_slice();
-            let variable = var.variable.clone().unwrap();
+        for var in variables {
+            let scope = var.1.as_slice();
+            let variable = var.0.clone();
             let name = variable.name.clone();
             let namespace = variable.clone().ns();
 
@@ -282,12 +284,7 @@ pub trait VegaFusionRuntimeTrait: Send + Sync {
 
         // Make sure planner keeps the requested variables, event
         // if they are not used elsewhere in the spec
-        let keep_variables = options
-            .variables
-            .clone()
-            .into_iter()
-            .map(|v| (v.variable.unwrap(), v.scope))
-            .collect();
+        let keep_variables = Vec::from(variables);
 
         // Create spec plan
         let plan = SpecPlan::try_new(
@@ -333,12 +330,11 @@ pub trait VegaFusionRuntimeTrait: Send + Sync {
         }
 
         // Collect node indices for variables
-        let indices: Vec<_> = options
-            .variables
+        let indices: Vec<_> = variables
             .iter()
             .map(|var| {
                 if let Some(index) =
-                    task_graph_mapping.get(&(var.variable.clone().unwrap(), var.scope.clone()))
+                    task_graph_mapping.get(&(var.0.clone(), var.1.clone()))
                 {
                     Ok(index.clone())
                 } else {

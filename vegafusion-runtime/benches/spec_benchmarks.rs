@@ -52,8 +52,7 @@ async fn eval_spec_get_variable(full_spec: ChartSpec, var: &ScopedVariable) -> V
     let task_graph_mapping = task_graph.build_mapping();
 
     // Initialize task graph runtime
-    let ctx = make_datafusion_context();
-    let runtime = VegaFusionRuntime::new(Arc::new(ctx), Some(64), None);
+    let runtime = VegaFusionRuntime::new(None);
 
     let node_index = task_graph_mapping.get(var).unwrap();
 
@@ -104,8 +103,7 @@ async fn eval_spec_sequence(full_spec: ChartSpec, full_updates: Vec<ExportUpdate
     let task_graph_mapping = task_graph.build_mapping();
 
     // Initialize task graph runtime
-    let ctx = make_datafusion_context();
-    let runtime = VegaFusionRuntime::new(Arc::new(ctx), Some(64), None);
+    let runtime = VegaFusionRuntime::new(None);
 
     // Get initial values
     let mut query_indices = Vec::new();
