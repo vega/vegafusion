@@ -265,17 +265,19 @@ class VegaFusionRuntime:
 
                             # If so, keep the arrow version so that it's more efficient
                             # to convert as part of the whole table later
-                            inner_value = inner_value.assign(**{
-                                col: pd.arrays.ArrowExtensionArray(
-                                    pa.chunked_array(col_tbl.column(0))
-                                )
-                            })
+                            inner_value = inner_value.assign(
+                                **{
+                                    col: pd.arrays.ArrowExtensionArray(
+                                        pa.chunked_array(col_tbl.column(0))
+                                    )
+                                }
+                            )
                         except TypeError:
                             # If the Table constructor can't handle the object column,
                             # convert the column to pyarrow strings
-                            inner_value = inner_value.assign(**{
-                                col: inner_value[col].astype("string[pyarrow]")
-                            })
+                            inner_value = inner_value.assign(
+                                **{col: inner_value[col].astype("string[pyarrow]")}
+                            )
                 if hasattr(inner_value, "__arrow_c_stream__"):
                     # TODO: this requires pyarrow 14.0.0 or later
                     imported_inline_datasets[name] = Table(inner_value)
@@ -506,9 +508,9 @@ class VegaFusionRuntime:
                 datasets.
             dataset_format: Format for returned datasets. One of:
 
-                * ``"auto"``: Infer the result type based on the types of inline datasets.
-                  If no inline datasets are provided, return type will depend on
-                  installed packages.
+                * ``"auto"``: (default) Infer the result type based on the types of
+                  inline datasets. If no inline datasets are provided, return type will
+                  depend on installed packages.
                 * ``"polars"``: polars.DataFrame
                 * ``"pandas"``: pandas.DataFrame
                 * ``"pyarrow"``: pyarrow.Table
@@ -555,27 +557,31 @@ class VegaFusionRuntime:
                 processed_datasets.append(df.to_native())
             return processed_datasets
 
-        # Wrap result dataframes in Narwhals, using the input type and arrow PyCapsule interface
+        # Wrap result dataframes in Narwhals, using the input type and arrow
+        # PyCapsule interface
         if dataset_format != "auto":
             match dataset_format:
                 case "polars":
                     import polars as pl
 
-                    datasets = normalize_timezones([
-                        nw.from_native(pl.DataFrame(value)) for value in values
-                    ])
+                    datasets = normalize_timezones(
+                        [nw.from_native(pl.DataFrame(value)) for value in values]
+                    )
                 case "pandas":
                     import pyarrow as pa
 
-                    datasets = normalize_timezones([
-                        nw.from_native(pa.table(value).to_pandas()) for value in values
-                    ])
+                    datasets = normalize_timezones(
+                        [
+                            nw.from_native(pa.table(value).to_pandas())
+                            for value in values
+                        ]
+                    )
                 case "pyarrow":
                     import pyarrow as pa
 
-                    datasets = normalize_timezones([
-                        nw.from_native(pa.table(value)) for value in values
-                    ])
+                    datasets = normalize_timezones(
+                        [nw.from_native(pa.table(value)) for value in values]
+                    )
                 case "arro3":
                     # Pass through arrof3
                     datasets = values
@@ -583,9 +589,9 @@ class VegaFusionRuntime:
                     raise ValueError(f"Unrecognized dataset_format: {dataset_format}")
         elif (namespace := _get_common_namespace(inline_datasets)) is not None:
             # Infer the type from the inline datasets
-            datasets = normalize_timezones([
-                nw.from_arrow(value, native_namespace=namespace) for value in values
-            ])
+            datasets = normalize_timezones(
+                [nw.from_arrow(value, native_namespace=namespace) for value in values]
+            )
         else:
             # Either no inline datasets, inline datasets with mixed or
             # unrecognized types
@@ -593,18 +599,21 @@ class VegaFusionRuntime:
                 # Try polars
                 import polars as pl
 
-                datasets = normalize_timezones([
-                    nw.from_native(pl.DataFrame(value)) for value in values
-                ])
+                datasets = normalize_timezones(
+                    [nw.from_native(pl.DataFrame(value)) for value in values]
+                )
             except ImportError:
                 try:
                     # Try pandas
                     import pandas as _pd  # noqa: F401
                     import pyarrow as pa
 
-                    datasets = normalize_timezones([
-                        nw.from_native(pa.table(value).to_pandas()) for value in values
-                    ])
+                    datasets = normalize_timezones(
+                        [
+                            nw.from_native(pa.table(value).to_pandas())
+                            for value in values
+                        ]
+                    )
                 except ImportError:
                     # Fall back to arro3
                     datasets = values
