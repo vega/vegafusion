@@ -15,11 +15,9 @@ mod test_stringify_datetimes {
     use crate::{crate_dir, TOKIO_RUNTIME};
     use rstest::rstest;
     use std::fs;
-    use std::sync::Arc;
     use vegafusion_core::proto::gen::pretransform::PreTransformSpecOpts;
     use vegafusion_core::runtime::VegaFusionRuntimeTrait;
     use vegafusion_core::spec::chart::ChartSpec;
-    use vegafusion_runtime::datafusion::context::make_datafusion_context;
     use vegafusion_runtime::task_graph::runtime::VegaFusionRuntime;
 
     #[rstest(

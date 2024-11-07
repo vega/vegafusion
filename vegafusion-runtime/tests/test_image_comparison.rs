@@ -26,7 +26,6 @@ use vegafusion_core::proto::gen::tasks::{TaskGraph, TzConfig};
 use vegafusion_core::spec::chart::ChartSpec;
 use vegafusion_core::task_graph::graph::ScopedVariable;
 use vegafusion_core::task_graph::task_value::TaskValue;
-use vegafusion_runtime::datafusion::context::make_datafusion_context;
 use vegafusion_runtime::task_graph::runtime::VegaFusionRuntime;
 use vegafusion_runtime::tokio_runtime::TOKIO_THREAD_STACK_SIZE;
 
@@ -1177,7 +1176,6 @@ mod test_pre_transform_inline {
     use super::*;
     use crate::util::datasets::vega_json_dataset_async;
     use vegafusion_core::{data::dataset::VegaFusionDataset, runtime::VegaFusionRuntimeTrait};
-    use vegafusion_runtime::datafusion::context::make_datafusion_context;
 
     #[tokio::test]
     async fn test() {

@@ -20,18 +20,15 @@ mod tests {
     use std::collections::HashMap;
     use std::env;
     use std::fs;
-    use std::sync::Arc;
     use vegafusion_common::data::table::VegaFusionTable;
     use vegafusion_common::error::VegaFusionError;
     use vegafusion_core::data::dataset::VegaFusionDataset;
     use vegafusion_core::proto::gen::pretransform::pre_transform_values_warning::WarningType;
     use vegafusion_core::proto::gen::pretransform::PreTransformValuesOpts;
-    use vegafusion_core::proto::gen::pretransform::PreTransformVariable;
     use vegafusion_core::proto::gen::tasks::Variable;
     use vegafusion_core::runtime::VegaFusionRuntimeTrait;
     use vegafusion_core::spec::chart::ChartSpec;
     use vegafusion_core::spec::values::StringOrSignalSpec;
-    use vegafusion_runtime::datafusion::context::make_datafusion_context;
     use vegafusion_runtime::task_graph::runtime::VegaFusionRuntime;
 
     #[tokio::test]
@@ -47,12 +44,9 @@ mod tests {
         let (values, warnings) = runtime
             .pre_transform_values(
                 &spec,
+                &[(Variable::new_data("source_0"), vec![])],
                 &Default::default(),
                 &PreTransformValuesOpts {
-                    variables: vec![PreTransformVariable {
-                        variable: Some(Variable::new_data("source_0")),
-                        scope: vec![],
-                    }],
                     row_limit: None,
                     local_tz: "UTC".to_string(),
                     default_input_tz: None,
@@ -99,12 +93,9 @@ mod tests {
         let (values, warnings) = runtime
             .pre_transform_values(
                 &spec,
+                &[(Variable::new_data("source_0"), vec![])],
                 &Default::default(),
                 &PreTransformValuesOpts {
-                    variables: vec![PreTransformVariable {
-                        variable: Some(Variable::new_data("source_0")),
-                        scope: vec![],
-                    }],
                     row_limit: Some(3),
                     local_tz: "UTC".to_string(),
                     default_input_tz: None,
@@ -152,12 +143,9 @@ mod tests {
         let result = runtime
             .pre_transform_values(
                 &spec,
+                &[(Variable::new_data("source_0"), vec![])],
                 &Default::default(),
                 &PreTransformValuesOpts {
-                    variables: vec![PreTransformVariable {
-                        variable: Some(Variable::new_data("source_0")),
-                        scope: vec![],
-                    }],
                     row_limit: None,
                     local_tz: "UTC".to_string(),
                     default_input_tz: None,
@@ -179,12 +167,9 @@ mod tests {
         let result = runtime
             .pre_transform_values(
                 &spec,
+                &[(Variable::new_data("bogus_0"), vec![])],
                 &Default::default(),
                 &PreTransformValuesOpts {
-                    variables: vec![PreTransformVariable {
-                        variable: Some(Variable::new_data("bogus_0")),
-                        scope: vec![],
-                    }],
                     row_limit: None,
                     local_tz: "UTC".to_string(),
                     default_input_tz: None,
@@ -225,12 +210,9 @@ mod tests {
         let (values, warnings) = runtime
             .pre_transform_values(
                 &spec,
+                &[(Variable::new_data("source_0"), vec![])],
                 &inline_datasets,
                 &PreTransformValuesOpts {
-                    variables: vec![PreTransformVariable {
-                        variable: Some(Variable::new_data("source_0")),
-                        scope: vec![],
-                    }],
                     row_limit: None,
                     local_tz: "UTC".to_string(),
                     default_input_tz: None,
@@ -274,12 +256,9 @@ mod tests {
         let (values, warnings) = runtime
             .pre_transform_values(
                 &spec,
+                &[(Variable::new_data("data_3"), vec![])],
                 &Default::default(),
                 &PreTransformValuesOpts {
-                    variables: vec![PreTransformVariable {
-                        variable: Some(Variable::new_data("data_3")),
-                        scope: vec![],
-                    }],
                     row_limit: None,
                     local_tz: "UTC".to_string(),
                     default_input_tz: None,
@@ -324,18 +303,12 @@ mod tests {
         let (values, warnings) = runtime
             .pre_transform_values(
                 &spec,
+                &[
+                    (Variable::new_data("click_selected"), vec![]),
+                    (Variable::new_data("drag_selected"), vec![]),
+                ],
                 &Default::default(),
                 &PreTransformValuesOpts {
-                    variables: vec![
-                        PreTransformVariable {
-                            variable: Some(Variable::new_data("click_selected")),
-                            scope: vec![],
-                        },
-                        PreTransformVariable {
-                            variable: Some(Variable::new_data("drag_selected")),
-                            scope: vec![],
-                        },
-                    ],
                     row_limit: None,
                     local_tz: "UTC".to_string(),
                     default_input_tz: None,
@@ -414,12 +387,9 @@ mod tests {
             let (values, warnings) = runtime
                 .pre_transform_values(
                     &spec,
+                    &[(Variable::new_data("source_0"), vec![])],
                     &Default::default(),
                     &PreTransformValuesOpts {
-                        variables: vec![PreTransformVariable {
-                            variable: Some(Variable::new_data("source_0")),
-                            scope: vec![],
-                        }],
                         row_limit: None,
                         local_tz: "UTC".to_string(),
                         default_input_tz: None,

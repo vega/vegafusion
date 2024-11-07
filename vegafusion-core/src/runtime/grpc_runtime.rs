@@ -1,36 +1,21 @@
 use crate::{
     data::dataset::VegaFusionDataset,
     proto::gen::{
-        pretransform::{
-            PreTransformExtractOpts, PreTransformExtractRequest, PreTransformExtractWarning,
-            PreTransformSpecOpts, PreTransformSpecRequest, PreTransformSpecWarning,
-            PreTransformValuesOpts, PreTransformValuesRequest, PreTransformValuesWarning,
-        },
         services::{
-            pre_transform_extract_result, pre_transform_spec_result, pre_transform_values_result,
             query_request, query_result, vega_fusion_runtime_client::VegaFusionRuntimeClient,
             QueryRequest,
         },
         tasks::{NodeValueIndex, TaskGraph, TaskGraphValueRequest},
     },
-    spec::chart::ChartSpec,
-    task_graph::task_value::{NamedTaskValue, TaskValue},
+    task_graph::task_value::NamedTaskValue,
 };
 
-use super::{
-    runtime::{encode_inline_datasets, PreTransformExtractTable},
-    VegaFusionRuntimeTrait,
-};
-use crate::proto::gen::pretransform::PreTransformVariable;
-use crate::task_graph::graph::ScopedVariable;
+use super::{runtime::encode_inline_datasets, VegaFusionRuntimeTrait};
 use async_mutex::Mutex;
 use async_trait::async_trait;
 use std::collections::HashMap;
 use std::{any::Any, sync::Arc};
-use vegafusion_common::{
-    data::table::VegaFusionTable,
-    error::{Result, VegaFusionError},
-};
+use vegafusion_common::error::{Result, VegaFusionError};
 
 #[derive(Clone)]
 pub struct GrpcVegaFusionRuntime {

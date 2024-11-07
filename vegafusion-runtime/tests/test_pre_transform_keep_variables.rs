@@ -8,15 +8,11 @@ mod tests {
     use crate::crate_dir;
 
     use std::fs;
-    use std::sync::Arc;
     use vegafusion_common::error::VegaFusionError;
     use vegafusion_core::proto::gen::pretransform::{PreTransformSpecOpts, PreTransformVariable};
     use vegafusion_core::proto::gen::tasks::Variable;
-
-    use vegafusion_core::spec::chart::ChartSpec;
-
     use vegafusion_core::runtime::VegaFusionRuntimeTrait;
-    use vegafusion_runtime::datafusion::context::make_datafusion_context;
+    use vegafusion_core::spec::chart::ChartSpec;
     use vegafusion_runtime::task_graph::runtime::VegaFusionRuntime;
 
     #[tokio::test]

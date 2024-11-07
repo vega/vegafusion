@@ -10,7 +10,6 @@ use vegafusion_core::planning::split_domain_data::split_domain_data;
 
 use vegafusion_core::planning::stitch::stitch_specs;
 use vegafusion_core::planning::strip_encodings::strip_encodings;
-use vegafusion_runtime::datafusion::context::make_datafusion_context;
 
 #[tokio::test(flavor = "multi_thread")]
 async fn test_extract_server_data() {
