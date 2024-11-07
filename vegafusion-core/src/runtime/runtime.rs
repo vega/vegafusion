@@ -30,7 +30,7 @@ use crate::{
     },
 };
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct PreTransformExtractTable {
     pub name: String,
     pub scope: Vec<u32>,

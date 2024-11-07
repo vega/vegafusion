@@ -620,39 +620,49 @@ class VegaFusionRuntime:
             extract_threshold: Datasets with length below extract_threshold will be
                 inlined.
             extracted_format: The format for the extracted datasets. Options are:
-                - "arro3": arro3.Table
-                - "pyarrow": pyarrow.Table
-                - "arrow-ipc": bytes in arrow IPC format
-                - "arrow-ipc-base64": base64 encoded arrow IPC format
+
+                * ``"arro3"``: (default) arro3.Table
+                * ``"pyarrow"``: pyarrow.Table
+                * ``"arrow-ipc"``: bytes in arrow IPC format
+                * ``"arrow-ipc-base64"``: base64 encoded arrow IPC format
             inline_datasets: A dict from dataset names to pandas DataFrames or pyarrow
                 Tables. Inline datasets may be referenced by the input specification
                 using the following url syntax 'vegafusion+dataset://{dataset_name}' or
                 'table://{dataset_name}'.
             keep_signals: Signals from the input spec that must be included in the
-                pre-transformed spec. A list with elements that are either:
-                - The name of a top-level signal as a string
-                - A two-element tuple where the first element is the name of a signal as
-                  a string and the second element is the nested scope of the dataset as
-                  a list of integers
+                pre-transformed spec, even if they are no longer referenced.
+                A list with elements that are either:
+
+                * The name of a top-level signal as a string
+                * A two-element tuple where the first element is the name of a signal
+                  as a string and the second element is the nested scope of the dataset
+                  as a list of integers
             keep_datasets: Datasets from the input spec that must be included in the
-                pre-transformed spec. A list with elements that are either:
-                - The name of a top-level dataset as a string
-                - A two-element tuple where the first element is the name of a dataset
+                pre-transformed spec even if they are no longer referenced.
+                A list with elements that are either:
+
+                * The name of a top-level dataset as a string
+                * A two-element tuple where the first element is the name of a dataset
                   as a string and the second element is the nested scope of the dataset
                   as a list of integers
 
-        Returns:
-            A tuple containing three elements:
-            1. A dict containing the JSON representation of the pre-transformed Vega
-               specification without pre-transformed datasets included inline
-            2. Extracted datasets as a list of three element tuples:
-               - dataset name
-               - dataset scope
-               - pyarrow Table
-            3. A list of warnings as dictionaries. Each warning dict has a 'type' key
-               indicating the warning type, and a 'message' key containing a description
-               of the warning. Potential warning types include:
-               - 'Planner': Planner warning
+        Returns: Three-element tuple
+            * The Vega specification as a dict with pre-transformed datasets
+              included but left empty.
+            * Extracted datasets as a list of three element tuples
+               * dataset name
+               * dataset scope list
+               * arrow data
+            * A list of warnings as dictionaries. Each warning dict has a ``'type'``
+              key indicating the warning type, and a ``'message'`` key containing
+              a description of the warning. Potential warning types include:
+
+              * ``'RowLimitExceeded'``: Some datasets in resulting Vega specification
+                have been truncated to the provided row limit
+              * ``'BrokenInteractivity'``: Some interactive features may have been
+                broken in the resulting Vega specification
+              * ``'Unsupported'``: No transforms in the provided Vega specification
+                were eligible for pre-transforming
         """
         local_tz = local_tz or get_local_tz()
 

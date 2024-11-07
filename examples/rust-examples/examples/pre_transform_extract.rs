@@ -1,27 +1,32 @@
-use vegafusion_core::runtime::VegaFusionRuntimeTrait;
+use vegafusion_core::proto::gen::pretransform::PreTransformExtractOpts;
+use vegafusion_core::runtime::{PreTransformExtractTable, VegaFusionRuntimeTrait};
 use vegafusion_core::spec::chart::ChartSpec;
 use vegafusion_runtime::task_graph::runtime::VegaFusionRuntime;
 
-/// This example demonstrates how to use the `pre_transform_spec` method to create a new
-/// spec with supported transforms pre-evaluated.
+/// This example demonstrates how to use the `pre_transform_extract` method to create a new
+/// spec with supported transforms pre-evaluated and the transformed datasets extract in arrow format
 #[tokio::main]
 async fn main() {
     let spec = get_spec();
 
     let runtime = VegaFusionRuntime::new(None);
 
-    let (transformed_spec, warnings) = runtime
-        .pre_transform_spec(
+    let (transformed_spec, datasets, warnings) = runtime
+        .pre_transform_extract(
             &spec,
             &Default::default(), // Inline datasets
-            &Default::default(), // Options
+            &PreTransformExtractOpts{extract_threshold: 4, ..Default::default()},
         )
         .await
         .unwrap();
 
     assert_eq!(warnings.len(), 0);
+    assert_eq!(datasets.len(), 1);
+
+    let PreTransformExtractTable{ name, scope, table } = datasets[0].clone();
     println!(
-        "{}",
+        "{name}({scope:?})\n{}\n{}",
+        table.pretty_format(None).unwrap(),
         serde_json::to_string_pretty(&transformed_spec).unwrap()
     );
 }
