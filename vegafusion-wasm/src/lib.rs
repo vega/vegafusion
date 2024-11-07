@@ -32,7 +32,6 @@ use vegafusion_core::spec::chart::ChartSpec;
 use vegafusion_core::chart_state::ChartState;
 use vegafusion_core::data::dataset::VegaFusionDataset;
 use vegafusion_core::get_column_usage;
-use vegafusion_runtime::datafusion::context::make_datafusion_context;
 use vegafusion_runtime::task_graph::runtime::VegaFusionRuntime;
 use web_sys::Element;
 
@@ -439,8 +438,7 @@ pub async fn vegafusion_embed(
     let runtime: Box<dyn VegaFusionRuntimeTrait> = if query_fn.is_undefined() || query_fn.is_null()
     {
         // Use embedded runtime
-        let ctx = make_datafusion_context();
-        Box::new(VegaFusionRuntime::new(Arc::new(ctx), None, None))
+        Box::new(VegaFusionRuntime::new(None))
     } else {
         let query_fn = query_fn.dyn_into::<js_sys::Function>().map_err(|e| {
             JsError::new(&format!(

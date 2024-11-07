@@ -6,3 +6,5 @@ edition = "2021"
 [dev-dependencies]
 serde_json = { workspace = true }
 vegafusion-core = { path = "../../vegafusion-core" }
+vegafusion-runtime = { path = "../../vegafusion-runtime" }
+tokio = "1.41.1"

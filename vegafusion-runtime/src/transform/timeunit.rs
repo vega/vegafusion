@@ -289,7 +289,7 @@ fn timeunit_custom_udf(
 }
 
 /// Convert a column to a timezone aware timestamp with Millisecond precision, in UTC
-pub fn to_timestamp_col(expr: Expr, schema: &DFSchema, default_input_tz: &String) -> Result<Expr> {
+pub fn to_timestamp_col(expr: Expr, schema: &DFSchema, default_input_tz: &str) -> Result<Expr> {
     Ok(match expr.get_type(schema)? {
         DataType::Timestamp(ArrowTimeUnit::Millisecond, Some(_)) => expr,
         DataType::Timestamp(_, Some(tz)) => expr.try_cast_to(
@@ -297,10 +297,7 @@ pub fn to_timestamp_col(expr: Expr, schema: &DFSchema, default_input_tz: &String
             schema,
         )?,
         DataType::Timestamp(_, None) => expr.try_cast_to(
-            &DataType::Timestamp(
-                ArrowTimeUnit::Millisecond,
-                Some(default_input_tz.as_str().into()),
-            ),
+            &DataType::Timestamp(ArrowTimeUnit::Millisecond, Some(default_input_tz.into())),
             schema,
         )?,
         DataType::Date32 | DataType::Date64 => cast_to(
@@ -309,10 +306,7 @@ pub fn to_timestamp_col(expr: Expr, schema: &DFSchema, default_input_tz: &String
             schema,
         )?
         .try_cast_to(
-            &DataType::Timestamp(
-                ArrowTimeUnit::Millisecond,
-                Some(default_input_tz.as_str().into()),
-            ),
+            &DataType::Timestamp(ArrowTimeUnit::Millisecond, Some(default_input_tz.into())),
             schema,
         )?,
         DataType::Utf8 | DataType::LargeUtf8 | DataType::Utf8View => {

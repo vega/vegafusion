@@ -10,16 +10,20 @@ lazy_static! {
         .unwrap();
 }
 
+fn crate_dir() -> String {
+    std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .display()
+        .to_string()
+}
+
 #[cfg(test)]
 mod test_stringify_datetimes {
     use crate::{crate_dir, TOKIO_RUNTIME};
     use rstest::rstest;
     use std::fs;
-    use std::sync::Arc;
     use vegafusion_core::proto::gen::pretransform::PreTransformSpecOpts;
     use vegafusion_core::runtime::VegaFusionRuntimeTrait;
     use vegafusion_core::spec::chart::ChartSpec;
-    use vegafusion_runtime::datafusion::context::make_datafusion_context;
     use vegafusion_runtime::task_graph::runtime::VegaFusionRuntime;
 
     #[rstest(
@@ -82,11 +86,7 @@ mod test_stringify_datetimes {
         let spec: ChartSpec = serde_json::from_str(&spec_str).unwrap();
 
         // Initialize task graph runtime
-        let runtime = VegaFusionRuntime::new(
-            Arc::new(make_datafusion_context()),
-            Some(16),
-            Some(1024_i32.pow(3) as usize),
-        );
+        let runtime = VegaFusionRuntime::new(None);
         let local_tz = local_tz.to_string();
 
         let (spec, _warnings) = runtime
@@ -139,11 +139,7 @@ mod test_stringify_datetimes {
         let spec: ChartSpec = serde_json::from_str(&spec_str).unwrap();
 
         // Initialize task graph runtime
-        let runtime = VegaFusionRuntime::new(
-            Arc::new(make_datafusion_context()),
-            Some(16),
-            Some(1024_i32.pow(3) as usize),
-        );
+        let runtime = VegaFusionRuntime::new(None);
         // let local_tz = "America/New_York".to_string();
         let local_tz = "UTC".to_string();
         let default_input_tz = "UTC".to_string();
@@ -229,11 +225,7 @@ mod test_stringify_datetimes {
         let spec_str = fs::read_to_string(spec_path).unwrap();
         let spec: ChartSpec = serde_json::from_str(&spec_str).unwrap();
         // Initialize task graph runtime
-        let runtime = VegaFusionRuntime::new(
-            Arc::new(make_datafusion_context()),
-            Some(16),
-            Some(1024_i32.pow(3) as usize),
-        );
+        let runtime = VegaFusionRuntime::new(None);
 
         let (spec, _warnings) = runtime
             .pre_transform_spec(
@@ -298,11 +290,7 @@ mod test_stringify_datetimes {
         let spec: ChartSpec = serde_json::from_str(&spec_str).unwrap();
 
         // Initialize task graph runtime
-        let runtime = VegaFusionRuntime::new(
-            Arc::new(make_datafusion_context()),
-            Some(16),
-            Some(1024_i32.pow(3) as usize),
-        );
+        let runtime = VegaFusionRuntime::new(None);
 
         let (spec, _warnings) = TOKIO_RUNTIME
             .block_on(runtime.pre_transform_spec(
@@ -347,11 +335,7 @@ mod test_stringify_datetimes {
         let spec: ChartSpec = serde_json::from_str(&spec_str).unwrap();
 
         // Initialize task graph runtime
-        let runtime = VegaFusionRuntime::new(
-            Arc::new(make_datafusion_context()),
-            Some(16),
-            Some(1024_i32.pow(3) as usize),
-        );
+        let runtime = VegaFusionRuntime::new(None);
 
         let (spec, _warnings) = runtime
             .pre_transform_spec(
@@ -385,10 +369,4 @@ mod test_stringify_datetimes {
             .to_string();
         assert_eq!(month_date, "2012-01-01T00:00:00.000");
     }
-}
-
-fn crate_dir() -> String {
-    std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .display()
-        .to_string()
 }

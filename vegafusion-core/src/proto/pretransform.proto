@@ -49,16 +49,16 @@ message PreTransformVariable {
 }
 
 message PreTransformValuesOpts {
-  repeated PreTransformVariable variables = 1;
-  optional uint32 row_limit = 2;
-  string local_tz = 3;
-  optional string default_input_tz = 4;
+  optional uint32 row_limit = 1;
+  string local_tz = 2;
+  optional string default_input_tz = 3;
 }
 
 message PreTransformValuesRequest {
   string spec = 1;
-  repeated tasks.InlineDataset inline_datasets = 2;
-  PreTransformValuesOpts opts = 3;
+  repeated PreTransformVariable variables = 2;
+  repeated tasks.InlineDataset inline_datasets = 3;
+  PreTransformValuesOpts opts = 4;
 }
 
 message PreTransformValuesResponse {
