@@ -1,7 +1,7 @@
-use vegafusion_core::{get_column_usage, spec::chart::ChartSpec};
 use vegafusion_core::proto::gen::tasks::Variable;
 use vegafusion_core::runtime::VegaFusionRuntimeTrait;
 use vegafusion_core::task_graph::task_value::TaskValue;
+use vegafusion_core::{get_column_usage, spec::chart::ChartSpec};
 use vegafusion_runtime::task_graph::runtime::VegaFusionRuntime;
 
 /// This example demonstrates how to use the `pre_transform_values` method to get
@@ -12,12 +12,15 @@ async fn main() {
 
     let runtime = VegaFusionRuntime::new(None);
 
-    let (values, warnings) = runtime.pre_transform_values(
-        &spec,
-        &[(Variable::new_data("counts"), vec![])],
-        &Default::default(),  // Inline datasets
-        &Default::default()   // Options
-    ).await.unwrap();
+    let (values, warnings) = runtime
+        .pre_transform_values(
+            &spec,
+            &[(Variable::new_data("counts"), vec![])],
+            &Default::default(), // Inline datasets
+            &Default::default(), // Options
+        )
+        .await
+        .unwrap();
 
     assert_eq!(values.len(), 1);
     assert_eq!(warnings.len(), 0);
@@ -28,7 +31,9 @@ async fn main() {
 
     let tbl_repr = counts_table.pretty_format(None).unwrap();
 
-    assert_eq!(tbl_repr, "\
+    assert_eq!(
+        tbl_repr,
+        "\
 +------+------+-------+
 | bin0 | bin1 | count |
 +------+------+-------+
@@ -41,7 +46,8 @@ async fn main() {
 | 4.0  | 5.0  | 273   |
 | 9.0  | 10.0 | 4     |
 | 1.0  | 2.0  | 5     |
-+------+------+-------+")
++------+------+-------+"
+    )
 }
 
 fn get_spec() -> ChartSpec {

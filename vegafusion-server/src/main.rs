@@ -180,9 +180,11 @@ impl VegaFusionRuntimeGrpc {
                 default_input_tz: None,
             });
 
-        let variables: Vec<ScopedVariable> = request.variables.iter().map(
-            |v| (v.variable.clone().unwrap(), v.scope.clone())
-        ).collect::<Vec<_>>();
+        let variables: Vec<ScopedVariable> = request
+            .variables
+            .iter()
+            .map(|v| (v.variable.clone().unwrap(), v.scope.clone()))
+            .collect::<Vec<_>>();
 
         // Extract and deserialize inline datasets
         let inline_datasets = decode_inline_datasets(request.inline_datasets)?;
@@ -319,9 +321,10 @@ async fn main() -> Result<(), VegaFusionError> {
         None
     };
 
-    let tg_runtime = VegaFusionRuntime::new(
-        Some(VegaFusionCache::new(Some(args.capacity), memory_limit))
-    );
+    let tg_runtime = VegaFusionRuntime::new(Some(VegaFusionCache::new(
+        Some(args.capacity),
+        memory_limit,
+    )));
 
     grpc_server(grpc_address, tg_runtime.clone(), args.web)
         .await

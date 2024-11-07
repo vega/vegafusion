@@ -17,6 +17,12 @@ use crate::{
     task_graph::task_value::{NamedTaskValue, TaskValue},
 };
 
+use super::{
+    runtime::{encode_inline_datasets, PreTransformExtractTable},
+    VegaFusionRuntimeTrait,
+};
+use crate::proto::gen::pretransform::PreTransformVariable;
+use crate::task_graph::graph::ScopedVariable;
 use async_mutex::Mutex;
 use async_trait::async_trait;
 use std::collections::HashMap;
@@ -24,12 +30,6 @@ use std::{any::Any, sync::Arc};
 use vegafusion_common::{
     data::table::VegaFusionTable,
     error::{Result, VegaFusionError},
-};
-use crate::proto::gen::pretransform::PreTransformVariable;
-use crate::task_graph::graph::ScopedVariable;
-use super::{
-    runtime::{encode_inline_datasets, PreTransformExtractTable},
-    VegaFusionRuntimeTrait,
 };
 
 #[derive(Clone)]

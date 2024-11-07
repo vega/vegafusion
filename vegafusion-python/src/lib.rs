@@ -210,9 +210,11 @@ impl PyVegaFusionRuntime {
             .build()
             .external("Failed to create Tokio thread pool")?;
 
-
         Ok(Self {
-            runtime: Arc::new(VegaFusionRuntime::new(Some(VegaFusionCache::new(max_capacity, memory_limit)))),
+            runtime: Arc::new(VegaFusionRuntime::new(Some(VegaFusionCache::new(
+                max_capacity,
+                memory_limit,
+            )))),
             tokio_runtime: Arc::new(tokio_runtime_connection),
         })
     }
@@ -360,8 +362,8 @@ impl PyVegaFusionRuntime {
             .collect();
 
         let (values, warnings) = py.allow_threads(|| {
-            self.tokio_runtime.block_on(
-                self.runtime.pre_transform_values(
+            self.tokio_runtime
+                .block_on(self.runtime.pre_transform_values(
                     &spec,
                     &variables,
                     &inline_datasets,
@@ -370,8 +372,7 @@ impl PyVegaFusionRuntime {
                         default_input_tz,
                         row_limit,
                     },
-                ),
-            )
+                ))
         })?;
 
         let warnings: Vec<_> = warnings

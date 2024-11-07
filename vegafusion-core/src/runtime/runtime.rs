@@ -30,7 +30,6 @@ use crate::{
     },
 };
 
-
 #[derive(Clone)]
 pub struct PreTransformExtractTable {
     pub name: String,
@@ -333,9 +332,7 @@ pub trait VegaFusionRuntimeTrait: Send + Sync {
         let indices: Vec<_> = variables
             .iter()
             .map(|var| {
-                if let Some(index) =
-                    task_graph_mapping.get(&(var.0.clone(), var.1.clone()))
-                {
+                if let Some(index) = task_graph_mapping.get(&(var.0.clone(), var.1.clone())) {
                     Ok(index.clone())
                 } else {
                     Err(VegaFusionError::pre_transform(format!(

@@ -1,3 +1,4 @@
+use crate::datafusion::context::make_datafusion_context;
 use crate::task_graph::cache::VegaFusionCache;
 use crate::task_graph::task::TaskCall;
 use crate::task_graph::timezone::RuntimeTzConfig;
@@ -15,7 +16,6 @@ use vegafusion_core::error::{Result, ResultWithContext, VegaFusionError};
 use vegafusion_core::proto::gen::tasks::{task::TaskKind, NodeValueIndex, TaskGraph};
 use vegafusion_core::runtime::VegaFusionRuntimeTrait;
 use vegafusion_core::task_graph::task_value::{NamedTaskValue, TaskValue};
-use crate::datafusion::context::make_datafusion_context;
 
 type CacheValue = (TaskValue, Vec<TaskValue>);
 
@@ -26,9 +26,7 @@ pub struct VegaFusionRuntime {
 }
 
 impl VegaFusionRuntime {
-    pub fn new(
-        cache: Option<VegaFusionCache>
-    ) -> Self {
+    pub fn new(cache: Option<VegaFusionCache>) -> Self {
         Self {
             cache: cache.unwrap_or_else(|| VegaFusionCache::new(Some(32), None)),
             ctx: Arc::new(make_datafusion_context()),
