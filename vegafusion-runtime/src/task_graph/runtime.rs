@@ -13,9 +13,18 @@ use std::panic::AssertUnwindSafe;
 use std::sync::Arc;
 use vegafusion_core::data::dataset::VegaFusionDataset;
 use vegafusion_core::error::{Result, ResultWithContext, VegaFusionError};
-use vegafusion_core::proto::gen::tasks::{task::TaskKind, NodeValueIndex, TaskGraph};
+use vegafusion_core::proto::gen::tasks::inline_dataset::Dataset;
+use vegafusion_core::proto::gen::tasks::{
+    task::TaskKind, InlineDataset, InlineDatasetPlan, InlineDatasetSubstrait, InlineDatasetTable,
+    NodeValueIndex, TaskGraph,
+};
 use vegafusion_core::runtime::VegaFusionRuntimeTrait;
 use vegafusion_core::task_graph::task_value::{NamedTaskValue, TaskValue};
+
+use datafusion_proto::bytes::{logical_plan_from_bytes, logical_plan_to_bytes};
+use datafusion_substrait::logical_plan::consumer::from_substrait_plan;
+use datafusion_substrait::substrait::proto::Plan;
+use prost::Message;
 
 type CacheValue = (TaskValue, Vec<TaskValue>);
 
@@ -215,7 +224,65 @@ async fn get_or_compute_node_value(
         };
 
         // get or construct from cache
-
         cache.get_or_try_insert_with(cache_key, fut).await
     }
+}
+
+pub async fn decode_inline_datasets(
+    inline_pretransform_datasets: Vec<InlineDataset>,
+    ctx: &SessionContext,
+) -> Result<HashMap<String, VegaFusionDataset>> {
+    let mut inline_datasets = HashMap::new();
+    for inline_dataset in inline_pretransform_datasets {
+        let (name, dataset) = match inline_dataset.dataset.as_ref().unwrap() {
+            Dataset::Table(table) => {
+                let dataset = VegaFusionDataset::from_table_ipc_bytes(&table.table)?;
+                (table.name.clone(), dataset)
+            }
+            Dataset::Plan(plan) => {
+                let logical_plan = logical_plan_from_bytes(&plan.plan, ctx)?;
+                let dataset = VegaFusionDataset::from_plan(logical_plan);
+                (plan.name.clone(), dataset)
+            }
+            Dataset::SubstraitPlan(substrait_plan) => {
+                let proto_substrait_plan = Plan::decode(&*substrait_plan.substrait_plan)?;
+                let logical_plan = from_substrait_plan(ctx, &proto_substrait_plan).await?;
+                let dataset = VegaFusionDataset::from_plan(logical_plan);
+                (substrait_plan.name.clone(), dataset)
+            }
+        };
+        inline_datasets.insert(name, dataset);
+    }
+    Ok(inline_datasets)
+}
+
+pub fn encode_inline_datasets(
+    datasets: &HashMap<String, VegaFusionDataset>,
+) -> Result<Vec<InlineDataset>> {
+    datasets
+        .iter()
+        .map(|(name, dataset)| {
+            let encoded_dataset = match dataset {
+                VegaFusionDataset::Table { table, .. } => InlineDataset {
+                    dataset: Some(Dataset::Table(InlineDatasetTable {
+                        name: name.clone(),
+                        table: table.to_ipc_bytes()?,
+                    })),
+                },
+                VegaFusionDataset::Plan { plan } => InlineDataset {
+                    dataset: Some(Dataset::Plan(InlineDatasetPlan {
+                        name: name.clone(),
+                        plan: logical_plan_to_bytes(&plan)?.to_vec(),
+                    })),
+                },
+                VegaFusionDataset::Substrait { substrait_plan } => InlineDataset {
+                    dataset: Some(Dataset::SubstraitPlan(InlineDatasetSubstrait {
+                        name: name.clone(),
+                        substrait_plan: substrait_plan.encode_to_vec(),
+                    })),
+                },
+            };
+            Ok(encoded_dataset)
+        })
+        .collect::<Result<Vec<InlineDataset>>>()
 }

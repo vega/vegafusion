@@ -31,7 +31,7 @@ workspace = true
 workspace = true
 
 [dependencies.tonic]
-version = "0.10.2"
+workspace = true
 features = ["tls"]
 
 [dependencies.deterministic-hash]

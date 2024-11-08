@@ -163,9 +163,31 @@ message TaskGraphValueResponse {
   repeated ResponseTaskValue response_values = 1;
 }
 
-message InlineDataset {
+message InlineDatasetTable {
   // Inline dataset name
   string name = 1;
   // Serialized Arrow record batch in Arrow IPC format
   bytes table = 2;
+}
+
+message InlineDatasetPlan {
+  // Inline dataset name
+  string name = 1;
+  // Serialized DataFusion plan in protobuf format
+  bytes plan = 2;
+}
+
+message InlineDatasetSubstrait {
+  // Inline dataset name
+  string name = 1;
+  // Serialized substrait plan in protobuf format
+  bytes substrait_plan = 2;
+}
+
+message InlineDataset {
+  oneof dataset {
+    InlineDatasetTable table = 1;
+    InlineDatasetPlan plan = 2;
+    InlineDatasetSubstrait substrait_plan = 3;
+  }
 }

@@ -16,7 +16,7 @@ use vegafusion_core::proto::gen::pretransform::{
     PreTransformExtractOpts, PreTransformSpecOpts, PreTransformValuesOpts, PreTransformVariable,
 };
 use vegafusion_core::proto::gen::tasks::{TzConfig, Variable};
-use vegafusion_core::runtime::GrpcVegaFusionRuntime;
+use vegafusion_runtime::task_graph::GrpcVegaFusionRuntime;
 
 use vegafusion_runtime::task_graph::runtime::VegaFusionRuntime;
 

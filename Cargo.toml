@@ -47,6 +47,15 @@ features = [ "case-insensitive", "filter-by-regex",]
 version = "0.12.8"
 default-features = false
 
+[workspace.dependencies.tonic]
+version = "0.12.3"
+
+[workspace.dependencies.tonic-web]
+version = "0.12.3"
+
+[workspace.dependencies.tonic-build]
+version = "0.12.3"
+
 [workspace.dependencies.tokio]
 version = "1.36.0"
 
@@ -61,10 +70,13 @@ version = "0.5.1"
 default-features = false
 
 [workspace.dependencies.prost]
-version = "0.12.3"
+version = "0.13.3"
 
 [workspace.dependencies.prost-types]
-version = "0.12.3"
+version = "0.13.3"
+
+[workspace.dependencies.prost-build]
+version = "0.13.3"
 
 [workspace.dependencies.object_store]
 version = "0.11.0"
@@ -129,5 +141,9 @@ git = "https://github.com/apache/datafusion.git"
 rev = "b30d12a73fb9867180c2fdf8ddc818b45f957bac"
 
 [workspace.dependencies.datafusion-functions-window]
+git = "https://github.com/apache/datafusion.git"
+rev = "b30d12a73fb9867180c2fdf8ddc818b45f957bac"
+
+[workspace.dependencies.datafusion-substrait]
 git = "https://github.com/apache/datafusion.git"
 rev = "b30d12a73fb9867180c2fdf8ddc818b45f957bac"

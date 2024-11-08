@@ -14,10 +14,10 @@ use vegafusion_core::proto::gen::services::{
 };
 use vegafusion_core::proto::gen::tasks::TaskGraphValueResponse;
 use vegafusion_core::proto::gen::tasks::{ResponseTaskValue, TaskValue as ProtoTaskValue};
-use vegafusion_core::runtime::{decode_inline_datasets, VegaFusionRuntimeTrait};
+use vegafusion_core::runtime::VegaFusionRuntimeTrait;
 use vegafusion_core::spec::chart::ChartSpec;
 use vegafusion_core::task_graph::graph::ScopedVariable;
-use vegafusion_runtime::task_graph::runtime::VegaFusionRuntime;
+use vegafusion_runtime::task_graph::runtime::{decode_inline_datasets, VegaFusionRuntime};
 
 use clap::Parser;
 use regex::Regex;
@@ -46,7 +46,11 @@ impl VegaFusionRuntimeGrpc {
             Some(query_request::Request::TaskGraphValues(task_graph_values)) => {
                 let task_graph = Arc::new(task_graph_values.task_graph.unwrap());
                 let indices = &task_graph_values.indices;
-                let inline_datasets = decode_inline_datasets(task_graph_values.inline_datasets)?;
+                let inline_datasets = decode_inline_datasets(
+                    task_graph_values.inline_datasets,
+                    self.runtime.ctx.as_ref(),
+                )
+                .await?;
 
                 match self
                     .runtime
@@ -98,7 +102,8 @@ impl VegaFusionRuntimeGrpc {
         });
 
         // Decode inline datasets to VegaFusionDatasets
-        let inline_datasets = decode_inline_datasets(request.inline_datasets)?;
+        let inline_datasets =
+            decode_inline_datasets(request.inline_datasets, self.runtime.ctx.as_ref()).await?;
 
         // Parse spec
         let spec: ChartSpec = serde_json::from_str(&request.spec)?;
@@ -129,7 +134,8 @@ impl VegaFusionRuntimeGrpc {
     ) -> Result<PreTransformExtractResult, VegaFusionError> {
         // Extract and deserialize inline datasets
         let inline_pretransform_datasets = request.inline_datasets;
-        let inline_datasets = decode_inline_datasets(inline_pretransform_datasets)?;
+        let inline_datasets =
+            decode_inline_datasets(inline_pretransform_datasets, self.runtime.ctx.as_ref()).await?;
         let opts = request.opts.unwrap();
 
         // Parse spec
@@ -187,7 +193,8 @@ impl VegaFusionRuntimeGrpc {
             .collect::<Vec<_>>();
 
         // Extract and deserialize inline datasets
-        let inline_datasets = decode_inline_datasets(request.inline_datasets)?;
+        let inline_datasets =
+            decode_inline_datasets(request.inline_datasets, self.runtime.ctx.as_ref()).await?;
 
         // Parse spec
         let spec_string = request.spec;

@@ -36,6 +36,7 @@ deterministic-hash = "1.0.1"
 log = "0.4.17"
 env_logger = "0.10.0"
 ordered-float = "3.6.0"
+async-mutex = "1.4.0"
 
 [dev-dependencies]
 futures-util = "0.3.21"
@@ -88,12 +89,12 @@ workspace = true
 
 [dependencies.vegafusion-common]
 path = "../vegafusion-common"
-features = ["json", "sqlparser", "prettyprint", "object_store", "url"]
+features = ["json", "sqlparser", "prettyprint", "object_store", "url", "proto"]
 version = "1.6.9"
 
 [dependencies.vegafusion-core]
 path = "../vegafusion-core"
-features = ["sqlparser"]
+features = ["sqlparser", "tonic_support", "substrait"]
 version = "1.6.9"
 
 [dependencies.serde]
@@ -129,9 +130,18 @@ workspace = true
 [dependencies.datafusion-functions-window]
 workspace = true
 
+[dependencies.datafusion-proto]
+workspace = true
+
+[dependencies.datafusion-substrait]
+workspace = true
+
 [dependencies.tokio]
 workspace = true
 features = ["macros"]
+
+[dependencies.tonic]
+workspace = true
 
 [dependencies.reqwest]
 workspace = true

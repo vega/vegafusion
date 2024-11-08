@@ -45,6 +45,8 @@ use vegafusion_common::datatypes::{is_integer_datatype, is_string_datatype};
 use vegafusion_core::proto::gen::transforms::transform::TransformKind;
 use vegafusion_core::spec::visitors::extract_inline_dataset;
 
+use datafusion_substrait::logical_plan::consumer::from_substrait_plan;
+
 #[cfg(feature = "s3")]
 use object_store::aws::AmazonS3Builder;
 
@@ -138,6 +140,15 @@ impl TaskCall for DataUrlTask {
                     VegaFusionDataset::Table { table, .. } => {
                         let table = table.clone().with_ordering()?;
                         ctx.vegafusion_table(table).await?
+                    }
+                    VegaFusionDataset::Plan { plan } => {
+                        ctx.execute_logical_plan(plan.clone()).await?
+                    }
+                    VegaFusionDataset::Substrait {
+                        substrait_plan: plan,
+                    } => {
+                        let logical_plan = from_substrait_plan(ctx.as_ref(), plan).await?;
+                        ctx.execute_logical_plan(logical_plan).await?
                     }
                 }
             } else if let Ok(df) = ctx.table(&inline_name).await {

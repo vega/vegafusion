@@ -40,7 +40,7 @@ fn gen_tonic() {
     config.protoc_arg("--experimental_allow_proto3_optional");
 
     builder
-        .compile_with_config(
+        .compile_protos_with_config(
             config,
             &[
                 "src/proto/expression.proto",
