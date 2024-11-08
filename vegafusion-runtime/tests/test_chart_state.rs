@@ -8,7 +8,7 @@ mod tests {
     use crate::crate_dir;
     use serde_json::json;
     use std::fs;
-    use vegafusion_core::chart_state::ChartState;
+    use vegafusion_core::chart_state::{ChartState, ChartStateOpts};
     use vegafusion_core::planning::watch::{ExportUpdateJSON, ExportUpdateNamespace};
     use vegafusion_core::proto::gen::tasks::TzConfig;
     use vegafusion_core::spec::chart::ChartSpec;
@@ -31,11 +31,13 @@ mod tests {
             &runtime,
             spec,
             Default::default(),
-            TzConfig {
-                local_tz: "UTC".to_string(),
-                default_input_tz: None,
+            ChartStateOpts {
+                tz_config: TzConfig {
+                    local_tz: "UTC".to_string(),
+                    default_input_tz: None,
+                },
+                row_limit: None,
             },
-            None,
         )
         .await
         .unwrap();

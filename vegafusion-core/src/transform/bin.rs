@@ -5,7 +5,7 @@ use crate::proto::gen::expression::{ArrayExpression, Expression, Literal};
 use crate::proto::gen::tasks::Variable;
 use crate::proto::gen::transforms::Bin;
 use crate::spec::transform::bin::{BinExtent, BinSpan, BinTransformSpec};
-use crate::spec::values::SignalExpressionSpec;
+use crate::spec::values::{SignalExpressionSpec, ValueOrSignalSpec};
 use crate::task_graph::task::InputVariable;
 use crate::transform::TransformDependencies;
 
@@ -42,7 +42,7 @@ impl Bin {
             alias_0: as_.first().cloned(),
             alias_1: as_.get(1).cloned(),
             anchor: config.anchor,
-            maxbins: config.maxbins,
+            maxbins: Some(config.maxbins),
             base: config.base,
             step: config.step,
             steps: config.steps.into_iter().flatten().collect(),
@@ -73,7 +73,7 @@ pub struct BinConfig {
     divide: Vec<f64>,
 
     /// The maximum number of bins allowed
-    maxbins: f64,
+    maxbins: Expression,
 
     /// A minimum distance between adjacent bins
     minstep: f64,
@@ -99,7 +99,7 @@ impl Default for BinConfig {
             anchor: None,
             base: 10.0,
             divide: vec![5.0, 2.0],
-            maxbins: 20.0,
+            maxbins: Expression::from(20.0),
             minstep: 0.0,
             nice: true,
             step: None,
@@ -121,11 +121,19 @@ impl BinConfig {
             },
         };
 
+        let maxbins = match &spec.maxbins {
+            None => None,
+            Some(maxbins) => match maxbins {
+                ValueOrSignalSpec::Value(maxbins) => maxbins.as_f64().map(Expression::from),
+                ValueOrSignalSpec::Signal(signal) => Some(parse(&signal.signal)?),
+            },
+        };
+
         Ok(Self {
             anchor: spec.anchor,
             base: spec.base.unwrap_or(dflt.base),
             divide: spec.divide.unwrap_or(dflt.divide),
-            maxbins: spec.maxbins.unwrap_or(dflt.maxbins),
+            maxbins: maxbins.unwrap_or(dflt.maxbins),
             minstep: spec.minstep.unwrap_or(dflt.minstep),
             nice: spec.nice.unwrap_or(dflt.nice),
             step: spec.step,
@@ -140,6 +148,9 @@ impl TransformDependencies for Bin {
         let mut input_vars = self.extent.as_ref().unwrap().input_vars();
         if let Some(span) = self.span.as_ref() {
             input_vars.extend(span.input_vars());
+        }
+        if let Some(maxbins) = self.maxbins.as_ref() {
+            input_vars.extend(maxbins.input_vars());
         }
         input_vars
     }

@@ -18,5 +18,8 @@ If you've arrived here looking for information on how to scale Vega-Altair visua
 :caption: Contents
 
 column_usage
-transformed_data
+transform_data
+transform_spec
+transform_extract
+chart_state
 ```

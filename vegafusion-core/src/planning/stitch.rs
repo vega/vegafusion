@@ -6,6 +6,7 @@ use crate::spec::signal::SignalSpec;
 use crate::spec::values::MissingNullOrValue;
 use crate::task_graph::graph::ScopedVariable;
 use crate::task_graph::scope::TaskScope;
+use itertools::Itertools;
 use serde_json::Value;
 use std::collections::HashSet;
 
@@ -76,8 +77,8 @@ pub fn stitch_specs(
 
     // Return plan which specifies which signals/data need to be communicated between client and server
     Ok(CommPlan {
-        server_to_client: server_to_client.into_iter().collect(),
-        client_to_server: client_to_server.into_iter().collect(),
+        server_to_client: server_to_client.into_iter().sorted().collect(),
+        client_to_server: client_to_server.into_iter().sorted().collect(),
     })
 }
 
