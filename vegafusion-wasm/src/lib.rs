@@ -29,7 +29,7 @@ use vegafusion_core::proto::gen::services::{
 use vegafusion_core::runtime::{encode_inline_datasets, VegaFusionRuntimeTrait};
 use vegafusion_core::spec::chart::ChartSpec;
 
-use vegafusion_core::chart_state::ChartState;
+use vegafusion_core::chart_state::{ChartState, ChartStateOpts};
 use vegafusion_core::data::dataset::VegaFusionDataset;
 use vegafusion_core::get_column_usage;
 use vegafusion_runtime::task_graph::runtime::VegaFusionRuntime;
@@ -449,10 +449,17 @@ pub async fn vegafusion_embed(
         Box::new(QueryFnVegaFusionRuntime::new(query_fn))
     };
 
-    let chart_state =
-        ChartState::try_new(runtime.as_ref(), spec, Default::default(), tz_config, None)
-            .await
-            .map_err(|e| JsError::new(&e.to_string()))?;
+    let chart_state = ChartState::try_new(
+        runtime.as_ref(),
+        spec,
+        Default::default(),
+        ChartStateOpts {
+            tz_config,
+            row_limit: None,
+        },
+    )
+    .await
+    .map_err(|e| JsError::new(&e.to_string()))?;
 
     // Serializer that can be used to convert serde types to JSON compatible objects
     let serializer = serde_wasm_bindgen::Serializer::json_compatible();

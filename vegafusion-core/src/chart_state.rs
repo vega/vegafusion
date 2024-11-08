@@ -24,6 +24,24 @@ use vegafusion_common::{
     error::{Result, ResultWithContext, VegaFusionError},
 };
 
+#[derive(Clone, Debug)]
+pub struct ChartStateOpts {
+    pub tz_config: TzConfig,
+    pub row_limit: Option<u32>,
+}
+
+impl Default for ChartStateOpts {
+    fn default() -> Self {
+        Self {
+            tz_config: TzConfig {
+                local_tz: "UTC".to_string(),
+                default_input_tz: None,
+            },
+            row_limit: None,
+        }
+    }
+}
+
 #[derive(Clone)]
 pub struct ChartState {
     input_spec: ChartSpec,
@@ -41,8 +59,7 @@ impl ChartState {
         runtime: &dyn VegaFusionRuntimeTrait,
         spec: ChartSpec,
         inline_datasets: HashMap<String, VegaFusionDataset>,
-        tz_config: TzConfig,
-        row_limit: Option<u32>,
+        opts: ChartStateOpts,
     ) -> Result<Self> {
         let dataset_fingerprints = inline_datasets
             .iter()
@@ -57,7 +74,7 @@ impl ChartState {
             .with_context(|| "Failed to create task scope for server spec")?;
         let tasks = plan
             .server_spec
-            .to_tasks(&tz_config, &dataset_fingerprints)
+            .to_tasks(&opts.tz_config, &dataset_fingerprints)
             .unwrap();
         let task_graph = TaskGraph::new(tasks, &task_scope).unwrap();
         let task_graph_mapping = task_graph.build_mapping();
@@ -97,7 +114,7 @@ impl ChartState {
         }
 
         let (transformed_spec, warnings) =
-            apply_pre_transform_datasets(&spec, &plan, init, row_limit)?;
+            apply_pre_transform_datasets(&spec, &plan, init, opts.row_limit)?;
 
         Ok(Self {
             input_spec: spec,

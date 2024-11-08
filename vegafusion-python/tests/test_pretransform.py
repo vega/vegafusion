@@ -1761,9 +1761,9 @@ def test_pre_transform_spec_encoded_datasets():
     # Pre-transform with supported aggregate function should result in no warnings
     vega_spec = movies_histogram_spec()
 
-    # default list of dict format
-    tx_spec, _warnings = vf.runtime.pre_transform_spec(
-        vega_spec, data_encoding_threshold=10, data_encoding_format="pyarrow"
+    # Inline when threshold is larger than transformed data
+    tx_spec, datasets, _warnings = vf.runtime.pre_transform_extract(
+        vega_spec, extract_threshold=10, extracted_format="pyarrow"
     )
 
     values = tx_spec["data"][0]["values"]
@@ -1771,33 +1771,33 @@ def test_pre_transform_spec_encoded_datasets():
     assert len(values) == 9
 
     # pyarrow format
-    tx_spec, _warnings = vf.runtime.pre_transform_spec(
-        vega_spec, data_encoding_threshold=0, data_encoding_format="pyarrow"
+    tx_spec, datasets, _warnings = vf.runtime.pre_transform_extract(
+        vega_spec, extract_threshold=0, extracted_format="pyarrow"
     )
 
-    values = tx_spec["data"][0]["values"]
+    name, scope, values = datasets[0]
+    assert name == "source_0"
     assert isinstance(values, pa.Table)
     values_df = values.to_pandas()
     assert len(values_df) == 9
     assert values_df.columns[0] == "bin_maxbins_10_IMDB Rating"
 
     # arrow-ipc format
-    tx_spec, _warnings = vf.runtime.pre_transform_spec(
-        vega_spec, data_encoding_threshold=0, data_encoding_format="arrow-ipc"
+    tx_spec, datasets, _warnings = vf.runtime.pre_transform_extract(
+        vega_spec, extract_threshold=0, extracted_format="arrow-ipc"
     )
-
-    values = tx_spec["data"][0]["values"]
+    name, scope, values = datasets[0]
     assert isinstance(values, bytes)
     values_df = pa.ipc.deserialize_pandas(values)
     assert len(values_df) == 9
     assert values_df.columns[0] == "bin_maxbins_10_IMDB Rating"
 
     # arrow-ipc-base64 format
-    tx_spec, _warnings = vf.runtime.pre_transform_spec(
-        vega_spec, data_encoding_threshold=0, data_encoding_format="arrow-ipc-base64"
+    tx_spec, datasets, _warnings = vf.runtime.pre_transform_extract(
+        vega_spec, extract_threshold=0, extracted_format="arrow-ipc-base64"
     )
 
-    values = tx_spec["data"][0]["values"]
+    name, scope, values = datasets[0]
     assert isinstance(values, str)
     values_df = pa.ipc.deserialize_pandas(base64.standard_b64decode(values))
     assert len(values_df) == 9

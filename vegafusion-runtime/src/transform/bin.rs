@@ -194,6 +194,10 @@ pub fn calculate_bin_params(
         }
     }
 
+    let maxbins = compile(&tx.maxbins.as_ref().unwrap(), config, Some(schema))?
+        .eval_to_scalar()?
+        .to_f64()?;
+
     let logb = tx.base.ln();
 
     let step = if let Some(step) = tx.step {
@@ -202,7 +206,7 @@ pub fn calculate_bin_params(
     } else if !tx.steps.is_empty() {
         // If steps is provided, limit step to one of the elements.
         // Choose the first element of steps that will result in fewer than maxmins
-        let min_step_size = span / tx.maxbins;
+        let min_step_size = span / maxbins;
         let valid_steps: Vec<_> = tx
             .steps
             .clone()
@@ -214,19 +218,19 @@ pub fn calculate_bin_params(
             .unwrap_or_else(|| tx.steps.last().unwrap())
     } else {
         // Otherwise, use span to determine the step size
-        let level = (tx.maxbins.ln() / logb).ceil();
+        let level = (maxbins.ln() / logb).ceil();
         let minstep = tx.minstep;
         let mut step = minstep.max(tx.base.powf((span.ln() / logb).round() - level));
 
         // increase step size if too many bins
-        while (span / step).ceil() > tx.maxbins {
+        while (span / step).ceil() > maxbins {
             step *= tx.base;
         }
 
         // decrease step size if allowed
         for div in &tx.divide {
             let v = step / div;
-            if v >= minstep && span / v <= tx.maxbins {
+            if v >= minstep && span / v <= maxbins {
                 step = v
             }
         }

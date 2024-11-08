@@ -3,7 +3,7 @@ use crate::expression::parser::parse;
 
 use crate::expression::column_usage::{ColumnUsage, DatasetsColumnUsage, VlSelectionFields};
 use crate::spec::transform::{TransformColumns, TransformSpecTrait};
-use crate::spec::values::{Field, SignalExpressionSpec};
+use crate::spec::values::{Field, SignalExpressionSpec, ValueOrSignalSpec};
 use crate::task_graph::graph::ScopedVariable;
 use crate::task_graph::scope::TaskScope;
 use crate::task_graph::task::InputVariable;
@@ -26,7 +26,7 @@ pub struct BinTransformSpec {
     pub anchor: Option<f64>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub maxbins: Option<f64>,
+    pub maxbins: Option<ValueOrSignalSpec>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
     pub base: Option<f64>,
@@ -103,6 +103,11 @@ impl TransformSpecTrait for BinTransformSpec {
 
         if let Some(BinSpan::Signal(span)) = &self.span {
             let expression = parse(&span.signal)?;
+            input_vars.extend(expression.input_vars())
+        }
+
+        if let Some(ValueOrSignalSpec::Signal(maxbins)) = &self.maxbins {
+            let expression = parse(&maxbins.signal)?;
             input_vars.extend(expression.input_vars())
         }
 

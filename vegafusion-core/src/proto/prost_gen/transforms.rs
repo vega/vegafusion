@@ -52,8 +52,8 @@ pub struct Bin {
     #[prost(double, optional, tag = "6")]
     pub anchor: ::core::option::Option<f64>,
     /// The maximum number of bins allowed
-    #[prost(double, tag = "7")]
-    pub maxbins: f64,
+    #[prost(message, optional, tag = "7")]
+    pub maxbins: ::core::option::Option<super::expression::Expression>,
     /// The number base to use for automatic bin selection (e.g. base 10)
     #[prost(double, tag = "8")]
     pub base: f64,
