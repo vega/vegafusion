@@ -6,7 +6,6 @@ version = "1.6.9"
 description = "Core components required by multiple VegaFusion crates, with WASM compatibility"
 
 [features]
-default = ["substrait"]
 tonic_support = ["tonic", "tonic-build"]
 py = ["pyo3", "vegafusion-common/py"]
 substrait = ["datafusion-substrait"]

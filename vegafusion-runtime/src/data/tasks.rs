@@ -45,6 +45,7 @@ use vegafusion_common::datatypes::{is_integer_datatype, is_string_datatype};
 use vegafusion_core::proto::gen::transforms::transform::TransformKind;
 use vegafusion_core::spec::visitors::extract_inline_dataset;
 
+#[cfg(feature = "substrait")]
 use datafusion_substrait::logical_plan::consumer::from_substrait_plan;
 
 #[cfg(feature = "s3")]
@@ -144,6 +145,7 @@ impl TaskCall for DataUrlTask {
                     VegaFusionDataset::Plan { plan } => {
                         ctx.execute_logical_plan(plan.clone()).await?
                     }
+                    #[cfg(feature = "substrait")]
                     VegaFusionDataset::Substrait {
                         substrait_plan: plan,
                     } => {

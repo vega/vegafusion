@@ -1,12 +1,11 @@
 use crate::error::Result;
-use prost::Message;
 use std::collections::hash_map::DefaultHasher;
 use std::hash::{Hash, Hasher};
 use vegafusion_common::data::table::VegaFusionTable;
 use vegafusion_common::datafusion_expr::LogicalPlan;
 
 #[cfg(feature = "substrait")]
-use datafusion_substrait::substrait::proto::Plan;
+use {datafusion_substrait::substrait::proto::Plan, prost::Message};
 
 #[derive(Clone)]
 pub enum VegaFusionDataset {

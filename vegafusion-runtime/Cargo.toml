@@ -10,8 +10,11 @@ version = "1.6.9"
 description = "VegaFusion Runtime"
 
 [features]
-default = ["fs", "multi-thread", "rustls-tls", "s3", "http", "parquet"]
+default = ["fs", "multi-thread", "rustls-tls", "s3", "http", "parquet", "proto", "tonic"]
 py = ["vegafusion-core/py"]
+proto = ["vegafusion-common/proto", "dep:datafusion-proto"]
+tonic = ["dep:tonic", "vegafusion-core/tonic_support", "proto"]
+substrait = ["vegafusion-core/substrait", "dep:datafusion-substrait"]
 protobuf-src = ["vegafusion-core/protobuf-src"]
 s3 = ["object_store/aws"]
 http = ["object_store/http"]
@@ -89,12 +92,12 @@ workspace = true
 
 [dependencies.vegafusion-common]
 path = "../vegafusion-common"
-features = ["json", "sqlparser", "prettyprint", "object_store", "url", "proto"]
+features = ["json", "sqlparser", "prettyprint", "object_store", "url"]
 version = "1.6.9"
 
 [dependencies.vegafusion-core]
 path = "../vegafusion-core"
-features = ["sqlparser", "tonic_support", "substrait"]
+features = ["sqlparser"]
 version = "1.6.9"
 
 [dependencies.serde]
@@ -132,9 +135,11 @@ workspace = true
 
 [dependencies.datafusion-proto]
 workspace = true
+optional = true
 
 [dependencies.datafusion-substrait]
 workspace = true
+optional = true
 
 [dependencies.tokio]
 workspace = true
@@ -142,6 +147,7 @@ features = ["macros"]
 
 [dependencies.tonic]
 workspace = true
+optional = true
 
 [dependencies.reqwest]
 workspace = true

@@ -15,16 +15,23 @@ use vegafusion_core::data::dataset::VegaFusionDataset;
 use vegafusion_core::error::{Result, ResultWithContext, VegaFusionError};
 use vegafusion_core::proto::gen::tasks::inline_dataset::Dataset;
 use vegafusion_core::proto::gen::tasks::{
-    task::TaskKind, InlineDataset, InlineDatasetPlan, InlineDatasetSubstrait, InlineDatasetTable,
-    NodeValueIndex, TaskGraph,
+    task::TaskKind, InlineDataset, InlineDatasetTable, NodeValueIndex, TaskGraph,
 };
 use vegafusion_core::runtime::VegaFusionRuntimeTrait;
 use vegafusion_core::task_graph::task_value::{NamedTaskValue, TaskValue};
 
-use datafusion_proto::bytes::{logical_plan_from_bytes, logical_plan_to_bytes};
-use datafusion_substrait::logical_plan::consumer::from_substrait_plan;
-use datafusion_substrait::substrait::proto::Plan;
-use prost::Message;
+#[cfg(feature = "proto")]
+use {
+    datafusion_proto::bytes::{logical_plan_from_bytes, logical_plan_to_bytes},
+    vegafusion_core::proto::gen::tasks::InlineDatasetPlan,
+};
+
+#[cfg(feature = "substrait")]
+use {
+    datafusion_substrait::{logical_plan::consumer::from_substrait_plan, substrait::proto::Plan},
+    prost::Message,
+    vegafusion_core::proto::gen::tasks::InlineDatasetSubstrait,
+};
 
 type CacheValue = (TaskValue, Vec<TaskValue>);
 
@@ -239,16 +246,28 @@ pub async fn decode_inline_datasets(
                 let dataset = VegaFusionDataset::from_table_ipc_bytes(&table.table)?;
                 (table.name.clone(), dataset)
             }
+            #[cfg(feature = "proto")]
             Dataset::Plan(plan) => {
                 let logical_plan = logical_plan_from_bytes(&plan.plan, ctx)?;
                 let dataset = VegaFusionDataset::from_plan(logical_plan);
                 (plan.name.clone(), dataset)
             }
+            #[cfg(not(feature = "proto"))]
+            Dataset::Plan(_plan) => {
+                return Err(VegaFusionError::internal("proto feature is not enabled"))
+            }
+            #[cfg(feature = "substrait")]
             Dataset::SubstraitPlan(substrait_plan) => {
                 let proto_substrait_plan = Plan::decode(&*substrait_plan.substrait_plan)?;
                 let logical_plan = from_substrait_plan(ctx, &proto_substrait_plan).await?;
                 let dataset = VegaFusionDataset::from_plan(logical_plan);
                 (substrait_plan.name.clone(), dataset)
+            }
+            #[cfg(not(feature = "substrait"))]
+            Dataset::SubstraitPlan(_substrait_plan) => {
+                return Err(VegaFusionError::internal(
+                    "substrait feature is not enabled",
+                ))
             }
         };
         inline_datasets.insert(name, dataset);
@@ -269,12 +288,18 @@ pub fn encode_inline_datasets(
                         table: table.to_ipc_bytes()?,
                     })),
                 },
+                #[cfg(feature = "proto")]
                 VegaFusionDataset::Plan { plan } => InlineDataset {
                     dataset: Some(Dataset::Plan(InlineDatasetPlan {
                         name: name.clone(),
                         plan: logical_plan_to_bytes(&plan)?.to_vec(),
                     })),
                 },
+                #[cfg(not(feature = "proto"))]
+                VegaFusionDataset::Plan { .. } => {
+                    return Err(VegaFusionError::internal("proto feature is not enabled"))
+                }
+                #[cfg(feature = "substrait")]
                 VegaFusionDataset::Substrait { substrait_plan } => InlineDataset {
                     dataset: Some(Dataset::SubstraitPlan(InlineDatasetSubstrait {
                         name: name.clone(),

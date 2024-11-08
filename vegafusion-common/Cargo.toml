@@ -51,10 +51,12 @@ workspace = true
 [dependencies.datafusion-proto]
 workspace = true
 optional = true
+default-features = false
 
 [dependencies.datafusion-proto-common]
 workspace = true
 optional = true
+default-features = false
 
 [dependencies.prost]
 workspace = true
