@@ -1,37 +1,50 @@
-use vegafusion_core::proto::gen::pretransform::PreTransformExtractOpts;
-use vegafusion_core::runtime::{PreTransformExtractTable, VegaFusionRuntimeTrait};
+use vegafusion_core::chart_state::ChartState;
+use vegafusion_core::planning::watch::{ExportUpdateJSON, ExportUpdateNamespace};
 use vegafusion_core::spec::chart::ChartSpec;
 use vegafusion_runtime::task_graph::runtime::VegaFusionRuntime;
 
-/// This example demonstrates how to use the `pre_transform_extract` method to create a new
-/// spec with supported transforms pre-evaluated and the transformed datasets extract in arrow format
+/// This example demonstrates how to use the `pre_transform_spec` method to create a new
+/// spec with supported transforms pre-evaluated.
 #[tokio::main]
 async fn main() {
     let spec = get_spec();
 
+    // Make runtime
     let runtime = VegaFusionRuntime::new(None);
 
-    let (transformed_spec, datasets, warnings) = runtime
-        .pre_transform_extract(
-            &spec,
-            &Default::default(), // Inline datasets
-            &PreTransformExtractOpts {
-                extract_threshold: 4,
-                ..Default::default()
-            },
+    // Construct ChartState
+    let chart_state = ChartState::try_new(
+        &runtime,
+        spec,
+        Default::default(),  // Inline datasets
+        &Default::default(), // Options
+    )
+    .await
+    .unwrap();
+
+    // Get initial transformed spec for display
+    let _transformed_spec = chart_state.get_client_spec();
+
+    // Get comm plan
+    let comm_plan = chart_state.get_comm_plan();
+    println!("{:#?}", comm_plan);
+
+    // Apply an update to the maxbins signal
+    let updates = chart_state
+        .update(
+            &runtime,
+            vec![ExportUpdateJSON {
+                namespace: ExportUpdateNamespace::Signal,
+                name: "maxbins".to_string(),
+                scope: vec![],
+                value: 4.into(),
+            }],
         )
         .await
         .unwrap();
 
-    assert_eq!(warnings.len(), 0);
-    assert_eq!(datasets.len(), 1);
-
-    let PreTransformExtractTable { name, scope, table } = datasets[0].clone();
-    println!(
-        "{name}({scope:?})\n{}\n{}",
-        table.pretty_format(None).unwrap(),
-        serde_json::to_string_pretty(&transformed_spec).unwrap()
-    );
+    // Print updates that should be applied to the rendered Vega chart
+    println!("{}", serde_json::to_string_pretty(&updates).unwrap());
 }
 
 fn get_spec() -> ChartSpec {
@@ -43,6 +56,24 @@ fn get_spec() -> ChartSpec {
       "height": 200,
       "padding": 5,
       "autosize": {"type": "fit", "resize": true},
+
+      "signals": [
+        {
+          "name": "maxbins", "value": 10,
+          "bind": {"input": "select", "options": [5, 10, 20]}
+        },
+        {
+          "name": "binCount",
+          "update": "(bins.stop - bins.start) / bins.step"
+        },
+        {
+          "name": "nullGap", "value": 10
+        },
+        {
+          "name": "barStep",
+          "update": "(width - nullGap) / (1 + binCount)"
+        }
+      ],
       "data": [
         {
           "name": "table",
@@ -55,7 +86,7 @@ fn get_spec() -> ChartSpec {
             {
               "type": "bin", "signal": "bins",
               "field": "IMDB Rating", "extent": {"signal": "extent"},
-              "maxbins": 10
+              "maxbins": {"signal": "maxbins"}
             }
           ]
         },
@@ -88,22 +119,7 @@ fn get_spec() -> ChartSpec {
           ]
         }
       ],
-      "signals": [
-        {
-          "name": "maxbins", "value": 10
-        },
-        {
-          "name": "binCount",
-          "update": "(bins.stop - bins.start) / bins.step"
-        },
-        {
-          "name": "nullGap", "value": 10
-        },
-        {
-          "name": "barStep",
-          "update": "(width - nullGap) / (1 + binCount)"
-        }
-      ],
+
       "scales": [
         {
           "name": "yscale",

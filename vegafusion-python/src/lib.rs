@@ -8,7 +8,7 @@ use std::str::FromStr;
 use std::sync::{Arc, Once};
 use tokio::runtime::Runtime;
 use tonic::transport::{Channel, Uri};
-use vegafusion_core::chart_state::ChartState as RsChartState;
+use vegafusion_core::chart_state::{ChartState as RsChartState, ChartStateOpts};
 use vegafusion_core::error::{ToExternalError, VegaFusionError};
 use vegafusion_core::proto::gen::pretransform::pre_transform_extract_warning::WarningType as ExtractWarningType;
 use vegafusion_core::proto::gen::pretransform::pre_transform_values_warning::WarningType as ValueWarningType;
@@ -73,8 +73,10 @@ impl PyChartState {
             runtime.as_ref(),
             spec,
             inline_datasets,
-            tz_config,
-            row_limit,
+            ChartStateOpts {
+                tz_config,
+                row_limit,
+            },
         ))?;
         Ok(Self {
             runtime,

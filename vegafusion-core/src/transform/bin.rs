@@ -125,8 +125,8 @@ impl BinConfig {
             None => None,
             Some(maxbins) => match maxbins {
                 ValueOrSignalSpec::Value(maxbins) => maxbins.as_f64().map(Expression::from),
-                ValueOrSignalSpec::Signal(signal) => Some(parse(&signal.signal)?)
-            }
+                ValueOrSignalSpec::Signal(signal) => Some(parse(&signal.signal)?),
+            },
         };
 
         Ok(Self {

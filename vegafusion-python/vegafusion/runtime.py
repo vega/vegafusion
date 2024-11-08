@@ -403,7 +403,8 @@ class VegaFusionRuntime:
         row_limit: int | None = None,
         inline_datasets: dict[str, DataFrameLike] | None = None,
     ) -> ChartState:
-        """Construct new ChartState object.
+        """
+        Construct new ChartState object.
 
         Args:
             spec: A Vega specification dict or JSON string.

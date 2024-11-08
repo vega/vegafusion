@@ -1,27 +1,38 @@
-import json
 from typing import Any
-
-
+import json
 import vegafusion as vf
 
 
-# This example demonstrates how to use the `pre_transform_extract` method to create a new
-# spec with supported transforms pre-evaluated and the transformed datasets extract in arrow format
+# This example demonstrates how to use a chart state, and update it in response to simulated interactive
+# updates to the chart
 def main():
     spec = get_spec()
-    transformed_spec, datasets, warnings = vf.runtime.pre_transform_extract(
-        spec, extract_threshold=4
-    )
-    print(datasets)
-    assert warnings == []
-    assert transformed_spec == expected_spec()
-    assert len(datasets) == 1
 
-    name, scope, data = datasets[0]
-    assert name == "counts"
-    assert scope == []
-    assert data.num_rows == 9
-    assert data.column_names == ["bin0", "bin1", "count"]
+    # Build chart state
+    chart_state = vf.runtime.new_chart_state(spec)
+
+    # Get the initial pre-transformed spec that can be rendered
+    _init_spec = chart_state.get_client_spec()
+
+    # Get the watch plan, which includes which signals and data variables that should be listened to
+    # and relayed from the displayed vega chart back to the chart state.
+    watch_plan = chart_state.get_watch_plan()
+    print("Watch Plan:\n" + json.dumps(watch_plan, indent=2), end="\n\n")
+
+    # Report an update to the maxbins signal. Update will return the signal and dataset updates that should
+    # but updated in the displayed chart.
+    updates = chart_state.update(
+        [
+            {
+                "name": "maxbins",
+                "namespace": "signal",
+                "scope": [],
+                "value": 4,
+            }
+        ]
+    )
+
+    print("Server to Client Updates:\n" + json.dumps(updates, indent=2), end="\n\n")
 
 
 def get_spec() -> dict[str, Any]:
@@ -39,7 +50,8 @@ def get_spec() -> dict[str, Any]:
 
   "signals": [
     {
-      "name": "maxbins", "value": 10
+      "name": "maxbins", "value": 10,
+      "bind": {"input": "select", "options": [5, 10, 20]}
     },
     {
       "name": "binCount",
@@ -53,7 +65,6 @@ def get_spec() -> dict[str, Any]:
       "update": "(width - nullGap) / (1 + binCount)"
     }
   ],
-
   "data": [
     {
       "name": "table",
@@ -66,7 +77,7 @@ def get_spec() -> dict[str, Any]:
         {
           "type": "bin", "signal": "bins",
           "field": "IMDB Rating", "extent": {"signal": "extent"},
-          "maxbins": 10
+          "maxbins": {"signal": "maxbins"}
         }
       ]
     },
@@ -171,7 +182,6 @@ def get_spec() -> dict[str, Any]:
     }
   ]
 }
-
     """
     return json.loads(spec_str)
 
@@ -185,7 +195,54 @@ def expected_spec() -> dict[str, Any]:
       "name": "table"
     },
     {
-      "name": "counts"
+      "name": "counts",
+      "values": [
+        {
+          "bin0": 6.0,
+          "bin1": 7.0,
+          "count": 985
+        },
+        {
+          "bin0": 3.0,
+          "bin1": 4.0,
+          "count": 100
+        },
+        {
+          "bin0": 7.0,
+          "bin1": 8.0,
+          "count": 741
+        },
+        {
+          "bin0": 5.0,
+          "bin1": 6.0,
+          "count": 633
+        },
+        {
+          "bin0": 8.0,
+          "bin1": 9.0,
+          "count": 204
+        },
+        {
+          "bin0": 2.0,
+          "bin1": 3.0,
+          "count": 43
+        },
+        {
+          "bin0": 4.0,
+          "bin1": 5.0,
+          "count": 273
+        },
+        {
+          "bin0": 9.0,
+          "bin1": 10.0,
+          "count": 4
+        },
+        {
+          "bin0": 1.0,
+          "bin1": 2.0,
+          "count": 5
+        }
+      ]
     },
     {
       "name": "nulls",
