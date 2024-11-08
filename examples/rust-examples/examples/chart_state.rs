@@ -16,8 +16,8 @@ async fn main() {
     let chart_state = ChartState::try_new(
         &runtime,
         spec,
-        Default::default(),  // Inline datasets
-        &Default::default(), // Options
+        Default::default(), // Inline datasets
+        Default::default(), // Options
     )
     .await
     .unwrap();
