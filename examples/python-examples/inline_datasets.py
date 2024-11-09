@@ -4,12 +4,17 @@ from typing import Any
 import vegafusion as vf
 import pandas as pd
 
+
 # This example demonstrates how to use the `pre_transform_spec` method with an inline dataset
 # (a pandas DataFrame in this case) to create a new spec with supported transforms pre-evaluated.
 def main():
-    movies_df = pd.read_json("https://raw.githubusercontent.com/vega/vega-datasets/refs/heads/main/data/movies.json")
+    movies_df = pd.read_json(
+        "https://raw.githubusercontent.com/vega/vega-datasets/refs/heads/main/data/movies.json"
+    )
     spec = get_spec()
-    transformed_spec, warnings = vf.runtime.pre_transform_spec(spec, inline_datasets={"movies": movies_df})
+    transformed_spec, warnings = vf.runtime.pre_transform_spec(
+        spec, inline_datasets={"movies": movies_df}
+    )
     assert warnings == []
     assert transformed_spec == expected_spec()
 

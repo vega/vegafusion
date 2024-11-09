@@ -1,4 +1,4 @@
-# Transformed Spec
+# Transform Spec
 
 VegaFusion can be used to evaluate datasets in a Vega spec, remove unused columns, and inline the results in a transformed Vega spec. This transformed Vega spec is self-contained and may be displayed with the standard Vega JavaScript library.
 

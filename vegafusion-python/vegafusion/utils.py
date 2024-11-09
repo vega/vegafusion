@@ -20,12 +20,14 @@ def get_column_usage(spec: dict[str, Any]) -> dict[str, list[str] | None]:
         spec: Vega spec
 
     Returns:
-        dict[str, list[str] | None]: Dict from root-level dataset name
-            to either:
-               - A list of columns that are referenced in this dataset if this can
-                 be determined precisely
-               - None if it was not possible to determine the full set of columns
-                 that are referenced from this dataset
+        dict[str, list[str] | None]:
+        Dict from root-level dataset name to either
+
+        * A list of columns that are referenced in this dataset if this can
+          be determined precisely
+        * None if it was not possible to determine the full set of columns
+          that are referenced from this dataset
+
     """
     return cast("dict[str, list[str] | None]", _get_column_usage(spec))
 

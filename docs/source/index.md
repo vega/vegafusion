@@ -22,4 +22,5 @@ transform_data
 transform_spec
 transform_extract
 chart_state
+inline_datasets
 ```

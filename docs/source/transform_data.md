@@ -1,4 +1,4 @@
-# Transformed Data
+# Transform Data
 
 VegaFusion can be used to evaluate datasets in a Vega spec and return them as arrow tables or DataFrames. This is the foundation for Vega-Altair's [`chart.transformed_data`](https://altair-viz.github.io/user_guide/transform/index.html#accessing-transformed-data) method.
 
