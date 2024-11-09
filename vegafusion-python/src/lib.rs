@@ -225,7 +225,7 @@ impl PyVegaFusionRuntime {
     pub fn new_grpc(url: &str) -> PyResult<Self> {
         let tokio_runtime = Arc::new(
             tokio::runtime::Builder::new_multi_thread()
-                .enable_io()
+                .enable_all()
                 .build()?,
         );
         let runtime = tokio_runtime.block_on(async move {

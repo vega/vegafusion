@@ -48,7 +48,7 @@ version = "1.6.9"
 
 [dependencies.tokio]
 workspace = true
-features = ["rt-multi-thread", "macros"]
+features = ["rt-multi-thread", "macros", "time"]
 
 [dependencies.datafusion]
 workspace = true

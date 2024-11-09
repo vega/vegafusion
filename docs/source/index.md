@@ -1,9 +1,20 @@
-<img 
-    src="https://user-images.githubusercontent.com/15064365/213880036-3d28c1b6-5b76-47c4-a010-2a623522c9f2.svg"
-    width=400px,
-    style="margin-left:-12px;margin-bottom:-26px">
-
-Welcome to the VegaFusion documentation! 
+```{raw} html
+<div
+    style="margin-left:-32px;margin-bottom:-12px"
+>
+    <img
+        src="_static/VegaFusionLightTitle.svg"
+        class="only-light"
+        width=400px
+    >
+    <img
+        src="_static/VegaFusionDarkTitle.svg"
+        class="only-dark"
+        width=400px
+    >
+</div>
+<h4>Building blocks for scaling Vega visualizations</h4>
+```
 
 # Purpose
 
@@ -23,4 +34,5 @@ transform_spec
 transform_extract
 chart_state
 inline_datasets
+grpc
 ```

@@ -63,7 +63,7 @@ version = "1.6.9"
 
 [dependencies.tokio]
 workspace = true
-features = ["macros", "rt-multi-thread"]
+features = ["macros", "rt-multi-thread", "time"]
 
 [dependencies.pyo3]
 workspace = true

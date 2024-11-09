@@ -27,6 +27,7 @@ use vegafusion_core::proto::gen::pretransform::{
     PreTransformValuesOpts, PreTransformValuesRequest, PreTransformValuesResponse,
 };
 use vegafusion_runtime::task_graph::cache::VegaFusionCache;
+use vegafusion_runtime::tokio_runtime::TOKIO_THREAD_STACK_SIZE;
 
 #[derive(Clone)]
 pub struct VegaFusionRuntimeGrpc {
@@ -308,8 +309,7 @@ struct Args {
     pub web: bool,
 }
 
-#[tokio::main]
-async fn main() -> Result<(), VegaFusionError> {
+fn main() -> Result<(), VegaFusionError> {
     let args = Args::parse();
 
     // Create addresse
@@ -328,14 +328,22 @@ async fn main() -> Result<(), VegaFusionError> {
         None
     };
 
+    let tokio_runtime = tokio::runtime::Builder::new_multi_thread()
+        .enable_all()
+        .thread_stack_size(TOKIO_THREAD_STACK_SIZE)
+        .build()
+        .expect("Failed to create tokio runtime");
+
     let tg_runtime = VegaFusionRuntime::new(Some(VegaFusionCache::new(
         Some(args.capacity),
         memory_limit,
     )));
 
-    grpc_server(grpc_address, tg_runtime.clone(), args.web)
-        .await
-        .expect("Failed to start grpc service");
+    tokio_runtime.block_on(async move {
+        grpc_server(grpc_address, tg_runtime.clone(), args.web)
+            .await
+            .expect("Failed to start grpc service");
+    });
 
     Ok(())
 }

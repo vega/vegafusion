@@ -3561,6 +3561,7 @@ dependencies = [
  "reqwest 0.12.8",
  "serde_json",
  "tokio",
+ "tonic",
  "vegafusion-common",
  "vegafusion-core",
  "vegafusion-runtime",
