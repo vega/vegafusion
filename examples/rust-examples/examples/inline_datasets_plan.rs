@@ -1,32 +1,45 @@
+use datafusion::logical_expr::lit;
+use datafusion::prelude::{col, SessionContext};
 use std::collections::HashMap;
-use vegafusion_common::data::table::VegaFusionTable;
+use std::path::PathBuf;
 use vegafusion_core::data::dataset::VegaFusionDataset;
 use vegafusion_core::runtime::VegaFusionRuntimeTrait;
 use vegafusion_core::spec::chart::ChartSpec;
 use vegafusion_runtime::task_graph::runtime::VegaFusionRuntime;
 
 /// This example demonstrates how to use the `pre_transform_spec` method with an inline
-/// Arrow table to create a new spec with supported transforms pre-evaluated.
+/// dataset that wraps a DataFusion logical plan to create a new spec with supported
+/// transforms pre-evaluated.
 #[tokio::main]
-async fn main() {
+async fn main() -> vegafusion_common::error::Result<()> {
+    // Construct default DataFusion session context
+    let ctx = SessionContext::new();
+
+    // Build path to parquet file
+    let parquet_path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .parent()
+        .unwrap()
+        .join("datasets")
+        .join("movies.parquet")
+        .display()
+        .to_string();
+
+    // Read parquet file into dataframe
+    let df = ctx
+        .read_parquet(parquet_path, Default::default())
+        .await?
+        .filter(col("MPAA Rating").eq(lit("PG")))?;
+
+    // Extract logical plan from DataFrame
+    // let plan = df.into_optimized_plan()?;
+    let plan = df.logical_plan().clone();
+
+    // Load chart spec
     let spec = get_spec();
 
-    // Fetch  movies dataset as json
-    let client = reqwest::ClientBuilder::new().build().unwrap();
-    let movies_json: serde_json::Value = client
-        .get(
-            "https://raw.githubusercontent.com/vega/vega-datasets/refs/heads/main/data/movies.json",
-        )
-        .send()
-        .await
-        .unwrap()
-        .json()
-        .await
-        .unwrap();
+    // Create VegaFusionDataset from the logical plan
+    let dataset = VegaFusionDataset::from_plan(plan);
 
-    // Construct VegaFusionTable and wrap in VegaFusionDataset
-    let table = VegaFusionTable::from_json(&movies_json).unwrap();
-    let dataset = VegaFusionDataset::from_table(table, None).unwrap();
     let inline_datasets: HashMap<String, VegaFusionDataset> =
         vec![("movies".to_string(), dataset)].into_iter().collect();
 
@@ -46,6 +59,8 @@ async fn main() {
         "{}",
         serde_json::to_string_pretty(&transformed_spec).unwrap()
     );
+
+    Ok(())
 }
 
 fn get_spec() -> ChartSpec {

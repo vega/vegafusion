@@ -126,7 +126,6 @@ yarn = "3.6.1.*"
 jupyterlab = "4.0.5.*"
 nbval = "0.9.6.*"
 selenium = "4.11.2.*"
-scikit-image = "0.24.*"
 toml = "0.10.2.*"
 pytest = ">=4.6"
 click = "8.1.6.*"
@@ -159,15 +158,16 @@ furo = ">=2024.8.6"
 [dependencies]
 psutil = "5.9.5.*"
 altair = "5.4.*"
-protobuf = "4.23.3.*"
 ipywidgets = "8.1.0.*"
 vl-convert-python = "1.7.*"
 anywidget = ">=0.9.6,<0.10"
 polars = "1.8.*"
 grpcio = ">=1.56.2,<2"
+pyarrow = "16.*"
 
 [pypi-dependencies]
-pyarrow = "==16"
+# Works around pixi solve conflict with arrow >13
+scikit-image = ">=0.24"
 
 [target.osx-arm64.build-dependencies]
 # These dependencies are for building node canvas from source on apple silicon

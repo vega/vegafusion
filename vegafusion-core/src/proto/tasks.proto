@@ -177,17 +177,9 @@ message InlineDatasetPlan {
   bytes plan = 2;
 }
 
-message InlineDatasetSubstrait {
-  // Inline dataset name
-  string name = 1;
-  // Serialized substrait plan in protobuf format
-  bytes substrait_plan = 2;
-}
-
 message InlineDataset {
   oneof dataset {
     InlineDatasetTable table = 1;
     InlineDatasetPlan plan = 2;
-    InlineDatasetSubstrait substrait_plan = 3;
   }
 }

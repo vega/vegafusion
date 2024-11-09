@@ -7,6 +7,7 @@ edition = "2021"
 serde_json = { workspace = true }
 vegafusion-common = { path = "../../vegafusion-common" }
 vegafusion-core = { path = "../../vegafusion-core" }
-vegafusion-runtime = { path = "../../vegafusion-runtime", features = ["substrait"] }
+vegafusion-runtime = { path = "../../vegafusion-runtime" }
+datafusion = { workspace = true }
 reqwest = { workspace = true }
 tokio = "1.41.1"

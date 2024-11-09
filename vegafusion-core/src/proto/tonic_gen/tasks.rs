@@ -249,17 +249,8 @@ pub struct InlineDatasetPlan {
     pub plan: ::prost::alloc::vec::Vec<u8>,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
-pub struct InlineDatasetSubstrait {
-    /// Inline dataset name
-    #[prost(string, tag = "1")]
-    pub name: ::prost::alloc::string::String,
-    /// Serialized substrait plan in protobuf format
-    #[prost(bytes = "vec", tag = "2")]
-    pub substrait_plan: ::prost::alloc::vec::Vec<u8>,
-}
-#[derive(Clone, PartialEq, ::prost::Message)]
 pub struct InlineDataset {
-    #[prost(oneof = "inline_dataset::Dataset", tags = "1, 2, 3")]
+    #[prost(oneof = "inline_dataset::Dataset", tags = "1, 2")]
     pub dataset: ::core::option::Option<inline_dataset::Dataset>,
 }
 /// Nested message and enum types in `InlineDataset`.
@@ -270,8 +261,6 @@ pub mod inline_dataset {
         Table(super::InlineDatasetTable),
         #[prost(message, tag = "2")]
         Plan(super::InlineDatasetPlan),
-        #[prost(message, tag = "3")]
-        SubstraitPlan(super::InlineDatasetSubstrait),
     }
 }
 /// ## Variable

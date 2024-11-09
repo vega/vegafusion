@@ -4,22 +4,10 @@ use std::hash::{Hash, Hasher};
 use vegafusion_common::data::table::VegaFusionTable;
 use vegafusion_common::datafusion_expr::LogicalPlan;
 
-#[cfg(feature = "substrait")]
-use {datafusion_substrait::substrait::proto::Plan, prost::Message};
-
 #[derive(Clone)]
 pub enum VegaFusionDataset {
-    Table {
-        table: VegaFusionTable,
-        hash: u64,
-    },
-    Plan {
-        plan: LogicalPlan,
-    },
-    #[cfg(feature = "substrait")]
-    Substrait {
-        substrait_plan: Plan,
-    },
+    Table { table: VegaFusionTable, hash: u64 },
+    Plan { plan: LogicalPlan },
 }
 
 impl VegaFusionDataset {
@@ -29,12 +17,6 @@ impl VegaFusionDataset {
             VegaFusionDataset::Plan { plan } => {
                 let mut hasher = deterministic_hash::DeterministicHasher::new(DefaultHasher::new());
                 plan.hash(&mut hasher);
-                hasher.finish().to_string()
-            }
-            #[cfg(feature = "substrait")]
-            VegaFusionDataset::Substrait { substrait_plan } => {
-                let mut hasher = deterministic_hash::DeterministicHasher::new(DefaultHasher::new());
-                substrait_plan.encode_to_vec().hash(&mut hasher);
                 hasher.finish().to_string()
             }
         }
@@ -56,12 +38,5 @@ impl VegaFusionDataset {
 
     pub fn from_plan(plan: LogicalPlan) -> Self {
         Self::Plan { plan }
-    }
-
-    #[cfg(feature = "substrait")]
-    pub fn from_substrait(plan: Plan) -> Self {
-        Self::Substrait {
-            substrait_plan: plan,
-        }
     }
 }

@@ -143,7 +143,3 @@ rev = "b30d12a73fb9867180c2fdf8ddc818b45f957bac"
 [workspace.dependencies.datafusion-functions-window]
 git = "https://github.com/apache/datafusion.git"
 rev = "b30d12a73fb9867180c2fdf8ddc818b45f957bac"
-
-[workspace.dependencies.datafusion-substrait]
-git = "https://github.com/apache/datafusion.git"
-rev = "b30d12a73fb9867180c2fdf8ddc818b45f957bac"

@@ -8,7 +8,6 @@ description = "Core components required by multiple VegaFusion crates, with WASM
 [features]
 tonic_support = ["tonic", "tonic-build"]
 py = ["pyo3", "vegafusion-common/py"]
-substrait = ["datafusion-substrait"]
 
 [dependencies]
 thiserror = "^1.0.29"
@@ -57,10 +56,6 @@ version = "1.6.9"
 [dependencies.datafusion-common]
 workspace = true
 default-features = false
-
-[dependencies.datafusion-substrait]
-workspace = true
-optional = true
 
 [dependencies.pyo3]
 workspace = true

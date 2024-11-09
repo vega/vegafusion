@@ -14,7 +14,6 @@ default = ["fs", "multi-thread", "rustls-tls", "s3", "http", "parquet", "proto",
 py = ["vegafusion-core/py"]
 proto = ["vegafusion-common/proto", "dep:datafusion-proto"]
 tonic = ["dep:tonic", "vegafusion-core/tonic_support", "proto"]
-substrait = ["vegafusion-core/substrait", "dep:datafusion-substrait"]
 protobuf-src = ["vegafusion-core/protobuf-src"]
 s3 = ["object_store/aws"]
 http = ["object_store/http"]
@@ -134,10 +133,6 @@ workspace = true
 workspace = true
 
 [dependencies.datafusion-proto]
-workspace = true
-optional = true
-
-[dependencies.datafusion-substrait]
 workspace = true
 optional = true
 
