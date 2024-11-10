@@ -289,7 +289,7 @@ class VegaFusionRuntime:
                 df_nw = nw.from_dict(value, native_namespace=_get_default_namespace())
                 imported_inline_datasets[name] = Table(df_nw)
             else:
-                # Import through PyCapsule interface on narwhals
+                # Import through PyCapsule interface or narwhals
                 try:
                     df_nw = nw.from_native(value)
 
@@ -362,7 +362,9 @@ class VegaFusionRuntime:
                   as a string and the second element is the nested scope of the dataset
                   as a list of integers
 
-        Returns: Two-element tuple
+        Returns:
+            tuple[dict[str, Any], list[PreTransformWarning]]:
+            Two-element tuple of
 
             * The Vega specification as a dict with pre-transformed datasets
               included inline
@@ -423,7 +425,7 @@ class VegaFusionRuntime:
                 'table://{dataset_name}'.
 
         Returns:
-            ChartState object.
+            ChartState
         """
         local_tz = local_tz or get_local_tz()
         inline_arrow_dataset = self._import_inline_datasets(
@@ -485,11 +487,14 @@ class VegaFusionRuntime:
                 * ``"pyarrow"``: pyarrow.Table
                 * ``"arro3"``: arro3.Table
 
-        Returns: Two-element tuple
-                * List of pandas DataFrames corresponding to the input datasets list
-                * A list of warnings as dictionaries. Each warning dict has a 'type'
-                  key indicating the warning type, and a 'message' key containing a
-                  description of the warning.
+        Returns:
+            tuple[list[DataFrameLike], list[PreTransformWarning]]:
+            Two-element tuple of
+
+            * List of pandas DataFrames corresponding to the input datasets list
+            * A list of warnings as dictionaries. Each warning dict has a 'type'
+              key indicating the warning type, and a 'message' key containing a
+              description of the warning.
         """
         local_tz = local_tz or get_local_tz()
 
@@ -647,7 +652,10 @@ class VegaFusionRuntime:
                   as a string and the second element is the nested scope of the dataset
                   as a list of integers
 
-        Returns: Three-element tuple
+        Returns:
+            tuple[dict[str, Any], list[tuple[str, list[int], pa.Table]], list[PreTransformWarning]]:
+            Three-element tuple of
+
             * The Vega specification as a dict with pre-transformed datasets
               included but left empty.
             * Extracted datasets as a list of three element tuples
@@ -664,7 +672,7 @@ class VegaFusionRuntime:
                 broken in the resulting Vega specification
               * ``'Unsupported'``: No transforms in the provided Vega specification
                 were eligible for pre-transforming
-        """
+        """  # noqa: E501
         local_tz = local_tz or get_local_tz()
 
         inline_arrow_dataset = self._import_inline_datasets(

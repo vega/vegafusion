@@ -9,7 +9,7 @@ license = "BSD-3-Clause"
 py = ["pyo3", "pyo3-arrow"]
 json = ["serde_json/preserve_order", "arrow/json", "chrono"]
 prettyprint = ["arrow/prettyprint"]
-proto = ["datafusion-proto", "datafusion-proto-common"]
+proto = ["datafusion-proto", "datafusion-proto-common", "prost"]
 
 [dependencies]
 thiserror = "^1.0.29"
@@ -51,8 +51,14 @@ workspace = true
 [dependencies.datafusion-proto]
 workspace = true
 optional = true
+default-features = false
 
 [dependencies.datafusion-proto-common]
+workspace = true
+optional = true
+default-features = false
+
+[dependencies.prost]
 workspace = true
 optional = true
 

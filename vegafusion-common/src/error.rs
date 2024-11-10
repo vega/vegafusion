@@ -5,7 +5,7 @@ use std::result;
 use thiserror::Error;
 
 #[cfg(feature = "proto")]
-use datafusion_proto_common::to_proto::Error as DataFusionProtoError;
+use {datafusion_proto_common::to_proto::Error as DataFusionProtoError, prost::DecodeError};
 
 #[cfg(feature = "pyo3")]
 use pyo3::{exceptions::PyValueError, PyErr};
@@ -34,6 +34,7 @@ impl std::fmt::Display for ErrorContext {
         for (i, context) in self.contexts.iter().enumerate() {
             writeln!(f, "    Context[{i}]: {context}")?;
         }
+
         Ok(())
     }
 }
@@ -73,6 +74,10 @@ pub enum VegaFusionError {
     #[cfg(feature = "proto")]
     #[error("DataFusion proto error: {0}\n{1}")]
     DataFusionProtoError(DataFusionProtoError, ErrorContext),
+
+    #[cfg(feature = "proto")]
+    #[error("Prost decode error: {0}\n{1}")]
+    ProstDecodeError(DecodeError, ErrorContext),
 
     #[error("IO Error: {0}\n{1}")]
     IOError(std::io::Error, ErrorContext),
@@ -159,6 +164,11 @@ impl VegaFusionError {
             DataFusionProtoError(err, mut context) => {
                 context.contexts.push(context_fn().into());
                 VegaFusionError::DataFusionProtoError(err, context)
+            }
+            #[cfg(feature = "proto")]
+            ProstDecodeError(err, mut context) => {
+                context.contexts.push(context_fn().into());
+                VegaFusionError::ProstDecodeError(err.clone(), context)
             }
             IOError(err, mut context) => {
                 context.contexts.push(context_fn().into());
@@ -265,6 +275,10 @@ impl VegaFusionError {
             DataFusionProtoError(err, context) => {
                 VegaFusionError::ExternalError(err.to_string(), context.clone())
             }
+            #[cfg(feature = "proto")]
+            ProstDecodeError(err, context) => {
+                VegaFusionError::ProstDecodeError(err.clone(), context.clone())
+            }
             IOError(err, context) => {
                 VegaFusionError::ExternalError(err.to_string(), context.clone())
             }
@@ -353,6 +367,13 @@ impl From<DataFusionError> for VegaFusionError {
 impl From<DataFusionProtoError> for VegaFusionError {
     fn from(err: DataFusionProtoError) -> Self {
         Self::DataFusionProtoError(err, Default::default())
+    }
+}
+
+#[cfg(feature = "proto")]
+impl From<DecodeError> for VegaFusionError {
+    fn from(err: DecodeError) -> Self {
+        Self::ProstDecodeError(err, Default::default())
     }
 }
 

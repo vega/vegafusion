@@ -20,7 +20,7 @@ chrono = "0.4.23"
 num-complex = "0.4.2"
 rand = "0.8.5"
 json-patch = "1.0.0"
-async-mutex = "1.4.0"
+log = "0.4.22"
 
 [dependencies.lazy_static]
 workspace = true
@@ -66,14 +66,14 @@ version = "1.0.137"
 features = ["derive"]
 
 [dependencies.tonic]
-version = "0.10.2"
+workspace = true
 optional = true
 
 [build-dependencies.prost-build]
-version = "0.12.1"
+workspace = true
 
 [build-dependencies.tonic-build]
-version = "0.10.2"
+workspace = true
 optional = true
 
 [build-dependencies.protobuf-src]

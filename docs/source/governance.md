@@ -1,0 +1,2 @@
+# Governance
+The VegaFusion project is governed by the documents that reside in the [project-docs](https://github.com/vega/.github/tree/main/project-docs) directory of the Vega Organizational GitHub repository.

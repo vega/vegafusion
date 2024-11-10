@@ -1,4 +1,4 @@
-use crate::{
+use vegafusion_core::{
     data::dataset::VegaFusionDataset,
     proto::gen::{
         services::{
@@ -7,10 +7,11 @@ use crate::{
         },
         tasks::{NodeValueIndex, TaskGraph, TaskGraphValueRequest},
     },
+    runtime::VegaFusionRuntimeTrait,
     task_graph::task_value::NamedTaskValue,
 };
 
-use super::{runtime::encode_inline_datasets, VegaFusionRuntimeTrait};
+use crate::task_graph::runtime::encode_inline_datasets;
 use async_mutex::Mutex;
 use async_trait::async_trait;
 use std::collections::HashMap;

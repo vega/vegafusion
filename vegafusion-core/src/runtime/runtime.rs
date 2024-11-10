@@ -1,11 +1,5 @@
 use std::{any::Any, collections::HashMap, sync::Arc};
 
-use async_trait::async_trait;
-use vegafusion_common::{
-    data::table::VegaFusionTable,
-    error::{Result, ResultWithContext, VegaFusionError},
-};
-
 use crate::proto::gen::pretransform::pre_transform_values_warning::WarningType as ValuesWarningType;
 use crate::{
     data::dataset::VegaFusionDataset,
@@ -21,13 +15,18 @@ use crate::{
             PreTransformExtractWarning, PreTransformRowLimitWarning, PreTransformSpecOpts,
             PreTransformSpecWarning, PreTransformValuesOpts, PreTransformValuesWarning,
         },
-        tasks::{InlineDataset, NodeValueIndex, TaskGraph, TzConfig, VariableNamespace},
+        tasks::{NodeValueIndex, TaskGraph, TzConfig, VariableNamespace},
     },
     spec::{chart::ChartSpec, values::MissingNullOrValue},
     task_graph::{
         graph::ScopedVariable,
         task_value::{NamedTaskValue, TaskValue},
     },
+};
+use async_trait::async_trait;
+use vegafusion_common::{
+    data::table::VegaFusionTable,
+    error::{Result, ResultWithContext, VegaFusionError},
 };
 
 #[derive(Clone, Debug)]
@@ -372,32 +371,4 @@ pub trait VegaFusionRuntimeTrait: Send + Sync {
 
         Ok((task_values, warnings))
     }
-}
-
-pub fn decode_inline_datasets(
-    inline_pretransform_datasets: Vec<InlineDataset>,
-) -> Result<HashMap<String, VegaFusionDataset>> {
-    let inline_datasets = inline_pretransform_datasets
-        .iter()
-        .map(|inline_dataset| {
-            let dataset = VegaFusionDataset::from_table_ipc_bytes(&inline_dataset.table)?;
-            Ok((inline_dataset.name.clone(), dataset))
-        })
-        .collect::<Result<HashMap<_, _>>>()?;
-    Ok(inline_datasets)
-}
-
-pub fn encode_inline_datasets(
-    datasets: &HashMap<String, VegaFusionDataset>,
-) -> Result<Vec<InlineDataset>> {
-    datasets
-        .iter()
-        .map(|(name, dataset)| {
-            let VegaFusionDataset::Table { table, hash: _ } = dataset;
-            Ok(InlineDataset {
-                name: name.clone(),
-                table: table.to_ipc_bytes()?,
-            })
-        })
-        .collect::<Result<Vec<InlineDataset>>>()
 }

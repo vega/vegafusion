@@ -24,8 +24,8 @@ assert_cmd = "2.0"
 predicates = "3.0.2"
 
 [build-dependencies]
-tonic-build = "0.10.2"
-prost-build = "0.12.1"
+tonic-build = {workspace = true}
+prost-build = { workspace = true }
 
 [dependencies.prost]
 workspace = true
@@ -48,16 +48,16 @@ version = "1.6.9"
 
 [dependencies.tokio]
 workspace = true
-features = ["rt-multi-thread", "macros"]
+features = ["rt-multi-thread", "macros", "time"]
 
 [dependencies.datafusion]
 workspace = true
 
 [dependencies.tonic-web]
-version = "0.10.2"
+workspace = true
 
 [dependencies.tonic]
-version = "0.10.2"
+workspace = true
 features = ["tls"]
 
 [dependencies.clap]
