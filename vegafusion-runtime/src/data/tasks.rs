@@ -139,6 +139,9 @@ impl TaskCall for DataUrlTask {
                         let table = table.clone().with_ordering()?;
                         ctx.vegafusion_table(table).await?
                     }
+                    VegaFusionDataset::Plan { plan } => {
+                        ctx.execute_logical_plan(plan.clone()).await?
+                    }
                 }
             } else if let Ok(df) = ctx.table(&inline_name).await {
                 df

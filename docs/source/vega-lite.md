@@ -1,0 +1,2 @@
+# Vega-Lite
+[Vega-Lite](https://vega.github.io/vega-lite/) is a high-level specification for charts that is compiled to standard Vega specification by the Vega-Lite TypeScript library. VegaFusion operates exclusively on Vega specifications, so it does not directly support Vega-Lite. The [vl-convert](https://github.com/vega/vl-convert) project provides Rust and Python libraries that can be used to convert Vega-Lite chart specifications to Vega specifications that are compatible with VegaFusion. Vega-Altair's `"vegafusion"` data transformer uses this approach. 

@@ -26,13 +26,13 @@ use vegafusion_core::planning::watch::{ExportUpdateJSON, ExportUpdateNamespace, 
 use vegafusion_core::proto::gen::services::{
     query_request, query_result, QueryRequest, QueryResult,
 };
-use vegafusion_core::runtime::{encode_inline_datasets, VegaFusionRuntimeTrait};
+use vegafusion_core::runtime::VegaFusionRuntimeTrait;
 use vegafusion_core::spec::chart::ChartSpec;
 
 use vegafusion_core::chart_state::{ChartState, ChartStateOpts};
 use vegafusion_core::data::dataset::VegaFusionDataset;
 use vegafusion_core::get_column_usage;
-use vegafusion_runtime::task_graph::runtime::VegaFusionRuntime;
+use vegafusion_runtime::task_graph::runtime::{encode_inline_datasets, VegaFusionRuntime};
 use web_sys::Element;
 
 fn set_panic_hook() {

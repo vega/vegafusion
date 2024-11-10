@@ -16,7 +16,7 @@ use vegafusion_core::proto::gen::pretransform::{
     PreTransformExtractOpts, PreTransformSpecOpts, PreTransformValuesOpts, PreTransformVariable,
 };
 use vegafusion_core::proto::gen::tasks::{TzConfig, Variable};
-use vegafusion_core::runtime::GrpcVegaFusionRuntime;
+use vegafusion_runtime::task_graph::GrpcVegaFusionRuntime;
 
 use vegafusion_runtime::task_graph::runtime::VegaFusionRuntime;
 
@@ -225,7 +225,7 @@ impl PyVegaFusionRuntime {
     pub fn new_grpc(url: &str) -> PyResult<Self> {
         let tokio_runtime = Arc::new(
             tokio::runtime::Builder::new_multi_thread()
-                .enable_io()
+                .enable_all()
                 .build()?,
         );
         let runtime = tokio_runtime.block_on(async move {
