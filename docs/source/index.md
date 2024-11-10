@@ -1,16 +1,16 @@
 ```{raw} html
 <div
-    style="margin-left:-32px;margin-bottom:-12px"
+    style="margin-left:-16px;margin-bottom:-12px"
 >
     <img
         src="_static/VegaFusionLightTitle.svg"
         class="only-light"
-        width=400px
+        width=300px
     >
     <img
         src="_static/VegaFusionDarkTitle.svg"
         class="only-dark"
-        width=400px
+        width=300px
     >
 </div>
 <h4>Building blocks for scaling Vega visualizations</h4>
@@ -25,8 +25,8 @@ If you've arrived here looking for information on how to scale Vega-Altair visua
 :::
 
 ```{toctree}
-:maxdepth: 2
-:caption: Contents
+:maxdepth: 1
+:caption: Features
 
 column_usage
 transform_data
@@ -35,4 +35,32 @@ transform_extract
 chart_state
 inline_datasets
 grpc
+vega-lite
+```
+
+```{toctree}
+:maxdepth: 2
+:hidden: true
+:caption: About
+
+background
+how_it_works
+technology
+related_projects
+about_the_name
+license
+stewardship
+citation
+```
+
+```{toctree}
+:maxdepth: 1
+:hidden: true
+:caption: "Community"
+
+Source Code <https://github.com/vega/vegafusion/>
+Report an Issue <https://github.com/vega/vegafusion/issues>
+Start a Discussion <https://github.com/vega/vegafusion/discussions>
+Code of Conduct <https://github.com/vega/.github/blob/main/CODE_OF_CONDUCT.md>
+governance
 ```

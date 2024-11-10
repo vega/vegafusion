@@ -25,7 +25,7 @@ For example, to connect to a server running locally on port 50051
 
 ```
 import vegafusion as vf
-vf.runtime.grpc_connect("http://127.0.0.1:50052")
+vf.runtime.grpc_connect("http://127.0.0.1:50051")
 ```
 
 This will cause all VegaFusion runtime operations to be dispatched to the VegaFusion Server.
