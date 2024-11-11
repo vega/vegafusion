@@ -4,3 +4,57 @@
     height: auto;
     margin-left: 0;
 }
+
+/* Color the header of the table */
+table.docutils th {
+    background-color: #8523a7;
+    color: white;
+}
+
+/* Make dropdown rounded pill and fit in cell */
+table.docutils td {
+    padding: 0
+}
+
+details.sd-dropdown {
+    margin-top: 0.4em;
+    margin-bottom: 0.4em !important;
+    border: 0;
+}
+
+details.sd-dropdown>.sd-card-header {
+    border: 0 !important;
+    background-color: var(--color-table-border) !important;
+    border-radius: 1em !important;
+    padding: 0 .4em 0 .8em !important;
+    margin: 0 0.8em 0 0.6em !important;
+}
+
+details.sd-card {
+    background-color: transparent;
+    box-shadow: none;
+}
+
+summary.sd-summary-title {
+    font-weight: normal !important;
+}
+
+
+/* Center the contents of the second column */
+table.docutils td:nth-child(2) {
+    text-align: center;
+}
+
+table.docutils td:first-child {
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+}
+
+/* Round corners of the first and last column headers */
+table.docutils th:first-child {
+    border-radius: 0.5rem 0 0 0;
+}
+
+table.docutils th:last-child {
+    border-radius: 0 0.5rem 0 0;
+}
