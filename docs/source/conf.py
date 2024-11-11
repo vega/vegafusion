@@ -7,6 +7,7 @@ extensions = [
     'sphinx_copybutton',
     'sphinx.ext.autodoc',
     'sphinx.ext.napoleon',
+    'sphinx_design',
 ]
 
 # Theme settings
