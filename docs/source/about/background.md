@@ -16,3 +16,18 @@ There are at least two significant advantages to having data transformations and
 Vega makes it possible to create declarative JSON specifications of rich interactive visualizations that are fully self-contained. They can run entirely in a web browser without requiring access to an external database or a Python library like Pandas.
 
 For datasets of a few tens of thousands rows or fewer, this architecture often results in extremely smooth and responsive interactivity. However, this architecture doesn't scale very well to datasets of hundreds of thousands of rows or more.  This is the gap VegaFusion aims to fill.
+
+:::{toctree}
+:maxdepth: 1
+:hidden: true
+:caption: About
+
+self
+how_it_works
+technology
+related_projects
+about_the_name
+license
+stewardship
+citation
+:::

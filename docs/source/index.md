@@ -38,20 +38,12 @@ or conda
 conda install -c conda-forge vegafusion
 ```
 
-# Recent Posts
-
-```{postlist} 10
-:date: "%Y-%m-%d"
-:format: "{date} - {title}"
-```
-
 ```{toctree}
 :maxdepth: 1
 :hidden: true
 
-features
-vega_coverage
-about
-community
-blog
+features/features
+Vega Coverage <vega_coverage/supported_transforms>
+About <about/background>
+Community <community/governance>
 ```

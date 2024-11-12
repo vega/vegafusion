@@ -18,6 +18,11 @@ html_static_path = ['_static']
 html_logo = "_static/VegaFusionLogo-Color.svg"
 html_favicon = "_static/favicon.ico"
 
+# Add custom CSS
+html_css_files = [
+    'custom.css',
+] 
+
 _social_img = "https://vegafusion.io/_static/vegafusion_social.png"
 _description = "VegaFusion provides serverside scaling for Vega visualizations"
 _title = "VegaFusion"
@@ -38,7 +43,3 @@ myst_enable_extensions = [
     "attrs_inline",   # Inline attributes
 ]
 
-# Add custom CSS
-html_css_files = [
-    'custom.css',
-] 

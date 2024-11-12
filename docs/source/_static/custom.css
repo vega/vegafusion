@@ -1,3 +1,8 @@
+:root {
+    /* Make the table hover background lighter */
+    --pst-color-table-row-hover-bg: color-mix(in srgb, #6432bd 30%, transparent) !important;
+}
+
 .sidebar-logo {
     max-width: 100px;
     width: auto;
@@ -11,50 +16,32 @@ table.docutils th {
     color: white;
 }
 
-/* Make dropdown rounded pill and fit in cell */
-table.docutils td {
-    padding: 0
+/* make dropdown background transparent, and fit in cell */
+details.sd-dropdown summary.sd-card-header {
+    border: 0 !important;
+    background-color: transparent !important;
+    border-radius: 0 !important;   
 }
 
 details.sd-dropdown {
-    margin-top: 0.4em;
-    margin-bottom: 0.4em !important;
-    border: 0;
+    box-shadow: none !important;
 }
 
-details.sd-dropdown>.sd-card-header {
-    border: 0 !important;
-    background-color: var(--color-table-border) !important;
-    border-radius: 1em !important;
-    padding: 0 .4em 0 .8em !important;
-    margin: 0 0.8em 0 0.6em !important;
-}
-
-details.sd-card {
-    background-color: transparent;
-    box-shadow: none;
-}
-
-summary.sd-summary-title {
+details.sd-dropdown summary.sd-summary-title {
+    width: fit-content;
+    padding: .2em .3em .2em .4em;
     font-weight: normal !important;
 }
 
+.sd-mb-3, .sd-my-3 {
+    margin: 0 !important;
+}
+
+summary.sd-card-header+div.sd-summary-content {
+    background-color: transparent !important;
+}
 
 /* Center the contents of the second column */
-table.docutils td:nth-child(2) {
+table.table td:nth-child(2) {
     text-align: center;
-}
-
-table.docutils td:first-child {
-    padding-left: 0.5rem;
-    padding-right: 0.5rem;
-}
-
-/* Round corners of the first and last column headers */
-table.docutils th:first-child {
-    border-radius: 0.5rem 0 0 0;
-}
-
-table.docutils th:last-child {
-    border-radius: 0 0.5rem 0 0;
 }
