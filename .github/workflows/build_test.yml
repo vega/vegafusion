@@ -56,7 +56,7 @@ jobs:
         run: |
           pixi run test-rs --release
       - name: Upload test artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         if: always()
         with:
           name: vegafusion-rt-test-images
@@ -83,7 +83,7 @@ jobs:
         run: |
           pixi run pack-wasm
       - name: Upload artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: vegafusion-wasm-packages
           path: vegafusion-wasm/pkg/vegafusion-wasm-*.tgz
@@ -140,12 +140,14 @@ jobs:
           rust-toolchain: stable
           args: -m vegafusion-python/Cargo.toml --profile release-opt --features=protobuf-src --strip
       - name: Upload artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
-          name: python-wheels
+          name: python-wheels-linux-64
           path: |
             target/wheels/*.tar.gz
             target/wheels/*.whl
+          retention-days: 1
+          if-no-files-found: error
 
   build-vegafusion-python-linux-arm64:
     runs-on: ubuntu-latest
@@ -174,12 +176,14 @@ jobs:
           rust-toolchain: stable
           args: -m vegafusion-python/Cargo.toml --profile release-opt --features=protobuf-src --strip --target aarch64-unknown-linux-gnu
       - name: Upload artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
-          name: python-wheels
+          name: python-wheels-linux-arm64
           path: |
             target/wheels/*.tar.gz
             target/wheels/*.whl
+          retention-days: 1
+          if-no-files-found: error
 
   build-vegafusion-python-win-64:
     runs-on: windows-2022
@@ -205,12 +209,14 @@ jobs:
         run: |
           pixi run build-py
       - name: Upload artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
-          name: python-wheels
+          name: python-wheels-win-64
           path: |
             target/wheels/*.tar.gz
             target/wheels/*.whl
+          retention-days: 1
+          if-no-files-found: error
 
   build-vegafusion-python-osx-64:
     runs-on: macos-12
@@ -232,12 +238,14 @@ jobs:
         run: |
           pixi run build-py
       - name: Upload artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
-          name: python-wheels
+          name: python-wheels-osx-64
           path: |
             target/wheels/*.tar.gz
             target/wheels/*.whl
+          retention-days: 1
+          if-no-files-found: error
 
   build-vegafusion-python-osx-arm64:
     runs-on: macos-14
@@ -259,12 +267,14 @@ jobs:
         run: |
           pixi run build-py --target aarch64-apple-darwin
       - name: Upload artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
-          name: python-wheels
+          name: python-wheels-osx-arm64
           path: |
             target/wheels/*.tar.gz
             target/wheels/*.whl
+          retention-days: 1
+          if-no-files-found: error
 
   test-vegafusion-python-linux-64:
     runs-on: ubuntu-20.04
@@ -288,7 +298,7 @@ jobs:
       - name: Download vegafusion-python wheel
         uses: actions/download-artifact@v4
         with:
-          name: python-wheels
+          name: python-wheels-linux-64
           path: target/wheels/
       - name: install wheels
         working-directory: target/wheels/
@@ -310,7 +320,7 @@ jobs:
           VEGAFUSION_TEST_HEADLESS: 1
         run: pytest
       - name: Upload test artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         if: always()
         with:
           name: vegafusion-python-test-failures
@@ -330,7 +340,7 @@ jobs:
       - name: Download vegafusion-python wheel
         uses: actions/download-artifact@v4
         with:
-          name: python-wheels
+          name: python-wheels-osx-64
           path: target/wheels/
       - name: install wheels
         working-directory: target/wheels/
@@ -361,7 +371,7 @@ jobs:
       - name: Download vegafusion-python wheel
         uses: actions/download-artifact@v4
         with:
-          name: python-wheels
+          name: python-wheels-win-64
           path: target/wheels/
       - name: install wheels
         working-directory: target/wheels/
@@ -406,11 +416,13 @@ jobs:
           files: target/release/vegafusion-server
           dest: vegafusion-server-linux-64.zip
       - name: Upload artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
-          name: vegafusion-server
+          name: vegafusion-server-linux-64
           path: |
             vegafusion-server-*
+          retention-days: 1
+          if-no-files-found: error
 
   # # Below is an Attempt to cross compile to linux aarch64 within conda environment.
   # # It fails in compiling protobuf-src. So instead we fall back to the direct use of
@@ -443,9 +455,9 @@ jobs:
   #          files: target/aarch64-unknown-linux-gnu/release/vegafusion-server
   #          dest: vegafusion-server-linux-arm64.zip
   #      - name: Upload artifacts
-  #        uses: actions/upload-artifact@v3
+  #        uses: actions/upload-artifact@v4
   #        with:
-  #          name: vegafusion-server
+  #          name: vegafusion-server-linux-arm64
   #          path: |
   #            vegafusion-server-*
 
@@ -480,11 +492,13 @@ jobs:
           files: target/aarch64-unknown-linux-gnu/release/vegafusion-server
           dest: vegafusion-server-linux-arm64.zip
       - name: Upload artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
-          name: vegafusion-server
+          name: vegafusion-server-linux-arm64
           path: |
             vegafusion-server-*
+          retention-days: 1
+          if-no-files-found: error
 
   build-vegafusion-server-win-64:
     runs-on: windows-2022
@@ -512,11 +526,13 @@ jobs:
           files: target/release/vegafusion-server.exe
           dest: vegafusion-server-win-64.zip
       - name: Upload artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
-          name: vegafusion-server
+          name: vegafusion-server-win-64
           path: |
             vegafusion-server-*
+          retention-days: 1
+          if-no-files-found: error
 
   build-vegafusion-server-osx-64:
     runs-on: macos-13
@@ -543,11 +559,13 @@ jobs:
           files: target/release/vegafusion-server
           dest: vegafusion-server-osx-64.zip
       - name: Upload artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
-          name: vegafusion-server
+          name: vegafusion-server-osx-64
           path: |
             vegafusion-server-*
+          retention-days: 1
+          if-no-files-found: error
 
   build-vegafusion-server-osx-arm64:
     runs-on: macos-14
@@ -574,8 +592,50 @@ jobs:
           files: target/aarch64-apple-darwin/release/vegafusion-server
           dest: vegafusion-server-osx-arm64.zip
       - name: Upload artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
-          name: vegafusion-server
+          name: vegafusion-server-osx-arm64
           path: |
             vegafusion-server-*
+          retention-days: 1
+          if-no-files-found: error
+
+  # Bundle all server builds into a single artifact for easier downloading
+  bundle-vegafusion-server-builds:
+    needs:
+      [
+        build-vegafusion-server-linux-64,
+        build-vegafusion-server-linux-arm64,
+        build-vegafusion-server-win-64,
+        build-vegafusion-server-osx-64,
+        build-vegafusion-server-osx-arm64,
+      ]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Merge Server Artifacts
+        uses: actions/upload-artifact/merge@v4
+        with:
+          name: vegafusion-server-all
+          pattern: vegafusion-server-*
+          delete-merged: true
+          separate-directories: false
+
+  # Bundle all python wheels into a single artifact for easier downloading
+  bundle-vegafusion-python-wheels:
+    needs:
+      [
+        build-vegafusion-python-linux-64,
+        build-vegafusion-python-linux-arm64,
+        build-vegafusion-python-win-64,
+        build-vegafusion-python-osx-64,
+        build-vegafusion-python-osx-arm64,
+      ]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Merge Wheel Artifacts
+        uses: actions/upload-artifact/merge@v4
+        with:
+          name: vegafusion-python-wheels-all
+          pattern: python-wheels-*
+          delete-merged: true
+          separate-directories: false
