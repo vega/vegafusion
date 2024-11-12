@@ -3,7 +3,7 @@
 VegaFusion supports a subset of [Vega's expression language](https://vega.github.io/vega/docs/expressions/). Below is a detailed breakdown of supported expression features.
 
 :::{note}
-When a Vega spec includes unsupported expressions, these expressions will be included in the client Vega spec for evaluation by the standard Vega library in the browser. See [How it works](./how_it_works.md) for more details.
+When a Vega spec includes unsupported expressions, these expressions will be included in the client Vega spec for evaluation by the standard Vega library in the browser. See [How it works](../about/how_it_works.md) for more details.
 :::
 
 > **Key**:

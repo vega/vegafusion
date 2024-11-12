@@ -4,7 +4,7 @@ VegaFusion implements a subset of [Vega's transforms](https://vega.github.io/veg
 
 :::{note}
 
-When a Vega spec includes unsupported transforms, these transforms will be included in the client Vega spec for evaluation by the standard Vega library in the browser. See [How it works](./how_it_works.md) for more details.
+When a Vega spec includes unsupported transforms, these transforms will be included in the client Vega spec for evaluation by the standard Vega library in the browser. See [How it works](../about/how_it_works.md) for more details.
 
 :::
 
@@ -289,4 +289,14 @@ When a Vega spec includes unsupported transforms, these transforms will be inclu
 *   - [resolvefilter](https://vega.github.io/vega/docs/transforms/resolvefilter/)
     - ❌
     - <p></p>
+:::
+
+
+:::{toctree}
+:maxdepth: 2
+:hidden: true
+:caption: Vega Coverage
+
+self
+supported_expressions
 :::
