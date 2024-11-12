@@ -24,52 +24,26 @@ The VegaFusion project provides Rust, Python, and JavaScript libraries for analy
 If you've arrived here looking for information on how to scale Vega-Altair visualizations to support larger datasets, see the Vega-Altair documentation on the [`"vegafusion"` data transformer](https://altair-viz.github.io/user_guide/large_datasets.html#vegafusion-data-transformer).
 :::
 
-```{toctree}
-:maxdepth: 1
-:caption: Features
+# Python Installation
 
-column_usage
-transform_data
-transform_spec
-transform_extract
-chart_state
-inline_datasets
-grpc
-vega-lite
+The VegaFusion Python package can be installed into a Python environment using pip
+
+```bash
+pip install vegafusion
 ```
 
-```{toctree}
-:maxdepth: 2
-:hidden: true
-:caption: Vega Coverage
+or conda
 
-supported_transforms
-supported_expressions
-```
-
-```{toctree}
-:maxdepth: 2
-:hidden: true
-:caption: About
-
-background
-how_it_works
-technology
-related_projects
-about_the_name
-license
-stewardship
-citation
+```bash
+conda install -c conda-forge vegafusion
 ```
 
 ```{toctree}
 :maxdepth: 1
 :hidden: true
-:caption: "Community"
 
-Source Code <https://github.com/vega/vegafusion/>
-Report an Issue <https://github.com/vega/vegafusion/issues>
-Start a Discussion <https://github.com/vega/vegafusion/discussions>
-Code of Conduct <https://github.com/vega/.github/blob/main/CODE_OF_CONDUCT.md>
-governance
+features/features
+Vega Coverage <vega_coverage/supported_transforms>
+About <about/background>
+Community <community/governance>
 ```
