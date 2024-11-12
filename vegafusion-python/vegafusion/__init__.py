@@ -14,7 +14,7 @@ def patched_version(distribution_name: str) -> str:
     vegafusion package. This is just to satisfy Altair's version check.
     """
     if distribution_name == "vegafusion-python-embed":
-        return cast(str, __version__)
+        return cast(str, __version__).replace("-", "")
     return _original_version(distribution_name)
 
 
