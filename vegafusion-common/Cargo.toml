@@ -1,6 +1,6 @@
 [package]
 name = "vegafusion-common"
-version = "1.6.9"
+version = "2.0.0-a0"
 edition = "2021"
 description = "Common components required by multiple VegaFusion crates"
 license = "BSD-3-Clause"
@@ -43,7 +43,12 @@ workspace = true
 
 [dependencies.datafusion-functions]
 workspace = true
-features = ["core_expressions", "string_expressions", "datetime_expressions", "hashbrown"]
+features = [
+  "core_expressions",
+  "string_expressions",
+  "datetime_expressions",
+  "hashbrown",
+]
 
 [dependencies.datafusion-functions-nested]
 workspace = true
