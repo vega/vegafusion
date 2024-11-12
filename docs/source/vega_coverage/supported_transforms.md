@@ -1,6 +1,6 @@
 # Supported Transforms
 
-VegaFusion implements a subset of [Vega's transforms](https://vega.github.io/vega/). Below is a detailed breakdown of transform support status.
+VegaFusion implements a subset of [Vega's transforms](https://vega.github.io/vega/docs/transforms/). Below is a detailed breakdown of transform support status.
 
 :::{note}
 

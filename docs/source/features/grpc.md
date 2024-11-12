@@ -1,5 +1,5 @@
 # gRPC
-The VegaFusion Runtime can run as a [gRPC](https://grpc.io/) service, which makes it possible for multiple clients to connect to the same runtime, and share a cache. This also makes it possible for the Runtime to reside on a different host than the client.
+The VegaFusion Runtime can run as a [gRPC](https://grpc.io/) service, which makes it possible for multiple clients to connect to the same runtime, and share a cache (See [How it Works](../about/how_it_works) for more details). This also makes it possible for the Runtime to reside on a different host than the client.
 
 :::{warning}
 VegaFusion's gRPC server does not currently support authentication, and chart specifications may reference the local file system of the machine running the server. It is not currently recommended to use VegaFusion server with untrusted Vega specifications unless other measures are taken to isolate the service.
@@ -35,7 +35,7 @@ See [grpc.py](https://github.com/vega/vegafusion/tree/v2/examples/python-example
 ## Rust
 The `GrpcVegaFusionRuntime` struct is an alternative to the `VegaFusionRuntime` struct that provides the same interface, but connects to a VegaFusion Server.
 
-See [grpc.rs](https://github.com/vega/vegafusion/tree/v2/examples/rust-examples/grpc.rs) for a complete example.
+See [grpc.rs](https://github.com/vega/vegafusion/tree/v2/examples/rust-examples/examples/grpc.rs) for a complete example.
 
 ## JavaScript
 The `vegafusion-wasm` package can connect to an instance of VegaFusion Server over [gRPC-Web](https://github.com/grpc/grpc-web). 
