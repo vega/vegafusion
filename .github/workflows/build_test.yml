@@ -7,13 +7,13 @@ jobs:
     runs-on: ubuntu-20.04
     steps:
       - name: Check out repository code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v4.2.2
       - uses: prefix-dev/setup-pixi@v0.8.1
         with:
           pixi-version: v0.34.0
           cache: true
       - name: Cache
-        uses: actions/cache@v3
+        uses: actions/cache@v4.1.2
         with:
           key: ${{ runner.os }}-${{ hashFiles('pixi.lock', 'Cargo.lock', 'vegafusion-python/pyproject.toml') }}-check-rust
           path: |
@@ -38,12 +38,12 @@ jobs:
           - macos-14
     steps:
       - name: Check out repository code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v4.2.2
       - uses: prefix-dev/setup-pixi@v0.8.1
         with:
           pixi-version: v0.34.0
       - name: Cache
-        uses: actions/cache@v3
+        uses: actions/cache@v4.1.2
         with:
           key: ${{ runner.os }}-${{ hashFiles('pixi.lock', 'Cargo.lock', 'vegafusion-python/pyproject.toml') }}-test-rust2
           path: |
@@ -67,12 +67,12 @@ jobs:
     runs-on: ubuntu-20.04
     steps:
       - name: Check out repository code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v4.2.2
       - uses: prefix-dev/setup-pixi@v0.8.1
         with:
           pixi-version: v0.34.0
       - name: Cache
-        uses: actions/cache@v3
+        uses: actions/cache@v4.1.2
         with:
           key: ${{ runner.os }}-${{ hashFiles('pixi.lock', 'Cargo.lock', 'vegafusion-python/pyproject.toml') }}-build-vegafusion-wasm
           path: |
@@ -85,7 +85,7 @@ jobs:
           mkdir -p vegafusion-wasm/package
           cp vegafusion-wasm/pkg/vegafusion-wasm-*.tgz vegafusion-wasm/package/
       - name: Upload artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v4.4.3
         with:
           name: vegafusion-wasm-package
           path: vegafusion-wasm/package/
@@ -94,12 +94,12 @@ jobs:
     runs-on: ubuntu-20.04
     steps:
       - name: Check out repository code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v4.2.2
       - uses: prefix-dev/setup-pixi@v0.8.1
         with:
           pixi-version: v0.34.0
       - name: Cache
-        uses: actions/cache@v3
+        uses: actions/cache@v4.1.2
         with:
           key: ${{ runner.os }}-${{ hashFiles('pixi.lock', 'Cargo.lock', 'vegafusion-python/pyproject.toml') }}-build-vegafusion-wasm
           path: |
@@ -122,27 +122,18 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check out repository code
-        uses: actions/checkout@v4
-      # - name: Install latest stable Rust toolchain
-      #   uses: actions-rs/toolchain@16499b5e05bf2e26879000db0c1d13f7e13fa3af # pin@v1
-      #   with:
-      #     toolchain: stable
-      #     override: true
-      # - name: Cache rust dependencies
-      #   uses: Swatinem/rust-cache@v2
-      #   with:
-      #     cache-on-failure: True
+        uses: actions/checkout@v4.2.2
       - name: Clear target/wheels
         run: rm -rf target/wheels
       - name: Build wheels (Linux)
-        uses: messense/maturin-action@v1
+        uses: messense/maturin-action@v1.45
         with:
           command: build
           manylinux: 2014
           rust-toolchain: stable
           args: -m vegafusion-python/Cargo.toml --profile release-opt --features=protobuf-src --strip
       - name: Upload artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v4.4.3
         with:
           name: python-wheels-linux-64
           path: |
@@ -155,30 +146,18 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check out repository code
-        uses: actions/checkout@v4
-      # - name: Install latest stable Rust toolchain
-      #   uses: actions-rs/toolchain@16499b5e05bf2e26879000db0c1d13f7e13fa3af # pin@v1
-      #   with:
-      #     toolchain: stable
-      #     override: true
-      # - name: Cache rust dependencies
-      #   uses: Swatinem/rust-cache@v2
-      #   with:
-      #     cache-on-failure: True
-      # - name: Download arm64 toolchain
-      #   run: |
-      #     rustup target add aarch64-unknown-linux-gnu
+        uses: actions/checkout@v4.2.2
       - name: Clear target/wheels
         run: rm -rf target/wheels
       - name: Build arm64 wheels
-        uses: messense/maturin-action@v1
+        uses: messense/maturin-action@v1.45
         with:
           command: build
           manylinux: 2_28
           rust-toolchain: stable
           args: -m vegafusion-python/Cargo.toml --profile release-opt --features=protobuf-src --strip --target aarch64-unknown-linux-gnu
       - name: Upload artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v4.4.3
         with:
           name: python-wheels-linux-arm64
           path: |
@@ -191,16 +170,12 @@ jobs:
     runs-on: windows-2022
     steps:
       - name: Check out repository code
-        uses: actions/checkout@v4
-      # - name: Setup Python
-      #   uses: actions/setup-python@v5
-      #   with:
-      #     python-version: "3.11"
+        uses: actions/checkout@v4.2.2
       - uses: prefix-dev/setup-pixi@v0.8.1
         with:
           pixi-version: v0.34.0
       - name: Cache
-        uses: actions/cache@v3
+        uses: actions/cache@v4.1.2
         with:
           key: ${{ runner.os }}-${{ hashFiles('pixi.lock', 'Cargo.lock', 'vegafusion-python/pyproject.toml') }}-build-vegafusion-python-win-64
           path: |
@@ -211,7 +186,7 @@ jobs:
         run: |
           pixi run build-py
       - name: Upload artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v4.4.3
         with:
           name: python-wheels-win-64
           path: |
@@ -224,12 +199,12 @@ jobs:
     runs-on: macos-12
     steps:
       - name: Check out repository code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v4.2.2
       - uses: prefix-dev/setup-pixi@v0.8.1
         with:
           pixi-version: v0.34.0
       - name: Cache
-        uses: actions/cache@v3
+        uses: actions/cache@v4.1.2
         with:
           key: ${{ runner.os }}-${{ hashFiles('pixi.lock', 'Cargo.lock', 'vegafusion-python/pyproject.toml') }}-build-vegafusion-python-osx-64
           path: |
@@ -240,7 +215,7 @@ jobs:
         run: |
           pixi run build-py
       - name: Upload artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v4.4.3
         with:
           name: python-wheels-osx-64
           path: |
@@ -253,12 +228,12 @@ jobs:
     runs-on: macos-14
     steps:
       - name: Check out repository code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v4.2.2
       - uses: prefix-dev/setup-pixi@v0.8.1
         with:
           pixi-version: v0.34.0
       - name: Cache
-        uses: actions/cache@v3
+        uses: actions/cache@v4.1.2
         with:
           key: osx-arm64-${{ hashFiles('pixi.lock', 'Cargo.lock', 'vegafusion-python/pyproject.toml') }}-build-vegafusion-python-osx-arm64
           path: |
@@ -269,7 +244,7 @@ jobs:
         run: |
           pixi run build-py --target aarch64-apple-darwin
       - name: Upload artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v4.4.3
         with:
           name: python-wheels-osx-arm64
           path: |
@@ -283,9 +258,9 @@ jobs:
     needs: [build-vegafusion-python-linux-64]
     steps:
       - name: Check out repository code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v4.2.2
       - name: Setup Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v5.3.0
         with:
           python-version: "3.11"
       - name: Install Chrome
@@ -298,7 +273,7 @@ jobs:
           echo ttf-mscorefonts-installer msttcorefonts/accepted-mscorefonts-eula select true | sudo debconf-set-selections
           sudo apt-get install ttf-mscorefonts-installer
       - name: Download vegafusion-python wheel
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v4.1.8
         with:
           name: python-wheels-linux-64
           path: target/wheels/
@@ -322,7 +297,7 @@ jobs:
           VEGAFUSION_TEST_HEADLESS: 1
         run: pytest
       - name: Upload test artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v4.4.3
         if: always()
         with:
           name: vegafusion-python-test-failures
@@ -334,13 +309,13 @@ jobs:
     needs: [build-vegafusion-python-osx-arm64]
     steps:
       - name: Check out repository code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v4.2.2
       - name: Setup Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v5.3.0
         with:
           python-version: "3.10"
       - name: Download vegafusion-python wheel
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v4.1.8
         with:
           name: python-wheels-osx-64
           path: target/wheels/
@@ -365,13 +340,13 @@ jobs:
     needs: [build-vegafusion-python-win-64]
     steps:
       - name: Check out repository code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v4.2.2
       - name: Setup Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v5.3.0
         with:
           python-version: "3.9"
       - name: Download vegafusion-python wheel
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v4.1.8
         with:
           name: python-wheels-win-64
           path: target/wheels/
@@ -397,12 +372,12 @@ jobs:
     runs-on: ubuntu-20.04
     steps:
       - name: Check out repository code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v4.2.2
       - uses: prefix-dev/setup-pixi@v0.8.1
         with:
           pixi-version: v0.34.0
       - name: Cache
-        uses: actions/cache@v3
+        uses: actions/cache@v4.1.2
         with:
           key: ${{ runner.os }}-${{ hashFiles('pixi.lock', 'Cargo.lock', 'vegafusion-python/pyproject.toml') }}-build-vegafusion-server-linux-64
           path: |
@@ -413,12 +388,12 @@ jobs:
         run: |
           pixi run build-rs-server
       - name: zip executable
-        uses: vimtor/action-zip@v1
+        uses: vimtor/action-zip@v1.2
         with:
           files: target/release/vegafusion-server
           dest: vegafusion-server-linux-64.zip
       - name: Upload artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v4.4.3
         with:
           name: vegafusion-server-linux-64
           path: |
@@ -434,11 +409,11 @@ jobs:
   #    runs-on: ubuntu-20.04
   #    steps:
   #      - name: Check out repository code
-  #        uses: actions/checkout@v4
+  #        uses: actions/checkout@v4.2.2
   #      - name: Install pixi
   #        run: curl -fsSL https://pixi.sh/install.sh | bash && echo "${HOME}/.pixi/bin" >> $GITHUB_PATH
   #      - name: Cache
-  #        uses: actions/cache@v3
+  #        uses: actions/cache@v4.1.2
   #        with:
   #          key: linux-arm64-${{ hashFiles('pixi.lock', 'Cargo.lock', 'vegafusion-python/pyproject.toml') }}-server
   #          path: |
@@ -452,12 +427,12 @@ jobs:
   #          export RUSTFLAGS="-C linker=aarch64-linux-gnu-gcc"
   #          pixi run build-rs-server --features=protobuf-src --target aarch64-unknown-linux-gnu
   #      - name: zip executable
-  #        uses: vimtor/action-zip@v1
+  #        uses: vimtor/action-zip@v1.2
   #        with:
   #          files: target/aarch64-unknown-linux-gnu/release/vegafusion-server
   #          dest: vegafusion-server-linux-arm64.zip
   #      - name: Upload artifacts
-  #        uses: actions/upload-artifact@v4
+  #        uses: actions/upload-artifact@v4.4.3
   #        with:
   #          name: vegafusion-server-linux-arm64
   #          path: |
@@ -467,13 +442,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check out repository code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v4.2.2
       - name: Install latest stable Rust toolchain
         uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: stable
       - name: Cache rust dependencies
-        uses: Swatinem/rust-cache@v2
+        uses: Swatinem/rust-cache@v2.7.5
         with:
           cache-on-failure: True
       - name: Download arm64 toolchain
@@ -489,12 +464,12 @@ jobs:
         run: |
           cargo build -p vegafusion-server --features=protobuf-src --profile release-opt --target=aarch64-unknown-linux-gnu
       - name: zip executable
-        uses: vimtor/action-zip@v1
+        uses: vimtor/action-zip@v1.2
         with:
           files: target/aarch64-unknown-linux-gnu/release/vegafusion-server
           dest: vegafusion-server-linux-arm64.zip
       - name: Upload artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v4.4.3
         with:
           name: vegafusion-server-linux-arm64
           path: |
@@ -506,12 +481,12 @@ jobs:
     runs-on: windows-2022
     steps:
       - name: Check out repository code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v4.2.2
       - uses: prefix-dev/setup-pixi@v0.8.1
         with:
           pixi-version: v0.34.0
       - name: Cache
-        uses: actions/cache@v3
+        uses: actions/cache@v4.1.2
         with:
           key: ${{ runner.os }}-${{ hashFiles('pixi.lock', 'Cargo.lock', 'vegafusion-python/pyproject.toml') }}-build-vegafusion-server-win-64b
           path: |
@@ -523,12 +498,12 @@ jobs:
           pixi install -vvv
           pixi run build-rs-server
       - name: zip executable
-        uses: vimtor/action-zip@v1
+        uses: vimtor/action-zip@v1.2
         with:
           files: target/release/vegafusion-server.exe
           dest: vegafusion-server-win-64.zip
       - name: Upload artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v4.4.3
         with:
           name: vegafusion-server-win-64
           path: |
@@ -540,12 +515,12 @@ jobs:
     runs-on: macos-13
     steps:
       - name: Check out repository code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v4.2.2
       - uses: prefix-dev/setup-pixi@v0.8.1
         with:
           pixi-version: v0.34.0
       - name: Cache
-        uses: actions/cache@v3
+        uses: actions/cache@v4.1.2
         with:
           key: ${{ runner.os }}-${{ hashFiles('pixi.lock', 'Cargo.lock', 'vegafusion-python/pyproject.toml') }}-build-vegafusion-server-osx-64
           path: |
@@ -556,12 +531,12 @@ jobs:
         run: |
           pixi run build-rs-server
       - name: zip executable
-        uses: vimtor/action-zip@v1
+        uses: vimtor/action-zip@v1.2
         with:
           files: target/release/vegafusion-server
           dest: vegafusion-server-osx-64.zip
       - name: Upload artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v4.4.3
         with:
           name: vegafusion-server-osx-64
           path: |
@@ -573,12 +548,12 @@ jobs:
     runs-on: macos-14
     steps:
       - name: Check out repository code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v4.2.2
       - uses: prefix-dev/setup-pixi@v0.8.1
         with:
           pixi-version: v0.34.0
       - name: Cache
-        uses: actions/cache@v3
+        uses: actions/cache@v4.1.2
         with:
           key: osx-arm64-${{ hashFiles('pixi.lock', 'Cargo.lock', 'vegafusion-python/pyproject.toml') }}-build-vegafusion-server-osx-arm64
           path: |
@@ -589,12 +564,12 @@ jobs:
         run: |
           pixi run build-rs-server --target aarch64-apple-darwin
       - name: zip executable
-        uses: vimtor/action-zip@v1
+        uses: vimtor/action-zip@v1.2
         with:
           files: target/aarch64-apple-darwin/release/vegafusion-server
           dest: vegafusion-server-osx-arm64.zip
       - name: Upload artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v4.4.3
         with:
           name: vegafusion-server-osx-arm64
           path: |
@@ -615,7 +590,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Merge Server Artifacts
-        uses: actions/upload-artifact/merge@v4
+        uses: actions/upload-artifact/merge@v4.4.3
         with:
           name: vegafusion-server-all
           pattern: vegafusion-server-*
@@ -637,7 +612,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Merge Wheel Artifacts
-        uses: actions/upload-artifact/merge@v4
+        uses: actions/upload-artifact/merge@v4.4.3
         with:
           name: vegafusion-python-wheels-all
           pattern: python-wheels-*
