@@ -82,11 +82,13 @@ jobs:
       - name: Build package
         run: |
           pixi run pack-wasm
+          mkdir -p vegafusion-wasm/package
+          cp vegafusion-wasm/pkg/vegafusion-wasm-*.tgz vegafusion-wasm/package/
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: vegafusion-wasm-packages
-          path: vegafusion-wasm/pkg/vegafusion-wasm-*.tgz
+          name: vegafusion-wasm-package
+          path: vegafusion-wasm/package/
 
   check-vegafusion-python:
     runs-on: ubuntu-20.04
