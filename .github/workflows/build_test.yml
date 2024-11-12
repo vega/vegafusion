@@ -7,10 +7,10 @@ jobs:
     runs-on: ubuntu-20.04
     steps:
       - name: Check out repository code
-        uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # pin@v3.5.2
+        uses: actions/checkout@v4
       - uses: prefix-dev/setup-pixi@v0.8.1
         with:
-          pixi-version: v0.30.0
+          pixi-version: v0.34.0
           cache: true
       - name: Cache
         uses: actions/cache@v3
@@ -38,10 +38,10 @@ jobs:
           - macos-14
     steps:
       - name: Check out repository code
-        uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # pin@v3.5.2
+        uses: actions/checkout@v4
       - uses: prefix-dev/setup-pixi@v0.8.1
         with:
-          pixi-version: v0.30.0
+          pixi-version: v0.34.0
       - name: Cache
         uses: actions/cache@v3
         with:
@@ -56,7 +56,7 @@ jobs:
         run: |
           pixi run test-rs --release
       - name: Upload test artifacts
-        uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce # pin@v3.1.2
+        uses: actions/upload-artifact@v3
         if: always()
         with:
           name: vegafusion-rt-test-images
@@ -67,10 +67,10 @@ jobs:
     runs-on: ubuntu-20.04
     steps:
       - name: Check out repository code
-        uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # pin@v3.5.2
+        uses: actions/checkout@v4
       - uses: prefix-dev/setup-pixi@v0.8.1
         with:
-          pixi-version: v0.30.0
+          pixi-version: v0.34.0
       - name: Cache
         uses: actions/cache@v3
         with:
@@ -83,7 +83,7 @@ jobs:
         run: |
           pixi run pack-wasm
       - name: Upload artifacts
-        uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce # pin@v3.1.2
+        uses: actions/upload-artifact@v3
         with:
           name: vegafusion-wasm-packages
           path: vegafusion-wasm/pkg/vegafusion-wasm-*.tgz
@@ -92,10 +92,10 @@ jobs:
     runs-on: ubuntu-20.04
     steps:
       - name: Check out repository code
-        uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # pin@v3.5.2
+        uses: actions/checkout@v4
       - uses: prefix-dev/setup-pixi@v0.8.1
         with:
-          pixi-version: v0.30.0
+          pixi-version: v0.34.0
       - name: Cache
         uses: actions/cache@v3
         with:
@@ -120,27 +120,27 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check out repository code
-        uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # pin@v3.5.2
-      - name: Install latest stable Rust toolchain
-        uses: actions-rs/toolchain@16499b5e05bf2e26879000db0c1d13f7e13fa3af # pin@v1
-        with:
-          toolchain: stable
-          override: true
-      - name: Cache rust dependencies
-        uses: Swatinem/rust-cache@81d053bdb0871dcd3f10763c8cc60d0adc41762b # pin@v1
-        with:
-          cache-on-failure: True
+        uses: actions/checkout@v4
+      # - name: Install latest stable Rust toolchain
+      #   uses: actions-rs/toolchain@16499b5e05bf2e26879000db0c1d13f7e13fa3af # pin@v1
+      #   with:
+      #     toolchain: stable
+      #     override: true
+      # - name: Cache rust dependencies
+      #   uses: Swatinem/rust-cache@v2
+      #   with:
+      #     cache-on-failure: True
       - name: Clear target/wheels
         run: rm -rf target/wheels
       - name: Build wheels (Linux)
-        uses: messense/maturin-action@60d11847b29f81ca5375519a8eb33cc336ba4bfa # pin@v1.41.1
+        uses: messense/maturin-action@v1
         with:
           command: build
           manylinux: 2014
           rust-toolchain: stable
           args: -m vegafusion-python/Cargo.toml --profile release-opt --features=protobuf-src --strip
       - name: Upload artifacts
-        uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce # pin@v3.1.2
+        uses: actions/upload-artifact@v3
         with:
           name: python-wheels
           path: |
@@ -151,30 +151,30 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check out repository code
-        uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # pin@v3.5.2
-      - name: Install latest stable Rust toolchain
-        uses: actions-rs/toolchain@16499b5e05bf2e26879000db0c1d13f7e13fa3af # pin@v1
-        with:
-          toolchain: stable
-          override: true
-      - name: Cache rust dependencies
-        uses: Swatinem/rust-cache@81d053bdb0871dcd3f10763c8cc60d0adc41762b # pin@v1
-        with:
-          cache-on-failure: True
-      - name: Download arm64 toolchain
-        run: |
-          rustup target add aarch64-unknown-linux-gnu
+        uses: actions/checkout@v4
+      # - name: Install latest stable Rust toolchain
+      #   uses: actions-rs/toolchain@16499b5e05bf2e26879000db0c1d13f7e13fa3af # pin@v1
+      #   with:
+      #     toolchain: stable
+      #     override: true
+      # - name: Cache rust dependencies
+      #   uses: Swatinem/rust-cache@v2
+      #   with:
+      #     cache-on-failure: True
+      # - name: Download arm64 toolchain
+      #   run: |
+      #     rustup target add aarch64-unknown-linux-gnu
       - name: Clear target/wheels
         run: rm -rf target/wheels
       - name: Build arm64 wheels
-        uses: messense/maturin-action@60d11847b29f81ca5375519a8eb33cc336ba4bfa # pin@v1.41.1
+        uses: messense/maturin-action@v1
         with:
           command: build
           manylinux: 2_28
           rust-toolchain: stable
           args: -m vegafusion-python/Cargo.toml --profile release-opt --features=protobuf-src --strip --target aarch64-unknown-linux-gnu
       - name: Upload artifacts
-        uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce # pin@v3.1.2
+        uses: actions/upload-artifact@v3
         with:
           name: python-wheels
           path: |
@@ -185,14 +185,14 @@ jobs:
     runs-on: windows-2022
     steps:
       - name: Check out repository code
-        uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # pin@v3.5.2
-      - name: Setup Python
-        uses: actions/setup-python@61a6322f88396a6271a6ee3565807d608ecaddd1 # pin@4.7
-        with:
-          python-version: "3.11"
+        uses: actions/checkout@v4
+      # - name: Setup Python
+      #   uses: actions/setup-python@v5
+      #   with:
+      #     python-version: "3.11"
       - uses: prefix-dev/setup-pixi@v0.8.1
         with:
-          pixi-version: v0.30.0
+          pixi-version: v0.34.0
       - name: Cache
         uses: actions/cache@v3
         with:
@@ -205,7 +205,7 @@ jobs:
         run: |
           pixi run build-py
       - name: Upload artifacts
-        uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce # pin@v3.1.2
+        uses: actions/upload-artifact@v3
         with:
           name: python-wheels
           path: |
@@ -216,10 +216,10 @@ jobs:
     runs-on: macos-12
     steps:
       - name: Check out repository code
-        uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # pin@v3.5.2
+        uses: actions/checkout@v4
       - uses: prefix-dev/setup-pixi@v0.8.1
         with:
-          pixi-version: v0.30.0
+          pixi-version: v0.34.0
       - name: Cache
         uses: actions/cache@v3
         with:
@@ -232,7 +232,7 @@ jobs:
         run: |
           pixi run build-py
       - name: Upload artifacts
-        uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce # pin@v3.1.2
+        uses: actions/upload-artifact@v3
         with:
           name: python-wheels
           path: |
@@ -243,10 +243,10 @@ jobs:
     runs-on: macos-14
     steps:
       - name: Check out repository code
-        uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # pin@v3.5.2
+        uses: actions/checkout@v4
       - uses: prefix-dev/setup-pixi@v0.8.1
         with:
-          pixi-version: v0.30.0
+          pixi-version: v0.34.0
       - name: Cache
         uses: actions/cache@v3
         with:
@@ -259,7 +259,7 @@ jobs:
         run: |
           pixi run build-py --target aarch64-apple-darwin
       - name: Upload artifacts
-        uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce # pin@v3.1.2
+        uses: actions/upload-artifact@v3
         with:
           name: python-wheels
           path: |
@@ -271,13 +271,13 @@ jobs:
     needs: [build-vegafusion-python-linux-64]
     steps:
       - name: Check out repository code
-        uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # pin@v3.5.2
+        uses: actions/checkout@v4
       - name: Setup Python
-        uses: actions/setup-python@61a6322f88396a6271a6ee3565807d608ecaddd1 # pin@4.7
+        uses: actions/setup-python@v5
         with:
           python-version: "3.11"
       - name: Install Chrome
-        uses: browser-actions/setup-chrome@f0ff752add8c926994566c80b3ceadfd03f24d12 # pin@latest
+        uses: browser-actions/setup-chrome@v1
         with:
           chrome-version: stable
       - name: Install fonts on Linux
@@ -286,7 +286,7 @@ jobs:
           echo ttf-mscorefonts-installer msttcorefonts/accepted-mscorefonts-eula select true | sudo debconf-set-selections
           sudo apt-get install ttf-mscorefonts-installer
       - name: Download vegafusion-python wheel
-        uses: actions/download-artifact@cbed621e49e4c01b044d60f6c80ea4ed6328b281 # pin@v2
+        uses: actions/download-artifact@v4
         with:
           name: python-wheels
           path: target/wheels/
@@ -310,7 +310,7 @@ jobs:
           VEGAFUSION_TEST_HEADLESS: 1
         run: pytest
       - name: Upload test artifacts
-        uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce # pin@v3.1.2
+        uses: actions/upload-artifact@v3
         if: always()
         with:
           name: vegafusion-python-test-failures
@@ -322,13 +322,13 @@ jobs:
     needs: [build-vegafusion-python-osx-arm64]
     steps:
       - name: Check out repository code
-        uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # pin@v3.5.2
+        uses: actions/checkout@v4
       - name: Setup Python
-        uses: actions/setup-python@61a6322f88396a6271a6ee3565807d608ecaddd1 # pin@4.7
+        uses: actions/setup-python@v5
         with:
           python-version: "3.10"
       - name: Download vegafusion-python wheel
-        uses: actions/download-artifact@cbed621e49e4c01b044d60f6c80ea4ed6328b281 # pin@v2
+        uses: actions/download-artifact@v4
         with:
           name: python-wheels
           path: target/wheels/
@@ -353,17 +353,13 @@ jobs:
     needs: [build-vegafusion-python-win-64]
     steps:
       - name: Check out repository code
-        uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # pin@v3.5.2
+        uses: actions/checkout@v4
       - name: Setup Python
-        uses: actions/setup-python@61a6322f88396a6271a6ee3565807d608ecaddd1 # pin@4.7
+        uses: actions/setup-python@v5
         with:
           python-version: "3.9"
-      - name: Install Chrome
-        uses: browser-actions/setup-chrome@f0ff752add8c926994566c80b3ceadfd03f24d12 # pin@latest
-        with:
-          chrome-version: stable
       - name: Download vegafusion-python wheel
-        uses: actions/download-artifact@cbed621e49e4c01b044d60f6c80ea4ed6328b281 # pin@v2
+        uses: actions/download-artifact@v4
         with:
           name: python-wheels
           path: target/wheels/
@@ -389,10 +385,10 @@ jobs:
     runs-on: ubuntu-20.04
     steps:
       - name: Check out repository code
-        uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # pin@v3.5.2
+        uses: actions/checkout@v4
       - uses: prefix-dev/setup-pixi@v0.8.1
         with:
-          pixi-version: v0.30.0
+          pixi-version: v0.34.0
       - name: Cache
         uses: actions/cache@v3
         with:
@@ -405,12 +401,12 @@ jobs:
         run: |
           pixi run build-rs-server
       - name: zip executable
-        uses: vimtor/action-zip@26a249fb00d43ca98dad77a4b3838025fc226aa1 # pin@v1.1
+        uses: vimtor/action-zip@v1
         with:
           files: target/release/vegafusion-server
           dest: vegafusion-server-linux-64.zip
       - name: Upload artifacts
-        uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce # pin@v3.1.2
+        uses: actions/upload-artifact@v3
         with:
           name: vegafusion-server
           path: |
@@ -424,7 +420,7 @@ jobs:
   #    runs-on: ubuntu-20.04
   #    steps:
   #      - name: Check out repository code
-  #        uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # pin@v3.5.2
+  #        uses: actions/checkout@v4
   #      - name: Install pixi
   #        run: curl -fsSL https://pixi.sh/install.sh | bash && echo "${HOME}/.pixi/bin" >> $GITHUB_PATH
   #      - name: Cache
@@ -442,12 +438,12 @@ jobs:
   #          export RUSTFLAGS="-C linker=aarch64-linux-gnu-gcc"
   #          pixi run build-rs-server --features=protobuf-src --target aarch64-unknown-linux-gnu
   #      - name: zip executable
-  #        uses: vimtor/action-zip@26a249fb00d43ca98dad77a4b3838025fc226aa1 # pin@v1.1
+  #        uses: vimtor/action-zip@v1
   #        with:
   #          files: target/aarch64-unknown-linux-gnu/release/vegafusion-server
   #          dest: vegafusion-server-linux-arm64.zip
   #      - name: Upload artifacts
-  #        uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce # pin@v3.1.2
+  #        uses: actions/upload-artifact@v3
   #        with:
   #          name: vegafusion-server
   #          path: |
@@ -457,14 +453,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check out repository code
-        uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # pin@v3.5.2
+        uses: actions/checkout@v4
       - name: Install latest stable Rust toolchain
-        uses: actions-rs/toolchain@16499b5e05bf2e26879000db0c1d13f7e13fa3af # pin@v1
+        uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: stable
-          override: true
       - name: Cache rust dependencies
-        uses: Swatinem/rust-cache@81d053bdb0871dcd3f10763c8cc60d0adc41762b # pin@v1
+        uses: Swatinem/rust-cache@v2
         with:
           cache-on-failure: True
       - name: Download arm64 toolchain
@@ -475,19 +470,17 @@ jobs:
           sudo apt-get update
           sudo apt-get install gcc-aarch64-linux-gnu
       - name: Build vegafusion-server
-        uses: actions-rs/cargo@844f36862e911db73fe0815f00a4a2602c279505 # pin@v1
         env:
           RUSTFLAGS: "-C linker=aarch64-linux-gnu-gcc"
-        with:
-          command: build
-          args: -p vegafusion-server --features=protobuf-src --profile release-opt --target=aarch64-unknown-linux-gnu
+        run: |
+          cargo build -p vegafusion-server --features=protobuf-src --profile release-opt --target=aarch64-unknown-linux-gnu
       - name: zip executable
-        uses: vimtor/action-zip@26a249fb00d43ca98dad77a4b3838025fc226aa1 # pin@v1.1
+        uses: vimtor/action-zip@v1
         with:
           files: target/aarch64-unknown-linux-gnu/release/vegafusion-server
           dest: vegafusion-server-linux-arm64.zip
       - name: Upload artifacts
-        uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce # pin@v3.1.2
+        uses: actions/upload-artifact@v3
         with:
           name: vegafusion-server
           path: |
@@ -497,10 +490,10 @@ jobs:
     runs-on: windows-2022
     steps:
       - name: Check out repository code
-        uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # pin@v3.5.2
+        uses: actions/checkout@v4
       - uses: prefix-dev/setup-pixi@v0.8.1
         with:
-          pixi-version: v0.30.0
+          pixi-version: v0.34.0
       - name: Cache
         uses: actions/cache@v3
         with:
@@ -514,12 +507,12 @@ jobs:
           pixi install -vvv
           pixi run build-rs-server
       - name: zip executable
-        uses: vimtor/action-zip@26a249fb00d43ca98dad77a4b3838025fc226aa1 # pin@v1.1
+        uses: vimtor/action-zip@v1
         with:
           files: target/release/vegafusion-server.exe
           dest: vegafusion-server-win-64.zip
       - name: Upload artifacts
-        uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce # pin@v3.1.2
+        uses: actions/upload-artifact@v3
         with:
           name: vegafusion-server
           path: |
@@ -529,10 +522,10 @@ jobs:
     runs-on: macos-13
     steps:
       - name: Check out repository code
-        uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # pin@v3.5.2
+        uses: actions/checkout@v4
       - uses: prefix-dev/setup-pixi@v0.8.1
         with:
-          pixi-version: v0.30.0
+          pixi-version: v0.34.0
       - name: Cache
         uses: actions/cache@v3
         with:
@@ -545,12 +538,12 @@ jobs:
         run: |
           pixi run build-rs-server
       - name: zip executable
-        uses: vimtor/action-zip@26a249fb00d43ca98dad77a4b3838025fc226aa1 # pin@v1.1
+        uses: vimtor/action-zip@v1
         with:
           files: target/release/vegafusion-server
           dest: vegafusion-server-osx-64.zip
       - name: Upload artifacts
-        uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce # pin@v3.1.2
+        uses: actions/upload-artifact@v3
         with:
           name: vegafusion-server
           path: |
@@ -560,10 +553,10 @@ jobs:
     runs-on: macos-14
     steps:
       - name: Check out repository code
-        uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # pin@v3.5.2
+        uses: actions/checkout@v4
       - uses: prefix-dev/setup-pixi@v0.8.1
         with:
-          pixi-version: v0.30.0
+          pixi-version: v0.34.0
       - name: Cache
         uses: actions/cache@v3
         with:
@@ -576,12 +569,12 @@ jobs:
         run: |
           pixi run build-rs-server --target aarch64-apple-darwin
       - name: zip executable
-        uses: vimtor/action-zip@26a249fb00d43ca98dad77a4b3838025fc226aa1 # pin@v1.1
+        uses: vimtor/action-zip@v1
         with:
           files: target/aarch64-apple-darwin/release/vegafusion-server
           dest: vegafusion-server-osx-arm64.zip
       - name: Upload artifacts
-        uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce # pin@v3.1.2
+        uses: actions/upload-artifact@v3
         with:
           name: vegafusion-server
           path: |
