@@ -604,7 +604,7 @@ class VegaFusionRuntime:
         """
         Evaluate supported transforms in an input Vega specification.
 
-        Produces a new specification with small pre-transformed datasets 
+        Produces a new specification with small pre-transformed datasets
         (under ``extract_threshold`` rows) included inline and larger inline
         datasets (``extract_threshold`` rows or more) extracted into arrow tables.
 
