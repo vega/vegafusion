@@ -14,5 +14,6 @@ transform_extract
 chart_state
 inline_datasets
 grpc
+embed
 vega-lite
 ```

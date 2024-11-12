@@ -3,7 +3,7 @@ Wasm library for interfacing with VegaFusion.
 
 For more information, see the VegaFusion repository at https://github.com/hex-inc/vegafusion
 
-## Usage
+## gRPC-WebUsage
 Example usage with the VegaFusion server running locally on port 50051, with grpc-enabled:
 
 ```
@@ -31,10 +31,14 @@ let config = {
 let chart_handle = await vegaFusionEmbed(
     element,
     spec,  // Replace with your Vega spec
-    send_message_grpc,
     config,
+    send_message_grpc,
 );
 ```
+
+## Embedded Runtime Usage
+
+To use an embedded VegaFusion Runtime compiled with Web Assembly, simply omit the `send_message_grpc` argument from the `vegaFusionEmbed` call. In this configuration, the chart is fully self-contained and does not require a VegaFusion server.
 
 ## webpack config
 

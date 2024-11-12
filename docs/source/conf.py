@@ -17,11 +17,30 @@ html_theme = "pydata_sphinx_theme"
 html_static_path = ['_static']
 html_logo = "_static/VegaFusionLogo-Color.svg"
 html_favicon = "_static/favicon.ico"
-
+html_theme_options = {
+    "icon_links": [
+        {
+            "name": "Twitter",
+            "url": "https://twitter.com/vegafusion_io",
+            "icon": "fa-brands fa-twitter",
+        },
+        {
+            "name": "GitHub",
+            "url": "https://github.com/vega/vegafusion",
+            "icon": "fa-brands fa-github",
+        },
+        {
+            "name": "PyPI",
+            "url": "https://pypi.org/project/vegafusion/",
+            "icon": "fa-custom fa-pypi",
+        }
+    ],
+}
 # Add custom CSS
 html_css_files = [
     'custom.css',
 ] 
+html_js_files = ["custom-icon.js"]
 
 _social_img = "https://vegafusion.io/_static/vegafusion_social.png"
 _description = "VegaFusion provides serverside scaling for Vega visualizations"
