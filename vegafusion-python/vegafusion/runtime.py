@@ -452,8 +452,6 @@ class VegaFusionRuntime:
         Extract the fully evaluated form of the requested datasets from a Vega
         specification.
 
-        Extracts datasets as pandas DataFrames.
-
         Args:
             spec: A Vega specification dict or JSON string.
             datasets: A list with elements that are either:
@@ -606,9 +604,9 @@ class VegaFusionRuntime:
         """
         Evaluate supported transforms in an input Vega specification.
 
-        Produces a new specification with small pre-transformed datasets (under 100
-        rows) included inline and larger inline datasets (20 rows or more) extracted
-        into pyarrow tables.
+        Produces a new specification with small pre-transformed datasets
+        (under ``extract_threshold`` rows) included inline and larger inline
+        datasets (``extract_threshold`` rows or more) extracted into arrow tables.
 
         Args:
             spec: A Vega specification dict or JSON string.
