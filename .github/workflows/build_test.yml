@@ -126,7 +126,7 @@ jobs:
       - name: Clear target/wheels
         run: rm -rf target/wheels
       - name: Build wheels (Linux)
-        uses: messense/maturin-action@v1.45
+        uses: messense/maturin-action@v1.45.0
         with:
           command: build
           manylinux: 2014
@@ -150,7 +150,7 @@ jobs:
       - name: Clear target/wheels
         run: rm -rf target/wheels
       - name: Build arm64 wheels
-        uses: messense/maturin-action@v1.45
+        uses: messense/maturin-action@v1.45.0
         with:
           command: build
           manylinux: 2_28
