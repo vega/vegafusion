@@ -32,3 +32,8 @@ Documentation = "https://vegafusion.io"
 
 [tool.maturin]
 module-name = "vegafusion._vegafusion"
+
+[project.optional-dependencies]
+# For backward compatibility with older versions that used this extra to
+# install vegafusion-python-embed
+embed = []
