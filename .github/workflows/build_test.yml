@@ -59,7 +59,7 @@ jobs:
         uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: vegafusion-rt-test-images
+          name: vegafusion-rt-test-images-${{ matrix.os }}
           path: |
             vegafusion-runtime/tests/output
 
@@ -622,13 +622,15 @@ jobs:
 
   # Bundle all python wheels into a single artifact for easier downloading
   bundle-vegafusion-python-wheels:
-    needs:
-      [
-        build-vegafusion-python-linux-64,
+    needs: [
+        # jobs that build but don't have test dependencies
         build-vegafusion-python-linux-arm64,
-        build-vegafusion-python-win-64,
         build-vegafusion-python-osx-64,
-        build-vegafusion-python-osx-arm64,
+
+        # jobs that test the wheels
+        test-vegafusion-python-linux-64,
+        test-vegafusion-python-osx-arm64,
+        test-vegafusion-python-win-64,
       ]
     runs-on: ubuntu-latest
     steps:
