@@ -317,7 +317,7 @@ jobs:
       - name: Download vegafusion-python wheel
         uses: actions/download-artifact@v4.1.8
         with:
-          name: python-wheels-osx-64
+          name: python-wheels-osx-arm64
           path: target/wheels/
       - name: install wheels
         working-directory: target/wheels/
