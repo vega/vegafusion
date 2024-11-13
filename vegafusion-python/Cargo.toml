@@ -2,7 +2,7 @@
 name = "vegafusion"
 license = "BSD-3-Clause"
 edition = "2021"
-version = "1.6.9"
+version = "2.0.0-a0"
 description = "VegaFusion Python interface"
 
 [lib]
@@ -50,16 +50,16 @@ workspace = true
 [dependencies.vegafusion-common]
 path = "../vegafusion-common"
 features = ["pyo3", "base64"]
-version = "1.6.9"
+version = "2.0.0-a0"
 
 [dependencies.vegafusion-core]
 path = "../vegafusion-core"
 features = ["py", "tonic_support"]
-version = "1.6.9"
+version = "2.0.0-a0"
 
 [dependencies.vegafusion-runtime]
 path = "../vegafusion-runtime"
-version = "1.6.9"
+version = "2.0.0-a0"
 
 [dependencies.tokio]
 workspace = true
