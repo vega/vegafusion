@@ -46,4 +46,5 @@ features/features
 Vega Coverage <vega_coverage/supported_transforms>
 About <about/background>
 Community <community/governance>
+Blog <posts/posts>
 ```

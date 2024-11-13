@@ -4,7 +4,7 @@ category: Release
 author: Jon Mease
 ---
 
-# Announcing VegaFusion 0.1
+# VegaFusion 0.1
 **Server-side acceleration for the Vega visualization grammar with Rust and WebAssembly**
 
 By: Jon Mease
