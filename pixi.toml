@@ -99,6 +99,7 @@ docs-build = { cmd = "sphinx-build -b html docs/source docs/build/html" }
 docs-clean = { cmd = "rm -rf docs/build" }
 docs-rebuild = { depends_on = ["docs-clean", "docs-build"] }
 docs-serve = { cmd = "python -m http.server --directory docs/build/html 8000" }
+docs-publish = { cmd = "./sync_docs.sh", depends_on = ["docs-rebuild"], cwd = "docs" }
 
 # Note: the `--no-verify` flag below for `vegafusion-core` is due to this cargo publish error:
 #

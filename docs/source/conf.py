@@ -36,6 +36,25 @@ html_theme_options = {
         }
     ],
 }
+html_sidebars = {
+    "posts/**": [
+        "ablog/postcard.html",
+        "ablog/recentposts.html",
+        "ablog/archives.html",
+        "ablog/categories.html",
+        "ablog/tagcloud.html",
+        "ablog/authors.html",
+    ],
+    "blog": [
+        "ablog/postcard.html",
+        "ablog/recentposts.html",
+        "ablog/archives.html",
+        "ablog/categories.html",
+        "ablog/tagcloud.html",
+        "ablog/authors.html",
+    ],
+}
+
 # Add custom CSS
 html_css_files = [
     'custom.css',
@@ -49,9 +68,21 @@ _title = "VegaFusion"
 # -- Blog configuration ------------------------------------------------------
 blog_baseurl = "https://vegafusion.io"  # Replace with your actual base URL
 blog_post_pattern = "posts/*/*"
-blog_path = "blog"
+blog_path = "posts"
 blog_title = "VegaFusion Blog"
-templates_path = ['_templates']
+templates_path = [
+    "_templates",
+]
+
+blog_authors = {
+    "Jon Mease": ("Jon Mease", "https://github.com/jonmmease"),
+}
+
+blog_default_author = "Jon Mease"
+blog_feed_archives = True
+blog_feed_fulltext = True
+blog_feed_subtitle = "VegaFusion Updates"
+
 
 # MyST settings
 myst_enable_extensions = [
@@ -61,4 +92,5 @@ myst_enable_extensions = [
     "tasklist",       # Task lists
     "attrs_inline",   # Inline attributes
 ]
+
 

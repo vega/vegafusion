@@ -66,4 +66,5 @@ features/features
 Vega Coverage <vega_coverage/optimized_transforms>
 About <about/background>
 Community <community/governance>
+Blog <posts/posts>
 ```
