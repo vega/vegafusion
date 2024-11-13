@@ -390,7 +390,7 @@ jobs:
       - name: zip executable
         uses: vimtor/action-zip@v1.2
         with:
-          files: target/release/vegafusion-server
+          files: target/release-opt/vegafusion-server
           dest: vegafusion-server-linux-64.zip
       - name: Upload artifacts
         uses: actions/upload-artifact@v4.4.3
@@ -466,7 +466,7 @@ jobs:
       - name: zip executable
         uses: vimtor/action-zip@v1.2
         with:
-          files: target/aarch64-unknown-linux-gnu/release/vegafusion-server
+          files: target/aarch64-unknown-linux-gnu/release-opt/vegafusion-server
           dest: vegafusion-server-linux-arm64.zip
       - name: Upload artifacts
         uses: actions/upload-artifact@v4.4.3
@@ -500,7 +500,7 @@ jobs:
       - name: zip executable
         uses: vimtor/action-zip@v1.2
         with:
-          files: target/release/vegafusion-server.exe
+          files: target/release-opt/vegafusion-server.exe
           dest: vegafusion-server-win-64.zip
       - name: Upload artifacts
         uses: actions/upload-artifact@v4.4.3
@@ -533,7 +533,7 @@ jobs:
       - name: zip executable
         uses: vimtor/action-zip@v1.2
         with:
-          files: target/release/vegafusion-server
+          files: target/release-opt/vegafusion-server
           dest: vegafusion-server-osx-64.zip
       - name: Upload artifacts
         uses: actions/upload-artifact@v4.4.3
@@ -566,7 +566,7 @@ jobs:
       - name: zip executable
         uses: vimtor/action-zip@v1.2
         with:
-          files: target/aarch64-apple-darwin/release/vegafusion-server
+          files: target/aarch64-apple-darwin/release-opts/vegafusion-server
           dest: vegafusion-server-osx-arm64.zip
       - name: Upload artifacts
         uses: actions/upload-artifact@v4.4.3
