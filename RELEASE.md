@@ -20,24 +20,10 @@ python automation/bump_version.py $VF_VERSION
 Open a pull request to merge this branch into `main`.  This will start the continuous integration jobs on GitHub Actions. These jobs will test VegaFusion and build packages for publication.
 
 ### Publish Python packages
-To publish the `vegafusion-python-embed` packages to PyPI, first download and unzip the `vegafusion-python-embed-wheels` artifacts from GitHub Actions. Then `cd` into the directory of `*.whl` and `*.tar.gz` files and upload the packages to PyPI using [twine](https://pypi.org/project/twine/).
+To publish the `vegafusion` packages to PyPI, first download and unzip the `vegafusion-python-wheels-all` artifacts from GitHub Actions. Then `cd` into the directory of `*.whl` and `*.tar.gz` files and upload the packages to PyPI using [twine](https://pypi.org/project/twine/).
 
 ```bash
-cd vegafusion-python-embed-wheels
-twine upload *
-```
-
-To publish the `vegafusion` packages, download and unzip the `vegafusion-wheel` artifacts. Then upload with twine.
-
-```bash
-cd vegafusion-packages
-twine upload *
-```
-
-To publish the `vegafusion-jupyter` packages, download and unzip the `vegafusion-jupyter-packages` artifacts. Then upload with twine.
-
-```bash
-cd vegafusion-jupyter-packages
+cd vegafusion-python-wheels-all
 twine upload *
 ```
 
@@ -45,29 +31,8 @@ twine upload *
 First, download and unzip the `vegafusion-wasm-packages` artifact. Then publish the `vegafusion-wasm-X.Y.Z.tgz` package to NPM.  If this is a release candidate, include the `--pre` flag to `npm publish`.
 
 ```bash
-unzip vegafusion-wasm-packages.zip
+cd vegafusion-wasm-package
 npm publish vegafusion-wasm-$VF_VERSION.tgz
-```
-
-Next, change the version of `vegafusion-wasm` in `javascript/vegafusion-embed/package.json` from `"../../vegafusion-wasm/pkg"` to `"~X.Y.Z"`
-
-Then update `package.lock`, and build package, then publish to NPM (include the `--pre` flag to `npm publish` if this is a release candidate)
-```bash
-cd javascript/vegafusion-embed/
-npm install
-npm run build 
-npm publish
-```
-
-Next, change the version of `vegafusion-wasm` and `vegafusion-embed` in `python/vegafusion-jupyter/package.json` from local paths to `"~X.Y.Z"`
-
-Then build and publish the packages (include the `--pre` flag if this is a release candidate)
-
-```bash
-cd python/vegafusion-jupyter/
-npm install
-npm run build:prod
-npm publish
 ```
 
 ### Publish Rust crates
@@ -76,3 +41,12 @@ The Rust crates should be published in the following order
 ```
 pixi run publish-rs
 ```
+
+### Create GitHub Release
+Create a [GitHub Release](https://github.com/vega/vegafusion/releases) with tag `vX.Y.Z` and title `Release X.Y.Z`. Attach:
+ 1. the wheels from the `vegafusion-python-wheels-all` artifact
+ 2. The server binary archives from the `vegafusion-server-all` artifact
+ 2. the `vegafusion-wasm-X.Y.Z.tgz` package from the `vegafusion-wasm-package` artifact
+
+### Publish documentation
+Publish the documentation to the `gh-pages` branch of the https://github.com/vegafusion/vegafusion.github.io repository by running `pixi run docs-publish`, then confirm the push by entering `y` at the prompt.
