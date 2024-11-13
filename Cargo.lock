@@ -4510,7 +4510,7 @@ dependencies = [
 
 [[package]]
 name = "vegafusion"
-version = "1.6.9"
+version = "2.0.0-a0"
 dependencies = [
  "arrow",
  "async-trait",
@@ -4535,7 +4535,7 @@ dependencies = [
 
 [[package]]
 name = "vegafusion-common"
-version = "1.6.9"
+version = "2.0.0-a0"
 dependencies = [
  "arrow",
  "base64 0.21.7",
@@ -4560,7 +4560,7 @@ dependencies = [
 
 [[package]]
 name = "vegafusion-core"
-version = "1.6.9"
+version = "2.0.0-a0"
 dependencies = [
  "async-trait",
  "bytes",
@@ -4593,7 +4593,7 @@ dependencies = [
 
 [[package]]
 name = "vegafusion-runtime"
-version = "1.6.9"
+version = "2.0.0-a0"
 dependencies = [
  "async-lock",
  "async-mutex",
@@ -4650,7 +4650,7 @@ dependencies = [
 
 [[package]]
 name = "vegafusion-server"
-version = "1.6.9"
+version = "2.0.0-a0"
 dependencies = [
  "assert_cmd",
  "clap 4.5.20",
@@ -4674,7 +4674,7 @@ dependencies = [
 
 [[package]]
 name = "vegafusion-wasm"
-version = "1.6.9"
+version = "2.0.0-a0"
 dependencies = [
  "async-trait",
  "chrono",

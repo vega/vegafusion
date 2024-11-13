@@ -6,18 +6,27 @@ harness = false
 name = "vegafusion-runtime"
 license = "BSD-3-Clause"
 edition = "2021"
-version = "1.6.9"
+version = "2.0.0-a0"
 description = "VegaFusion Runtime"
 
 [features]
-default = ["fs", "multi-thread", "rustls-tls", "s3", "http", "parquet", "proto", "tonic"]
+default = [
+  "fs",
+  "multi-thread",
+  "rustls-tls",
+  "s3",
+  "http",
+  "parquet",
+  "proto",
+  "tonic",
+]
 py = ["vegafusion-core/py"]
 proto = ["vegafusion-common/proto", "dep:datafusion-proto"]
 tonic = ["dep:tonic", "vegafusion-core/tonic_support", "proto"]
 protobuf-src = ["vegafusion-core/protobuf-src"]
 s3 = ["object_store/aws"]
 http = ["object_store/http"]
-http-wasm = [ "object-store-wasm/http"]
+http-wasm = ["object-store-wasm/http"]
 fs = ["tokio/fs"]
 parquet = ["datafusion-common/parquet", "datafusion/parquet"]
 multi-thread = ["tokio/rt-multi-thread"]
@@ -92,12 +101,12 @@ workspace = true
 [dependencies.vegafusion-common]
 path = "../vegafusion-common"
 features = ["json", "sqlparser", "prettyprint", "object_store", "url"]
-version = "1.6.9"
+version = "2.0.0-a0"
 
 [dependencies.vegafusion-core]
 path = "../vegafusion-core"
 features = ["sqlparser"]
-version = "1.6.9"
+version = "2.0.0-a0"
 
 [dependencies.serde]
 version = "1.0.137"

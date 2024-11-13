@@ -22,7 +22,6 @@ def bump_version(version):
         "vegafusion-python",
         "vegafusion-server",
         "vegafusion-wasm",
-        "vegafusion-jni",
     ]
 
     for package in cargo_packages:
@@ -49,10 +48,7 @@ def bump_version(version):
         print(f"Updated version in {cargo_toml_path}")
 
     # Handle package.json files
-    package_json_dirs = [
-        root / "vegafusion-wasm",
-        root / "javascript" / "vegafusion-embed"
-    ]
+    package_json_dirs = [root / "vegafusion-wasm"]
     for package_json_dir in package_json_dirs:
         for fname in ["package.json", "package-lock.json"]:
             package_json_path = package_json_dir / fname
@@ -73,12 +69,6 @@ def bump_version(version):
             pyproject_toml["project"]["version"] = version
             pyproject_toml_path.write_text(toml.dumps(pyproject_toml))
             print(f"Updated version in {pyproject_toml_path}")
-
-    # Handle java/version.txt
-    version_txt_path = root / "java" / "version.txt"
-    with open(version_txt_path, "wt") as f:
-        f.write(version)
-    print(f"Updated version in {version_txt_path}")
 
     # Run taplo fmt *.toml
     print("Formatting TOML files...")
