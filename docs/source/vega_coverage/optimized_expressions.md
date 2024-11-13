@@ -1,15 +1,15 @@
-# Supported Expressions
+# Optimized Expressions
 
-VegaFusion supports a subset of [Vega's expression language](https://vega.github.io/vega/docs/expressions/). Below is a detailed breakdown of supported expression features.
+VegaFusion supports optimizing a subset of [Vega's expression language](https://vega.github.io/vega/docs/expressions/). Below is a detailed breakdown of expression features that are eligible for optimization.
 
 :::{note}
 When a Vega spec includes unsupported expressions, these expressions will be included in the client Vega spec for evaluation by the standard Vega library in the browser. See [How it works](../about/how_it_works.md) for more details.
 :::
 
 > **Key**:
-> - ✅: Full support for the feature and all its options
-> - 🟡: Partial support with limitations
-> - ❌: Feature is not currently supported
+> - ✅: Full optimization support for the feature and all its options
+> - 🟡: Partial optimization support with limitations
+> - ❌: Feature is not currently eligible for optimization
 
 ## Core Language Features
 
