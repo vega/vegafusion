@@ -1,6 +1,6 @@
-# Supported Transforms
+# Optimized Transforms
 
-VegaFusion implements a subset of [Vega's transforms](https://vega.github.io/vega/docs/transforms/). Below is a detailed breakdown of transform support status.
+VegaFusion supports optimizing a subset of [Vega's transforms](https://vega.github.io/vega/docs/transforms/). Below is a detailed breakdown of transform support status.
 
 :::{note}
 
@@ -9,9 +9,9 @@ When a Vega spec includes unsupported transforms, these transforms will be inclu
 :::
 
 > **Key**:
-> - ✅: Full support for the transform and all its options
-> - 🟡: Partial support with limitations
-> - ❌: Transform is not currently supported
+> - ✅: Full optimization support for the transform and all its options
+> - 🟡: Partial optimization support for the transform with limitations
+> - ❌: Transform is not currently eligible for optimization
 
 ## Basic Transforms
 
@@ -55,7 +55,7 @@ When a Vega spec includes unsupported transforms, these transforms will be inclu
 *   - [formula](https://vega.github.io/vega/docs/transforms/formula/)
     - ✅
     - :::{dropdown} More Info
-      See [supported expressions](./supported_expressions.md) for details on supported
+      See [optimized expressions](./optimized_expressions.md) for details on supported
       expression features that may be used in the `expr` field.
       :::
 *   - [window](https://vega.github.io/vega/docs/transforms/window/)
@@ -98,7 +98,7 @@ When a Vega spec includes unsupported transforms, these transforms will be inclu
 *   - [filter](https://vega.github.io/vega/docs/transforms/filter/)
     - ✅
     - :::{dropdown} More Info
-      See [supported expressions](./supported_expressions.md) for details on supported
+      See [optimized expressions](./optimized_expressions.md) for details on supported
       expression features that may be used in the `expr` field.
       :::
 *   - [flatten](https://vega.github.io/vega/docs/transforms/flatten/)
@@ -298,5 +298,5 @@ When a Vega spec includes unsupported transforms, these transforms will be inclu
 :caption: Vega Coverage
 
 self
-supported_expressions
+optimized_expressions
 :::
