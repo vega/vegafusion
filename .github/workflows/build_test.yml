@@ -57,7 +57,7 @@ jobs:
           pixi run test-rs --release
       - name: Upload test artifacts
         uses: actions/upload-artifact@v4
-        if: always()
+        if: failure()
         with:
           name: vegafusion-rt-test-images-${{ matrix.os }}
           path: |
@@ -298,7 +298,7 @@ jobs:
         run: pytest
       - name: Upload test artifacts
         uses: actions/upload-artifact@v4.4.3
-        if: always()
+        if: failure()
         with:
           name: vegafusion-python-test-failures
           path: |
