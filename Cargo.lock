@@ -1564,12 +1564,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "deterministic-hash"
-version = "1.0.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "51a9f34e639edf43f709706fc3016ccc7ce5a819d339fd23665e4385af8e93f0"
-
-[[package]]
 name = "difflib"
 version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4535,7 +4529,6 @@ version = "2.0.0-a0"
 dependencies = [
  "arrow",
  "async-trait",
- "deterministic-hash",
  "env_logger",
  "lazy_static",
  "log",
@@ -4558,6 +4551,7 @@ dependencies = [
 name = "vegafusion-common"
 version = "2.0.0-a0"
 dependencies = [
+ "ahash",
  "arrow",
  "base64 0.21.7",
  "chrono",
@@ -4567,7 +4561,6 @@ dependencies = [
  "datafusion-functions-nested",
  "datafusion-proto",
  "datafusion-proto-common",
- "deterministic-hash",
  "jni",
  "object_store",
  "prost",
@@ -4583,12 +4576,12 @@ dependencies = [
 name = "vegafusion-core"
 version = "2.0.0-a0"
 dependencies = [
+ "ahash",
  "async-trait",
  "bytes",
  "chrono",
  "chrono-tz 0.9.0",
  "datafusion-common",
- "deterministic-hash",
  "itertools 0.10.5",
  "json-patch",
  "lazy_static",
@@ -4636,7 +4629,6 @@ dependencies = [
  "datafusion-optimizer",
  "datafusion-physical-expr",
  "datafusion-proto",
- "deterministic-hash",
  "env_logger",
  "float-cmp",
  "futures",
