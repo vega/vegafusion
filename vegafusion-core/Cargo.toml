@@ -25,7 +25,7 @@ log = "0.4.22"
 [dependencies.lazy_static]
 workspace = true
 
-[dependencies.deterministic-hash]
+[dependencies.ahash]
 workspace = true
 
 [dependencies.prost]

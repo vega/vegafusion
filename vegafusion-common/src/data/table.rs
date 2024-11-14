@@ -1,5 +1,6 @@
 use datafusion_common::ScalarValue;
 
+use ahash::RandomState;
 use arrow::{
     array::{ArrayData, ArrayRef, StructArray, UInt32Array},
     compute::concat_batches,
@@ -7,6 +8,7 @@ use arrow::{
     ipc::{reader::StreamReader, writer::StreamWriter},
     record_batch::RecordBatch,
 };
+use std::hash::BuildHasher;
 
 use crate::{
     data::{ORDER_COL, ORDER_COL_DTYPE},
@@ -19,7 +21,6 @@ use arrow::array::{
 };
 #[cfg(feature = "prettyprint")]
 use arrow::util::pretty::pretty_format_batches;
-use std::hash::DefaultHasher;
 use std::{
     hash::{Hash, Hasher},
     io::Cursor,
@@ -434,7 +435,7 @@ impl VegaFusionTable {
     }
 
     pub fn get_hash(&self) -> u64 {
-        let mut hasher = deterministic_hash::DeterministicHasher::new(DefaultHasher::new());
+        let mut hasher = RandomState::with_seed(123).build_hasher();
         self.hash(&mut hasher);
         hasher.finish()
     }
