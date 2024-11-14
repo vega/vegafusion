@@ -1,6 +1,4 @@
 use crate::error::Result;
-use std::collections::hash_map::DefaultHasher;
-use std::hash::{Hash, Hasher};
 use vegafusion_common::data::table::VegaFusionTable;
 use vegafusion_common::datafusion_expr::LogicalPlan;
 
@@ -14,11 +12,9 @@ impl VegaFusionDataset {
     pub fn fingerprint(&self) -> String {
         match self {
             VegaFusionDataset::Table { hash, .. } => hash.to_string(),
-            VegaFusionDataset::Plan { plan } => {
-                let mut hasher = deterministic_hash::DeterministicHasher::new(DefaultHasher::new());
-                plan.hash(&mut hasher);
-                hasher.finish().to_string()
-            }
+            VegaFusionDataset::Plan { plan } => ahash::RandomState::with_seed(123)
+                .hash_one(plan)
+                .to_string(),
         }
     }
 
@@ -29,9 +25,7 @@ impl VegaFusionDataset {
 
     pub fn from_table_ipc_bytes(ipc_bytes: &[u8]) -> Result<Self> {
         // Hash ipc bytes
-        let mut hasher = deterministic_hash::DeterministicHasher::new(DefaultHasher::new());
-        ipc_bytes.hash(&mut hasher);
-        let hash = hasher.finish();
+        let hash = ahash::RandomState::with_seed(123).hash_one(&ipc_bytes);
         let table = VegaFusionTable::from_ipc_bytes(ipc_bytes)?;
         Ok(Self::Table { table, hash })
     }

@@ -34,9 +34,6 @@ workspace = true
 workspace = true
 features = ["tls"]
 
-[dependencies.deterministic-hash]
-version = "1.0.1"
-
 [dependencies.serde]
 version = "1.0.137"
 features = ["derive"]

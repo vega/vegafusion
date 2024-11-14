@@ -14,9 +14,6 @@ proto = ["datafusion-proto", "datafusion-proto-common", "prost"]
 [dependencies]
 thiserror = "^1.0.29"
 
-[dependencies.deterministic-hash]
-workspace = true
-
 [dependencies.chrono]
 workspace = true
 optional = true
@@ -24,6 +21,9 @@ optional = true
 [dependencies.sqlparser]
 workspace = true
 optional = true
+
+[dependencies.ahash]
+workspace = true
 
 [dependencies.serde_json]
 workspace = true

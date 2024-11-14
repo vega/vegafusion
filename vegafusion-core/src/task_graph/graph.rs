@@ -14,9 +14,8 @@ use crate::task_graph::task_value::TaskValue;
 use crate::proto::gen::tasks::task::TaskKind;
 use crate::proto::gen::tasks::task_value::Data;
 use crate::proto::gen::tasks::TaskValue as ProtoTaskValue;
-use std::collections::hash_map::DefaultHasher;
 use std::convert::TryFrom;
-use std::hash::{Hash, Hasher};
+use std::hash::{BuildHasher, Hash, Hasher};
 
 struct PetgraphEdge {
     output_var: Option<Variable>,
@@ -208,8 +207,7 @@ impl TaskGraph {
         let mut id_fingerprints: Vec<u64> = Vec::with_capacity(self.nodes.len());
         for (i, node) in self.nodes.iter().enumerate() {
             let task = node.task();
-            let mut hasher = deterministic_hash::DeterministicHasher::new(DefaultHasher::new());
-
+            let mut hasher = ahash::RandomState::with_seed(123).build_hasher();
             if let TaskKind::Value(value) = task.task_kind() {
                 // Only hash the distinction between Scalar and Table, not the value itself.
                 // The state fingerprint takes the value into account.
@@ -249,7 +247,7 @@ impl TaskGraph {
         let mut state_fingerprints: Vec<u64> = Vec::with_capacity(self.nodes.len());
         for (i, node) in self.nodes.iter().enumerate() {
             let task = node.task();
-            let mut hasher = deterministic_hash::DeterministicHasher::new(DefaultHasher::new());
+            let mut hasher = ahash::RandomState::with_seed(123).build_hasher();
 
             if matches!(task.task_kind(), TaskKind::Value(_)) {
                 // Hash the task with inline TaskValue
