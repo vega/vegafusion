@@ -29,7 +29,7 @@ opt-level = "z"
 codegen-units = 1
 
 [workspace.dependencies.arrow]
-version = "53.1.0"
+version = "53.2.0"
 default-features = false
 
 [workspace.dependencies.sqlparser]
@@ -92,54 +92,43 @@ version = "1.0.91"
 default-features = false
 
 [workspace.dependencies.datafusion]
-git = "https://github.com/apache/datafusion.git"
-rev = "b30d12a73fb9867180c2fdf8ddc818b45f957bac"
+version = "43.0.0"
 default-features = false
 features = [ "nested_expressions",]
 
 [workspace.dependencies.datafusion-common]
-git = "https://github.com/apache/datafusion.git"
-rev = "b30d12a73fb9867180c2fdf8ddc818b45f957bac"
+version = "43.0.0"
 default-features = false
 
 [workspace.dependencies.datafusion-expr]
-git = "https://github.com/apache/datafusion.git"
-rev = "b30d12a73fb9867180c2fdf8ddc818b45f957bac"
+version = "43.0.0"
 
 [workspace.dependencies.datafusion-proto]
-git = "https://github.com/apache/datafusion.git"
-rev = "b30d12a73fb9867180c2fdf8ddc818b45f957bac"
+version = "43.0.0"
 default-features = false
 features = [ "parquet",]
 
 [workspace.dependencies.datafusion-proto-common]
-git = "https://github.com/apache/datafusion.git"
-rev = "b30d12a73fb9867180c2fdf8ddc818b45f957bac"
+version = "43.0.0"
 default-features = false
 
 [workspace.dependencies.datafusion-physical-expr]
-git = "https://github.com/apache/datafusion.git"
-rev = "b30d12a73fb9867180c2fdf8ddc818b45f957bac"
+version = "43.0.0"
 default-features = false
 
 [workspace.dependencies.datafusion-optimizer]
-git = "https://github.com/apache/datafusion.git"
-rev = "b30d12a73fb9867180c2fdf8ddc818b45f957bac"
+version = "43.0.0"
 default-features = false
 
 [workspace.dependencies.datafusion-functions]
-git = "https://github.com/apache/datafusion.git"
-rev = "b30d12a73fb9867180c2fdf8ddc818b45f957bac"
+version = "43.0.0"
 default-features = false
 
 [workspace.dependencies.datafusion-functions-nested]
-git = "https://github.com/apache/datafusion.git"
-rev = "b30d12a73fb9867180c2fdf8ddc818b45f957bac"
+version = "43.0.0"
 
 [workspace.dependencies.datafusion-functions-aggregate]
-git = "https://github.com/apache/datafusion.git"
-rev = "b30d12a73fb9867180c2fdf8ddc818b45f957bac"
+version = "43.0.0"
 
 [workspace.dependencies.datafusion-functions-window]
-git = "https://github.com/apache/datafusion.git"
-rev = "b30d12a73fb9867180c2fdf8ddc818b45f957bac"
+version = "43.0.0"
