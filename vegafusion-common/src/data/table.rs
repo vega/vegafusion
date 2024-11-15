@@ -435,8 +435,6 @@ impl VegaFusionTable {
     }
 
     pub fn get_hash(&self) -> u64 {
-        
-        
         RandomState::with_seed(123).hash_one(self)
     }
 }
