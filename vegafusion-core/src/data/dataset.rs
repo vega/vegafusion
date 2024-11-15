@@ -25,7 +25,7 @@ impl VegaFusionDataset {
 
     pub fn from_table_ipc_bytes(ipc_bytes: &[u8]) -> Result<Self> {
         // Hash ipc bytes
-        let hash = ahash::RandomState::with_seed(123).hash_one(&ipc_bytes);
+        let hash = ahash::RandomState::with_seed(123).hash_one(ipc_bytes);
         let table = VegaFusionTable::from_ipc_bytes(ipc_bytes)?;
         Ok(Self::Table { table, hash })
     }

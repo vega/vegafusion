@@ -194,7 +194,7 @@ pub fn calculate_bin_params(
         }
     }
 
-    let maxbins = compile(&tx.maxbins.as_ref().unwrap(), config, Some(schema))?
+    let maxbins = compile(tx.maxbins.as_ref().unwrap(), config, Some(schema))?
         .eval_to_scalar()?
         .to_f64()?;
 

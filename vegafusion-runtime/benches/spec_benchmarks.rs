@@ -60,13 +60,13 @@ async fn eval_spec_get_variable(full_spec: ChartSpec, var: &ScopedVariable) -> V
     let _request = QueryRequest {
         request: Some(Request::TaskGraphValues(TaskGraphValueRequest {
             task_graph: Some(task_graph.clone()),
-            indices: vec![node_index.clone()],
+            indices: vec![*node_index],
             inline_datasets: vec![],
         })),
     };
 
     runtime
-        .query_request(Arc::new(task_graph), &[node_index.clone()], &HashMap::new())
+        .query_request(Arc::new(task_graph), &[*node_index], &HashMap::new())
         .await
         .unwrap()
 }
@@ -109,7 +109,7 @@ async fn eval_spec_sequence(full_spec: ChartSpec, full_updates: Vec<ExportUpdate
     let mut query_indices = Vec::new();
     for var in comm_plan.server_to_client {
         let node_index = task_graph_mapping.get(&var).unwrap();
-        query_indices.push(node_index.clone());
+        query_indices.push(*node_index);
     }
     let _response = runtime
         .query_request(

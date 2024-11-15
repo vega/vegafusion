@@ -272,7 +272,7 @@ pub fn encode_inline_datasets(
                 VegaFusionDataset::Plan { plan } => InlineDataset {
                     dataset: Some(Dataset::Plan(InlineDatasetPlan {
                         name: name.clone(),
-                        plan: logical_plan_to_bytes(&plan)?.to_vec(),
+                        plan: logical_plan_to_bytes(plan)?.to_vec(),
                     })),
                 },
                 #[cfg(not(feature = "proto"))]
