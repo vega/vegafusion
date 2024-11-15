@@ -8,7 +8,6 @@ use arrow::{
     ipc::{reader::StreamReader, writer::StreamWriter},
     record_batch::RecordBatch,
 };
-use std::hash::BuildHasher;
 
 use crate::{
     data::{ORDER_COL, ORDER_COL_DTYPE},
