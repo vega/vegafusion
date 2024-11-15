@@ -308,7 +308,7 @@ class VegaFusionRuntime:
                                 f"{missing_col}"
                             )
                             raise ValueError(msg)
-                        df_nw = df_nw.select(columns)  # type: ignore[index]
+                        df_nw = df_nw.select(columns)
 
                     imported_inline_datasets[name] = Table(df_nw)  # type: ignore[arg-type]
                 except TypeError:
