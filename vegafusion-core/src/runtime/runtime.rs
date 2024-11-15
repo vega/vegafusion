@@ -332,7 +332,7 @@ pub trait VegaFusionRuntimeTrait: Send + Sync {
             .iter()
             .map(|var| {
                 if let Some(index) = task_graph_mapping.get(&(var.0.clone(), var.1.clone())) {
-                    Ok(index.clone())
+                    Ok(*index)
                 } else {
                     Err(VegaFusionError::pre_transform(format!(
                         "Requested variable {var:?}\n requires transforms or signal \

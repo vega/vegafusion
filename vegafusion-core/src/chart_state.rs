@@ -82,7 +82,7 @@ impl ChartState {
             plan.comm_plan
                 .server_to_client
                 .iter()
-                .map(|scoped_var| task_graph_mapping.get(scoped_var).unwrap().clone())
+                .map(|scoped_var| *task_graph_mapping.get(scoped_var).unwrap())
                 .collect(),
         );
 
@@ -91,7 +91,7 @@ impl ChartState {
             .comm_plan
             .server_to_client
             .iter()
-            .map(|var| task_graph_mapping.get(var).unwrap().clone())
+            .map(|var| *task_graph_mapping.get(var).unwrap())
             .collect();
 
         let response_task_values = runtime
@@ -144,11 +144,10 @@ impl ChartState {
                 ExportUpdateNamespace::Data => Variable::new_data(&export_update.name),
             };
             let scoped_var: ScopedVariable = (var, export_update.scope.clone());
-            let node_value_index = self
+            let node_value_index = *self
                 .task_graph_mapping
                 .get(&scoped_var)
-                .with_context(|| format!("No task graph node found for {scoped_var:?}"))?
-                .clone();
+                .with_context(|| format!("No task graph node found for {scoped_var:?}"))?;
 
             let value = match export_update.namespace {
                 ExportUpdateNamespace::Signal => {
