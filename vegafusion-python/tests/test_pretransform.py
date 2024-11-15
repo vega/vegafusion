@@ -10,6 +10,7 @@ import polars.testing as pl_testing
 import pyarrow as pa
 import pytest
 from pandas import NaT, Timestamp
+import duckdb
 
 import vegafusion as vf
 
@@ -1632,6 +1633,33 @@ def test_pre_transform_dataset_dataframe_interface_protocol():
     assert isinstance(result, pl.DataFrame)
     expected = pl.DataFrame({"menu_item": [0, 1, 2], "__count": [n, 2 * n, 3 * n]})
     assert_frame_equal(result, expected)
+
+
+def test_pre_transform_dataset_duckdb():
+    n = 4050
+    # Input a polars DataFrame (which follows the DataFrame Interface Protocol)
+    order_items = pl.DataFrame({"menu_item": [0] * n + [1] * (2 * n) + [2] * (3 * n)})  # noqa: F841
+    with duckdb.connect(":memory:") as con:
+        con.register("order_items", order_items)
+        rel = con.sql("SELECT * FROM order_items")
+
+        vega_spec = order_items_spec()
+        datasets, warnings = vf.runtime.pre_transform_datasets(
+            vega_spec,
+            ["data_0"],
+            inline_datasets={
+                "order_items": rel,
+            },
+        )
+        assert len(warnings) == 0
+        assert len(datasets) == 1
+
+        result = datasets[0]
+
+        # Result should be a pandas DataFrame
+        assert isinstance(result, pd.DataFrame)
+        expected = pd.DataFrame({"menu_item": [0, 1, 2], "__count": [n, 2 * n, 3 * n]})
+        pd.testing.assert_frame_equal(result, expected)
 
 
 def test_gh_268_hang():

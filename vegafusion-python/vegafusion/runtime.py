@@ -29,12 +29,16 @@ if TYPE_CHECKING:
 UnaryUnaryMultiCallable = Any
 
 
-def _get_common_namespace(inline_datasets: dict[str, Any] | None) -> ModuleType | None:
+def _get_common_full_namespace(
+    inline_datasets: dict[str, Any] | None,
+) -> ModuleType | None:
     namespaces: set[ModuleType] = set()
     try:
         if inline_datasets is not None:
             for df in inline_datasets.values():
-                namespaces.add(nw.get_native_namespace(nw.from_native(df)))
+                nw_df = nw.from_native(df)
+                if nw.get_level(nw_df) == "full":
+                    namespaces.add(nw.get_native_namespace(nw_df))
 
         if len(namespaces) == 1:
             return next(iter(namespaces))
@@ -295,8 +299,16 @@ class VegaFusionRuntime:
 
                     # Project down columns if possible
                     if columns is not None:
-                        # TODO: Nice error message when column is not found
-                        df_nw = df_nw[columns]  # type: ignore[index]
+                        missing_col = [
+                            col for col in columns if col not in df_nw.columns
+                        ]
+                        if missing_col:
+                            msg = (
+                                "Columns found in chart spec but not in DataFrame: "
+                                f"{missing_col}"
+                            )
+                            raise ValueError(msg)
+                        df_nw = df_nw.select(columns)
 
                     imported_inline_datasets[name] = Table(df_nw)  # type: ignore[arg-type]
                 except TypeError:
@@ -557,7 +569,7 @@ class VegaFusionRuntime:
                 datasets = values
             else:
                 raise ValueError(f"Unrecognized dataset_format: {dataset_format}")
-        elif (namespace := _get_common_namespace(inline_datasets)) is not None:
+        elif (namespace := _get_common_full_namespace(inline_datasets)) is not None:
             # Infer the type from the inline datasets
             datasets = normalize_timezones(
                 [nw.from_arrow(value, native_namespace=namespace) for value in values]
@@ -691,40 +703,6 @@ class VegaFusionRuntime:
 
         return new_spec, datasets, warnings
 
-    def patch_pre_transformed_spec(
-        self,
-        spec1: dict[str, Any] | str,
-        pre_transformed_spec1: dict[str, Any] | str,
-        spec2: dict[str, Any] | str,
-    ) -> dict[str, Any] | None:
-        """
-        Attempt to patch a Vega spec returned by the pre_transform_spec method.
-
-        This method tries to patch a Vega spec without rerunning the pre_transform_spec
-        logic. When possible, this can be significantly faster than rerunning the
-        pre_transform_spec method.
-
-        Args:
-            spec1: The input Vega spec to a prior call to pre_transform_spec.
-            pre_transformed_spec1: The prior result of passing spec1 to
-                pre_transform_spec.
-            spec2: A Vega spec that is assumed to be a small delta compared to spec1.
-
-        Returns:
-            If the delta between spec1 and spec2 is in the portions of spec1 that were
-            not modified by pre_transform_spec, then this delta can be applied cleanly
-            to pre_transform_spec1 and the result is returned. If the delta cannot be
-            applied cleanly, None is returned and spec2 should be passed through the
-            pre_transform_spec method.
-        """
-        if self.using_grpc:
-            raise ValueError("patch_pre_transformed_spec not yet supported over gRPC")
-        else:
-            pre_transformed_spec2 = self.runtime.patch_pre_transformed_spec(
-                spec1, pre_transformed_spec1, spec2
-            )
-            return cast(dict[str, Any], pre_transformed_spec2)
-
     @property
     def worker_threads(self) -> int | None:
         """
@@ -808,9 +786,19 @@ class VegaFusionRuntime:
             self.reset()
 
     def reset(self) -> None:
+        """
+        Restart the runtime
+        """
         if self._runtime is not None:
             self._runtime.clear_cache()
             self._runtime = None
+
+    def clear_cache(self) -> None:
+        """
+        Clear the VegaFusion runtime cache
+        """
+        if self._runtime is not None:
+            self._runtime.clear_cache()
 
     def __repr__(self) -> str:
         if self.using_grpc:

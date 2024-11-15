@@ -247,7 +247,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/pytest-cov-4.1.0-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/python-3.10.15-h4a871b0_2_cpython.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/python-dateutil-2.9.0-pyhd8ed1ab_0.conda
-      - conda: https://conda.anaconda.org/conda-forge/linux-64/python-duckdb-1.0.0-py310hea249c9_0.conda
+      - conda: https://conda.anaconda.org/conda-forge/linux-64/python-duckdb-1.1.3-py310hf71b8c6_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/python-fastjsonschema-2.20.0-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/python-json-logger-2.0.7-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/python-tzdata-2024.2-pyhd8ed1ab_0.conda
@@ -552,7 +552,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/pytest-cov-4.1.0-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-64/python-3.10.15-hd8744da_2_cpython.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/python-dateutil-2.9.0-pyhd8ed1ab_0.conda
-      - conda: https://conda.anaconda.org/conda-forge/osx-64/python-duckdb-1.0.0-py310he0a0c5d_0.conda
+      - conda: https://conda.anaconda.org/conda-forge/osx-64/python-duckdb-1.1.3-py310h6954a95_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/python-fastjsonschema-2.20.0-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/python-json-logger-2.0.7-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/python-tzdata-2024.2-pyhd8ed1ab_0.conda
@@ -870,7 +870,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/pytest-cov-4.1.0-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/python-3.10.15-hdce6c4c_2_cpython.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/python-dateutil-2.9.0-pyhd8ed1ab_0.conda
-      - conda: https://conda.anaconda.org/conda-forge/osx-arm64/python-duckdb-1.0.0-py310hcf9f62a_0.conda
+      - conda: https://conda.anaconda.org/conda-forge/osx-arm64/python-duckdb-1.1.3-py310h853098b_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/python-fastjsonschema-2.20.0-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/python-json-logger-2.0.7-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/python-tzdata-2024.2-pyhd8ed1ab_0.conda
@@ -1143,7 +1143,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/pytest-cov-4.1.0-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/win-64/python-3.10.15-hfaddaf0_2_cpython.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/python-dateutil-2.9.0-pyhd8ed1ab_0.conda
-      - conda: https://conda.anaconda.org/conda-forge/win-64/python-duckdb-1.0.0-py310h9e98ed7_0.conda
+      - conda: https://conda.anaconda.org/conda-forge/win-64/python-duckdb-1.1.3-py310h9e98ed7_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/python-fastjsonschema-2.20.0-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/python-json-logger-2.0.7-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/python-tzdata-2024.2-pyhd8ed1ab_0.conda
@@ -11922,12 +11922,51 @@ packages:
   timestamp: 1709299922152
 - kind: conda
   name: python-duckdb
-  version: 1.0.0
+  version: 1.1.3
+  build: py310h6954a95_0
+  subdir: osx-64
+  url: https://conda.anaconda.org/conda-forge/osx-64/python-duckdb-1.1.3-py310h6954a95_0.conda
+  sha256: 82fcd7656df4175101ee36fe3370bbf7cdac33b3d6375fa9178267edc03dafc3
+  md5: e3574a2a0b1e85c0fa25eac37555c884
+  depends:
+  - __osx >=10.13
+  - libcxx >=18
+  - python >=3.10,<3.11.0a0
+  - python_abi 3.10.* *_cp310
+  license: MIT
+  license_family: MIT
+  purls:
+  - pkg:pypi/duckdb?source=hash-mapping
+  size: 22035457
+  timestamp: 1730799829176
+- kind: conda
+  name: python-duckdb
+  version: 1.1.3
+  build: py310h853098b_0
+  subdir: osx-arm64
+  url: https://conda.anaconda.org/conda-forge/osx-arm64/python-duckdb-1.1.3-py310h853098b_0.conda
+  sha256: e0317a7dbfb44979d4ecbfc45454f60dc4a23e75c674fa821f216b500f8bd246
+  md5: 13252069330a0b39712f8cde0cc7a22f
+  depends:
+  - __osx >=11.0
+  - libcxx >=18
+  - python >=3.10,<3.11.0a0
+  - python >=3.10,<3.11.0a0 *_cpython
+  - python_abi 3.10.* *_cp310
+  license: MIT
+  license_family: MIT
+  purls:
+  - pkg:pypi/duckdb?source=hash-mapping
+  size: 20398771
+  timestamp: 1730799955032
+- kind: conda
+  name: python-duckdb
+  version: 1.1.3
   build: py310h9e98ed7_0
   subdir: win-64
-  url: https://conda.anaconda.org/conda-forge/win-64/python-duckdb-1.0.0-py310h9e98ed7_0.conda
-  sha256: 23c2abb0018fdd2ee8176b33ac8eac48b6094a219b971c5fdc702285785aa4cd
-  md5: cae7ec224c706014f6e1568b3cf1cc96
+  url: https://conda.anaconda.org/conda-forge/win-64/python-duckdb-1.1.3-py310h9e98ed7_0.conda
+  sha256: b4fe5816af8a982a7d59caa3ccbacae5f84c1eab084ce45242b86ce907338738
+  md5: e03cc4a182c117ec9330e1545792427c
   depends:
   - python >=3.10,<3.11.0a0
   - python_abi 3.10.* *_cp310
@@ -11938,67 +11977,28 @@ packages:
   license_family: MIT
   purls:
   - pkg:pypi/duckdb?source=hash-mapping
-  size: 15638825
-  timestamp: 1717687118745
+  size: 16945750
+  timestamp: 1730800695228
 - kind: conda
   name: python-duckdb
-  version: 1.0.0
-  build: py310hcf9f62a_0
-  subdir: osx-arm64
-  url: https://conda.anaconda.org/conda-forge/osx-arm64/python-duckdb-1.0.0-py310hcf9f62a_0.conda
-  sha256: 720fdd1e1a34bafc4e5b671c4ab722d2953d09563ca2a4520bb6fb450510fa34
-  md5: ff23b03d25d3614a05e91d94036b94b8
-  depends:
-  - __osx >=11.0
-  - libcxx >=16
-  - python >=3.10,<3.11.0a0
-  - python >=3.10,<3.11.0a0 *_cpython
-  - python_abi 3.10.* *_cp310
-  license: MIT
-  license_family: MIT
-  purls:
-  - pkg:pypi/duckdb?source=hash-mapping
-  size: 18599847
-  timestamp: 1717686407221
-- kind: conda
-  name: python-duckdb
-  version: 1.0.0
-  build: py310he0a0c5d_0
-  subdir: osx-64
-  url: https://conda.anaconda.org/conda-forge/osx-64/python-duckdb-1.0.0-py310he0a0c5d_0.conda
-  sha256: 3dd1abaa03cb511588c848b74ffdd817f576f259f5d42ad76c77358277c8ae5a
-  md5: 2c7fa91f1a5f57a72b1aec7e25f0a169
-  depends:
-  - __osx >=10.13
-  - libcxx >=16
-  - python >=3.10,<3.11.0a0
-  - python_abi 3.10.* *_cp310
-  license: MIT
-  license_family: MIT
-  purls:
-  - pkg:pypi/duckdb?source=hash-mapping
-  size: 20190347
-  timestamp: 1717686142652
-- kind: conda
-  name: python-duckdb
-  version: 1.0.0
-  build: py310hea249c9_0
+  version: 1.1.3
+  build: py310hf71b8c6_0
   subdir: linux-64
-  url: https://conda.anaconda.org/conda-forge/linux-64/python-duckdb-1.0.0-py310hea249c9_0.conda
-  sha256: c85731fcd95eba6459f74c675dc6ea6a4ec31ab09607d4bb4316c701690cec20
-  md5: 630bef971bd14f61afa83422425d7f95
+  url: https://conda.anaconda.org/conda-forge/linux-64/python-duckdb-1.1.3-py310hf71b8c6_0.conda
+  sha256: 0af8fabe998df691b317d7ac0455b30d6d64ce240e5bcedeb16b9ae8cf3a1533
+  md5: 1c07ae5896495839be2503ef31628c5f
   depends:
   - __glibc >=2.17,<3.0.a0
-  - libgcc-ng >=12
-  - libstdcxx-ng >=12
+  - libgcc >=13
+  - libstdcxx >=13
   - python >=3.10,<3.11.0a0
   - python_abi 3.10.* *_cp310
   license: MIT
   license_family: MIT
   purls:
   - pkg:pypi/duckdb?source=hash-mapping
-  size: 22769349
-  timestamp: 1717686625369
+  size: 24267398
+  timestamp: 1730800229394
 - kind: conda
   name: python-fastjsonschema
   version: 2.20.0
