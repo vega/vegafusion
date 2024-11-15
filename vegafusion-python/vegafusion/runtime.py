@@ -786,9 +786,19 @@ class VegaFusionRuntime:
             self.reset()
 
     def reset(self) -> None:
+        """
+        Restart the runtime
+        """
         if self._runtime is not None:
             self._runtime.clear_cache()
             self._runtime = None
+
+    def clear_cache(self) -> None:
+        """
+        Clear the VegaFusion runtime cache
+        """
+        if self._runtime is not None:
+            self._runtime.clear_cache()
 
     def __repr__(self) -> str:
         if self.using_grpc:
