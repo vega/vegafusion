@@ -29,12 +29,16 @@ if TYPE_CHECKING:
 UnaryUnaryMultiCallable = Any
 
 
-def _get_common_namespace(inline_datasets: dict[str, Any] | None) -> ModuleType | None:
+def _get_common_full_namespace(
+    inline_datasets: dict[str, Any] | None,
+) -> ModuleType | None:
     namespaces: set[ModuleType] = set()
     try:
         if inline_datasets is not None:
             for df in inline_datasets.values():
-                namespaces.add(nw.get_native_namespace(nw.from_native(df)))
+                nw_df = nw.from_native(df)
+                if nw.get_level(nw_df) == "full":
+                    namespaces.add(nw.get_native_namespace(nw_df))
 
         if len(namespaces) == 1:
             return next(iter(namespaces))
@@ -295,8 +299,16 @@ class VegaFusionRuntime:
 
                     # Project down columns if possible
                     if columns is not None:
-                        # TODO: Nice error message when column is not found
-                        df_nw = df_nw[columns]  # type: ignore[index]
+                        missing_col = [
+                            col for col in columns if col not in df_nw.columns
+                        ]
+                        if missing_col:
+                            msg = (
+                                "Columns found in chart spec but not in DataFrame: "
+                                f"{missing_col}"
+                            )
+                            raise ValueError(msg)
+                        df_nw = df_nw.select(columns)  # type: ignore[index]
 
                     imported_inline_datasets[name] = Table(df_nw)  # type: ignore[arg-type]
                 except TypeError:
@@ -557,7 +569,7 @@ class VegaFusionRuntime:
                 datasets = values
             else:
                 raise ValueError(f"Unrecognized dataset_format: {dataset_format}")
-        elif (namespace := _get_common_namespace(inline_datasets)) is not None:
+        elif (namespace := _get_common_full_namespace(inline_datasets)) is not None:
             # Infer the type from the inline datasets
             datasets = normalize_timezones(
                 [nw.from_arrow(value, native_namespace=namespace) for value in values]
