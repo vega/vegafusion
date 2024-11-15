@@ -8,7 +8,6 @@ use arrow::{
     ipc::{reader::StreamReader, writer::StreamWriter},
     record_batch::RecordBatch,
 };
-use std::hash::BuildHasher;
 
 use crate::{
     data::{ORDER_COL, ORDER_COL_DTYPE},
@@ -435,9 +434,7 @@ impl VegaFusionTable {
     }
 
     pub fn get_hash(&self) -> u64 {
-        let mut hasher = RandomState::with_seed(123).build_hasher();
-        self.hash(&mut hasher);
-        hasher.finish()
+        RandomState::with_seed(123).hash_one(self)
     }
 }
 

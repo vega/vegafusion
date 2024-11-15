@@ -201,7 +201,7 @@ pub fn parse_unary(
     let rhs = perform_parse(tokens, unary_bp, full_expr)?;
     let new_span = Span {
         start: start as i32,
-        end: rhs.span.clone().unwrap().end,
+        end: rhs.span.unwrap().end,
     };
     let expr = Expr::from(UnaryExpression::new(&op, rhs));
     Ok(Expression::new(expr, Some(new_span)))
@@ -229,7 +229,7 @@ pub fn parse_binary(
             // Update lhs
             let new_span = Span {
                 start: start as i32,
-                end: rhs.span.clone().unwrap().end,
+                end: rhs.span.unwrap().end,
             };
             let expr = Expr::from(BinaryExpression::new(lhs.clone(), &op, rhs));
             Ok(Expression::new(expr, Some(new_span)))
@@ -259,7 +259,7 @@ pub fn parse_logical(
             // Update lhs
             let new_span = Span {
                 start: start as i32,
-                end: rhs.span.clone().unwrap().end,
+                end: rhs.span.unwrap().end,
             };
             let expr = Expr::from(LogicalExpression::new(lhs.clone(), &op, rhs));
             Ok(Expression::new(expr, Some(new_span)))
@@ -375,7 +375,7 @@ pub fn parse_static_member(
             // Update span
             let new_span = Span {
                 start: start as i32,
-                end: property.span.clone().unwrap().end,
+                end: property.span.unwrap().end,
             };
 
             let expr = match MemberExpression::new_static(lhs.clone(), property) {
@@ -427,7 +427,7 @@ pub fn parse_ternary(
     // Update span
     let new_span = Span {
         start: start as i32,
-        end: alternate.span.clone().unwrap().end,
+        end: alternate.span.unwrap().end,
     };
 
     let expr = Expr::from(ConditionalExpression::new(
