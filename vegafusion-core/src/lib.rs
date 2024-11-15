@@ -5,7 +5,6 @@ extern crate core;
 pub mod chart_state;
 pub mod data;
 pub mod expression;
-pub mod patch;
 pub mod planning;
 pub mod proto;
 pub mod runtime;
