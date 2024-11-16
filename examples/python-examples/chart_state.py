@@ -16,7 +16,7 @@ def main():
 
     # Get the watch plan, which includes which signals and data variables that should be listened to
     # and relayed from the displayed vega chart back to the chart state.
-    watch_plan = chart_state.get_watch_plan()
+    watch_plan = chart_state.get_comm_plan()
     print("Watch Plan:\n" + json.dumps(watch_plan, indent=2), end="\n\n")
 
     # Report an update to the maxbins signal. Update will return the signal and dataset updates that should

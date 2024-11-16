@@ -1,6 +1,6 @@
 [project]
 name = "vegafusion"
-version = "2.0.0-a0"
+version = "2.0.0-rc1"
 description = "Core tools for using VegaFusion from Python"
 readme = "README.md"
 requires-python = ">=3.9"
@@ -30,10 +30,8 @@ Homepage = "https://vegafusion.io"
 Repository = "https://github.com/hex-inc/vegafusion"
 Documentation = "https://vegafusion.io"
 
+[project.optional-dependencies]
+embed = []
+
 [tool.maturin]
 module-name = "vegafusion._vegafusion"
-
-[project.optional-dependencies]
-# For backward compatibility with older versions that used this extra to
-# install vegafusion-python-embed
-embed = []

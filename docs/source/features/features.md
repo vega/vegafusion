@@ -15,5 +15,6 @@ chart_state
 inline_datasets
 grpc
 embed
+jupyter_widget
 vega-lite
 ```
