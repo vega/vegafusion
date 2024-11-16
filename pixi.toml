@@ -105,9 +105,6 @@ docs-publish = { cmd = "./sync_docs.sh", depends_on = ["docs-rebuild"], cwd = "d
 cmd = """
 cargo publish -p vegafusion-common &&
 cargo publish -p vegafusion-core &&
-cargo publish -p vegafusion-dataframe &&
-cargo publish -p vegafusion-datafusion-udfs &&
-cargo publish -p vegafusion-sql &&
 cargo publish -p vegafusion-runtime &&
 cargo publish -p vegafusion-server
 """
