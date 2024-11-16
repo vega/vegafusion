@@ -127,9 +127,9 @@ impl PyChartState {
     }
 
     /// Get ChartState's watch plan
-    pub fn get_watch_plan(&self, py: Python) -> PyResult<PyObject> {
-        let watch_plan = WatchPlan::from(self.state.get_comm_plan().clone());
-        Ok(pythonize(py, &watch_plan)?.into())
+    pub fn get_comm_plan(&self, py: Python) -> PyResult<PyObject> {
+        let comm_plan = WatchPlan::from(self.state.get_comm_plan().clone());
+        Ok(pythonize(py, &comm_plan)?.into())
     }
 
     /// Get list of transform warnings

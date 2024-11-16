@@ -31,6 +31,11 @@ class VegaFusionWidget(anywidget.AnyWidget):
     # Public traitlets
     spec = traitlets.Dict(allow_none=True)
     transformed_spec = traitlets.Dict(allow_none=True).tag(sync=True)
+    server_spec = traitlets.Dict(allow_none=True).tag(sync=False)
+    client_spec = traitlets.Dict(allow_none=True).tag(sync=False)
+    comm_plan = traitlets.Dict(allow_none=True).tag(sync=False)
+    warnings = traitlets.Dict(allow_none=True).tag(sync=False)
+
     inline_datasets = traitlets.Dict(default_value=None, allow_none=True)
     debounce_wait = traitlets.Float(default_value=10).tag(sync=True)
     max_wait = traitlets.Bool(default_value=True).tag(sync=True)
@@ -156,6 +161,10 @@ class VegaFusionWidget(anywidget.AnyWidget):
             # Clear state
             with self.hold_sync():
                 self.transformed_spec = None
+                self.server_spec = None
+                self.client_spec = None
+                self.comm_plan = None
+                self.warnings = None
                 self._chart_state = None
                 self._js_watch_plan = None
             return
@@ -220,10 +229,13 @@ class VegaFusionWidget(anywidget.AnyWidget):
                 )
 
                 # Get the watch plan and transformed spec
-                self._js_watch_plan = self._chart_state.get_watch_plan()[
+                self._js_watch_plan = self._chart_state.get_comm_plan()[
                     "client_to_server"
                 ]
                 self.transformed_spec = self._chart_state.get_transformed_spec()
+                self.server_spec = self._chart_state.get_server_spec()
+                self.client_spec = self._chart_state.get_client_spec()
+                self.comm_plan = self._chart_state.get_comm_plan()
                 self.warnings = self._chart_state.get_warnings()
 
 
