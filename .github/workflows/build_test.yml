@@ -567,7 +567,7 @@ jobs:
       - name: zip executable
         uses: vimtor/action-zip@v1.2
         with:
-          files: target/aarch64-apple-darwin/release-opts/vegafusion-server
+          files: target/aarch64-apple-darwin/release-opt/vegafusion-server
           dest: vegafusion-server-osx-arm64.zip
       - name: Upload artifacts
         uses: actions/upload-artifact@v4.4.3
