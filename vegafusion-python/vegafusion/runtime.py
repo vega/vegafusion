@@ -68,15 +68,15 @@ class VariableUpdate(TypedDict):
     value: Any
 
 
-class Watch(TypedDict):
+class Variable(TypedDict):
     name: str
     namespace: Literal["data", "signal"]
     scope: list[int]
 
 
-class WatchPlan(TypedDict):
-    client_to_server: list[Watch]
-    server_to_client: list[Watch]
+class CommPlan(TypedDict):
+    client_to_server: list[Variable]
+    server_to_client: list[Variable]
 
 
 class PreTransformWarning(TypedDict):
@@ -103,16 +103,29 @@ class ChartState:
         """
         return cast(list[VariableUpdate], self._chart_state.update(client_updates))
 
-    def get_watch_plan(self) -> WatchPlan:
+    def get_comm_plan(self) -> CommPlan:
         """
-        Get ChartState's watch plan.
+        Get ChartState's communication plan.
 
         Returns:
             WatchPlan specifying the signals and datasets that should be communicated
             between ChartState and client to preserve the input Vega spec's
             interactivity.
         """
-        return cast(WatchPlan, self._chart_state.get_watch_plan())
+        return cast(CommPlan, self._chart_state.get_comm_plan())
+
+    def get_watch_plan(self) -> CommPlan:
+        """
+        Get ChartState's communication plan.
+
+        Alias for get_comm_plan() for backwards compatibility.
+
+        Returns:
+            WatchPlan specifying the signals and datasets that should be communicated
+            between ChartState and client to preserve the input Vega spec's
+            interactivity.
+        """
+        return self.get_comm_plan()
 
     def get_transformed_spec(self) -> dict[str, Any]:
         """
