@@ -426,9 +426,6 @@ mod tests {
 
     #[tokio::test]
     async fn test_pre_transform_dataset_date_format() {
-        // Load spec
-        let spec_path = format!("{}/tests/specs/vegalite/histogram.vg.json", crate_dir());
-        let spec_str = fs::read_to_string(spec_path).unwrap();
         let spec: ChartSpec = serde_json::from_value(json!({
             "data": [
                 {
