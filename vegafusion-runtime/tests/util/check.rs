@@ -135,5 +135,5 @@ pub fn eval_vegafusion_transforms(
         .map(|v| v.as_scalar().cloned())
         .collect::<Result<Vec<ScalarValue>>>()
         .unwrap();
-    (result_data, result_signals)
+    (result_data.without_ordering().unwrap(), result_signals)
 }

@@ -103,7 +103,7 @@ impl TransformPipelineUtils for TransformPipeline {
             nulls_first: false,
         }])?;
 
-        let table = result_sql_df.collect_to_table().await?.without_ordering()?;
+        let table = result_sql_df.collect_to_table().await?;
 
         // Sort result signal value by signal name
         let (_, signals_values): (Vec<_>, Vec<_>) = result_outputs
