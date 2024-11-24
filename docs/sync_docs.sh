@@ -19,20 +19,11 @@ git pull
 # switch to gh-pages branch
 git checkout gh-pages
 
+remove all tracked files
+git ls-files -z | xargs -0 rm -f
 
-# When the v2 docs become the default, overwrite everything in the branch
-# -----------------------------------------------------------------------------
-# remove all tracked files
-# git ls-files -z | xargs -0 rm -f
-#
-# # sync files from html build
-# rsync -r ../html/ ./
-# -----------------------------------------------------------------------------
-
-# While the v1 docs are still the default, only sync the new docs under the v2/ folder
-# -----------------------------------------------------------------------------
-rsync -r ../html/ ./v2/
-# -----------------------------------------------------------------------------
+# sync files from html build
+rsync -r ../html/ ./
 
 # add commit, and push to github
 git add . --all
