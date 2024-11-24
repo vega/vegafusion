@@ -4525,7 +4525,7 @@ dependencies = [
 
 [[package]]
 name = "vegafusion"
-version = "2.0.0-rc1"
+version = "2.0.0"
 dependencies = [
  "arrow",
  "async-trait",
@@ -4549,7 +4549,7 @@ dependencies = [
 
 [[package]]
 name = "vegafusion-common"
-version = "2.0.0-rc1"
+version = "2.0.0"
 dependencies = [
  "ahash",
  "arrow",
@@ -4574,7 +4574,7 @@ dependencies = [
 
 [[package]]
 name = "vegafusion-core"
-version = "2.0.0-rc1"
+version = "2.0.0"
 dependencies = [
  "ahash",
  "async-trait",
@@ -4607,7 +4607,7 @@ dependencies = [
 
 [[package]]
 name = "vegafusion-runtime"
-version = "2.0.0-rc1"
+version = "2.0.0"
 dependencies = [
  "async-lock",
  "async-mutex",
@@ -4663,7 +4663,7 @@ dependencies = [
 
 [[package]]
 name = "vegafusion-server"
-version = "2.0.0-rc1"
+version = "2.0.0"
 dependencies = [
  "assert_cmd",
  "clap 4.5.20",
@@ -4687,7 +4687,7 @@ dependencies = [
 
 [[package]]
 name = "vegafusion-wasm"
-version = "2.0.0-rc1"
+version = "2.0.0"
 dependencies = [
  "async-trait",
  "chrono",

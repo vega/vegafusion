@@ -14,7 +14,7 @@ git switch -c release_$VF_VERSION
 Then update all the package version strings to `X.Y.Z` using the `automation/bump_version.py` script
 
 ```bash
-python automation/bump_version.py $VF_VERSION
+pixi run bump-version $VF_VERSION
 ```
 
 Open a pull request to merge this branch into `main`.  This will start the continuous integration jobs on GitHub Actions. These jobs will test VegaFusion and build packages for publication.
