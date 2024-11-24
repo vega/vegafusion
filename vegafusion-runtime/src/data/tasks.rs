@@ -216,7 +216,7 @@ async fn eval_sql_df(
         )
     };
 
-    let table_value = TaskValue::Table(transformed_df);
+    let table_value = TaskValue::Table(transformed_df.without_ordering()?);
 
     Ok((table_value, output_values))
 }
@@ -360,7 +360,7 @@ async fn process_datetimes(
                     if fmt.starts_with("'") && fmt.ends_with("'") {
                         (typ.to_lowercase(), Some(fmt[1..fmt.len() - 1].to_string()))
                     } else {
-                        (typ.to_lowercase(), None)
+                        (typ.to_lowercase(), Some(fmt.to_string()))
                     }
                 } else {
                     (datatype.to_lowercase(), None)
@@ -541,7 +541,7 @@ impl TaskCall for DataValuesTask {
             (values_df.collect_to_table().await?, Vec::new())
         };
 
-        let table_value = TaskValue::Table(transformed_table);
+        let table_value = TaskValue::Table(transformed_table.without_ordering()?);
 
         Ok((table_value, output_values))
     }
@@ -587,7 +587,7 @@ impl TaskCall for DataSourceTask {
             (source_table, Vec::new())
         };
 
-        let table_value = TaskValue::Table(transformed_table);
+        let table_value = TaskValue::Table(transformed_table.without_ordering()?);
         Ok((table_value, output_values))
     }
 }

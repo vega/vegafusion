@@ -423,4 +423,59 @@ mod tests {
             assert_eq!(dataset.pretty_format(None).unwrap(), expected);
         }
     }
+
+    #[tokio::test]
+    async fn test_pre_transform_dataset_date_format() {
+        // Load spec
+        let spec_path = format!("{}/tests/specs/vegalite/histogram.vg.json", crate_dir());
+        let spec_str = fs::read_to_string(spec_path).unwrap();
+        let spec: ChartSpec = serde_json::from_value(json!({
+            "data": [
+                {
+                    "name": "data_0",
+                    "format": {"parse": {"a": "date:%Y"}},
+                    "values": [
+                        {"a": "2020", "b": 2, "c": 3},
+                        {"a": "2022", "b": 22, "c": 33},
+                    ]
+                }
+            ]
+        }))
+        .unwrap();
+
+        // Initialize task graph runtime
+        let runtime = VegaFusionRuntime::new(None);
+
+        let (values, warnings) = runtime
+            .pre_transform_values(
+                &spec,
+                &[(Variable::new_data("data_0"), vec![])],
+                &Default::default(),
+                &PreTransformValuesOpts {
+                    row_limit: None,
+                    local_tz: "UTC".to_string(),
+                    default_input_tz: None,
+                },
+            )
+            .await
+            .unwrap();
+
+        // Check there are no warnings
+        assert!(warnings.is_empty());
+
+        // Check single returned dataset
+        assert_eq!(values.len(), 1);
+
+        let dataset = values[0].as_table().cloned().unwrap();
+        println!("{:?}", dataset);
+
+        let expected = "\
++----+----+------------+
+| b  | c  | a          |
++----+----+------------+
+| 2  | 3  | 2020-01-01 |
+| 22 | 33 | 2022-01-01 |
++----+----+------------+";
+        assert_eq!(dataset.pretty_format(None).unwrap(), expected);
+    }
 }
