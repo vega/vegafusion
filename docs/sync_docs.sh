@@ -10,7 +10,7 @@ if test -d vegafusion.github.io;
 then rm -rf vegafusion.github.io;
 fi
 
-git clone https://github.com/vegafusion/vegafusion.github.io.git;
+git clone git@github.com:vegafusion/vegafusion.github.io.git;
 
 # sync the website
 cd vegafusion.github.io
