@@ -30,14 +30,14 @@ vf.runtime.grpc_connect("http://127.0.0.1:50051")
 
 This will cause all VegaFusion runtime operations to be dispatched to the VegaFusion Server.
 
-See [grpc.py](https://github.com/vega/vegafusion/tree/v2/examples/python-examples/grpc.py) for a complete example.
+See [grpc.py](https://github.com/vega/vegafusion/tree/main/examples/python-examples/grpc.py) for a complete example.
 
 ## Rust
 The `GrpcVegaFusionRuntime` struct is an alternative to the `VegaFusionRuntime` struct that provides the same interface, but connects to a VegaFusion Server.
 
-See [grpc.rs](https://github.com/vega/vegafusion/tree/v2/examples/rust-examples/examples/grpc.rs) for a complete example.
+See [grpc.rs](https://github.com/vega/vegafusion/tree/main/examples/rust-examples/examples/grpc.rs) for a complete example.
 
 ## JavaScript
 The `vegafusion-wasm` package can connect to an instance of VegaFusion Server over [gRPC-Web](https://github.com/grpc/grpc-web). 
 
-See the [editor-demo](https://github.com/vega/vegafusion/tree/v2/examples/editor-demo/README.md) example for more information.
+See the [editor-demo](https://github.com/vega/vegafusion/tree/main/examples/editor-demo/README.md) example for more information.

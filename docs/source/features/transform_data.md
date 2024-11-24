@@ -8,9 +8,9 @@ VegaFusion can be used to evaluate datasets in a Vega spec and return them as ar
 .. automethod:: vegafusion.runtime.VegaFusionRuntime.pre_transform_datasets
 ```
 
-**Example**: See [pre_transform_data.py](https://github.com/vega/vegafusion/tree/v2/examples/python-examples/pre_transform_data.py) for a complete example.
+**Example**: See [pre_transform_data.py](https://github.com/vega/vegafusion/tree/main/examples/python-examples/pre_transform_data.py) for a complete example.
 
 ## Rust
 The Rust API provides a slightly more general `pre_transform_values` method that can extract dataset or signal values.
 
-See [pre_transform_data.rs](https://github.com/vega/vegafusion/tree/v2/examples/rust-examples/examples/pre_transform_data.rs) for a complete example of extracting dataset values as arrow tables.
+See [pre_transform_data.rs](https://github.com/vega/vegafusion/tree/main/examples/rust-examples/examples/pre_transform_data.rs) for a complete example of extracting dataset values as arrow tables.

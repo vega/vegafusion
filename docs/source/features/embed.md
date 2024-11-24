@@ -5,4 +5,4 @@ The [`vegafusion-wasm`](https://www.npmjs.com/package/vegafusion-wasm) NPM packa
 See the [vegafusion-wasm README](https://github.com/vega/vegafusion/blob/v2/vegafusion-wasm/README.md) for usage instructions.
 
 ## Demo
-See [editor demo](https://github.com/vega/vegafusion/tree/v2/examples/editor-demo) for a complete example.
+See [editor demo](https://github.com/vega/vegafusion/tree/main/examples/editor-demo) for a complete example.
