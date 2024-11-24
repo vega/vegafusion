@@ -150,7 +150,7 @@ pydata-sphinx-theme = ">=0.16.0,<0.17"
 # Dependencies are those required at runtime by the Python packages
 [dependencies]
 psutil = "5.9.5.*"
-altair = "5.4.*"
+altair = "5.5.*"
 ipywidgets = "8.1.0.*"
 vl-convert-python = "1.7.*"
 anywidget = ">=0.9.6,<0.10"
