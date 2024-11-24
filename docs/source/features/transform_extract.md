@@ -8,8 +8,8 @@ The `pre_transform_extract` method generates a transformed spec like the [`pre_t
 .. automethod:: vegafusion.runtime.VegaFusionRuntime.pre_transform_extract
 ```
 
-**Example**: See [pre_transform_extract.py](https://github.com/vega/vegafusion/tree/v2/examples/python-examples/pre_transform_extract.py) for a complete example.
+**Example**: See [pre_transform_extract.py](https://github.com/vega/vegafusion/tree/main/examples/python-examples/pre_transform_extract.py) for a complete example.
 
 ## Rust
 
-See [pre_transform_extract.rs](https://github.com/vega/vegafusion/tree/v2/examples/rust-examples/examples/pre_transform_extract.rs) for a complete example.
+See [pre_transform_extract.rs](https://github.com/vega/vegafusion/tree/main/examples/rust-examples/examples/pre_transform_extract.rs) for a complete example.

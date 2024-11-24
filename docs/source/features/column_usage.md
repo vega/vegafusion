@@ -8,10 +8,10 @@ When VegaFusion cannot precisely determine which columns are referenced from eac
 .. autofunction:: vegafusion.get_column_usage
 ```
 
-See [column_usage.py](https://github.com/vega/vegafusion/tree/v2/examples/python-examples/column_usage.py) for a complete example.
+See [column_usage.py](https://github.com/vega/vegafusion/tree/main/examples/python-examples/column_usage.py) for a complete example.
 
 ## Rust
-See [column_usage.rs](https://github.com/vega/vegafusion/tree/v2/examples/rust-examples/examples/column_usage.rs) for a complete example.
+See [column_usage.rs](https://github.com/vega/vegafusion/tree/main/examples/rust-examples/examples/column_usage.rs) for a complete example.
 
 ## JavaScript
-See the [Editor Demo](https://github.com/vega/vegafusion/tree/v2/examples/editor-demo/src/index.js) for example usage of the `getColumnUsage` function in the `vegafusion-wasm` package.
+See the [Editor Demo](https://github.com/vega/vegafusion/tree/main/examples/editor-demo/src/index.js) for example usage of the `getColumnUsage` function in the `vegafusion-wasm` package.

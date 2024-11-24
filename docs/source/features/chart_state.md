@@ -9,7 +9,7 @@ This is the foundation of Vega-Altair's [JupyterChart](https://altair-viz.github
 .. automethod:: vegafusion.runtime.VegaFusionRuntime.new_chart_state
 ```
 
-**Example**: See [chart_state.py](https://github.com/vega/vegafusion/tree/v2/examples/python-examples/chart_state.py) for a complete example.
+**Example**: See [chart_state.py](https://github.com/vega/vegafusion/tree/main/examples/python-examples/chart_state.py) for a complete example.
 
 ## Rust
-See [chart_state.rs](https://github.com/vega/vegafusion/tree/v2/examples/rust-examples/examples/chart_state.rs) for a complete example.
+See [chart_state.rs](https://github.com/vega/vegafusion/tree/main/examples/rust-examples/examples/chart_state.rs) for a complete example.

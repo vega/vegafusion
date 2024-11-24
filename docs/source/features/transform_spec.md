@@ -14,8 +14,8 @@ The pre-transform process will, by default, preserve the interactive behavior of
 .. automethod:: vegafusion.runtime.VegaFusionRuntime.pre_transform_spec
 ```
 
-**Example**: See [pre_transform_spec.py](https://github.com/vega/vegafusion/tree/v2/examples/python-examples/pre_transform_spec.py) for a complete example.
+**Example**: See [pre_transform_spec.py](https://github.com/vega/vegafusion/tree/main/examples/python-examples/pre_transform_spec.py) for a complete example.
 
 ## Rust
 
-See [pre_transform_spec.rs](https://github.com/vega/vegafusion/tree/v2/examples/rust-examples/examples/pre_transform_spec.rs) for a complete example.
+See [pre_transform_spec.rs](https://github.com/vega/vegafusion/tree/main/examples/rust-examples/examples/pre_transform_spec.rs) for a complete example.

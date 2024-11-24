@@ -31,9 +31,9 @@ In Python, `inline_datasets` should be a `dict` from dataset names (e.g. `movies
 
 In the case of types supported by Narwhals, VegaFusion will use [`get_column_usage`](./column_usage.md) to project down to the minimal collection of columns that are required, then rely on Narwhals' support for the Arrow PyCapsule API to convert these required columns to an `arro3` Arrow table for zero-copy transfer to Rust.
 
-See [inline_datasets.py](https://github.com/vega/vegafusion/tree/v2/examples/python-examples/inline_datasets.py) for a complete example with pandas.
+See [inline_datasets.py](https://github.com/vega/vegafusion/tree/main/examples/python-examples/inline_datasets.py) for a complete example with pandas.
 
 ## Rust
 In Rust, `inline_datasets` should be a `HashMap<String, VegaFusionDataset>` from dataset names (e.g. `movies` in the example above) to `VegaFusionDataset` instances. `VegaFusionDataset` is an enum that may be either a `VegaFusionTable` (which is a thin wrapper around Arrow RecordBatches), or a DataFusion [`LocalPlan`](https://docs.rs/datafusion/latest/datafusion/logical_expr/enum.LogicalPlan.html) (which represents an arbitrary DataFusion query).
 
-See [inline_datasets.rs](https://github.com/vega/vegafusion/tree/v2/examples/rust-examples/examples/inline_datasets.rs) for a complete example using a `VegaFusionTable`, and see [inline_datasets_plan.rs](https://github.com/vega/vegafusion/tree/v2/examples/rust-examples/examples/inline_datasets_plan.rs) for a complete example using a DataFusion ``LogicalPlan``.
+See [inline_datasets.rs](https://github.com/vega/vegafusion/tree/main/examples/rust-examples/examples/inline_datasets.rs) for a complete example using a `VegaFusionTable`, and see [inline_datasets_plan.rs](https://github.com/vega/vegafusion/tree/main/examples/rust-examples/examples/inline_datasets_plan.rs) for a complete example using a DataFusion ``LogicalPlan``.
