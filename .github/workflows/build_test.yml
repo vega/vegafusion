@@ -132,7 +132,7 @@ jobs:
           command: build
           manylinux: 2014
           rust-toolchain: stable
-          args: -m vegafusion-python/Cargo.toml --profile release-opt --features=protobuf-src --strip
+          args: -m vegafusion-python/Cargo.toml --profile release-opt --features=protobuf-src --strip --sdist
       - name: Upload artifacts
         uses: actions/upload-artifact@v4.4.3
         with:
