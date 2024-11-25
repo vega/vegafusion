@@ -95,7 +95,7 @@ build-rs-server = { cmd = "cargo build -p vegafusion-server --profile release-op
 start-minio = "python automation/start_minio.py"
 
 # Docs
-docs-build = { cmd = "sphinx-build -b html docs/source docs/build/html" }
+docs-build = { cmd = "sphinx-build -b html docs/source docs/build/html && cp docs/config/* docs/build/html" }
 docs-clean = { cmd = "rm -rf docs/build" }
 docs-rebuild = { depends_on = ["docs-clean", "docs-build"] }
 docs-serve = { cmd = "python -m http.server --directory docs/build/html 8000" }
