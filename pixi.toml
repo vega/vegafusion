@@ -28,7 +28,7 @@ dev-py = { cmd = [
 ] }
 
 # Build Python packages
-build-py = { cmd = "rm -rf target/wheels && maturin build -m vegafusion-python/Cargo.toml --profile release-opt --strip --sdist $0" }
+build-py = { cmd = "rm -rf target/wheels && maturin build -m vegafusion-python/Cargo.toml --profile release-opt --strip" }
 
 fmt-py = { cmd = "ruff format" }
 lint-fix-py = { cmd = "ruff format && ruff check --fix" }
