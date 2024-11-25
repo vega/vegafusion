@@ -113,7 +113,7 @@ cargo publish -p vegafusion-server
 [build-dependencies]
 python = "3.10.*"
 nodejs = "20.5.1.*"
-maturin = "1.2.3.*"
+maturin = "1.7.4.*"
 yarn = "3.6.1.*"
 jupyterlab = "4.0.5.*"
 nbval = "0.9.6.*"
