@@ -300,7 +300,7 @@ class VegaFusionRuntime:
                     imported_inline_datasets[name] = Table(inner_value)
                 else:
                     # Older pandas, convert through pyarrow
-                    imported_inline_datasets[name] = Table(pa.from_pandas(inner_value))
+                    imported_inline_datasets[name] = pa.Table.from_pandas(inner_value)
             elif isinstance(value, dict):
                 # Let narwhals import the dict using a default backend
                 df_nw = nw.from_dict(value, native_namespace=_get_default_namespace())

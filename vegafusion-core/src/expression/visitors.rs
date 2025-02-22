@@ -312,7 +312,7 @@ impl<'a> DatasetsColumnUsageVisitor<'a> {
     }
 }
 
-impl<'a> ExpressionVisitor for DatasetsColumnUsageVisitor<'a> {
+impl ExpressionVisitor for DatasetsColumnUsageVisitor<'_> {
     fn visit_member(&mut self, node: &MemberExpression) {
         if let (Some(datum_var), Some(object), Some(property)) =
             (&self.datum_var, &node.object, &node.property)

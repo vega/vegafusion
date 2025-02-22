@@ -5,6 +5,9 @@ edition = "2021"
 version = "2.0.1"
 description = "Core components required by multiple VegaFusion crates, with WASM compatibility"
 
+[lints.clippy]
+module_inception = "allow"
+
 [features]
 tonic_support = ["tonic", "tonic-build"]
 py = ["pyo3", "vegafusion-common/py"]

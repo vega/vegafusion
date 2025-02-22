@@ -92,7 +92,7 @@ struct Tokenizer<'a> {
     full_text: &'a str,
 }
 
-impl<'a> Tokenizer<'a> {
+impl Tokenizer<'_> {
     fn new(src: &str) -> Tokenizer {
         Tokenizer {
             current_index: 0,
