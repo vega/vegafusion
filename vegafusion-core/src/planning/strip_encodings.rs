@@ -14,7 +14,7 @@ pub struct StripEncodingsVisitor<'a> {
     pub config: &'a PlannerConfig,
 }
 
-impl<'a> MutChartVisitor for StripEncodingsVisitor<'a> {
+impl MutChartVisitor for StripEncodingsVisitor<'_> {
     fn visit_non_group_mark(&mut self, mark: &mut MarkSpec, _scope: &[u32]) -> Result<()> {
         let Some(encode) = &mut mark.encode else {
             return Ok(());

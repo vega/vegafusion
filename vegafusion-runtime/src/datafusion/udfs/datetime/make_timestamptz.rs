@@ -190,6 +190,7 @@ impl ScalarUDFImpl for MakeTimestamptzUDF {
     }
 }
 
+#[allow(clippy::too_many_arguments)]
 pub fn make_timestamptz(
     year: Expr,
     month: Expr,

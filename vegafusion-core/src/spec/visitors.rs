@@ -120,7 +120,7 @@ impl<'a> MakeTasksVisitor<'a> {
     }
 }
 
-impl<'a> ChartVisitor for MakeTasksVisitor<'a> {
+impl ChartVisitor for MakeTasksVisitor<'_> {
     fn visit_data(&mut self, data: &DataSpec, scope: &[u32]) -> Result<()> {
         let data_var = Variable::new_data(&data.name);
 
@@ -322,7 +322,7 @@ impl<'a> UpdateVarsChartVisitor<'a> {
 }
 
 /// Gather variables that can be updated by the spec (whether or not they are defined in the spec)
-impl<'a> ChartVisitor for UpdateVarsChartVisitor<'a> {
+impl ChartVisitor for UpdateVarsChartVisitor<'_> {
     fn visit_data(&mut self, data: &DataSpec, scope: &[u32]) -> Result<()> {
         if data.is_selection_store() && data.values.is_some() {
             // Selection store with inline values not considered an update so that
@@ -463,7 +463,7 @@ impl<'a> InputVarsChartVisitor<'a> {
     }
 }
 
-impl<'a> ChartVisitor for InputVarsChartVisitor<'a> {
+impl ChartVisitor for InputVarsChartVisitor<'_> {
     fn visit_chart(&mut self, chart: &ChartSpec) -> Result<()> {
         // Handle signals in title
         if let Some(title) = &chart.title {

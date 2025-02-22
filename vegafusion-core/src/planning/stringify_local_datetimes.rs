@@ -330,7 +330,7 @@ impl<'a> CollectLocalTimeDataFieldsVisitor<'a> {
     }
 }
 
-impl<'a> ChartVisitor for CollectLocalTimeDataFieldsVisitor<'a> {
+impl ChartVisitor for CollectLocalTimeDataFieldsVisitor<'_> {
     fn visit_data(&mut self, data: &DataSpec, scope: &[u32]) -> Result<()> {
         // Add local datetime columns produced by the dataset.
         // Note: This isn't quite complete, for derived datasets input_local_datetime_columns
@@ -374,7 +374,7 @@ impl<'a> StringifyLocalDatetimeFieldsVisitor<'a> {
     }
 }
 
-impl<'a> MutChartVisitor for StringifyLocalDatetimeFieldsVisitor<'a> {
+impl MutChartVisitor for StringifyLocalDatetimeFieldsVisitor<'_> {
     fn visit_data(&mut self, data: &mut DataSpec, scope: &[u32]) -> Result<()> {
         let data_var = (Variable::new_data(&data.name), Vec::from(scope));
 
@@ -442,7 +442,7 @@ impl<'a> FormatLocalDatetimeFieldsVisitor<'a> {
     }
 }
 
-impl<'a> MutChartVisitor for FormatLocalDatetimeFieldsVisitor<'a> {
+impl MutChartVisitor for FormatLocalDatetimeFieldsVisitor<'_> {
     fn visit_data(&mut self, data: &mut DataSpec, scope: &[u32]) -> Result<()> {
         let data_var = (Variable::new_data(&data.name), Vec::from(scope));
         let fields = get_local_datetime_fields(

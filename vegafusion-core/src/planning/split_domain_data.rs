@@ -56,7 +56,7 @@ impl<'a> SplitScaleDomainVisitor<'a> {
     }
 }
 
-impl<'a> MutChartVisitor for SplitScaleDomainVisitor<'a> {
+impl MutChartVisitor for SplitScaleDomainVisitor<'_> {
     fn visit_scale(&mut self, scale: &mut ScaleSpec, scope: &[u32]) -> Result<()> {
         if let Some(domain) = scale.domain.clone() {
             match domain {
@@ -73,7 +73,7 @@ impl<'a> MutChartVisitor for SplitScaleDomainVisitor<'a> {
     }
 }
 
-impl<'a> SplitScaleDomainVisitor<'a> {
+impl SplitScaleDomainVisitor<'_> {
     fn split_fields_reference_domain(
         &mut self,
         scale: &mut ScaleSpec,

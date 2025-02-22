@@ -786,7 +786,7 @@ impl<'a> InsertProjectionVisitor<'a> {
     }
 }
 
-impl<'a> MutChartVisitor for InsertProjectionVisitor<'a> {
+impl MutChartVisitor for InsertProjectionVisitor<'_> {
     fn visit_data(&mut self, data: &mut DataSpec, scope: &[u32]) -> Result<()> {
         let data_var = Variable::new_data(&data.name);
         let scoped_data_var = (data_var, Vec::from(scope));

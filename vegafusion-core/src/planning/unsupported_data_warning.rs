@@ -37,7 +37,7 @@ impl<'a> CollectUnsupportedDatasetsWarningsVisitor<'a> {
     }
 }
 
-impl<'a> ChartVisitor for CollectUnsupportedDatasetsWarningsVisitor<'a> {
+impl ChartVisitor for CollectUnsupportedDatasetsWarningsVisitor<'_> {
     fn visit_data(&mut self, data: &DataSpec, scope: &[u32]) -> Result<()> {
         let data_suported = data.supported(self.planner_config, self.task_scope, scope);
         if !matches!(data_suported, DependencyNodeSupported::Supported) {

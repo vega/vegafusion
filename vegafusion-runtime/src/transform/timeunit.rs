@@ -25,7 +25,7 @@ fn timeunit_date_trunc(
     field: &str,
     smallest_unit: TimeUnitUnit,
     schema: &DFSchema,
-    default_input_tz: &String,
+    default_input_tz: &str,
     tz: &str,
 ) -> Result<(Expr, Expr)> {
     // Convert field to timestamp in target timezone
@@ -71,7 +71,7 @@ fn timeunit_date_part_tz(
     field: &str,
     units_set: &HashSet<TimeUnitUnit>,
     schema: &DFSchema,
-    default_input_tz: &String,
+    default_input_tz: &str,
     tz: &str,
 ) -> Result<(Expr, Expr)> {
     let mut year_arg = lit(2012);
@@ -164,7 +164,7 @@ fn timeunit_date_part_tz(
 fn timeunit_weekday(
     field: &str,
     schema: &DFSchema,
-    default_input_tz: &String,
+    default_input_tz: &str,
     tz: &str,
 ) -> Result<(Expr, Expr)> {
     let field_col = to_timestamp_col(unescaped_col(field), schema, default_input_tz)?.try_cast_to(
@@ -199,7 +199,7 @@ fn timeunit_custom_udf(
     field: &str,
     units_set: &HashSet<TimeUnitUnit>,
     schema: &DFSchema,
-    default_input_tz: &String,
+    default_input_tz: &str,
     tz: &str,
 ) -> Result<(Expr, Expr)> {
     let units_mask = [

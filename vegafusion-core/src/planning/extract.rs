@@ -54,7 +54,7 @@ impl<'a> ExtractServerDependenciesVisitor<'a> {
     }
 }
 
-impl<'a> MutChartVisitor for ExtractServerDependenciesVisitor<'a> {
+impl MutChartVisitor for ExtractServerDependenciesVisitor<'_> {
     /// Extract data definitions, splitting partially supported transform pipelines
     fn visit_data(&mut self, data: &mut DataSpec, scope: &[u32]) -> Result<()> {
         let data_var: ScopedVariable = (Variable::new_data(&data.name), Vec::from(scope));

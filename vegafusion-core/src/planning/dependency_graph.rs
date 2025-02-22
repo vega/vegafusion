@@ -181,7 +181,7 @@ impl<'a> AddDependencyNodesVisitor<'a> {
     }
 }
 
-impl<'a> ChartVisitor for AddDependencyNodesVisitor<'a> {
+impl ChartVisitor for AddDependencyNodesVisitor<'_> {
     fn visit_data(&mut self, data: &DataSpec, scope: &[u32]) -> Result<()> {
         // Add scoped variable for dataset as node
         let scoped_var = (Variable::new_data(&data.name), Vec::from(scope));
@@ -301,7 +301,7 @@ impl<'a> AddDependencyEdgesVisitor<'a> {
     }
 }
 
-impl<'a> ChartVisitor for AddDependencyEdgesVisitor<'a> {
+impl ChartVisitor for AddDependencyEdgesVisitor<'_> {
     /// Add edges into a data node
     fn visit_data(&mut self, data: &DataSpec, scope: &[u32]) -> Result<()> {
         // Scoped var for this node

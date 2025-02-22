@@ -133,46 +133,53 @@ impl ChartState {
         runtime: &dyn VegaFusionRuntimeTrait,
         updates: Vec<ExportUpdateJSON>,
     ) -> Result<Vec<ExportUpdateJSON>> {
-        let mut task_graph = self.task_graph.lock().map_err(|err| {
-            VegaFusionError::internal(format!("Failed to acquire task graph lock: {:?}", err))
-        })?;
-        let server_to_client = self.server_to_client_value_indices.clone();
-        let mut indices: Vec<NodeValueIndex> = Vec::new();
-        for export_update in &updates {
-            let var = match export_update.namespace {
-                ExportUpdateNamespace::Signal => Variable::new_signal(&export_update.name),
-                ExportUpdateNamespace::Data => Variable::new_data(&export_update.name),
-            };
-            let scoped_var: ScopedVariable = (var, export_update.scope.clone());
-            let node_value_index = *self
-                .task_graph_mapping
-                .get(&scoped_var)
-                .with_context(|| format!("No task graph node found for {scoped_var:?}"))?;
+        // Scope the mutex guard to ensure it's dropped before the async call
+        let (indices, cloned_task_graph) = {
+            let mut task_graph = self.task_graph.lock().map_err(|err| {
+                VegaFusionError::internal(format!("Failed to acquire task graph lock: {:?}", err))
+            })?;
+            let server_to_client = self.server_to_client_value_indices.clone();
+            let mut indices: Vec<NodeValueIndex> = Vec::new();
 
-            let value = match export_update.namespace {
-                ExportUpdateNamespace::Signal => {
-                    TaskValue::Scalar(ScalarValue::from_json(&export_update.value)?)
-                }
-                ExportUpdateNamespace::Data => {
-                    TaskValue::Table(VegaFusionTable::from_json(&export_update.value)?)
-                }
-            };
+            for export_update in &updates {
+                let var = match export_update.namespace {
+                    ExportUpdateNamespace::Signal => Variable::new_signal(&export_update.name),
+                    ExportUpdateNamespace::Data => Variable::new_data(&export_update.name),
+                };
+                let scoped_var: ScopedVariable = (var, export_update.scope.clone());
+                let node_value_index = *self
+                    .task_graph_mapping
+                    .get(&scoped_var)
+                    .with_context(|| format!("No task graph node found for {scoped_var:?}"))?;
 
-            indices.extend(task_graph.update_value(node_value_index.node_index as usize, value)?);
-        }
+                let value = match export_update.namespace {
+                    ExportUpdateNamespace::Signal => {
+                        TaskValue::Scalar(ScalarValue::from_json(&export_update.value)?)
+                    }
+                    ExportUpdateNamespace::Data => {
+                        TaskValue::Table(VegaFusionTable::from_json(&export_update.value)?)
+                    }
+                };
 
-        // Filter to update nodes in the comm plan
-        let indices: Vec<_> = indices
-            .iter()
-            .filter(|&node| server_to_client.contains(node))
-            .cloned()
-            .collect();
+                indices
+                    .extend(task_graph.update_value(node_value_index.node_index as usize, value)?);
+            }
 
-        let cloned_task_graph = task_graph.clone();
+            // Filter to update nodes in the comm plan
+            let indices: Vec<_> = indices
+                .iter()
+                .filter(|&node| server_to_client.contains(node))
+                .cloned()
+                .collect();
 
-        // Drop the MutexGuard before await call to avoid warning
-        drop(task_graph);
+            // Clone the task graph while we still have the lock
+            let cloned_task_graph = task_graph.clone();
 
+            // Return both values we need
+            (indices, cloned_task_graph)
+        }; // MutexGuard is dropped here
+
+        // Now we can safely make the async call
         let response_task_values = runtime
             .query_request(
                 Arc::new(cloned_task_graph),
@@ -185,7 +192,6 @@ impl ChartState {
             .into_iter()
             .map(|response_value| {
                 let variable = response_value.variable;
-
                 let scope = response_value.scope;
                 let value = response_value.value;
 
