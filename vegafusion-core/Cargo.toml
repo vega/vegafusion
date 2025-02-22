@@ -2,11 +2,8 @@
 name = "vegafusion-core"
 license = "BSD-3-Clause"
 edition = "2021"
-version = "2.0.1"
+version = "2.0.2"
 description = "Core components required by multiple VegaFusion crates, with WASM compatibility"
-
-[lints.clippy]
-module_inception = "allow"
 
 [features]
 tonic_support = ["tonic", "tonic-build"]
@@ -24,6 +21,9 @@ num-complex = "0.4.2"
 rand = "0.8.5"
 json-patch = "1.0.0"
 log = "0.4.22"
+
+[lints.clippy]
+module_inception = "allow"
 
 [dependencies.lazy_static]
 workspace = true
@@ -54,7 +54,7 @@ features = ["preserve_order"]
 [dependencies.vegafusion-common]
 path = "../vegafusion-common"
 features = ["json", "sqlparser"]
-version = "2.0.1"
+version = "2.0.2"
 
 [dependencies.datafusion-common]
 workspace = true
