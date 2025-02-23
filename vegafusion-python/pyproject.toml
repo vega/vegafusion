@@ -3,6 +3,7 @@ name = "vegafusion"
 version = "2.0.2"
 description = "Core tools for using VegaFusion from Python"
 readme = "README.md"
+license = {file = "LICENSE"}
 requires-python = ">=3.9"
 keywords = ["vega", "altair", "vegafusion", "arrow"]
 classifiers = [
@@ -21,9 +22,6 @@ name = "VegaFusion Contributors"
 [build-system]
 requires = ["maturin>=1.1.0,<2"]
 build-backend = "maturin"
-
-[project.license]
-text = "BSD-3-Clause"
 
 [project.urls]
 Homepage = "https://vegafusion.io"
