@@ -1,6 +1,6 @@
 {
   "name": "vegafusion-wasm",
-  "version": "2.0.1",
+  "version": "2.0.2",
   "author": "Jon Mease <jon@vegafusion.io> (https://jonmmease.dev)",
   "license": "BSD-3-Clause",
   "description": "Wasm library for interfacing with VegaFusion",

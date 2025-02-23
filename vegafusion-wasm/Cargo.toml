@@ -1,12 +1,9 @@
 [package]
 name = "vegafusion-wasm"
 license = "BSD-3-Clause"
-version = "2.0.1"
+version = "2.0.2"
 edition = "2021"
 description = "VegaFusion WASM package for embedding Vega charts in the browser with a connection to a VegaFusion Runtime"
-
-[lints.rust]
-unexpected_cfgs = { level = "warn", check-cfg = ['cfg(wasm_bindgen_unstable_test_coverage)'] }
 
 [lib]
 crate-type = ["cdylib", "rlib"]
@@ -36,15 +33,15 @@ workspace = true
 [dependencies.vegafusion-common]
 path = "../vegafusion-common"
 features = ["json"]
-version = "2.0.1"
+version = "2.0.2"
 
 [dependencies.vegafusion-core]
 path = "../vegafusion-core"
-version = "2.0.1"
+version = "2.0.2"
 
 [dependencies.vegafusion-runtime]
 path = "../vegafusion-runtime"
-version = "2.0.1"
+version = "2.0.2"
 default-features = false
 features = ["http-wasm"]
 
@@ -73,6 +70,10 @@ features = ["Document", "Element", "HtmlElement", "Node", "Window"]
 
 [dependencies.async-trait]
 workspace = true
+
+[lints.rust.unexpected_cfgs]
+level = "warn"
+check-cfg = ["cfg(wasm_bindgen_unstable_test_coverage)"]
 
 [package.metadata.wasm-pack.profile.release]
 wasm-opt = ["-Os"]
