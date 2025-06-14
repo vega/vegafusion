@@ -13,7 +13,7 @@ jobs:
           pixi-version: v0.34.0
           cache: true
       - name: Cache
-        uses: actions/cache@v4.1.2
+        uses: actions/cache@v4
         with:
           key: ${{ runner.os }}-${{ hashFiles('pixi.lock', 'Cargo.lock', 'vegafusion-python/pyproject.toml') }}-check-rust
           path: |
@@ -43,7 +43,7 @@ jobs:
         with:
           pixi-version: v0.34.0
       - name: Cache
-        uses: actions/cache@v4.1.2
+        uses: actions/cache@v4
         with:
           key: ${{ runner.os }}-${{ hashFiles('pixi.lock', 'Cargo.lock', 'vegafusion-python/pyproject.toml') }}-test-rust2
           path: |
@@ -72,7 +72,7 @@ jobs:
         with:
           pixi-version: v0.34.0
       - name: Cache
-        uses: actions/cache@v4.1.2
+        uses: actions/cache@v4
         with:
           key: ${{ runner.os }}-${{ hashFiles('pixi.lock', 'Cargo.lock', 'vegafusion-python/pyproject.toml') }}-build-vegafusion-wasm
           path: |
@@ -100,7 +100,7 @@ jobs:
         with:
           pixi-version: v0.34.0
       - name: Cache
-        uses: actions/cache@v4.1.2
+        uses: actions/cache@v4
         with:
           key: ${{ runner.os }}-${{ hashFiles('pixi.lock', 'Cargo.lock', 'vegafusion-python/pyproject.toml') }}-build-vegafusion-wasm
           path: |
@@ -176,7 +176,7 @@ jobs:
         with:
           pixi-version: v0.34.0
       - name: Cache
-        uses: actions/cache@v4.1.2
+        uses: actions/cache@v4
         with:
           key: ${{ runner.os }}-${{ hashFiles('pixi.lock', 'Cargo.lock', 'vegafusion-python/pyproject.toml') }}-build-vegafusion-python-win-64
           path: |
@@ -205,7 +205,7 @@ jobs:
         with:
           pixi-version: v0.34.0
       - name: Cache
-        uses: actions/cache@v4.1.2
+        uses: actions/cache@v4
         with:
           key: ${{ runner.os }}-${{ hashFiles('pixi.lock', 'Cargo.lock', 'vegafusion-python/pyproject.toml') }}-build-vegafusion-python-osx-64
           path: |
@@ -234,7 +234,7 @@ jobs:
         with:
           pixi-version: v0.34.0
       - name: Cache
-        uses: actions/cache@v4.1.2
+        uses: actions/cache@v4
         with:
           key: osx-arm64-${{ hashFiles('pixi.lock', 'Cargo.lock', 'vegafusion-python/pyproject.toml') }}-build-vegafusion-python-osx-arm64
           path: |
@@ -378,7 +378,7 @@ jobs:
         with:
           pixi-version: v0.34.0
       - name: Cache
-        uses: actions/cache@v4.1.2
+        uses: actions/cache@v4
         with:
           key: ${{ runner.os }}-${{ hashFiles('pixi.lock', 'Cargo.lock', 'vegafusion-python/pyproject.toml') }}-build-vegafusion-server-linux-64
           path: |
@@ -414,7 +414,7 @@ jobs:
   #      - name: Install pixi
   #        run: curl -fsSL https://pixi.sh/install.sh | bash && echo "${HOME}/.pixi/bin" >> $GITHUB_PATH
   #      - name: Cache
-  #        uses: actions/cache@v4.1.2
+  #        uses: actions/cache@v4
   #        with:
   #          key: linux-arm64-${{ hashFiles('pixi.lock', 'Cargo.lock', 'vegafusion-python/pyproject.toml') }}-server
   #          path: |
@@ -487,7 +487,7 @@ jobs:
         with:
           pixi-version: v0.34.0
       - name: Cache
-        uses: actions/cache@v4.1.2
+        uses: actions/cache@v4
         with:
           key: ${{ runner.os }}-${{ hashFiles('pixi.lock', 'Cargo.lock', 'vegafusion-python/pyproject.toml') }}-build-vegafusion-server-win-64b
           path: |
@@ -521,7 +521,7 @@ jobs:
         with:
           pixi-version: v0.34.0
       - name: Cache
-        uses: actions/cache@v4.1.2
+        uses: actions/cache@v4
         with:
           key: ${{ runner.os }}-${{ hashFiles('pixi.lock', 'Cargo.lock', 'vegafusion-python/pyproject.toml') }}-build-vegafusion-server-osx-64
           path: |
@@ -554,7 +554,7 @@ jobs:
         with:
           pixi-version: v0.34.0
       - name: Cache
-        uses: actions/cache@v4.1.2
+        uses: actions/cache@v4
         with:
           key: osx-arm64-${{ hashFiles('pixi.lock', 'Cargo.lock', 'vegafusion-python/pyproject.toml') }}-build-vegafusion-server-osx-arm64
           path: |
