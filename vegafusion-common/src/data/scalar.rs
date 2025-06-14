@@ -8,7 +8,7 @@ pub use datafusion_common::ScalarValue;
 #[cfg(feature = "json")]
 use {
     arrow::array::new_empty_array,
-    datafusion_common::utils::array_into_list_array,
+    datafusion_common::utils::SingleRowListArrayBuilder,
     serde_json::{Map, Value},
     std::ops::Deref,
     std::sync::Arc,
@@ -69,14 +69,18 @@ impl ScalarValueHelpers for ScalarValue {
             }
             Value::Array(elements) => {
                 let array: ListArray = if elements.is_empty() {
-                    array_into_list_array(Arc::new(new_empty_array(&DataType::Float64)), true)
+                    SingleRowListArrayBuilder::new(Arc::new(new_empty_array(&DataType::Float64)))
+                        .with_nullable(true)
+                        .build_list_array()
                 } else {
                     let elements: Vec<_> = elements
                         .iter()
                         .map(ScalarValue::from_json)
                         .collect::<Result<Vec<ScalarValue>>>()?;
 
-                    array_into_list_array(ScalarValue::iter_to_array(elements)?, true)
+                    SingleRowListArrayBuilder::new(ScalarValue::iter_to_array(elements)?)
+                        .with_nullable(true)
+                        .build_list_array()
                 };
 
                 ScalarValue::List(Arc::new(array))
@@ -221,6 +225,7 @@ impl ScalarValueHelpers for ScalarValue {
         Ok(match self {
             ScalarValue::Utf8(Some(value)) => value.clone(),
             ScalarValue::LargeUtf8(Some(value)) => value.clone(),
+            ScalarValue::Utf8View(Some(value)) => value.clone(),
             _ => {
                 return Err(VegaFusionError::internal(format!(
                     "Cannot convert {self} to String"

@@ -65,7 +65,7 @@ mod test_compile {
     use vegafusion_core::expression::parser::parse;
 
     use crate::task_graph::timezone::RuntimeTzConfig;
-    use datafusion_common::utils::array_into_list_array;
+    use datafusion_common::utils::SingleRowListArrayBuilder;
     use datafusion_common::{DFSchema, ScalarValue};
     use datafusion_expr::expr::{BinaryExpr, Case, TryCast};
     use datafusion_expr::{lit, not, Expr, Operator};
@@ -387,10 +387,11 @@ mod test_compile {
         // Check evaluated value
         let result_value = result_expr.eval_to_scalar().unwrap();
 
-        let expected_value = ScalarValue::List(Arc::new(array_into_list_array(
-            Arc::new(Float64Array::from(vec![1.0, 2.0, 3.0])),
-            true,
-        )));
+        let expected_value = ScalarValue::List(Arc::new(
+            SingleRowListArrayBuilder::new(Arc::new(Float64Array::from(vec![1.0, 2.0, 3.0])))
+                .with_nullable(true)
+                .build_list_array(),
+        ));
 
         println!("value: {result_value:?}");
         assert_eq!(result_value, expected_value);
@@ -406,10 +407,11 @@ mod test_compile {
         assert_eq!(result_expr, expected_expr);
 
         let result_value = result_expr.eval_to_scalar().unwrap();
-        let expected_value = ScalarValue::List(Arc::new(array_into_list_array(
-            new_empty_array(&DataType::Int64),
-            true,
-        )));
+        let expected_value = ScalarValue::List(Arc::new(
+            SingleRowListArrayBuilder::new(new_empty_array(&DataType::Int64))
+                .with_nullable(true)
+                .build_list_array(),
+        ));
 
         println!("value: {result_value:?}");
         assert_eq!(result_value, expected_value);
@@ -431,24 +433,30 @@ mod test_compile {
 
         // Check evaluated value
         let result_value = result_expr.eval_to_scalar().unwrap();
-        let expected_value = ScalarValue::List(Arc::new(array_into_list_array(
-            ScalarValue::iter_to_array(vec![
-                ScalarValue::List(Arc::new(array_into_list_array(
-                    Arc::new(Float64Array::from(vec![1.0, 2.0])),
-                    true,
-                ))),
-                ScalarValue::List(Arc::new(array_into_list_array(
-                    Arc::new(Float64Array::from(vec![3.0, 4.0])),
-                    true,
-                ))),
-                ScalarValue::List(Arc::new(array_into_list_array(
-                    Arc::new(Float64Array::from(vec![5.0, 6.0])),
-                    true,
-                ))),
-            ])
-            .unwrap(),
-            true,
-        )));
+        let expected_value = ScalarValue::List(Arc::new(
+            SingleRowListArrayBuilder::new(
+                ScalarValue::iter_to_array(vec![
+                    ScalarValue::List(Arc::new(
+                        SingleRowListArrayBuilder::new(Arc::new(Float64Array::from(vec![1.0, 2.0])))
+                            .with_nullable(true)
+                            .build_list_array(),
+                    )),
+                    ScalarValue::List(Arc::new(
+                        SingleRowListArrayBuilder::new(Arc::new(Float64Array::from(vec![3.0, 4.0])))
+                            .with_nullable(true)
+                            .build_list_array(),
+                    )),
+                    ScalarValue::List(Arc::new(
+                        SingleRowListArrayBuilder::new(Arc::new(Float64Array::from(vec![5.0, 6.0])))
+                            .with_nullable(true)
+                            .build_list_array(),
+                    )),
+                ])
+                .unwrap(),
+            )
+            .with_nullable(true)
+            .build_list_array(),
+        ));
 
         println!("value: {result_value:?}");
         assert_eq!(result_value, expected_value);

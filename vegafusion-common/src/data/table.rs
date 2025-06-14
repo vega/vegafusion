@@ -53,7 +53,7 @@ use {
 
 #[cfg(feature = "base64")]
 use base64::{engine::general_purpose, Engine as _};
-use datafusion_common::utils::array_into_list_array;
+use datafusion_common::utils::SingleRowListArrayBuilder;
 
 #[derive(Clone, Debug)]
 pub struct VegaFusionTable {
@@ -231,14 +231,18 @@ impl VegaFusionTable {
         if self.num_rows() == 0 {
             // Return empty list with (arbitrary) Float64 type
             let array = Arc::new(new_empty_array(&DataType::Float64));
-            return Ok(ScalarValue::List(Arc::new(array_into_list_array(
-                array, true,
-            ))));
+            return Ok(ScalarValue::List(Arc::new(
+                SingleRowListArrayBuilder::new(array)
+                    .with_nullable(true)
+                    .build_list_array(),
+            )));
         }
         let array = Arc::new(StructArray::from(self.to_record_batch()?)) as ArrayRef;
-        Ok(ScalarValue::List(Arc::new(array_into_list_array(
-            array, true,
-        ))))
+        Ok(ScalarValue::List(Arc::new(
+            SingleRowListArrayBuilder::new(array)
+                .with_nullable(true)
+                .build_list_array(),
+        )))
     }
 
     #[cfg(feature = "json")]
