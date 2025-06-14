@@ -101,6 +101,7 @@ impl ScalarValueHelpers for ScalarValue {
             ScalarValue::UInt64(Some(v)) => Value::from(*v),
             ScalarValue::Utf8(Some(v)) => Value::from(v.clone()),
             ScalarValue::LargeUtf8(Some(v)) => Value::from(v.clone()),
+            ScalarValue::Utf8View(Some(v)) => Value::from(v.clone()),
             ScalarValue::Binary(Some(_v)) => {
                 unimplemented!()
             }
