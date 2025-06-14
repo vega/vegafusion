@@ -3,9 +3,8 @@ use crate::transform::TransformTrait;
 use async_trait::async_trait;
 use datafusion::prelude::DataFrame;
 use datafusion_common::JoinType;
-use datafusion_expr::expr::WildcardOptions;
 use datafusion_expr::{
-    expr, lit, qualified_wildcard, when, Expr, WindowFrame, WindowFunctionDefinition,
+    expr, lit, when, Expr, WindowFrame, WindowFunctionDefinition,
     expr::AggregateFunctionParams, expr::WindowFunctionParams,
 };
 use datafusion_functions::expr_fn::{abs, coalesce};
@@ -134,11 +133,8 @@ impl TransformTrait for Stack {
             // Create __stack column with numeric field
             let stack_col_name = "__stack";
             let dataframe = dataframe.select(vec![
-                Expr::Wildcard {
-                    qualifier: None,
-                    options: Box::new(WildcardOptions::default()),
-                },
-                numeric_field.alias(stack_col_name),
+                datafusion_expr::expr_fn::wildcard(),
+                numeric_field.alias(stack_col_name).into(),
             ])?;
 
             // Create aggregate for total of stack value
@@ -196,11 +192,8 @@ impl TransformTrait for Stack {
 
             // Perform selection to add new field value
             let dataframe = dataframe.select(vec![
-                Expr::Wildcard {
-                    qualifier: None,
-                    options: Box::new(WildcardOptions::default()),
-                },
-                window_expr,
+                datafusion_expr::expr_fn::wildcard(),
+                window_expr.into(),
             ])?;
 
             // Build final_selection

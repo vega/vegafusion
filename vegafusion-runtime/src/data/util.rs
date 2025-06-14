@@ -3,7 +3,6 @@ use datafusion::datasource::{provider_as_source, MemTable};
 use datafusion::prelude::{DataFrame, SessionContext};
 use datafusion_common::tree_node::{Transformed, TreeNode, TreeNodeRewriter};
 use datafusion_common::TableReference;
-use datafusion_expr::expr::WildcardOptions;
 use datafusion_expr::{col, Expr, LogicalPlanBuilder, UNNAMED_TABLE};
 use datafusion_functions_window::row_number::row_number;
 use std::sync::Arc;
@@ -78,17 +77,11 @@ impl DataFrameUtils for DataFrame {
     async fn with_index(self, index_name: &str) -> vegafusion_common::error::Result<DataFrame> {
         if self.schema().inner().column_with_name(index_name).is_some() {
             // Column is already present, don't overwrite
-            Ok(self.select(vec![Expr::Wildcard {
-                qualifier: None,
-                options: Box::new(WildcardOptions::default()),
-            }])?)
+            Ok(self.select(vec![datafusion_expr::expr_fn::wildcard()])?)
         } else {
-            let selections = vec![
-                row_number().alias(index_name),
-                Expr::Wildcard {
-                    qualifier: None,
-                    options: Box::new(WildcardOptions::default()),
-                },
+            let selections: Vec<datafusion_expr::select_expr::SelectExpr> = vec![
+                row_number().alias(index_name).into(),
+                datafusion_expr::expr_fn::wildcard(),
             ];
             Ok(self.select(selections)?)
         }

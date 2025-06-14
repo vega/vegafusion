@@ -3,7 +3,6 @@ use crate::transform::TransformTrait;
 
 use async_trait::async_trait;
 use datafusion::prelude::DataFrame;
-use datafusion_expr::expr::WildcardOptions;
 use datafusion_expr::{expr, Expr, WindowFrame, WindowFunctionDefinition, expr::WindowFunctionParams};
 use datafusion_functions_window::row_number::RowNumber;
 use sqlparser::ast::NullTreatment;
@@ -39,11 +38,8 @@ impl TransformTrait for Identifier {
         .alias(&self.r#as);
 
         let result = dataframe.select(vec![
-            Expr::Wildcard {
-                qualifier: None,
-                options: Box::new(WildcardOptions::default()),
-            },
-            row_number_expr,
+            datafusion_expr::expr_fn::wildcard(),
+            row_number_expr.into(),
         ])?;
 
         Ok((result, Default::default()))
