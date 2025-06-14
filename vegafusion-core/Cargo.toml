@@ -10,10 +10,10 @@ tonic_support = ["tonic", "tonic-build"]
 py = ["pyo3", "vegafusion-common/py"]
 
 [dependencies]
-petgraph = "0.6.5"
+petgraph = "0.8.2"
 num-complex = "0.4.6"
 rand = "0.9.0"
-json-patch = "1.4.0"
+json-patch = "4.0.0"
 
 [lints.clippy]
 module_inception = "allow"
@@ -93,5 +93,5 @@ workspace = true
 optional = true
 
 [build-dependencies.protobuf-src]
-version = "1.1.0"
+version = "2.1.1"
 optional = true
