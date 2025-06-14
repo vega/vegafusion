@@ -4,7 +4,7 @@ on:
     types: [opened, synchronize]
 jobs:
   check-rust:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
       - name: Check out repository code
         uses: actions/checkout@v4.2.2
@@ -33,7 +33,7 @@ jobs:
       fail-fast: false
       matrix:
         os:
-          - ubuntu-20.04
+          - ubuntu-22.04
           - windows-2022
           - macos-14
     steps:
@@ -64,7 +64,7 @@ jobs:
             vegafusion-runtime/tests/output
 
   build-vegafusion-wasm:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
       - name: Check out repository code
         uses: actions/checkout@v4.2.2
@@ -92,7 +92,7 @@ jobs:
           path: package
 
   check-vegafusion-python:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
       - name: Check out repository code
         uses: actions/checkout@v4.2.2
@@ -255,7 +255,7 @@ jobs:
           if-no-files-found: error
 
   test-vegafusion-python-linux-64:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     needs: [build-vegafusion-python-linux-64]
     steps:
       - name: Check out repository code
@@ -370,7 +370,7 @@ jobs:
         run: pytest --ignore=tests/test_jupyter_widget.py
 
   build-vegafusion-server-linux-64:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
       - name: Check out repository code
         uses: actions/checkout@v4.2.2
@@ -407,7 +407,7 @@ jobs:
   # # cargo (without involving conda).
   #
   #  build-vegafusion-server-linux-arm64:
-  #    runs-on: ubuntu-20.04
+  #    runs-on: ubuntu-22.04
   #    steps:
   #      - name: Check out repository code
   #        uses: actions/checkout@v4.2.2
