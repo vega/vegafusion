@@ -480,11 +480,14 @@ impl PyVegaFusionRuntime {
                         "arro3" => {
                             let pytable = tbl.table.to_pyo3_arrow()?;
                             pytable.to_pyarrow(py)?.into()
-                        },
+                        }
                         "pyarrow" => tbl.table.to_pyo3_arrow()?.to_pyarrow(py)?.into(),
-                        "arrow-ipc" => PyBytes::new(py, tbl.table.to_ipc_bytes()?.as_slice())
-                            .into(),
-                        "arrow-ipc-base64" => tbl.table.to_ipc_base64()?.into_pyobject(py).unwrap().into(),
+                        "arrow-ipc" => {
+                            PyBytes::new(py, tbl.table.to_ipc_bytes()?.as_slice()).into()
+                        }
+                        "arrow-ipc-base64" => {
+                            tbl.table.to_ipc_base64()?.into_pyobject(py).unwrap().into()
+                        }
                         _ => {
                             return Err(PyValueError::new_err(format!(
                                 "Invalid extracted_format: {}",
@@ -493,8 +496,7 @@ impl PyVegaFusionRuntime {
                         }
                     };
 
-                    let dataset: PyObject =
-                        PyTuple::new(py, &[name, scope, table])?.into();
+                    let dataset: PyObject = PyTuple::new(py, &[name, scope, table])?.into();
                     Ok(dataset)
                 })
                 .collect::<PyResult<Vec<_>>>()?;

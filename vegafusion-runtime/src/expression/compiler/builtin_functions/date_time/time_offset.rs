@@ -19,8 +19,8 @@ pub fn time_offset_fn(
     }
 
     let unit = match &args[0] {
-        Expr::Literal(ScalarValue::Utf8(Some(unit)), _) | 
-        Expr::Literal(ScalarValue::Utf8View(Some(unit)), _) => unit,
+        Expr::Literal(ScalarValue::Utf8(Some(unit)), _)
+        | Expr::Literal(ScalarValue::Utf8View(Some(unit)), _) => unit,
         _ => {
             return Err(VegaFusionError::compilation(format!(
                 "The first argument to the timeOffset function must be a string: received {:?}",

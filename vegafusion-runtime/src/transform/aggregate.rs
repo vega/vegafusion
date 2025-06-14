@@ -1,7 +1,7 @@
 use crate::expression::compiler::config::CompilationConfig;
 use crate::transform::TransformTrait;
 
-use datafusion_expr::{lit, Expr, expr::AggregateFunctionParams};
+use datafusion_expr::{expr::AggregateFunctionParams, lit, Expr};
 use datafusion_functions_aggregate::median::median_udaf;
 use datafusion_functions_aggregate::variance::{var_pop_udaf, var_samp_udaf};
 use sqlparser::ast::NullTreatment;

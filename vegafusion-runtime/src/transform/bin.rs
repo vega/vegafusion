@@ -53,10 +53,7 @@ impl TransformTrait for Bin {
         let bin_index =
             floor((numeric_field.clone().sub(lit(start)).div(lit(step))).add(lit(1.0e-14)))
                 .alias(bin_index_name);
-        let sql_df = sql_df.select(vec![
-            datafusion_expr::expr_fn::wildcard(),
-            bin_index.into(),
-        ])?;
+        let sql_df = sql_df.select(vec![datafusion_expr::expr_fn::wildcard(), bin_index.into()])?;
 
         // Add column with bin start
         let bin_start = (flat_col(bin_index_name).mul(lit(step))).add(lit(start));

@@ -82,7 +82,10 @@ pub fn compile_member(
         _ => {
             if property_string == "length" {
                 length_transform(&[compiled_object], schema)?
-            } else if matches!(dtype, DataType::Utf8 | DataType::LargeUtf8 | DataType::Utf8View) {
+            } else if matches!(
+                dtype,
+                DataType::Utf8 | DataType::LargeUtf8 | DataType::Utf8View
+            ) {
                 if let Some(index) = index {
                     // SQL substr function is 1-indexed so add one
                     substring(compiled_object, lit((index + 1) as i32), lit(1i64))

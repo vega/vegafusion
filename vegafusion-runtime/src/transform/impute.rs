@@ -6,7 +6,9 @@ use crate::transform::TransformTrait;
 use async_trait::async_trait;
 use datafusion::prelude::DataFrame;
 use datafusion_common::{JoinType, ScalarValue};
-use datafusion_expr::{expr, lit, Expr, SortExpr, WindowFrame, WindowFunctionDefinition, expr::WindowFunctionParams};
+use datafusion_expr::{
+    expr, expr::WindowFunctionParams, lit, Expr, SortExpr, WindowFrame, WindowFunctionDefinition,
+};
 use datafusion_functions::expr_fn::coalesce;
 use datafusion_functions_aggregate::expr_fn::min;
 use datafusion_functions_window::row_number::RowNumber;

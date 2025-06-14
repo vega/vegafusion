@@ -25,14 +25,16 @@ pub fn to_date_transform(
             // Second argument is an override local timezone string
             let input_tz_expr = &args[1];
             match input_tz_expr {
-                Expr::Literal(ScalarValue::Utf8(Some(input_tz_str)), _) |
-                Expr::Literal(ScalarValue::Utf8View(Some(input_tz_str)), _) => {
+                Expr::Literal(ScalarValue::Utf8(Some(input_tz_str)), _)
+                | Expr::Literal(ScalarValue::Utf8View(Some(input_tz_str)), _) => {
                     if input_tz_str == "local" {
                         tz_config.local_tz
                     } else {
                         chrono_tz::Tz::from_str(input_tz_str)
                             .ok()
-                            .with_context(|| format!("Failed to parse {input_tz_str} as a timezone"))?
+                            .with_context(|| {
+                                format!("Failed to parse {input_tz_str} as a timezone")
+                            })?
                     }
                 }
                 _ => {

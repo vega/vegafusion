@@ -437,19 +437,25 @@ mod test_compile {
             SingleRowListArrayBuilder::new(
                 ScalarValue::iter_to_array(vec![
                     ScalarValue::List(Arc::new(
-                        SingleRowListArrayBuilder::new(Arc::new(Float64Array::from(vec![1.0, 2.0])))
-                            .with_nullable(true)
-                            .build_list_array(),
+                        SingleRowListArrayBuilder::new(Arc::new(Float64Array::from(vec![
+                            1.0, 2.0,
+                        ])))
+                        .with_nullable(true)
+                        .build_list_array(),
                     )),
                     ScalarValue::List(Arc::new(
-                        SingleRowListArrayBuilder::new(Arc::new(Float64Array::from(vec![3.0, 4.0])))
-                            .with_nullable(true)
-                            .build_list_array(),
+                        SingleRowListArrayBuilder::new(Arc::new(Float64Array::from(vec![
+                            3.0, 4.0,
+                        ])))
+                        .with_nullable(true)
+                        .build_list_array(),
                     )),
                     ScalarValue::List(Arc::new(
-                        SingleRowListArrayBuilder::new(Arc::new(Float64Array::from(vec![5.0, 6.0])))
-                            .with_nullable(true)
-                            .build_list_array(),
+                        SingleRowListArrayBuilder::new(Arc::new(Float64Array::from(vec![
+                            5.0, 6.0,
+                        ])))
+                        .with_nullable(true)
+                        .build_list_array(),
                     )),
                 ])
                 .unwrap(),

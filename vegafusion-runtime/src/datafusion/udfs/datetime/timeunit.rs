@@ -9,7 +9,8 @@ use vegafusion_common::arrow::error::ArrowError;
 use vegafusion_common::arrow::temporal_conversions::date64_to_datetime;
 use vegafusion_common::datafusion_common::{DataFusionError, ScalarValue};
 use vegafusion_common::datafusion_expr::{
-    ColumnarValue, ScalarUDF, ScalarFunctionArgs, ScalarUDFImpl, Signature, TypeSignature, Volatility,
+    ColumnarValue, ScalarFunctionArgs, ScalarUDF, ScalarUDFImpl, Signature, TypeSignature,
+    Volatility,
 };
 
 fn extract_bool(value: &ColumnarValue) -> std::result::Result<bool, DataFusionError> {
@@ -291,7 +292,7 @@ impl TimeunitStartUDF {
                     DataType::Boolean,                                              // [9] Hours
                     DataType::Boolean,                                              // [10] Minutes
                     DataType::Boolean,                                              // [11] Seconds
-                    DataType::Boolean,                                              // [12] Milliseconds
+                    DataType::Boolean, // [12] Milliseconds
                 ]),
                 TypeSignature::Exact(vec![
                     DataType::Timestamp(TimeUnit::Millisecond, Some("UTC".into())), // [0] timestamp
@@ -306,7 +307,7 @@ impl TimeunitStartUDF {
                     DataType::Boolean,                                              // [9] Hours
                     DataType::Boolean,                                              // [10] Minutes
                     DataType::Boolean,                                              // [11] Seconds
-                    DataType::Boolean,                                              // [12] Milliseconds
+                    DataType::Boolean, // [12] Milliseconds
                 ]),
             ],
             Volatility::Immutable,

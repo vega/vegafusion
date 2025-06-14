@@ -62,9 +62,10 @@ fn extract_extent_list(batch: &RecordBatch) -> Result<TaskValue> {
 
     // Build two-element list of the extents
     let extent_list = TaskValue::Scalar(ScalarValue::List(Arc::new(
-        SingleRowListArrayBuilder::new(
-            ScalarValue::iter_to_array(vec![min_val_scalar, max_val_scalar])?,
-        )
+        SingleRowListArrayBuilder::new(ScalarValue::iter_to_array(vec![
+            min_val_scalar,
+            max_val_scalar,
+        ])?)
         .with_nullable(true)
         .build_list_array(),
     )));

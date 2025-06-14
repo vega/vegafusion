@@ -49,7 +49,10 @@ pub fn is_float_datatype(dtype: &DataType) -> bool {
 }
 
 pub fn is_string_datatype(dtype: &DataType) -> bool {
-    matches!(dtype, DataType::Utf8 | DataType::LargeUtf8 | DataType::Utf8View)
+    matches!(
+        dtype,
+        DataType::Utf8 | DataType::LargeUtf8 | DataType::Utf8View
+    )
 }
 
 /// get datatype for expression
@@ -111,14 +114,15 @@ pub fn to_numeric(value: Expr, schema: &DFSchema) -> Result<Expr> {
 /// Cast an expression to Utf8 if not already Utf8. If already numeric, don't perform cast.
 pub fn to_string(value: Expr, schema: &DFSchema) -> Result<Expr> {
     let dtype = data_type(&value, schema)?;
-    let utf8_value = if dtype == DataType::Utf8 || dtype == DataType::LargeUtf8 || dtype == DataType::Utf8View {
-        value
-    } else {
-        Expr::TryCast(TryCast {
-            expr: Box::new(value),
-            data_type: DataType::Utf8,
-        })
-    };
+    let utf8_value =
+        if dtype == DataType::Utf8 || dtype == DataType::LargeUtf8 || dtype == DataType::Utf8View {
+            value
+        } else {
+            Expr::TryCast(TryCast {
+                expr: Box::new(value),
+                data_type: DataType::Utf8,
+            })
+        };
 
     Ok(utf8_value)
 }

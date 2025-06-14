@@ -4,8 +4,8 @@ use async_trait::async_trait;
 use datafusion::prelude::DataFrame;
 use datafusion_common::JoinType;
 use datafusion_expr::{
-    expr, lit, when, Expr, WindowFrame, WindowFunctionDefinition,
-    expr::AggregateFunctionParams, expr::WindowFunctionParams,
+    expr, expr::AggregateFunctionParams, expr::WindowFunctionParams, lit, when, Expr, WindowFrame,
+    WindowFunctionDefinition,
 };
 use datafusion_functions::expr_fn::{abs, coalesce};
 use datafusion_functions_aggregate::expr_fn::max;

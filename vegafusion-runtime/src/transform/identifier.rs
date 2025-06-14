@@ -3,7 +3,9 @@ use crate::transform::TransformTrait;
 
 use async_trait::async_trait;
 use datafusion::prelude::DataFrame;
-use datafusion_expr::{expr, Expr, WindowFrame, WindowFunctionDefinition, expr::WindowFunctionParams};
+use datafusion_expr::{
+    expr, expr::WindowFunctionParams, Expr, WindowFrame, WindowFunctionDefinition,
+};
 use datafusion_functions_window::row_number::RowNumber;
 use sqlparser::ast::NullTreatment;
 use std::sync::Arc;
