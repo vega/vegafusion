@@ -80,10 +80,6 @@ optional = true
 [dependencies.thiserror]
 workspace = true
 
-[dependencies.jni]
-version = "0.21.1"
-optional = true
-
 [dependencies.base64]
 workspace = true
 optional = true

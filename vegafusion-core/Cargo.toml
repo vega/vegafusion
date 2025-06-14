@@ -11,9 +11,7 @@ py = ["pyo3", "vegafusion-common/py"]
 
 [dependencies]
 petgraph = "0.8.2"
-num-complex = "0.4.6"
 rand = "0.9.0"
-json-patch = "4.0.0"
 
 [lints.clippy]
 module_inception = "allow"
