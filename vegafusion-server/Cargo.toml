@@ -14,14 +14,18 @@ repository = "https://github.com/vega/vegafusion"
 protobuf-src = ["vegafusion-core/protobuf-src", "dep:protobuf-src"]
 
 [dependencies]
-futures-util = "0.3.21"
-regex = "^1.5.5"
-h2 = "0.3.16"
+futures-util = "0.3.31"
+h2 = "0.3.26"
+
+[dependencies.regex]
+workspace = true
 
 [dev-dependencies]
-serde_json = "1.0.91"
-assert_cmd = "2.0"
-predicates = "3.0.2"
+assert_cmd = "2.0.16"
+predicates = "3.1.2"
+
+[dev-dependencies.serde_json]
+workspace = true
 
 [dependencies.prost]
 workspace = true

@@ -3,9 +3,9 @@ resolver = "2"
 members = [ "vegafusion-common", "vegafusion-core", "vegafusion-runtime", "vegafusion-python", "vegafusion-wasm", "vegafusion-server", "examples/rust-examples",]
 
 [workspace.dependencies]
-async-trait = "0.1.73"
-futures = "0.3.21"
-url = "2.3.1"
+async-trait = "0.1.88"
+futures = "0.3.31"
+url = "2.5.4"
 cfg-if = "1.0.0"
 
 [profile.release]
@@ -46,7 +46,7 @@ version = "0.9.0"
 features = [ "case-insensitive", "filter-by-regex",]
 
 [workspace.dependencies.reqwest]
-version = "0.12.8"
+version = "0.12.11"
 default-features = false
 
 [workspace.dependencies.tonic]
@@ -90,7 +90,7 @@ version = "0.0.6"
 version = "1.5"
 
 [workspace.dependencies.serde_json]
-version = "1.0.91"
+version = "1.0.140"
 default-features = false
 
 [workspace.dependencies.datafusion]
@@ -134,3 +134,41 @@ version = "48.0.0"
 
 [workspace.dependencies.datafusion-functions-window]
 version = "48.0.0"
+
+# Common dependencies across crates
+[workspace.dependencies.thiserror]
+version = "1.0.69"
+
+[workspace.dependencies.serde]
+version = "1.0.216"
+features = ["derive"]
+
+[workspace.dependencies.regex]
+version = "1.11.1"
+
+[workspace.dependencies.bytes]
+version = "1.9.0"
+
+[workspace.dependencies.env_logger]
+version = "0.11.5"
+
+[workspace.dependencies.ordered-float]
+version = "3.9.2"
+
+[workspace.dependencies.itertools]
+version = "0.12.1"
+
+[workspace.dependencies.log]
+version = "0.4.22"
+
+[workspace.dependencies.uuid]
+version = "1.11.0"
+
+[workspace.dependencies.base64]
+version = "0.22.1"
+
+[workspace.dependencies.tempfile]
+version = "3.14.0"
+
+[workspace.dependencies.num-traits]
+version = "0.2.19"
