@@ -9,7 +9,8 @@ url = "2.5.4"
 cfg-if = "1.0.0"
 
 [profile.release]
-opt-level = 3
+opt-level = "z"
+codegen-units = 1
 
 [profile.release-dev]
 inherits = "release"
@@ -135,13 +136,12 @@ version = "48.0.0"
 [workspace.dependencies.datafusion-functions-window]
 version = "48.0.0"
 
-# Common dependencies across crates
 [workspace.dependencies.thiserror]
 version = "1.0.69"
 
 [workspace.dependencies.serde]
 version = "1.0.216"
-features = ["derive"]
+features = [ "derive",]
 
 [workspace.dependencies.regex]
 version = "1.11.1"

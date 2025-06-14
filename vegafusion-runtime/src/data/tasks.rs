@@ -798,9 +798,11 @@ fn maybe_register_object_stores_for_url(
                                 .with_client_options(client_options)
                                 .build()?;
                             ctx.register_object_store(&base_url, Arc::new(http_store));
-                        } else {
+                        } else if #[cfg(target_arch = "wasm32")] {
                             let http_store = HttpStore::new(base_url.clone());
                             ctx.register_object_store(&base_url, Arc::new(http_store));
+                        } else {
+                            return Err(VegaFusionError::internal("HTTP support not available"));
                         }
                     }
                 }
