@@ -8,6 +8,11 @@ jobs:
     steps:
       - name: Check out repository code
         uses: actions/checkout@v4.2.2
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: stable
+          components: rustfmt, clippy
       - uses: prefix-dev/setup-pixi@v0.8.1
         with:
           pixi-version: v0.34.0
@@ -39,6 +44,10 @@ jobs:
     steps:
       - name: Check out repository code
         uses: actions/checkout@v4.2.2
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: stable
       - uses: prefix-dev/setup-pixi@v0.8.1
         with:
           pixi-version: v0.34.0
@@ -68,6 +77,11 @@ jobs:
     steps:
       - name: Check out repository code
         uses: actions/checkout@v4.2.2
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: stable
+          targets: wasm32-unknown-unknown
       - uses: prefix-dev/setup-pixi@v0.8.1
         with:
           pixi-version: v0.34.0
@@ -96,6 +110,10 @@ jobs:
     steps:
       - name: Check out repository code
         uses: actions/checkout@v4.2.2
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: stable
       - uses: prefix-dev/setup-pixi@v0.8.1
         with:
           pixi-version: v0.34.0
@@ -172,6 +190,10 @@ jobs:
     steps:
       - name: Check out repository code
         uses: actions/checkout@v4.2.2
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: stable
       - uses: prefix-dev/setup-pixi@v0.8.1
         with:
           pixi-version: v0.34.0
@@ -201,6 +223,10 @@ jobs:
     steps:
       - name: Check out repository code
         uses: actions/checkout@v4.2.2
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: stable
       - uses: prefix-dev/setup-pixi@v0.8.1
         with:
           pixi-version: v0.34.0
@@ -230,6 +256,11 @@ jobs:
     steps:
       - name: Check out repository code
         uses: actions/checkout@v4.2.2
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: stable
+          targets: aarch64-apple-darwin
       - uses: prefix-dev/setup-pixi@v0.8.1
         with:
           pixi-version: v0.34.0
@@ -374,6 +405,10 @@ jobs:
     steps:
       - name: Check out repository code
         uses: actions/checkout@v4.2.2
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: stable
       - uses: prefix-dev/setup-pixi@v0.8.1
         with:
           pixi-version: v0.34.0
@@ -483,6 +518,10 @@ jobs:
     steps:
       - name: Check out repository code
         uses: actions/checkout@v4.2.2
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: stable
       - uses: prefix-dev/setup-pixi@v0.8.1
         with:
           pixi-version: v0.34.0
@@ -517,6 +556,10 @@ jobs:
     steps:
       - name: Check out repository code
         uses: actions/checkout@v4.2.2
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: stable
       - uses: prefix-dev/setup-pixi@v0.8.1
         with:
           pixi-version: v0.34.0
@@ -550,6 +593,11 @@ jobs:
     steps:
       - name: Check out repository code
         uses: actions/checkout@v4.2.2
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: stable
+          targets: aarch64-apple-darwin
       - uses: prefix-dev/setup-pixi@v0.8.1
         with:
           pixi-version: v0.34.0

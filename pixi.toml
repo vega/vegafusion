@@ -64,7 +64,7 @@ test-rs = { cmd = "cargo test --workspace --exclude vegafusion --exclude vegafus
 run-rs-server = "cargo run --release -p vegafusion-server "
 
 # Build Wasm
-install-wasm-toolchain = "python automation/download_rust_target.py wasm32-unknown-unknown"
+install-wasm-toolchain = "rustup target add wasm32-unknown-unknown"
 install-wasm-pack = "export CARGO_HOME=$PIXI_PROJECT_ROOT/.pixi/envs/default && cargo install wasm-pack"
 build-wasm = { cmd = """
 python automation/set_default_release_profile.py small &&
@@ -131,7 +131,6 @@ jupytext = "1.15.0.*"
 openjdk = "20.0.0.*"
 minio-server = "2023.9.23.3.47.50.*"
 minio = "7.1.17.*"
-rust = "1.84.*"
 taplo = ">=0.9.3,<0.10"
 ruff = ">=0.6.9,<0.7"
 mypy = ">=1.11.2,<2"

@@ -27,11 +27,16 @@ The project is structured as a Rust workspace with multiple crates:
 
 ## Development Environment
 
-The entire development environment is managed by **Pixi** (prefix.dev). Pixi handles all dependencies including Rust, Python, Node.js, and system packages.
+The development environment uses:
+- **Rust**: Must be installed separately via [rustup.rs](https://rustup.rs/)
+- **Pixi**: Manages all other dependencies including Python, Node.js, and system packages
 
 ### Setup Commands
 
 ```bash
+# Install Rust (one-time setup)
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+
 # Install Pixi (one-time setup)
 curl -fsSL https://pixi.sh/install.sh | bash
 
@@ -127,7 +132,7 @@ pixi run docs-publish
 ### WebAssembly
 
 ```bash
-# Install WASM toolchain
+# Install WASM toolchain (requires Rust installed)
 pixi run install-wasm-toolchain
 
 # Build WASM package
