@@ -13,7 +13,7 @@ py = ["pyo3", "vegafusion-common/py"]
 petgraph = "0.6.5"
 chrono = "0.4.23"
 num-complex = "0.4.6"
-rand = "0.8.5"
+rand = "0.9.0"
 json-patch = "1.4.0"
 
 [lints.clippy]
