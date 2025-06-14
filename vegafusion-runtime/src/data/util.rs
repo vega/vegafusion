@@ -80,14 +80,14 @@ impl DataFrameUtils for DataFrame {
             // Column is already present, don't overwrite
             Ok(self.select(vec![Expr::Wildcard {
                 qualifier: None,
-                options: WildcardOptions::default(),
+                options: Box::new(WildcardOptions::default()),
             }])?)
         } else {
             let selections = vec![
                 row_number().alias(index_name),
                 Expr::Wildcard {
                     qualifier: None,
-                    options: WildcardOptions::default(),
+                    options: Box::new(WildcardOptions::default()),
                 },
             ];
             Ok(self.select(selections)?)

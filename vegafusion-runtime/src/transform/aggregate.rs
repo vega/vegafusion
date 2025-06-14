@@ -1,7 +1,7 @@
 use crate::expression::compiler::config::CompilationConfig;
 use crate::transform::TransformTrait;
 
-use datafusion_expr::{lit, Expr};
+use datafusion_expr::{lit, Expr, expr::AggregateFunctionParams};
 use datafusion_functions_aggregate::median::median_udaf;
 use datafusion_functions_aggregate::variance::{var_pop_udaf, var_samp_udaf};
 use sqlparser::ast::NullTreatment;
@@ -170,43 +170,53 @@ pub fn make_agg_expr_for_col_expr(
         AggregateOp::Sum => sum(numeric_column()?),
         AggregateOp::Median => Expr::AggregateFunction(expr::AggregateFunction {
             func: median_udaf(),
-            distinct: false,
-            args: vec![numeric_column()?],
-            filter: None,
-            order_by: None,
-            null_treatment: Some(NullTreatment::IgnoreNulls),
+            params: AggregateFunctionParams {
+                distinct: false,
+                args: vec![numeric_column()?],
+                filter: None,
+                order_by: None,
+                null_treatment: Some(NullTreatment::IgnoreNulls),
+            },
         }),
         AggregateOp::Variance => Expr::AggregateFunction(expr::AggregateFunction {
             func: var_samp_udaf(),
-            distinct: false,
-            args: vec![numeric_column()?],
-            filter: None,
-            order_by: None,
-            null_treatment: Some(NullTreatment::IgnoreNulls),
+            params: AggregateFunctionParams {
+                distinct: false,
+                args: vec![numeric_column()?],
+                filter: None,
+                order_by: None,
+                null_treatment: Some(NullTreatment::IgnoreNulls),
+            },
         }),
         AggregateOp::Variancep => Expr::AggregateFunction(expr::AggregateFunction {
             func: var_pop_udaf(),
-            distinct: false,
-            args: vec![numeric_column()?],
-            filter: None,
-            order_by: None,
-            null_treatment: Some(NullTreatment::IgnoreNulls),
+            params: AggregateFunctionParams {
+                distinct: false,
+                args: vec![numeric_column()?],
+                filter: None,
+                order_by: None,
+                null_treatment: Some(NullTreatment::IgnoreNulls),
+            },
         }),
         AggregateOp::Stdev => Expr::AggregateFunction(expr::AggregateFunction {
             func: stddev_udaf(),
-            distinct: false,
-            args: vec![numeric_column()?],
-            filter: None,
-            order_by: None,
-            null_treatment: Some(NullTreatment::IgnoreNulls),
+            params: AggregateFunctionParams {
+                distinct: false,
+                args: vec![numeric_column()?],
+                filter: None,
+                order_by: None,
+                null_treatment: Some(NullTreatment::IgnoreNulls),
+            },
         }),
         AggregateOp::Stdevp => Expr::AggregateFunction(expr::AggregateFunction {
             func: stddev_pop_udaf(),
-            distinct: false,
-            args: vec![numeric_column()?],
-            filter: None,
-            order_by: None,
-            null_treatment: Some(NullTreatment::IgnoreNulls),
+            params: AggregateFunctionParams {
+                distinct: false,
+                args: vec![numeric_column()?],
+                filter: None,
+                order_by: None,
+                null_treatment: Some(NullTreatment::IgnoreNulls),
+            },
         }),
         AggregateOp::Valid => {
             let valid = Expr::Cast(expr::Cast {
@@ -232,19 +242,23 @@ pub fn make_agg_expr_for_col_expr(
         }
         AggregateOp::Q1 => Expr::AggregateFunction(expr::AggregateFunction {
             func: Arc::new((*Q1_UDF).clone()),
-            args: vec![numeric_column()?],
-            distinct: false,
-            filter: None,
-            order_by: None,
-            null_treatment: Some(NullTreatment::IgnoreNulls),
+            params: AggregateFunctionParams {
+                distinct: false,
+                args: vec![numeric_column()?],
+                filter: None,
+                order_by: None,
+                null_treatment: Some(NullTreatment::IgnoreNulls),
+            },
         }),
         AggregateOp::Q3 => Expr::AggregateFunction(expr::AggregateFunction {
             func: Arc::new((*Q3_UDF).clone()),
-            args: vec![numeric_column()?],
-            distinct: false,
-            filter: None,
-            order_by: None,
-            null_treatment: Some(NullTreatment::IgnoreNulls),
+            params: AggregateFunctionParams {
+                distinct: false,
+                args: vec![numeric_column()?],
+                filter: None,
+                order_by: None,
+                null_treatment: Some(NullTreatment::IgnoreNulls),
+            },
         }),
         _ => {
             return Err(VegaFusionError::specification(format!(

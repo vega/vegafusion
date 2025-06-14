@@ -6,7 +6,7 @@ use crate::transform::TransformTrait;
 use async_trait::async_trait;
 use datafusion::prelude::DataFrame;
 use datafusion_common::{JoinType, ScalarValue};
-use datafusion_expr::{expr, lit, Expr, SortExpr, WindowFrame, WindowFunctionDefinition};
+use datafusion_expr::{expr, lit, Expr, SortExpr, WindowFrame, WindowFunctionDefinition, expr::WindowFunctionParams};
 use datafusion_functions::expr_fn::coalesce;
 use datafusion_functions_aggregate::expr_fn::min;
 use datafusion_functions_window::row_number::RowNumber;
@@ -160,21 +160,23 @@ impl TransformTrait for Impute {
                 }
             }
 
-            let final_order_expr = Expr::WindowFunction(expr::WindowFunction {
+            let final_order_expr = Expr::WindowFunction(Box::new(expr::WindowFunction {
                 fun: WindowFunctionDefinition::WindowUDF(Arc::new(RowNumber::new().into())),
-                args: vec![],
-                partition_by: vec![],
-                order_by: vec![
-                    // Sort first by the original row order, pushing imputed rows to the end
-                    SortExpr::new(order_col.clone(), true, false),
-                    // Sort imputed rows by first row that resides group
-                    // then by first row that matches a key
-                    SortExpr::new(order_group_col, true, true),
-                    SortExpr::new(order_key_col, true, true),
-                ],
-                window_frame: WindowFrame::new(Some(true)),
-                null_treatment: Some(NullTreatment::RespectNulls),
-            })
+                params: WindowFunctionParams {
+                    args: vec![],
+                    partition_by: vec![],
+                    order_by: vec![
+                        // Sort first by the original row order, pushing imputed rows to the end
+                        SortExpr::new(order_col.clone(), true, false),
+                        // Sort imputed rows by first row that resides group
+                        // then by first row that matches a key
+                        SortExpr::new(order_group_col, true, true),
+                        SortExpr::new(order_key_col, true, true),
+                    ],
+                    window_frame: WindowFrame::new(Some(true)),
+                    null_treatment: Some(NullTreatment::RespectNulls),
+                },
+            }))
             .alias(ORDER_COL);
             final_selections.push(final_order_expr);
 

@@ -124,7 +124,7 @@ pub fn to_string(value: Expr, schema: &DFSchema) -> Result<Expr> {
 }
 
 pub fn is_null_literal(value: &Expr) -> bool {
-    if let Expr::Literal(literal) = &value {
+    if let Expr::Literal(literal, _) = &value {
         literal.is_null()
     } else {
         false

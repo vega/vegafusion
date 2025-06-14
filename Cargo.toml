@@ -28,11 +28,11 @@ opt-level = "z"
 codegen-units = 1
 
 [workspace.dependencies.arrow]
-version = "53.2.0"
+version = "55.1.0"
 default-features = false
 
 [workspace.dependencies.sqlparser]
-version = "0.51.0"
+version = "0.55.0"
 
 [workspace.dependencies.chrono]
 version = "0.4.35"
@@ -62,13 +62,13 @@ version = "0.12.3"
 version = "1.36.0"
 
 [workspace.dependencies.pyo3]
-version = "0.22.4"
+version = "0.25.0"
 
 [workspace.dependencies.pythonize]
-version = "0.22"
+version = "0.25.0"
 
 [workspace.dependencies.pyo3-arrow]
-version = "0.5.1"
+version = "0.10.1"
 default-features = false
 
 [workspace.dependencies.prost]
@@ -81,7 +81,7 @@ version = "0.13.3"
 version = "0.13.3"
 
 [workspace.dependencies.object_store]
-version = "0.11.0"
+version = "0.12.0"
 
 [workspace.dependencies.object-store-wasm]
 version = "0.0.6"
@@ -94,43 +94,43 @@ version = "1.0.91"
 default-features = false
 
 [workspace.dependencies.datafusion]
-version = "43.0.0"
+version = "48.0.0"
 default-features = false
 features = [ "nested_expressions",]
 
 [workspace.dependencies.datafusion-common]
-version = "43.0.0"
+version = "48.0.0"
 default-features = false
 
 [workspace.dependencies.datafusion-expr]
-version = "43.0.0"
+version = "48.0.0"
 
 [workspace.dependencies.datafusion-proto]
-version = "43.0.0"
+version = "48.0.0"
 default-features = false
 features = [ "parquet",]
 
 [workspace.dependencies.datafusion-proto-common]
-version = "43.0.0"
+version = "48.0.0"
 default-features = false
 
 [workspace.dependencies.datafusion-physical-expr]
-version = "43.0.0"
+version = "48.0.0"
 default-features = false
 
 [workspace.dependencies.datafusion-optimizer]
-version = "43.0.0"
+version = "48.0.0"
 default-features = false
 
 [workspace.dependencies.datafusion-functions]
-version = "43.0.0"
+version = "48.0.0"
 default-features = false
 
 [workspace.dependencies.datafusion-functions-nested]
-version = "43.0.0"
+version = "48.0.0"
 
 [workspace.dependencies.datafusion-functions-aggregate]
-version = "43.0.0"
+version = "48.0.0"
 
 [workspace.dependencies.datafusion-functions-window]
-version = "43.0.0"
+version = "48.0.0"

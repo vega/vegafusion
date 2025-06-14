@@ -9,7 +9,7 @@ use vegafusion_common::arrow::error::ArrowError;
 use vegafusion_common::arrow::temporal_conversions::date64_to_datetime;
 use vegafusion_common::datafusion_common::{DataFusionError, ScalarValue};
 use vegafusion_common::datafusion_expr::{
-    ColumnarValue, ScalarUDF, ScalarUDFImpl, Signature, Volatility,
+    ColumnarValue, ScalarUDF, ScalarFunctionArgs, ScalarUDFImpl, Signature, Volatility,
 };
 
 fn extract_bool(value: &ColumnarValue) -> std::result::Result<bool, DataFusionError> {
@@ -322,10 +322,11 @@ impl ScalarUDFImpl for TimeunitStartUDF {
         ))
     }
 
-    fn invoke(
+    fn invoke_with_args(
         &self,
-        args: &[ColumnarValue],
+        args: ScalarFunctionArgs,
     ) -> vegafusion_common::datafusion_common::Result<ColumnarValue> {
+        let args = &args.args;
         let (timestamp, tz, units_mask) = unpack_timeunit_udf_args(args)?;
         let array = timestamp
             .as_any()

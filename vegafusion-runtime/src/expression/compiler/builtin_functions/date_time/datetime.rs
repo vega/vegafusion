@@ -24,7 +24,7 @@ pub fn to_date_transform(
         let default_input_tz = if args.len() == 2 {
             // Second argument is an override local timezone string
             let input_tz_expr = &args[1];
-            if let Expr::Literal(ScalarValue::Utf8(Some(input_tz_str))) = input_tz_expr {
+            if let Expr::Literal(ScalarValue::Utf8(Some(input_tz_str)), _) = input_tz_expr {
                 if input_tz_str == "local" {
                     tz_config.local_tz
                 } else {

@@ -11,5 +11,5 @@ pub fn data_fn(
     _schema: &DFSchema,
     _tz_config: &RuntimeTzConfig,
 ) -> Result<Expr> {
-    Ok(Expr::Literal(table.to_scalar_value()?))
+    Ok(Expr::Literal(table.to_scalar_value()?, None))
 }

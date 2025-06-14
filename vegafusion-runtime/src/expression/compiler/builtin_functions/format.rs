@@ -17,7 +17,7 @@ use vegafusion_core::error::{Result, VegaFusionError};
 pub fn format_transform(args: &[Expr], schema: &DFSchema) -> Result<Expr> {
     if args.len() == 2 {
         match &args[1] {
-            Expr::Literal(ScalarValue::Utf8(Some(s))) if s.is_empty() => {
+            Expr::Literal(ScalarValue::Utf8(Some(s)), _) if s.is_empty() => {
                 let arg = to_numeric(args[0].clone(), schema)?;
                 if is_integer_datatype(&arg.get_type(schema)?) {
                     // Integer type, just cast to string

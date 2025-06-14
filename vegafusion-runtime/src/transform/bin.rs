@@ -57,7 +57,7 @@ impl TransformTrait for Bin {
         let sql_df = sql_df.select(vec![
             Expr::Wildcard {
                 qualifier: None,
-                options: WildcardOptions::default(),
+                options: Box::new(WildcardOptions::default()),
             },
             bin_index,
         ])?;

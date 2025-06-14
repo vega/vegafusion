@@ -328,7 +328,7 @@ impl VegaFusionTable {
         py: Python,
         data: &Bound<PyAny>,
     ) -> std::result::Result<(Self, u64), PyErr> {
-        let arro3_core = PyModule::import_bound(py, "arro3.core")?;
+        let arro3_core = PyModule::import(py, "arro3.core")?;
         let arro3_table_type = arro3_core.getattr("Table")?;
         if data.is_instance(&arro3_table_type)? {
             // Extract original table for single-threaded hashing
@@ -338,8 +338,8 @@ impl VegaFusionTable {
             let hash = vf_table.get_hash();
 
             // Now rechunk for better multithreaded efficiency with DataFusion
-            let seq = PyList::new_bound(py, vec![("max_chunksize", 8096)]);
-            let kwargs = PyDict::from_sequence_bound(seq.as_any())?;
+            let seq = PyList::new(py, vec![("max_chunksize", 8096)])?;
+            let kwargs = PyDict::from_sequence(seq.as_any())?;
 
             let rechunked_table = data
                 .call_method("rechunk", (), Some(&kwargs))?

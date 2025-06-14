@@ -10,7 +10,7 @@ use vegafusion_common::{
         datatypes::{DataType, TimeUnit},
     },
     datafusion_common::{DataFusionError, ScalarValue},
-    datafusion_expr::{ColumnarValue, ScalarUDF, Signature, Volatility},
+    datafusion_expr::{ColumnarValue, ScalarUDF, ScalarFunctionArgs, Signature, Volatility},
 };
 
 #[derive(Debug, Clone)]
@@ -28,7 +28,7 @@ impl MakeTimestamptzUDF {
     pub fn new() -> Self {
         // Use Signature::coercible instead of Signature::exact so that float will be
         // truncated to ints.
-        let signature = Signature::coercible(
+        let signature = Signature::exact(
             vec![
                 DataType::Int64, // year
                 DataType::Int64, // month
@@ -68,10 +68,11 @@ impl ScalarUDFImpl for MakeTimestamptzUDF {
         ))
     }
 
-    fn invoke(
+    fn invoke_with_args(
         &self,
-        args: &[ColumnarValue],
+        args: ScalarFunctionArgs,
     ) -> vegafusion_common::datafusion_common::Result<ColumnarValue> {
+        let args = &args.args;
         let tz_str = if let ColumnarValue::Scalar(tz_scalar) = &args[7] {
             tz_scalar.to_string()
         } else {

@@ -18,7 +18,7 @@ pub fn time_offset_fn(
         )));
     }
 
-    let Expr::Literal(ScalarValue::Utf8(Some(unit))) = &args[0] else {
+    let Expr::Literal(ScalarValue::Utf8(Some(unit)), _) = &args[0] else {
         return Err(VegaFusionError::compilation(format!(
             "The first argument to the timeOffset function must be a string: received {:?}",
             args[0]
@@ -36,7 +36,7 @@ pub fn time_offset_fn(
 
         // Check for negative integer
         if let Expr::Negative(inner) = step_arg {
-            if let Expr::Literal(scalar_value) = inner.as_ref() {
+            if let Expr::Literal(scalar_value, _) = inner.as_ref() {
                 let dtype = scalar_value.data_type();
                 if dtype.is_integer() {
                     // Negate inner integer
@@ -55,7 +55,7 @@ pub fn time_offset_fn(
             } else {
                 return make_err();
             }
-        } else if let Expr::Literal(scalar_value) = step_arg {
+        } else if let Expr::Literal(scalar_value, _) = step_arg {
             let dtype = scalar_value.data_type();
             if dtype.is_integer() {
                 scalar_value.clone().to_i32()?

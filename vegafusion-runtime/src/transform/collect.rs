@@ -1,7 +1,7 @@
 use crate::expression::compiler::config::CompilationConfig;
 use crate::transform::TransformTrait;
 
-use datafusion_expr::{expr, Expr, WindowFunctionDefinition};
+use datafusion_expr::{expr, Expr, WindowFunctionDefinition, expr::WindowFunctionParams};
 use datafusion_functions_window::row_number::RowNumber;
 use sqlparser::ast::NullTreatment;
 
@@ -50,14 +50,16 @@ impl TransformTrait for Collect {
         // We don't actually sort here, use a row number window function sorted by the sort
         // criteria. This column becomes the new ORDER_COL, which will be sorted at the end of
         // the pipeline.
-        let order_col = Expr::WindowFunction(expr::WindowFunction {
+        let order_col = Expr::WindowFunction(Box::new(expr::WindowFunction {
             fun: WindowFunctionDefinition::WindowUDF(Arc::new(RowNumber::new().into())),
-            args: vec![],
-            partition_by: vec![],
-            order_by: sort_exprs,
-            window_frame: WindowFrame::new(Some(true)),
-            null_treatment: Some(NullTreatment::IgnoreNulls),
-        })
+            params: WindowFunctionParams {
+                args: vec![],
+                partition_by: vec![],
+                order_by: sort_exprs,
+                window_frame: WindowFrame::new(Some(true)),
+                null_treatment: Some(NullTreatment::IgnoreNulls),
+            },
+        }))
         .alias(ORDER_COL);
 
         // Build vector of selections

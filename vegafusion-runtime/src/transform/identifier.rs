@@ -4,7 +4,7 @@ use crate::transform::TransformTrait;
 use async_trait::async_trait;
 use datafusion::prelude::DataFrame;
 use datafusion_expr::expr::WildcardOptions;
-use datafusion_expr::{expr, Expr, WindowFrame, WindowFunctionDefinition};
+use datafusion_expr::{expr, Expr, WindowFrame, WindowFunctionDefinition, expr::WindowFunctionParams};
 use datafusion_functions_window::row_number::RowNumber;
 use sqlparser::ast::NullTreatment;
 use std::sync::Arc;
@@ -22,24 +22,26 @@ impl TransformTrait for Identifier {
         _config: &CompilationConfig,
     ) -> Result<(DataFrame, Vec<TaskValue>)> {
         // Add row number column with the desired name, sorted by the input order column
-        let row_number_expr = Expr::WindowFunction(expr::WindowFunction {
+        let row_number_expr = Expr::WindowFunction(Box::new(expr::WindowFunction {
             fun: WindowFunctionDefinition::WindowUDF(Arc::new(RowNumber::new().into())),
-            args: Vec::new(),
-            partition_by: Vec::new(),
-            order_by: vec![expr::Sort {
-                expr: flat_col(ORDER_COL),
-                asc: true,
-                nulls_first: false,
-            }],
-            window_frame: WindowFrame::new(Some(true)),
-            null_treatment: Some(NullTreatment::IgnoreNulls),
-        })
+            params: WindowFunctionParams {
+                args: Vec::new(),
+                partition_by: Vec::new(),
+                order_by: vec![expr::Sort {
+                    expr: flat_col(ORDER_COL),
+                    asc: true,
+                    nulls_first: false,
+                }],
+                window_frame: WindowFrame::new(Some(true)),
+                null_treatment: Some(NullTreatment::IgnoreNulls),
+            },
+        }))
         .alias(&self.r#as);
 
         let result = dataframe.select(vec![
             Expr::Wildcard {
                 qualifier: None,
-                options: WildcardOptions::default(),
+                options: Box::new(WildcardOptions::default()),
             },
             row_number_expr,
         ])?;

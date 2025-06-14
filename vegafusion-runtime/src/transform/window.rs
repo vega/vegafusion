@@ -4,7 +4,7 @@ use async_trait::async_trait;
 
 use datafusion::prelude::DataFrame;
 use datafusion_common::ScalarValue;
-use datafusion_expr::{expr, lit, Expr, WindowFrame, WindowFunctionDefinition};
+use datafusion_expr::{expr, lit, Expr, WindowFrame, WindowFunctionDefinition, expr::WindowFunctionParams};
 use datafusion_functions_aggregate::variance::{var_pop_udaf, var_samp_udaf};
 use std::sync::Arc;
 use vegafusion_core::error::Result;
@@ -13,7 +13,7 @@ use vegafusion_core::proto::gen::transforms::{
 };
 use vegafusion_core::task_graph::task_value::TaskValue;
 
-use datafusion_expr::{BuiltInWindowFunction, WindowFrameBound, WindowFrameUnits};
+use datafusion_expr::{WindowFrameBound, WindowFrameUnits};
 use datafusion_functions_aggregate::average::avg_udaf;
 use datafusion_functions_aggregate::count::count_udaf;
 use datafusion_functions_aggregate::min_max::{max_udaf, min_udaf};
@@ -197,14 +197,14 @@ impl TransformTrait for Window {
                                 Vec::new(),
                             ),
                             WindowOp::FirstValue => (
-                                WindowFunctionDefinition::BuiltInWindowFunction(
-                                    BuiltInWindowFunction::FirstValue,
+                                WindowFunctionDefinition::AggregateUDF(
+                                    datafusion_functions_aggregate::first_last::first_value_udaf(),
                                 ),
                                 vec![unescaped_col(field)],
                             ),
                             WindowOp::LastValue => (
-                                WindowFunctionDefinition::BuiltInWindowFunction(
-                                    BuiltInWindowFunction::LastValue,
+                                WindowFunctionDefinition::AggregateUDF(
+                                    datafusion_functions_aggregate::first_last::last_value_udaf(),
                                 ),
                                 vec![unescaped_col(field)],
                             ),
@@ -218,14 +218,16 @@ impl TransformTrait for Window {
                     }
                 };
 
-                let window_expr = Expr::WindowFunction(expr::WindowFunction {
+                let window_expr = Expr::WindowFunction(Box::new(expr::WindowFunction {
                     fun: window_fn,
-                    args,
-                    partition_by: partition_by.clone(),
-                    order_by: order_by.clone(),
-                    window_frame: window_frame.clone(),
-                    null_treatment: None,
-                });
+                    params: WindowFunctionParams {
+                        args,
+                        partition_by: partition_by.clone(),
+                        order_by: order_by.clone(),
+                        window_frame: window_frame.clone(),
+                        null_treatment: None,
+                    },
+                }));
 
                 if let Some(alias) = self.aliases.get(i) {
                     Ok(window_expr.alias(alias))

@@ -1,4 +1,3 @@
-use crate::data::util::DataFrameUtils;
 use crate::expression::compiler::config::CompilationConfig;
 use crate::transform::TransformTrait;
 use async_trait::async_trait;
@@ -7,6 +6,7 @@ use datafusion_common::JoinType;
 use datafusion_expr::expr::WildcardOptions;
 use datafusion_expr::{
     expr, lit, qualified_wildcard, when, Expr, WindowFrame, WindowFunctionDefinition,
+    expr::AggregateFunctionParams, expr::WindowFunctionParams,
 };
 use datafusion_functions::expr_fn::{abs, coalesce};
 use datafusion_functions_aggregate::expr_fn::max;
@@ -72,14 +72,16 @@ impl TransformTrait for Stack {
 
         if let StackOffset::Zero = offset {
             // Build window function to compute stacked value
-            let window_expr = Expr::WindowFunction(expr::WindowFunction {
+            let window_expr = Expr::WindowFunction(Box::new(expr::WindowFunction {
                 fun: WindowFunctionDefinition::AggregateUDF(sum_udaf()),
-                args: vec![numeric_field.clone()],
-                partition_by,
-                order_by,
-                window_frame: WindowFrame::new(Some(true)),
-                null_treatment: Some(NullTreatment::IgnoreNulls),
-            });
+                params: WindowFunctionParams {
+                    args: vec![numeric_field.clone()],
+                    partition_by,
+                    order_by,
+                    window_frame: WindowFrame::new(Some(true)),
+                    null_treatment: Some(NullTreatment::IgnoreNulls),
+                },
+            }));
 
             // Initialize selection with all columns, minus those that conflict with start/stop fields
             let mut select_exprs = dataframe
@@ -134,7 +136,7 @@ impl TransformTrait for Stack {
             let dataframe = dataframe.select(vec![
                 Expr::Wildcard {
                     qualifier: None,
-                    options: WildcardOptions::default(),
+                    options: Box::new(WildcardOptions::default()),
                 },
                 numeric_field.alias(stack_col_name),
             ])?;
@@ -142,11 +144,13 @@ impl TransformTrait for Stack {
             // Create aggregate for total of stack value
             let total_agg = Expr::AggregateFunction(expr::AggregateFunction {
                 func: sum_udaf(),
-                args: vec![flat_col(stack_col_name)],
-                distinct: false,
-                filter: None,
-                order_by: None,
-                null_treatment: Some(NullTreatment::IgnoreNulls),
+                params: AggregateFunctionParams {
+                    args: vec![flat_col(stack_col_name)],
+                    distinct: false,
+                    filter: None,
+                    order_by: None,
+                    null_treatment: Some(NullTreatment::IgnoreNulls),
+                },
             })
             .alias("__total");
 
@@ -166,36 +170,35 @@ impl TransformTrait for Stack {
                     .map(|p| relation_col(p, "lhs").eq(relation_col(p, "rhs")))
                     .collect::<Vec<_>>();
 
-                dataframe
+                let lhs_df = dataframe
                     .clone()
                     .aggregate(partition_by.clone(), vec![total_agg])?
-                    .alias("lhs")?
-                    .join_on(dataframe.alias("rhs")?, JoinType::Inner, on_exprs)?
-                    .select(vec![
-                        qualified_wildcard("rhs"),
-                        relation_col("__total", "lhs"),
-                    ])?
+                    .alias("lhs")?;
+                let rhs_df = dataframe.alias("rhs")?;
+                lhs_df.join_on(rhs_df, JoinType::Inner, on_exprs)?
             };
 
             // Build window function to compute cumulative sum of stack column
             let cumulative_field = "_cumulative";
             let fun = WindowFunctionDefinition::AggregateUDF(sum_udaf());
 
-            let window_expr = Expr::WindowFunction(expr::WindowFunction {
+            let window_expr = Expr::WindowFunction(Box::new(expr::WindowFunction {
                 fun,
-                args: vec![flat_col(stack_col_name)],
-                partition_by,
-                order_by,
-                window_frame: WindowFrame::new(Some(true)),
-                null_treatment: Some(NullTreatment::IgnoreNulls),
-            })
+                params: WindowFunctionParams {
+                    args: vec![flat_col(stack_col_name)],
+                    partition_by,
+                    order_by,
+                    window_frame: WindowFrame::new(Some(true)),
+                    null_treatment: Some(NullTreatment::IgnoreNulls),
+                },
+            }))
             .alias(cumulative_field);
 
             // Perform selection to add new field value
             let dataframe = dataframe.select(vec![
                 Expr::Wildcard {
                     qualifier: None,
-                    options: WildcardOptions::default(),
+                    options: Box::new(WildcardOptions::default()),
                 },
                 window_expr,
             ])?;
