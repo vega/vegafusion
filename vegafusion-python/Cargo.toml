@@ -13,7 +13,7 @@ crate-type = ["cdylib"]
 protobuf-src = ["vegafusion-core/protobuf-src"]
 
 [dependencies]
-sysinfo = "0.32.0"
+sysinfo = "0.35.0"
 
 [dependencies.async-trait]
 workspace = true
