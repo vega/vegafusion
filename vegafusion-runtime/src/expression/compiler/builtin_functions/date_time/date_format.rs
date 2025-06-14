@@ -20,12 +20,16 @@ pub fn time_format_fn(
     let format_tz_str = if args.len() >= 3 {
         // Second argument is an override local timezone string
         let format_tz_expr = &args[2];
-        if let Expr::Literal(ScalarValue::Utf8(Some(format_tz_str)), _) = format_tz_expr {
-            format_tz_str.clone()
-        } else {
-            return Err(VegaFusionError::parse(
-                "Third argument to timeFormat must be a timezone string",
-            ));
+        match format_tz_expr {
+            Expr::Literal(ScalarValue::Utf8(Some(format_tz_str)), _) |
+            Expr::Literal(ScalarValue::Utf8View(Some(format_tz_str)), _) => {
+                format_tz_str.clone()
+            }
+            _ => {
+                return Err(VegaFusionError::parse(
+                    "Third argument to timeFormat must be a timezone string",
+                ));
+            }
         }
     } else {
         tz_config.local_tz.to_string()
@@ -67,7 +71,8 @@ pub fn extract_format_str(args: &[Expr]) -> Result<String> {
     let format_str = if args.len() >= 2 {
         let format_arg = &args[1];
         match format_arg {
-            Expr::Literal(ScalarValue::Utf8(Some(format_str)), _) => Ok(format_str.clone()),
+            Expr::Literal(ScalarValue::Utf8(Some(format_str)), _) |
+            Expr::Literal(ScalarValue::Utf8View(Some(format_str)), _) => Ok(format_str.clone()),
             _ => {
                 return Err(VegaFusionError::compilation(
                     "the second argument to the timeFormat function must be a literal string",

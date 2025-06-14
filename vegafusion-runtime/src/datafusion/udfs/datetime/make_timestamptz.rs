@@ -10,7 +10,7 @@ use vegafusion_common::{
         datatypes::{DataType, TimeUnit},
     },
     datafusion_common::{DataFusionError, ScalarValue},
-    datafusion_expr::{ColumnarValue, ScalarUDF, ScalarFunctionArgs, Signature, Volatility},
+    datafusion_expr::{ColumnarValue, ScalarUDF, ScalarFunctionArgs, Signature, TypeSignature, Volatility},
 };
 
 #[derive(Debug, Clone)]
@@ -28,16 +28,28 @@ impl MakeTimestamptzUDF {
     pub fn new() -> Self {
         // Use Signature::coercible instead of Signature::exact so that float will be
         // truncated to ints.
-        let signature = Signature::exact(
+        let signature = Signature::one_of(
             vec![
-                DataType::Int64, // year
-                DataType::Int64, // month
-                DataType::Int64, // date
-                DataType::Int64, // hour
-                DataType::Int64, // minute
-                DataType::Int64, // second
-                DataType::Int64, // millisecond
-                DataType::Utf8,  // time zone
+                TypeSignature::Exact(vec![
+                    DataType::Int64, // year
+                    DataType::Int64, // month
+                    DataType::Int64, // date
+                    DataType::Int64, // hour
+                    DataType::Int64, // minute
+                    DataType::Int64, // second
+                    DataType::Int64, // millisecond
+                    DataType::Utf8,  // time zone
+                ]),
+                TypeSignature::Exact(vec![
+                    DataType::Int64, // year
+                    DataType::Int64, // month
+                    DataType::Int64, // date
+                    DataType::Int64, // hour
+                    DataType::Int64, // minute
+                    DataType::Int64, // second
+                    DataType::Int64, // millisecond
+                    DataType::Utf8View,  // time zone
+                ]),
             ],
             Volatility::Immutable,
         );

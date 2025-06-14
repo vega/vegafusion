@@ -18,11 +18,15 @@ pub fn time_offset_fn(
         )));
     }
 
-    let Expr::Literal(ScalarValue::Utf8(Some(unit)), _) = &args[0] else {
-        return Err(VegaFusionError::compilation(format!(
-            "The first argument to the timeOffset function must be a string: received {:?}",
-            args[0]
-        )));
+    let unit = match &args[0] {
+        Expr::Literal(ScalarValue::Utf8(Some(unit)), _) | 
+        Expr::Literal(ScalarValue::Utf8View(Some(unit)), _) => unit,
+        _ => {
+            return Err(VegaFusionError::compilation(format!(
+                "The first argument to the timeOffset function must be a string: received {:?}",
+                args[0]
+            )));
+        }
     };
 
     let timestamp = &args[1];

@@ -9,7 +9,7 @@ use vegafusion_common::arrow::error::ArrowError;
 use vegafusion_common::arrow::temporal_conversions::date64_to_datetime;
 use vegafusion_common::datafusion_common::{DataFusionError, ScalarValue};
 use vegafusion_common::datafusion_expr::{
-    ColumnarValue, ScalarUDF, ScalarFunctionArgs, ScalarUDFImpl, Signature, Volatility,
+    ColumnarValue, ScalarUDF, ScalarFunctionArgs, ScalarUDFImpl, Signature, TypeSignature, Volatility,
 };
 
 fn extract_bool(value: &ColumnarValue) -> std::result::Result<bool, DataFusionError> {
@@ -276,21 +276,38 @@ impl Default for TimeunitStartUDF {
 
 impl TimeunitStartUDF {
     pub fn new() -> Self {
-        let signature = Signature::exact(
+        let signature = Signature::one_of(
             vec![
-                DataType::Timestamp(TimeUnit::Millisecond, Some("UTC".into())), // [0] timestamp
-                DataType::Utf8,                                                 // [1] timezone
-                DataType::Boolean,                                              // [2] Year
-                DataType::Boolean,                                              // [3] Quarter
-                DataType::Boolean,                                              // [4] Month
-                DataType::Boolean,                                              // [5] Date
-                DataType::Boolean,                                              // [6] Week
-                DataType::Boolean,                                              // [7] Day
-                DataType::Boolean,                                              // [8] DayOfYear
-                DataType::Boolean,                                              // [9] Hours
-                DataType::Boolean,                                              // [10] Minutes
-                DataType::Boolean,                                              // [11] Seconds
-                DataType::Boolean,                                              // [12] Milliseconds
+                TypeSignature::Exact(vec![
+                    DataType::Timestamp(TimeUnit::Millisecond, Some("UTC".into())), // [0] timestamp
+                    DataType::Utf8,                                                 // [1] timezone
+                    DataType::Boolean,                                              // [2] Year
+                    DataType::Boolean,                                              // [3] Quarter
+                    DataType::Boolean,                                              // [4] Month
+                    DataType::Boolean,                                              // [5] Date
+                    DataType::Boolean,                                              // [6] Week
+                    DataType::Boolean,                                              // [7] Day
+                    DataType::Boolean,                                              // [8] DayOfYear
+                    DataType::Boolean,                                              // [9] Hours
+                    DataType::Boolean,                                              // [10] Minutes
+                    DataType::Boolean,                                              // [11] Seconds
+                    DataType::Boolean,                                              // [12] Milliseconds
+                ]),
+                TypeSignature::Exact(vec![
+                    DataType::Timestamp(TimeUnit::Millisecond, Some("UTC".into())), // [0] timestamp
+                    DataType::Utf8View,                                             // [1] timezone
+                    DataType::Boolean,                                              // [2] Year
+                    DataType::Boolean,                                              // [3] Quarter
+                    DataType::Boolean,                                              // [4] Month
+                    DataType::Boolean,                                              // [5] Date
+                    DataType::Boolean,                                              // [6] Week
+                    DataType::Boolean,                                              // [7] Day
+                    DataType::Boolean,                                              // [8] DayOfYear
+                    DataType::Boolean,                                              // [9] Hours
+                    DataType::Boolean,                                              // [10] Minutes
+                    DataType::Boolean,                                              // [11] Seconds
+                    DataType::Boolean,                                              // [12] Milliseconds
+                ]),
             ],
             Volatility::Immutable,
         );

@@ -18,7 +18,7 @@ pub fn indexof_transform(
             .with_context(|| format!("Failed to infer type of expression: {array_expr:?}"))?;
 
         let indexof_expr = match dtype {
-            DataType::Utf8 | DataType::LargeUtf8 => {
+            DataType::Utf8 | DataType::LargeUtf8 | DataType::Utf8View => {
                 Ok(coalesce(vec![
                     strpos(array_expr, item_expr).sub(lit(1)),
                     lit(-1)

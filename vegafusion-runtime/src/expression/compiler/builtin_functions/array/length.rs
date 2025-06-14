@@ -17,7 +17,7 @@ pub fn length_transform(
             .with_context(|| format!("Failed to infer type of expression: {arg:?}"))?;
 
         let len_expr = match dtype {
-            DataType::Utf8 | DataType::LargeUtf8 => {
+            DataType::Utf8 | DataType::LargeUtf8 | DataType::Utf8View => {
                 Ok(character_length(arg))
             },
             DataType::List(_) | DataType::LargeList(_) | DataType::FixedSizeList(_, _) => {
