@@ -52,9 +52,9 @@ features = ["derive"]
 [dependencies.wasm-bindgen]
 version = "0.2.78"
 
-[dependencies.getrandom]
-version = "0.2.8"
-features = ["js"]
+# Ensure both getrandom versions have proper WASM support
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+getrandom = { version = "0.2", features = ["js"] }
 
 [dependencies.chrono]
 version = "0.4.31"
