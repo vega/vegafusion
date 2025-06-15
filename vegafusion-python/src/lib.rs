@@ -474,8 +474,8 @@ impl PyVegaFusionRuntime {
             let datasets = datasets
                 .into_iter()
                 .map(|tbl| {
-                    let name: PyObject = tbl.name.into_pyobject(py).unwrap().into();
-                    let scope: PyObject = tbl.scope.into_pyobject(py).unwrap().into();
+                    let name: PyObject = tbl.name.into_pyobject(py)?.into();
+                    let scope: PyObject = tbl.scope.into_pyobject(py)?.into();
                     let table = match extracted_format.as_str() {
                         "arro3" => {
                             let pytable = tbl.table.to_pyo3_arrow()?;
@@ -486,7 +486,7 @@ impl PyVegaFusionRuntime {
                             PyBytes::new(py, tbl.table.to_ipc_bytes()?.as_slice()).into()
                         }
                         "arrow-ipc-base64" => {
-                            tbl.table.to_ipc_base64()?.into_pyobject(py).unwrap().into()
+                            tbl.table.to_ipc_base64()?.into_pyobject(py)?.into()
                         }
                         _ => {
                             return Err(PyValueError::new_err(format!(
