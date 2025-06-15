@@ -35,7 +35,7 @@ default-features = false
 [workspace.dependencies.sqlparser]
 version = "0.55.0"
 default-features = false
-features = ["std"]
+features = [ "std", "visitor",]
 
 [workspace.dependencies.chrono]
 version = "0.4.35"
@@ -44,7 +44,7 @@ default-features = false
 [workspace.dependencies.ahash]
 version = "0.8.12"
 default-features = false
-features = ["std"]
+features = [ "std", "getrandom",]
 
 [workspace.dependencies.chrono-tz]
 version = "0.9.0"
@@ -177,4 +177,53 @@ version = "3.14.0"
 [workspace.dependencies.num-traits]
 version = "0.2.19"
 
+[workspace.dependencies.getrandom]
+version = "0.3"
 
+[patch.crates-io.datafusion]
+git = "https://github.com/jonmmease/arrow-datafusion"
+branch = "fix-sqlparser-wasm-compatibility"
+
+[patch.crates-io.datafusion-common]
+git = "https://github.com/jonmmease/arrow-datafusion"
+branch = "fix-sqlparser-wasm-compatibility"
+
+[patch.crates-io.datafusion-expr]
+git = "https://github.com/jonmmease/arrow-datafusion"
+branch = "fix-sqlparser-wasm-compatibility"
+
+[patch.crates-io.datafusion-proto]
+git = "https://github.com/jonmmease/arrow-datafusion"
+branch = "fix-sqlparser-wasm-compatibility"
+
+[patch.crates-io.datafusion-proto-common]
+git = "https://github.com/jonmmease/arrow-datafusion"
+branch = "fix-sqlparser-wasm-compatibility"
+
+[patch.crates-io.datafusion-physical-expr]
+git = "https://github.com/jonmmease/arrow-datafusion"
+branch = "fix-sqlparser-wasm-compatibility"
+
+[patch.crates-io.datafusion-optimizer]
+git = "https://github.com/jonmmease/arrow-datafusion"
+branch = "fix-sqlparser-wasm-compatibility"
+
+[patch.crates-io.datafusion-functions]
+git = "https://github.com/jonmmease/arrow-datafusion"
+branch = "fix-sqlparser-wasm-compatibility"
+
+[patch.crates-io.datafusion-functions-nested]
+git = "https://github.com/jonmmease/arrow-datafusion"
+branch = "fix-sqlparser-wasm-compatibility"
+
+[patch.crates-io.datafusion-functions-aggregate]
+git = "https://github.com/jonmmease/arrow-datafusion"
+branch = "fix-sqlparser-wasm-compatibility"
+
+[patch.crates-io.datafusion-functions-window]
+git = "https://github.com/jonmmease/arrow-datafusion"
+branch = "fix-sqlparser-wasm-compatibility"
+
+[patch.crates-io.datafusion-sql]
+git = "https://github.com/jonmmease/arrow-datafusion"
+branch = "fix-sqlparser-wasm-compatibility"

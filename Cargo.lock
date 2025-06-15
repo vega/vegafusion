@@ -1092,8 +1092,7 @@ dependencies = [
 [[package]]
 name = "datafusion"
 version = "48.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cc6cb8c2c81eada072059983657d6c9caf3fddefc43b4a65551d243253254a96"
+source = "git+https://github.com/jonmmease/arrow-datafusion?branch=fix-sqlparser-wasm-compatibility#58a67fe4cf54c2e26fe2e043a39e18f5b1fb18d1"
 dependencies = [
  "arrow",
  "arrow-ipc",
@@ -1146,8 +1145,7 @@ dependencies = [
 [[package]]
 name = "datafusion-catalog"
 version = "48.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b7be8d1b627843af62e447396db08fe1372d882c0eb8d0ea655fd1fbc33120ee"
+source = "git+https://github.com/jonmmease/arrow-datafusion?branch=fix-sqlparser-wasm-compatibility#58a67fe4cf54c2e26fe2e043a39e18f5b1fb18d1"
 dependencies = [
  "arrow",
  "async-trait",
@@ -1172,8 +1170,7 @@ dependencies = [
 [[package]]
 name = "datafusion-catalog-listing"
 version = "48.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "38ab16c5ae43f65ee525fc493ceffbc41f40dee38b01f643dfcfc12959e92038"
+source = "git+https://github.com/jonmmease/arrow-datafusion?branch=fix-sqlparser-wasm-compatibility#58a67fe4cf54c2e26fe2e043a39e18f5b1fb18d1"
 dependencies = [
  "arrow",
  "async-trait",
@@ -1195,8 +1192,7 @@ dependencies = [
 [[package]]
 name = "datafusion-common"
 version = "48.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d3d56b2ac9f476b93ca82e4ef5fb00769c8a3f248d12b4965af7e27635fa7e12"
+source = "git+https://github.com/jonmmease/arrow-datafusion?branch=fix-sqlparser-wasm-compatibility#58a67fe4cf54c2e26fe2e043a39e18f5b1fb18d1"
 dependencies = [
  "ahash",
  "arrow",
@@ -1219,8 +1215,7 @@ dependencies = [
 [[package]]
 name = "datafusion-common-runtime"
 version = "48.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "16015071202d6133bc84d72756176467e3e46029f3ce9ad2cb788f9b1ff139b2"
+source = "git+https://github.com/jonmmease/arrow-datafusion?branch=fix-sqlparser-wasm-compatibility#58a67fe4cf54c2e26fe2e043a39e18f5b1fb18d1"
 dependencies = [
  "futures",
  "log",
@@ -1230,8 +1225,7 @@ dependencies = [
 [[package]]
 name = "datafusion-datasource"
 version = "48.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b77523c95c89d2a7eb99df14ed31390e04ab29b43ff793e562bdc1716b07e17b"
+source = "git+https://github.com/jonmmease/arrow-datafusion?branch=fix-sqlparser-wasm-compatibility#58a67fe4cf54c2e26fe2e043a39e18f5b1fb18d1"
 dependencies = [
  "arrow",
  "async-compression",
@@ -1266,8 +1260,7 @@ dependencies = [
 [[package]]
 name = "datafusion-datasource-csv"
 version = "48.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "40d25c5e2c0ebe8434beeea997b8e88d55b3ccc0d19344293f2373f65bc524fc"
+source = "git+https://github.com/jonmmease/arrow-datafusion?branch=fix-sqlparser-wasm-compatibility#58a67fe4cf54c2e26fe2e043a39e18f5b1fb18d1"
 dependencies = [
  "arrow",
  "async-trait",
@@ -1291,8 +1284,7 @@ dependencies = [
 [[package]]
 name = "datafusion-datasource-json"
 version = "48.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3dc6959e1155741ab35369e1dc7673ba30fc45ed568fad34c01b7cb1daeb4d4c"
+source = "git+https://github.com/jonmmease/arrow-datafusion?branch=fix-sqlparser-wasm-compatibility#58a67fe4cf54c2e26fe2e043a39e18f5b1fb18d1"
 dependencies = [
  "arrow",
  "async-trait",
@@ -1316,8 +1308,7 @@ dependencies = [
 [[package]]
 name = "datafusion-datasource-parquet"
 version = "48.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b7a6afdfe358d70f4237f60eaef26ae5a1ce7cb2c469d02d5fc6c7fd5d84e58b"
+source = "git+https://github.com/jonmmease/arrow-datafusion?branch=fix-sqlparser-wasm-compatibility#58a67fe4cf54c2e26fe2e043a39e18f5b1fb18d1"
 dependencies = [
  "arrow",
  "async-trait",
@@ -1347,14 +1338,12 @@ dependencies = [
 [[package]]
 name = "datafusion-doc"
 version = "48.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9bcd8a3e3e3d02ea642541be23d44376b5d5c37c2938cce39b3873cdf7186eea"
+source = "git+https://github.com/jonmmease/arrow-datafusion?branch=fix-sqlparser-wasm-compatibility#58a67fe4cf54c2e26fe2e043a39e18f5b1fb18d1"
 
 [[package]]
 name = "datafusion-execution"
 version = "48.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "670da1d45d045eee4c2319b8c7ea57b26cf48ab77b630aaa50b779e406da476a"
+source = "git+https://github.com/jonmmease/arrow-datafusion?branch=fix-sqlparser-wasm-compatibility#58a67fe4cf54c2e26fe2e043a39e18f5b1fb18d1"
 dependencies = [
  "arrow",
  "dashmap",
@@ -1372,8 +1361,7 @@ dependencies = [
 [[package]]
 name = "datafusion-expr"
 version = "48.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b3a577f64bdb7e2cc4043cd97f8901d8c504711fde2dbcb0887645b00d7c660b"
+source = "git+https://github.com/jonmmease/arrow-datafusion?branch=fix-sqlparser-wasm-compatibility#58a67fe4cf54c2e26fe2e043a39e18f5b1fb18d1"
 dependencies = [
  "arrow",
  "chrono",
@@ -1393,8 +1381,7 @@ dependencies = [
 [[package]]
 name = "datafusion-expr-common"
 version = "48.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "51b7916806ace3e9f41884f230f7f38ebf0e955dfbd88266da1826f29a0b9a6a"
+source = "git+https://github.com/jonmmease/arrow-datafusion?branch=fix-sqlparser-wasm-compatibility#58a67fe4cf54c2e26fe2e043a39e18f5b1fb18d1"
 dependencies = [
  "arrow",
  "datafusion-common",
@@ -1406,8 +1393,7 @@ dependencies = [
 [[package]]
 name = "datafusion-functions"
 version = "48.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7fb31c9dc73d3e0c365063f91139dc273308f8a8e124adda9898db8085d68357"
+source = "git+https://github.com/jonmmease/arrow-datafusion?branch=fix-sqlparser-wasm-compatibility#58a67fe4cf54c2e26fe2e043a39e18f5b1fb18d1"
 dependencies = [
  "arrow",
  "arrow-buffer",
@@ -1435,8 +1421,7 @@ dependencies = [
 [[package]]
 name = "datafusion-functions-aggregate"
 version = "48.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ebb72c6940697eaaba9bd1f746a697a07819de952b817e3fb841fb75331ad5d4"
+source = "git+https://github.com/jonmmease/arrow-datafusion?branch=fix-sqlparser-wasm-compatibility#58a67fe4cf54c2e26fe2e043a39e18f5b1fb18d1"
 dependencies = [
  "ahash",
  "arrow",
@@ -1456,8 +1441,7 @@ dependencies = [
 [[package]]
 name = "datafusion-functions-aggregate-common"
 version = "48.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d7fdc54656659e5ecd49bf341061f4156ab230052611f4f3609612a0da259696"
+source = "git+https://github.com/jonmmease/arrow-datafusion?branch=fix-sqlparser-wasm-compatibility#58a67fe4cf54c2e26fe2e043a39e18f5b1fb18d1"
 dependencies = [
  "ahash",
  "arrow",
@@ -1469,8 +1453,7 @@ dependencies = [
 [[package]]
 name = "datafusion-functions-nested"
 version = "48.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fad94598e3374938ca43bca6b675febe557e7a14eb627d617db427d70d65118b"
+source = "git+https://github.com/jonmmease/arrow-datafusion?branch=fix-sqlparser-wasm-compatibility#58a67fe4cf54c2e26fe2e043a39e18f5b1fb18d1"
 dependencies = [
  "arrow",
  "arrow-ord",
@@ -1490,8 +1473,7 @@ dependencies = [
 [[package]]
 name = "datafusion-functions-table"
 version = "48.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "de2fc6c2946da5cab8364fb28b5cac3115f0f3a87960b235ed031c3f7e2e639b"
+source = "git+https://github.com/jonmmease/arrow-datafusion?branch=fix-sqlparser-wasm-compatibility#58a67fe4cf54c2e26fe2e043a39e18f5b1fb18d1"
 dependencies = [
  "arrow",
  "async-trait",
@@ -1506,8 +1488,7 @@ dependencies = [
 [[package]]
 name = "datafusion-functions-window"
 version = "48.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3e5746548a8544870a119f556543adcd88fe0ba6b93723fe78ad0439e0fbb8b4"
+source = "git+https://github.com/jonmmease/arrow-datafusion?branch=fix-sqlparser-wasm-compatibility#58a67fe4cf54c2e26fe2e043a39e18f5b1fb18d1"
 dependencies = [
  "arrow",
  "datafusion-common",
@@ -1524,8 +1505,7 @@ dependencies = [
 [[package]]
 name = "datafusion-functions-window-common"
 version = "48.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "dcbe9404382cda257c434f22e13577bee7047031dfdb6216dd5e841b9465e6fe"
+source = "git+https://github.com/jonmmease/arrow-datafusion?branch=fix-sqlparser-wasm-compatibility#58a67fe4cf54c2e26fe2e043a39e18f5b1fb18d1"
 dependencies = [
  "datafusion-common",
  "datafusion-physical-expr-common",
@@ -1534,8 +1514,7 @@ dependencies = [
 [[package]]
 name = "datafusion-macros"
 version = "48.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8dce50e3b637dab0d25d04d2fe79dfdca2b257eabd76790bffd22c7f90d700c8"
+source = "git+https://github.com/jonmmease/arrow-datafusion?branch=fix-sqlparser-wasm-compatibility#58a67fe4cf54c2e26fe2e043a39e18f5b1fb18d1"
 dependencies = [
  "datafusion-expr",
  "quote",
@@ -1545,8 +1524,7 @@ dependencies = [
 [[package]]
 name = "datafusion-optimizer"
 version = "48.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "03cfaacf06445dc3bbc1e901242d2a44f2cae99a744f49f3fefddcee46240058"
+source = "git+https://github.com/jonmmease/arrow-datafusion?branch=fix-sqlparser-wasm-compatibility#58a67fe4cf54c2e26fe2e043a39e18f5b1fb18d1"
 dependencies = [
  "arrow",
  "chrono",
@@ -1564,8 +1542,7 @@ dependencies = [
 [[package]]
 name = "datafusion-physical-expr"
 version = "48.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1908034a89d7b2630898e06863583ae4c00a0dd310c1589ca284195ee3f7f8a6"
+source = "git+https://github.com/jonmmease/arrow-datafusion?branch=fix-sqlparser-wasm-compatibility#58a67fe4cf54c2e26fe2e043a39e18f5b1fb18d1"
 dependencies = [
  "ahash",
  "arrow",
@@ -1586,8 +1563,7 @@ dependencies = [
 [[package]]
 name = "datafusion-physical-expr-common"
 version = "48.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "47b7a12dd59ea07614b67dbb01d85254fbd93df45bcffa63495e11d3bdf847df"
+source = "git+https://github.com/jonmmease/arrow-datafusion?branch=fix-sqlparser-wasm-compatibility#58a67fe4cf54c2e26fe2e043a39e18f5b1fb18d1"
 dependencies = [
  "ahash",
  "arrow",
@@ -1600,8 +1576,7 @@ dependencies = [
 [[package]]
 name = "datafusion-physical-optimizer"
 version = "48.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4371cc4ad33978cc2a8be93bd54a232d3f2857b50401a14631c0705f3f910aae"
+source = "git+https://github.com/jonmmease/arrow-datafusion?branch=fix-sqlparser-wasm-compatibility#58a67fe4cf54c2e26fe2e043a39e18f5b1fb18d1"
 dependencies = [
  "arrow",
  "datafusion-common",
@@ -1619,8 +1594,7 @@ dependencies = [
 [[package]]
 name = "datafusion-physical-plan"
 version = "48.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "dc47bc33025757a5c11f2cd094c5b6b5ed87f46fa33c023e6fdfa25fcbfade23"
+source = "git+https://github.com/jonmmease/arrow-datafusion?branch=fix-sqlparser-wasm-compatibility#58a67fe4cf54c2e26fe2e043a39e18f5b1fb18d1"
 dependencies = [
  "ahash",
  "arrow",
@@ -1649,8 +1623,7 @@ dependencies = [
 [[package]]
 name = "datafusion-proto"
 version = "48.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d8f5d9acd7d96e3bf2a7bb04818373cab6e51de0356e3694b94905fee7b4e8b6"
+source = "git+https://github.com/jonmmease/arrow-datafusion?branch=fix-sqlparser-wasm-compatibility#58a67fe4cf54c2e26fe2e043a39e18f5b1fb18d1"
 dependencies = [
  "arrow",
  "chrono",
@@ -1665,8 +1638,7 @@ dependencies = [
 [[package]]
 name = "datafusion-proto-common"
 version = "48.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "09ecb5ec152c4353b60f7a5635489834391f7a291d2b39a4820cd469e318b78e"
+source = "git+https://github.com/jonmmease/arrow-datafusion?branch=fix-sqlparser-wasm-compatibility#58a67fe4cf54c2e26fe2e043a39e18f5b1fb18d1"
 dependencies = [
  "arrow",
  "datafusion-common",
@@ -1676,8 +1648,7 @@ dependencies = [
 [[package]]
 name = "datafusion-session"
 version = "48.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d7485da32283985d6b45bd7d13a65169dcbe8c869e25d01b2cfbc425254b4b49"
+source = "git+https://github.com/jonmmease/arrow-datafusion?branch=fix-sqlparser-wasm-compatibility#58a67fe4cf54c2e26fe2e043a39e18f5b1fb18d1"
 dependencies = [
  "arrow",
  "async-trait",
@@ -1700,8 +1671,7 @@ dependencies = [
 [[package]]
 name = "datafusion-sql"
 version = "48.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a466b15632befddfeac68c125f0260f569ff315c6831538cbb40db754134e0df"
+source = "git+https://github.com/jonmmease/arrow-datafusion?branch=fix-sqlparser-wasm-compatibility#58a67fe4cf54c2e26fe2e043a39e18f5b1fb18d1"
 dependencies = [
  "arrow",
  "bigdecimal",
@@ -3470,7 +3440,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "be769465445e8c1474e9c5dac2018218498557af32d9ed057325ec9a41ae81bf"
 dependencies = [
  "heck 0.5.0",
- "itertools 0.14.0",
+ "itertools 0.10.5",
  "log",
  "multimap",
  "once_cell",
@@ -3490,7 +3460,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8a56d757972c98b346a9b766e3f02746cde6dd1cd1d1d563472929fdd74bec4d"
 dependencies = [
  "anyhow",
- "itertools 0.14.0",
+ "itertools 0.10.5",
  "proc-macro2",
  "quote",
  "syn 2.0.103",
@@ -4250,12 +4220,9 @@ checksum = "56199f7ddabf13fe5074ce809e7d3f42b42ae711800501b5b16ea82ad029c39d"
 
 [[package]]
 name = "slab"
-version = "0.4.9"
+version = "0.4.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8f92a496fb766b417c996b9c5e57daf2f7ad3b0bebe1ccfca4856390e3d3bb67"
-dependencies = [
- "autocfg",
-]
+checksum = "04dc19736151f35336d325007ac991178d504a119863a2fcb3758cdb5e52c50d"
 
 [[package]]
 name = "smallvec"
@@ -5120,14 +5087,17 @@ dependencies = [
  "async-trait",
  "chrono",
  "console_error_panic_hook",
+ "datafusion-sql",
  "futures",
  "getrandom 0.2.16",
+ "getrandom 0.3.3",
  "indexmap 1.9.3",
  "js-sys",
  "prost",
  "serde",
  "serde-wasm-bindgen",
  "serde_json",
+ "sqlparser",
  "vegafusion-common",
  "vegafusion-core",
  "vegafusion-runtime",
@@ -5351,7 +5321,7 @@ version = "0.1.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "cf221c93e13a30d793f7645a0e7762c55d169dbb0a49671918a2319d289b10bb"
 dependencies = [
- "windows-sys 0.59.0",
+ "windows-sys 0.48.0",
 ]
 
 [[package]]
