@@ -485,9 +485,7 @@ impl PyVegaFusionRuntime {
                         "arrow-ipc" => {
                             PyBytes::new(py, tbl.table.to_ipc_bytes()?.as_slice()).into()
                         }
-                        "arrow-ipc-base64" => {
-                            tbl.table.to_ipc_base64()?.into_pyobject(py)?.into()
-                        }
+                        "arrow-ipc-base64" => tbl.table.to_ipc_base64()?.into_pyobject(py)?.into(),
                         _ => {
                             return Err(PyValueError::new_err(format!(
                                 "Invalid extracted_format: {}",
