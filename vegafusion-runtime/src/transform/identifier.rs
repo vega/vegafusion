@@ -46,9 +46,9 @@ impl TransformTrait for Identifier {
             .iter()
             .map(|f| flat_col(f.name()))
             .collect();
-        
+
         select_exprs.push(row_number_expr.into());
-        
+
         let result = dataframe.select(select_exprs)?;
 
         Ok((result, Default::default()))
