@@ -194,7 +194,7 @@ impl TransformTrait for Stack {
                 .iter()
                 .map(|group| relation_col(group, main_alias))
                 .collect();
-            
+
             let order_by_qualified: Vec<_> = self
                 .sort_fields
                 .iter()
@@ -210,7 +210,7 @@ impl TransformTrait for Stack {
                     nulls_first: true,
                 }))
                 .collect();
-            
+
             let window_expr = Expr::WindowFunction(Box::new(expr::WindowFunction {
                 fun,
                 params: WindowFunctionParams {
@@ -238,11 +238,17 @@ impl TransformTrait for Stack {
                 select_exprs.push(window_expr.into());
                 dataframe.select(select_exprs)?
             } else {
-                // For grouped case, use wildcard as columns are already properly aliased
-                dataframe.select(vec![
-                    datafusion_expr::expr_fn::wildcard(),
-                    window_expr.into(),
-                ])?
+                // For grouped case, we also need to select columns explicitly to ensure proper aliases
+                let mut select_exprs: Vec<Expr> = Vec::new();
+                for field in &input_fields {
+                    select_exprs.push(relation_col(field, main_alias).alias(field));
+                }
+                // Also select __stack and __total
+                select_exprs.push(relation_col("__stack", main_alias).alias("__stack"));
+                select_exprs.push(relation_col("__total", "lhs").alias("__total"));
+                // Add the window expression
+                select_exprs.push(window_expr.into());
+                dataframe.select(select_exprs)?
             };
 
             // Build final_selection
