@@ -66,15 +66,13 @@ pub fn data_type(value: &Expr, schema: &DFSchema) -> Result<DataType> {
 pub fn to_boolean(value: Expr, schema: &DFSchema) -> Result<Expr> {
     let dtype = data_type(&value, schema)?;
     let boolean_value = if matches!(dtype, DataType::Boolean) {
-        when(value.clone().is_null(), lit(false))
-            .otherwise(value)?
+        when(value.clone().is_null(), lit(false)).otherwise(value)?
     } else if matches!(
         dtype,
         DataType::Int8 | DataType::Int16 | DataType::Int32 | DataType::Int64
     ) {
         let not_eq_zero = value.not_eq(lit(0));
-        when(not_eq_zero.clone().is_null(), lit(false))
-            .otherwise(not_eq_zero)?
+        when(not_eq_zero.clone().is_null(), lit(false)).otherwise(not_eq_zero)?
     } else {
         // TODO: JavaScript falsey cast
         //  - empty string to false
@@ -83,8 +81,7 @@ pub fn to_boolean(value: Expr, schema: &DFSchema) -> Result<Expr> {
             expr: Box::new(value),
             data_type: DataType::Boolean,
         });
-        when(cast_expr.clone().is_null(), lit(false))
-            .otherwise(cast_expr)?
+        when(cast_expr.clone().is_null(), lit(false)).otherwise(cast_expr)?
     };
 
     Ok(boolean_value)

@@ -185,10 +185,8 @@ fn bitwise_expr(lhs: Expr, op: Operator, rhs: Expr, schema: &DFSchema) -> Result
     // Vega treats null as zero for bitwise operations
     let left_cast = cast_to(lhs, &DataType::Int64, schema)?;
     let right_cast = cast_to(rhs, &DataType::Int64, schema)?;
-    let left = when(left_cast.clone().is_null(), lit(0))
-        .otherwise(left_cast)?;
-    let right = when(right_cast.clone().is_null(), lit(0))
-        .otherwise(right_cast)?;
+    let left = when(left_cast.clone().is_null(), lit(0)).otherwise(left_cast)?;
+    let right = when(right_cast.clone().is_null(), lit(0)).otherwise(right_cast)?;
 
     Ok(Expr::BinaryExpr(BinaryExpr {
         left: Box::new(left),

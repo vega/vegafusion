@@ -7,7 +7,8 @@ use async_trait::async_trait;
 use datafusion::prelude::DataFrame;
 use datafusion_common::{JoinType, ScalarValue};
 use datafusion_expr::{
-    expr, expr::WindowFunctionParams, lit, when, Expr, SortExpr, WindowFrame, WindowFunctionDefinition,
+    expr, expr::WindowFunctionParams, lit, when, Expr, SortExpr, WindowFrame,
+    WindowFunctionDefinition,
 };
 // Remove coalesce import as we'll use when/otherwise instead
 use datafusion_functions_aggregate::expr_fn::min;

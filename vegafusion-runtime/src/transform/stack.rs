@@ -64,11 +64,11 @@ impl TransformTrait for Stack {
 
         // Build partitioning column expressions
         let partition_by: Vec<_> = group_by.iter().map(|group| flat_col(group)).collect();
-        
+
         // Convert field to numeric first, then handle nulls with CASE expression
         let numeric_field_expr = to_numeric(flat_col(&field), dataframe.schema())?;
-        let numeric_field = when(numeric_field_expr.clone().is_null(), lit(0.0))
-            .otherwise(numeric_field_expr)?;
+        let numeric_field =
+            when(numeric_field_expr.clone().is_null(), lit(0.0)).otherwise(numeric_field_expr)?;
 
         if let StackOffset::Zero = offset {
             // Build window function to compute stacked value
@@ -160,13 +160,13 @@ impl TransformTrait for Stack {
                     .aggregate(vec![], vec![total_agg])?
                     .with_column("__join_key", lit(1))?
                     .alias("agg")?;
-                
+
                 // Join on the dummy key
-                dataframe_with_key
-                    .alias("orig")?
-                    .join_on(agg_df, JoinType::Inner, vec![
-                        relation_col("__join_key", "orig").eq(relation_col("__join_key", "agg"))
-                    ])?
+                dataframe_with_key.alias("orig")?.join_on(
+                    agg_df,
+                    JoinType::Inner,
+                    vec![relation_col("__join_key", "orig").eq(relation_col("__join_key", "agg"))],
+                )?
             } else {
                 // Join back total aggregation
                 let on_exprs = group_by
@@ -222,14 +222,16 @@ impl TransformTrait for Stack {
                     let max_total = max(flat_col("__total")).alias("__max_total");
 
                     // Save original field names
-                    let orig_fields: Vec<String> = dataframe.schema().fields().iter()
+                    let orig_fields: Vec<String> = dataframe
+                        .schema()
+                        .fields()
+                        .iter()
                         .map(|f| f.name().clone())
                         .collect();
 
                     // Create a dummy column for joining
-                    let mut select_exprs: Vec<Expr> = orig_fields.iter()
-                        .map(|name| flat_col(name))
-                        .collect();
+                    let mut select_exprs: Vec<Expr> =
+                        orig_fields.iter().map(|name| flat_col(name)).collect();
                     select_exprs.push(lit(1).alias("__join_key"));
                     let dataframe_with_key = dataframe.select(select_exprs)?;
 
@@ -240,25 +242,30 @@ impl TransformTrait for Stack {
                         .alias("agg")?;
 
                     // Join on the dummy key
-                    let joined = dataframe_with_key
-                        .alias("orig")?
-                        .join_on(agg_df, JoinType::Inner, vec![
-                            relation_col("__join_key", "orig").eq(relation_col("__join_key", "agg"))
-                        ])?;
+                    let joined = dataframe_with_key.alias("orig")?.join_on(
+                        agg_df,
+                        JoinType::Inner,
+                        vec![relation_col("__join_key", "orig")
+                            .eq(relation_col("__join_key", "agg"))],
+                    )?;
 
                     // Select all original columns plus __max_total (but not __join_key)
-                    let mut select_cols: Vec<Expr> = orig_fields.iter()
+                    let mut select_cols: Vec<Expr> = orig_fields
+                        .iter()
                         .map(|name| relation_col(name, "orig"))
                         .collect();
                     select_cols.push(relation_col("__max_total", "agg"));
-                    
+
                     let dataframe = joined.select(select_cols)?;
 
                     // Build the final selection for Center case
                     let mut center_final_selection: Vec<_> = input_fields
                         .iter()
                         .filter_map(|field| {
-                            if field == &start_field || field == &stop_field || field.starts_with("__") {
+                            if field == &start_field
+                                || field == &stop_field
+                                || field.starts_with("__")
+                            {
                                 None
                             } else {
                                 Some(flat_col(field))
@@ -304,10 +311,7 @@ impl TransformTrait for Stack {
 
             match offset {
                 StackOffset::Center => Ok((dataframe, Default::default())),
-                _ => Ok((
-                    dataframe.select(final_selection)?,
-                    Default::default(),
-                ))
+                _ => Ok((dataframe.select(final_selection)?, Default::default())),
             }
         }
     }

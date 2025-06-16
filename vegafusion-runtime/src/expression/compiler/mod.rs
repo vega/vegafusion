@@ -68,7 +68,7 @@ mod test_compile {
     use datafusion_common::utils::SingleRowListArrayBuilder;
     use datafusion_common::{DFSchema, ScalarValue};
     use datafusion_expr::expr::{BinaryExpr, Case, TryCast};
-    use datafusion_expr::{lit, not, Expr, Operator};
+    use datafusion_expr::{lit, not, when, Expr, Operator};
     use std::collections::HashMap;
     use std::convert::TryFrom;
 
@@ -173,13 +173,13 @@ mod test_compile {
         println!("expr: {result_expr:?}");
 
         // unary not should cast numeric value to boolean
-        let expected_expr = not(coalesce(vec![
-            Expr::TryCast(TryCast {
-                expr: Box::new(lit(32.0)),
-                data_type: DataType::Boolean,
-            }),
-            lit(false),
-        ]));
+        let cast_expr = Expr::TryCast(TryCast {
+            expr: Box::new(lit(32.0)),
+            data_type: DataType::Boolean,
+        });
+        let expected_expr = not(when(cast_expr.clone().is_null(), lit(false))
+            .otherwise(cast_expr)
+            .unwrap());
 
         assert_eq!(result_expr, expected_expr);
 
@@ -196,16 +196,18 @@ mod test_compile {
         let expr = parse("32? 7: 9").unwrap();
         let result_expr = compile(&expr, &Default::default(), None).unwrap();
         println!("expr: {result_expr:?}");
+        let cast_expr = Expr::TryCast(TryCast {
+            expr: Box::new(lit(32.0)),
+            data_type: DataType::Boolean,
+        });
         let expected_expr = Expr::Case(Case {
             expr: None,
             when_then_expr: vec![(
-                Box::new(coalesce(vec![
-                    Expr::TryCast(TryCast {
-                        expr: Box::new(lit(32.0)),
-                        data_type: DataType::Boolean,
-                    }),
-                    lit(false),
-                ])),
+                Box::new(
+                    when(cast_expr.clone().is_null(), lit(false))
+                        .otherwise(cast_expr)
+                        .unwrap(),
+                ),
                 Box::new(lit(7.0)),
             )],
             else_expr: Some(Box::new(lit(9.0))),
@@ -248,16 +250,18 @@ mod test_compile {
         let result_expr = compile(&expr, &Default::default(), None).unwrap();
         println!("expr: {result_expr:?}");
 
+        let cast_expr = Expr::TryCast(TryCast {
+            expr: Box::new(lit(5.0)),
+            data_type: DataType::Boolean,
+        });
         let expected_expr = Expr::Case(Case {
             expr: None,
             when_then_expr: vec![(
-                Box::new(coalesce(vec![
-                    Expr::TryCast(TryCast {
-                        expr: Box::new(lit(5.0)),
-                        data_type: DataType::Boolean,
-                    }),
-                    lit(false),
-                ])),
+                Box::new(
+                    when(cast_expr.clone().is_null(), lit(false))
+                        .otherwise(cast_expr)
+                        .unwrap(),
+                ),
                 Box::new(lit(55.0)),
             )],
             else_expr: Some(Box::new(lit(5.0))),
@@ -575,16 +579,18 @@ mod test_compile {
         let expr = parse("if(32, 7, 9)").unwrap();
         let result_expr = compile(&expr, &Default::default(), None).unwrap();
 
+        let cast_expr = Expr::TryCast(TryCast {
+            expr: Box::new(lit(32.0)),
+            data_type: DataType::Boolean,
+        });
         let expected_expr = Expr::Case(Case {
             expr: None,
             when_then_expr: vec![(
-                Box::new(coalesce(vec![
-                    Expr::TryCast(TryCast {
-                        expr: Box::new(lit(32.0)),
-                        data_type: DataType::Boolean,
-                    }),
-                    lit(false),
-                ])),
+                Box::new(
+                    when(cast_expr.clone().is_null(), lit(false))
+                        .otherwise(cast_expr)
+                        .unwrap(),
+                ),
                 Box::new(lit(7.0)),
             )],
             else_expr: Some(Box::new(lit(9.0))),
