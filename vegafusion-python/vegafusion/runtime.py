@@ -332,7 +332,7 @@ class VegaFusionRuntime:
                 except TypeError:
                     # Not supported by Narwhals, try pycapsule interface directly
                     if hasattr(value, "__arrow_c_stream__"):
-                        imported_inline_datasets[name] = Table(value)  # type: ignore[arg-type]
+                        imported_inline_datasets[name] = Table(value)
                     else:
                         raise
 

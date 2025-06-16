@@ -39,10 +39,17 @@ impl TransformTrait for Identifier {
         }))
         .alias(&self.r#as);
 
-        let result = dataframe.select(vec![
-            datafusion_expr::expr_fn::wildcard(),
-            row_number_expr.into(),
-        ])?;
+        // Select all original columns plus the new identifier column
+        let mut select_exprs: Vec<Expr> = dataframe
+            .schema()
+            .fields()
+            .iter()
+            .map(|f| flat_col(f.name()))
+            .collect();
+        
+        select_exprs.push(row_number_expr.into());
+        
+        let result = dataframe.select(select_exprs)?;
 
         Ok((result, Default::default()))
     }
