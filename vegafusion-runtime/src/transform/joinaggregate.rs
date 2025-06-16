@@ -80,12 +80,14 @@ impl TransformTrait for JoinAggregate {
                 if new_col_names.contains(f.name()) {
                     None
                 } else {
-                    Some(relation_col(f.name(), "lhs"))
+                    // Add alias to ensure unqualified column name in result
+                    Some(relation_col(f.name(), "lhs").alias(f.name()))
                 }
             })
             .collect::<Vec<_>>();
         for col in &new_col_names {
-            final_selections.push(relation_col(col, "rhs"));
+            // Add alias to ensure unqualified column name in result
+            final_selections.push(relation_col(col, "rhs").alias(col));
         }
 
         let result = dataframe

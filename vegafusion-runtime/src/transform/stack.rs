@@ -186,12 +186,34 @@ impl TransformTrait for Stack {
             let cumulative_field = "_cumulative";
             let fun = WindowFunctionDefinition::AggregateUDF(sum_udaf());
 
+            // Update partition_by and order_by to use qualified column references after join
+            let partition_by_qualified: Vec<_> = group_by
+                .iter()
+                .map(|group| relation_col(group, "rhs"))
+                .collect();
+            
+            let order_by_qualified: Vec<_> = self
+                .sort_fields
+                .iter()
+                .zip(&self.sort)
+                .map(|(field, order)| expr::Sort {
+                    expr: relation_col(&unescape_field(field), "rhs"),
+                    asc: *order == SortOrder::Ascending as i32,
+                    nulls_first: *order == SortOrder::Ascending as i32,
+                })
+                .chain(std::iter::once(expr::Sort {
+                    expr: relation_col(ORDER_COL, "rhs"),
+                    asc: true,
+                    nulls_first: true,
+                }))
+                .collect();
+            
             let window_expr = Expr::WindowFunction(Box::new(expr::WindowFunction {
                 fun,
                 params: WindowFunctionParams {
-                    args: vec![flat_col(stack_col_name)],
-                    partition_by,
-                    order_by,
+                    args: vec![relation_col(stack_col_name, "rhs")],
+                    partition_by: partition_by_qualified,
+                    order_by: order_by_qualified,
                     window_frame: WindowFrame::new(Some(true)),
                     null_treatment: Some(NullTreatment::IgnoreNulls),
                 },
@@ -250,11 +272,12 @@ impl TransformTrait for Stack {
                     )?;
 
                     // Select all original columns plus __max_total (but not __join_key)
+                    // Add aliases to ensure unqualified column names in result
                     let mut select_cols: Vec<Expr> = orig_fields
                         .iter()
-                        .map(|name| relation_col(name, "orig"))
+                        .map(|name| relation_col(name, "orig").alias(name))
                         .collect();
-                    select_cols.push(relation_col("__max_total", "agg"));
+                    select_cols.push(relation_col("__max_total", "agg").alias("__max_total"));
 
                     let dataframe = joined.select(select_cols)?;
 
