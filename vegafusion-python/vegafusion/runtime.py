@@ -35,7 +35,7 @@ def _get_common_full_namespace(
     inline_datasets: dict[str, Any] | None,
 ) -> ModuleType | None:
     import narwhals.stable.v1 as nw
-    
+
     namespaces: set[ModuleType] = set()
     try:
         if inline_datasets is not None:
@@ -260,7 +260,7 @@ class VegaFusionRuntime:
                 entry is found, then all columns should be included.
         """
         import narwhals.stable.v1 as nw
-        
+
         if not TYPE_CHECKING:
             pd = sys.modules.get("pandas", None)
             pa = sys.modules.get("pyarrow", None)
@@ -526,7 +526,7 @@ class VegaFusionRuntime:
               description of the warning.
         """
         import narwhals.stable.v1 as nw
-        
+
         local_tz = local_tz or get_local_tz()
 
         # Build input variables
@@ -553,7 +553,7 @@ class VegaFusionRuntime:
             dfs: list[Any],  # list[nw.DataFrame[IntoFrameT] | nw.LazyFrame[IntoFrameT]]
         ) -> list[DataFrameLike]:
             import narwhals.stable.v1 as nw
-            
+
             # Convert to `local_tz` (or, set to UTC and then convert if starting
             # from time-zone-naive data), then extract the native DataFrame to return.
             processed_datasets = []

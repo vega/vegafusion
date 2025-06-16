@@ -20,7 +20,7 @@ const pkg = require(pkgPath);
 pkg.dependencies = {
   "grpc-web": "^1.5.0",
   "lodash": "^4.17.21",
-  "vega-embed": "^6.26.0",
+  "vega-embed": "^7.0.2",
   "vega-util": "^1.17.0"
 };
 

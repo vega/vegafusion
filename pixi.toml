@@ -57,7 +57,7 @@ test-rs-runtime-s3 = { cmd = "VEGAFUSION_S3_TESTS=1 cargo test -p vegafusion-run
 ] }
 test-rs-server = "cargo test -p vegafusion-server $0"
 test-rs-sql = "cargo test -p vegafusion-sql $0"
-test-rs = { cmd = "cargo test --workspace --exclude vegafusion --exclude vegafusion-wasm $0", depends-on = [
+test-rs = { cmd = "cargo test --workspace --exclude vegafusion --exclude vegafusion-wasm --exclude vegafusion-python $0", depends-on = [
   "build-vegajs-runtime",
 ] }
 
