@@ -151,7 +151,8 @@ impl TransformTrait for Stack {
             })
             .alias("__total");
 
-            let dataframe = if partition_by.is_empty() {
+            // Determine the alias for the main dataframe based on whether we have grouping
+            let (dataframe, main_alias) = if partition_by.is_empty() {
                 // Cross join total aggregation
                 // Add dummy join key for cross join since DataFusion 48.0 doesn't allow empty join conditions
                 let dataframe_with_key = dataframe.with_column("__join_key", lit(1))?;
@@ -162,11 +163,12 @@ impl TransformTrait for Stack {
                     .alias("agg")?;
 
                 // Join on the dummy key
-                dataframe_with_key.alias("orig")?.join_on(
+                let joined = dataframe_with_key.alias("orig")?.join_on(
                     agg_df,
                     JoinType::Inner,
                     vec![relation_col("__join_key", "orig").eq(relation_col("__join_key", "agg"))],
-                )?
+                )?;
+                (joined, "orig")
             } else {
                 // Join back total aggregation
                 let on_exprs = group_by
@@ -179,7 +181,8 @@ impl TransformTrait for Stack {
                     .aggregate(partition_by.clone(), vec![total_agg])?
                     .alias("lhs")?;
                 let rhs_df = dataframe.alias("rhs")?;
-                lhs_df.join_on(rhs_df, JoinType::Inner, on_exprs)?
+                let joined = lhs_df.join_on(rhs_df, JoinType::Inner, on_exprs)?;
+                (joined, "rhs")
             };
 
             // Build window function to compute cumulative sum of stack column
@@ -189,7 +192,7 @@ impl TransformTrait for Stack {
             // Update partition_by and order_by to use qualified column references after join
             let partition_by_qualified: Vec<_> = group_by
                 .iter()
-                .map(|group| relation_col(group, "rhs"))
+                .map(|group| relation_col(group, main_alias))
                 .collect();
             
             let order_by_qualified: Vec<_> = self
@@ -197,12 +200,12 @@ impl TransformTrait for Stack {
                 .iter()
                 .zip(&self.sort)
                 .map(|(field, order)| expr::Sort {
-                    expr: relation_col(&unescape_field(field), "rhs"),
+                    expr: relation_col(&unescape_field(field), main_alias),
                     asc: *order == SortOrder::Ascending as i32,
                     nulls_first: *order == SortOrder::Ascending as i32,
                 })
                 .chain(std::iter::once(expr::Sort {
-                    expr: relation_col(ORDER_COL, "rhs"),
+                    expr: relation_col(ORDER_COL, main_alias),
                     asc: true,
                     nulls_first: true,
                 }))
@@ -211,7 +214,7 @@ impl TransformTrait for Stack {
             let window_expr = Expr::WindowFunction(Box::new(expr::WindowFunction {
                 fun,
                 params: WindowFunctionParams {
-                    args: vec![relation_col(stack_col_name, "rhs")],
+                    args: vec![relation_col(stack_col_name, main_alias)],
                     partition_by: partition_by_qualified,
                     order_by: order_by_qualified,
                     window_frame: WindowFrame::new(Some(true)),
@@ -221,10 +224,26 @@ impl TransformTrait for Stack {
             .alias(cumulative_field);
 
             // Perform selection to add new field value
-            let dataframe = dataframe.select(vec![
-                datafusion_expr::expr_fn::wildcard(),
-                window_expr.into(),
-            ])?;
+            // After a join, we need to select all columns explicitly to handle aliases properly
+            let dataframe = if partition_by.is_empty() {
+                // For cross join case, select all columns from orig table
+                let mut select_exprs: Vec<Expr> = Vec::new();
+                for field in &input_fields {
+                    select_exprs.push(relation_col(field, "orig").alias(field));
+                }
+                // Also select __stack and __total
+                select_exprs.push(relation_col("__stack", "orig").alias("__stack"));
+                select_exprs.push(relation_col("__total", "agg").alias("__total"));
+                // Add the window expression
+                select_exprs.push(window_expr.into());
+                dataframe.select(select_exprs)?
+            } else {
+                // For grouped case, use wildcard as columns are already properly aliased
+                dataframe.select(vec![
+                    datafusion_expr::expr_fn::wildcard(),
+                    window_expr.into(),
+                ])?
+            };
 
             // Build final_selection
             let mut final_selection: Vec<_> = input_fields
