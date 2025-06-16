@@ -7,9 +7,9 @@ use async_trait::async_trait;
 use datafusion::prelude::DataFrame;
 use datafusion_common::{JoinType, ScalarValue};
 use datafusion_expr::{
-    expr, expr::WindowFunctionParams, lit, Expr, SortExpr, WindowFrame, WindowFunctionDefinition,
+    expr, expr::WindowFunctionParams, lit, when, Expr, SortExpr, WindowFrame, WindowFunctionDefinition,
 };
-use datafusion_functions::expr_fn::coalesce;
+// Remove coalesce import as we'll use when/otherwise instead
 use datafusion_functions_aggregate::expr_fn::min;
 use datafusion_functions_window::row_number::RowNumber;
 use itertools::Itertools;
@@ -80,11 +80,10 @@ impl TransformTrait for Impute {
                 .map(|f| {
                     let col_name = f.name();
                     Ok(if col_name == &field {
-                        coalesce(vec![
-                            flat_col(&field),
-                            lit(value.clone()).try_cast_to(field_type, schema)?,
-                        ])
-                        .alias(col_name)
+                        let casted_value = lit(value.clone()).try_cast_to(field_type, schema)?;
+                        when(flat_col(&field).is_null(), casted_value)
+                            .otherwise(flat_col(&field))?
+                            .alias(col_name)
                     } else {
                         flat_col(col_name)
                     })
@@ -127,8 +126,10 @@ impl TransformTrait for Impute {
                 .collect::<Vec<_>>();
             on_exprs.push(relation_col(&key, "lhs").eq(relation_col(&key, "rhs")));
 
+            // Perform cross join by using a dummy always-true condition
+            // This is needed because DataFusion 48.0 no longer allows empty join conditions
             let pre_ordered_df = key_df
-                .join_on(groups_df, JoinType::Inner, vec![])?
+                .join_on(groups_df, JoinType::Inner, vec![lit(true)])?
                 .alias("lhs")?
                 .join_on(dataframe.clone().alias("rhs")?, JoinType::Left, on_exprs)?;
 
@@ -142,12 +143,11 @@ impl TransformTrait for Impute {
                     continue;
                 } else if f.name() == &field {
                     // Coalesce to fill in null values in field
+                    let casted_value = lit(value.clone()).try_cast_to(field_type, schema)?;
                     final_selections.push(
-                        coalesce(vec![
-                            flat_col(&field),
-                            lit(value.clone()).try_cast_to(field_type, schema)?,
-                        ])
-                        .alias(f.name()),
+                        when(flat_col(&field).is_null(), casted_value)
+                            .otherwise(flat_col(&field))?
+                            .alias(f.name()),
                     );
                 } else {
                     // Keep other columns

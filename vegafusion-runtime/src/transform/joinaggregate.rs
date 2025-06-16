@@ -5,6 +5,7 @@ use crate::transform::TransformTrait;
 use async_trait::async_trait;
 use datafusion::prelude::DataFrame;
 use datafusion_common::JoinType;
+use datafusion_expr::lit;
 use vegafusion_common::column::{relation_col, unescaped_col};
 use vegafusion_common::escape::escape_field;
 use vegafusion_core::error::Result;
@@ -57,13 +58,19 @@ impl TransformTrait for JoinAggregate {
             .alias("rhs")?;
 
         // Join with the input dataframe on the grouping columns
-        let on = self
+        let mut on = self
             .groupby
             .iter()
             .map(|g| {
                 relation_col(&escape_field(g), "lhs").eq(relation_col(&escape_field(g), "rhs"))
             })
             .collect::<Vec<_>>();
+
+        // If there are no groupby columns, use a dummy always-true condition
+        // This is needed because DataFusion 48.0 no longer allows empty join conditions
+        if on.is_empty() {
+            on.push(lit(true));
+        }
 
         let mut final_selections = dataframe
             .schema()
