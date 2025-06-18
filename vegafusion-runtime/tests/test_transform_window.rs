@@ -50,23 +50,6 @@ mod test_window_single_agg {
 
         #[values(true, false)] ignore_peers: bool,
     ) {
-        // Skip FirstValue and LastValue with sliding windows (frame [-5, 4])
-        // as DataFusion 48.0 doesn't support retract_batch for these aggregates
-        if matches!(
-            (&op, &frame),
-            (
-                WindowTransformOpSpec::Window(WindowOpSpec::FirstValue)
-                    | WindowTransformOpSpec::Window(WindowOpSpec::LastValue),
-                serde_json::Value::Array(ref arr),
-            ) if arr.len() == 2 && arr[0].as_i64() == Some(-5) && arr[1].as_i64() == Some(4)
-        ) {
-            println!(
-                "Skipping test for {:?} with frame {:?} - DataFusion 48.0 doesn't support sliding windows for FirstValue/LastValue",
-                op, frame
-            );
-            return;
-        }
-
         // Vega and DataFusion differ on how to handle pop variance and percentile rank of
         // single element DataFusion returns 0 while Vega returns null.
         let null_matches_zero = matches!(
