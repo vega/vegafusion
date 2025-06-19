@@ -15,10 +15,10 @@ from vegafusion.utils import get_inline_column_usage
 from .local_tz import get_local_tz
 
 if TYPE_CHECKING:
+    import narwhals.stable.v1 as nw
     import pandas as pd  # noqa: F401
     import polars as pl  # noqa: F401
     import pyarrow as pa
-    import narwhals.stable.v1 as nw
     from narwhals.typing import IntoFrameT
 
     from vegafusion._vegafusion import (
