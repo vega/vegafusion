@@ -26,6 +26,7 @@ pub fn to_date_transform(
             let input_tz_expr = &args[1];
             match input_tz_expr {
                 Expr::Literal(ScalarValue::Utf8(Some(input_tz_str)), _)
+                | Expr::Literal(ScalarValue::LargeUtf8(Some(input_tz_str)), _)
                 | Expr::Literal(ScalarValue::Utf8View(Some(input_tz_str)), _) => {
                     if input_tz_str == "local" {
                         tz_config.local_tz

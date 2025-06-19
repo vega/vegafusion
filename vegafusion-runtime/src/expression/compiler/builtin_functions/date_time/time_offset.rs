@@ -20,6 +20,7 @@ pub fn time_offset_fn(
 
     let unit = match &args[0] {
         Expr::Literal(ScalarValue::Utf8(Some(unit)), _)
+        | Expr::Literal(ScalarValue::LargeUtf8(Some(unit)), _)
         | Expr::Literal(ScalarValue::Utf8View(Some(unit)), _) => unit,
         _ => {
             return Err(VegaFusionError::compilation(format!(

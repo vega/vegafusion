@@ -22,6 +22,7 @@ pub fn time_format_fn(
         let format_tz_expr = &args[2];
         match format_tz_expr {
             Expr::Literal(ScalarValue::Utf8(Some(format_tz_str)), _)
+            | Expr::Literal(ScalarValue::LargeUtf8(Some(format_tz_str)), _)
             | Expr::Literal(ScalarValue::Utf8View(Some(format_tz_str)), _) => format_tz_str.clone(),
             _ => {
                 return Err(VegaFusionError::parse(
@@ -70,6 +71,7 @@ pub fn extract_format_str(args: &[Expr]) -> Result<String> {
         let format_arg = &args[1];
         match format_arg {
             Expr::Literal(ScalarValue::Utf8(Some(format_str)), _)
+            | Expr::Literal(ScalarValue::LargeUtf8(Some(format_str)), _)
             | Expr::Literal(ScalarValue::Utf8View(Some(format_str)), _) => Ok(format_str.clone()),
             _ => {
                 return Err(VegaFusionError::compilation(
