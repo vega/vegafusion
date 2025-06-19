@@ -277,39 +277,22 @@ impl Default for TimeunitStartUDF {
 
 impl TimeunitStartUDF {
     pub fn new() -> Self {
-        let signature = Signature::one_of(
-            vec![
-                TypeSignature::Exact(vec![
-                    DataType::Timestamp(TimeUnit::Millisecond, Some("UTC".into())), // [0] timestamp
-                    DataType::Utf8,                                                 // [1] timezone
-                    DataType::Boolean,                                              // [2] Year
-                    DataType::Boolean,                                              // [3] Quarter
-                    DataType::Boolean,                                              // [4] Month
-                    DataType::Boolean,                                              // [5] Date
-                    DataType::Boolean,                                              // [6] Week
-                    DataType::Boolean,                                              // [7] Day
-                    DataType::Boolean,                                              // [8] DayOfYear
-                    DataType::Boolean,                                              // [9] Hours
-                    DataType::Boolean,                                              // [10] Minutes
-                    DataType::Boolean,                                              // [11] Seconds
-                    DataType::Boolean, // [12] Milliseconds
-                ]),
-                TypeSignature::Exact(vec![
-                    DataType::Timestamp(TimeUnit::Millisecond, Some("UTC".into())), // [0] timestamp
-                    DataType::Utf8View,                                             // [1] timezone
-                    DataType::Boolean,                                              // [2] Year
-                    DataType::Boolean,                                              // [3] Quarter
-                    DataType::Boolean,                                              // [4] Month
-                    DataType::Boolean,                                              // [5] Date
-                    DataType::Boolean,                                              // [6] Week
-                    DataType::Boolean,                                              // [7] Day
-                    DataType::Boolean,                                              // [8] DayOfYear
-                    DataType::Boolean,                                              // [9] Hours
-                    DataType::Boolean,                                              // [10] Minutes
-                    DataType::Boolean,                                              // [11] Seconds
-                    DataType::Boolean, // [12] Milliseconds
-                ]),
-            ],
+        let signature = Signature::new(
+            TypeSignature::Exact(vec![
+                DataType::Timestamp(TimeUnit::Millisecond, Some("UTC".into())), // [0] timestamp
+                DataType::Utf8, // [1] timezone - DataFusion will automatically coerce string types
+                DataType::Boolean, // [2] Year
+                DataType::Boolean, // [3] Quarter
+                DataType::Boolean, // [4] Month
+                DataType::Boolean, // [5] Date
+                DataType::Boolean, // [6] Week
+                DataType::Boolean, // [7] Day
+                DataType::Boolean, // [8] DayOfYear
+                DataType::Boolean, // [9] Hours
+                DataType::Boolean, // [10] Minutes
+                DataType::Boolean, // [11] Seconds
+                DataType::Boolean, // [12] Milliseconds
+            ]),
             Volatility::Immutable,
         );
 
