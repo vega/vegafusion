@@ -1092,7 +1092,7 @@ dependencies = [
 [[package]]
 name = "datafusion"
 version = "48.0.0"
-source = "git+https://github.com/jonmmease/arrow-datafusion?branch=fix-sqlparser-wasm-compatibility#58a67fe4cf54c2e26fe2e043a39e18f5b1fb18d1"
+source = "git+https://github.com/apache/datafusion?rev=87218a1e656f05da4c8374010b3ae550842606b8#87218a1e656f05da4c8374010b3ae550842606b8"
 dependencies = [
  "arrow",
  "arrow-ipc",
@@ -1145,7 +1145,7 @@ dependencies = [
 [[package]]
 name = "datafusion-catalog"
 version = "48.0.0"
-source = "git+https://github.com/jonmmease/arrow-datafusion?branch=fix-sqlparser-wasm-compatibility#58a67fe4cf54c2e26fe2e043a39e18f5b1fb18d1"
+source = "git+https://github.com/apache/datafusion?rev=87218a1e656f05da4c8374010b3ae550842606b8#87218a1e656f05da4c8374010b3ae550842606b8"
 dependencies = [
  "arrow",
  "async-trait",
@@ -1170,7 +1170,7 @@ dependencies = [
 [[package]]
 name = "datafusion-catalog-listing"
 version = "48.0.0"
-source = "git+https://github.com/jonmmease/arrow-datafusion?branch=fix-sqlparser-wasm-compatibility#58a67fe4cf54c2e26fe2e043a39e18f5b1fb18d1"
+source = "git+https://github.com/apache/datafusion?rev=87218a1e656f05da4c8374010b3ae550842606b8#87218a1e656f05da4c8374010b3ae550842606b8"
 dependencies = [
  "arrow",
  "async-trait",
@@ -1192,7 +1192,7 @@ dependencies = [
 [[package]]
 name = "datafusion-common"
 version = "48.0.0"
-source = "git+https://github.com/jonmmease/arrow-datafusion?branch=fix-sqlparser-wasm-compatibility#58a67fe4cf54c2e26fe2e043a39e18f5b1fb18d1"
+source = "git+https://github.com/apache/datafusion?rev=87218a1e656f05da4c8374010b3ae550842606b8#87218a1e656f05da4c8374010b3ae550842606b8"
 dependencies = [
  "ahash",
  "arrow",
@@ -1215,7 +1215,7 @@ dependencies = [
 [[package]]
 name = "datafusion-common-runtime"
 version = "48.0.0"
-source = "git+https://github.com/jonmmease/arrow-datafusion?branch=fix-sqlparser-wasm-compatibility#58a67fe4cf54c2e26fe2e043a39e18f5b1fb18d1"
+source = "git+https://github.com/apache/datafusion?rev=87218a1e656f05da4c8374010b3ae550842606b8#87218a1e656f05da4c8374010b3ae550842606b8"
 dependencies = [
  "futures",
  "log",
@@ -1225,7 +1225,7 @@ dependencies = [
 [[package]]
 name = "datafusion-datasource"
 version = "48.0.0"
-source = "git+https://github.com/jonmmease/arrow-datafusion?branch=fix-sqlparser-wasm-compatibility#58a67fe4cf54c2e26fe2e043a39e18f5b1fb18d1"
+source = "git+https://github.com/apache/datafusion?rev=87218a1e656f05da4c8374010b3ae550842606b8#87218a1e656f05da4c8374010b3ae550842606b8"
 dependencies = [
  "arrow",
  "async-compression",
@@ -1260,7 +1260,7 @@ dependencies = [
 [[package]]
 name = "datafusion-datasource-csv"
 version = "48.0.0"
-source = "git+https://github.com/jonmmease/arrow-datafusion?branch=fix-sqlparser-wasm-compatibility#58a67fe4cf54c2e26fe2e043a39e18f5b1fb18d1"
+source = "git+https://github.com/apache/datafusion?rev=87218a1e656f05da4c8374010b3ae550842606b8#87218a1e656f05da4c8374010b3ae550842606b8"
 dependencies = [
  "arrow",
  "async-trait",
@@ -1284,7 +1284,7 @@ dependencies = [
 [[package]]
 name = "datafusion-datasource-json"
 version = "48.0.0"
-source = "git+https://github.com/jonmmease/arrow-datafusion?branch=fix-sqlparser-wasm-compatibility#58a67fe4cf54c2e26fe2e043a39e18f5b1fb18d1"
+source = "git+https://github.com/apache/datafusion?rev=87218a1e656f05da4c8374010b3ae550842606b8#87218a1e656f05da4c8374010b3ae550842606b8"
 dependencies = [
  "arrow",
  "async-trait",
@@ -1308,7 +1308,7 @@ dependencies = [
 [[package]]
 name = "datafusion-datasource-parquet"
 version = "48.0.0"
-source = "git+https://github.com/jonmmease/arrow-datafusion?branch=fix-sqlparser-wasm-compatibility#58a67fe4cf54c2e26fe2e043a39e18f5b1fb18d1"
+source = "git+https://github.com/apache/datafusion?rev=87218a1e656f05da4c8374010b3ae550842606b8#87218a1e656f05da4c8374010b3ae550842606b8"
 dependencies = [
  "arrow",
  "async-trait",
@@ -1338,12 +1338,12 @@ dependencies = [
 [[package]]
 name = "datafusion-doc"
 version = "48.0.0"
-source = "git+https://github.com/jonmmease/arrow-datafusion?branch=fix-sqlparser-wasm-compatibility#58a67fe4cf54c2e26fe2e043a39e18f5b1fb18d1"
+source = "git+https://github.com/apache/datafusion?rev=87218a1e656f05da4c8374010b3ae550842606b8#87218a1e656f05da4c8374010b3ae550842606b8"
 
 [[package]]
 name = "datafusion-execution"
 version = "48.0.0"
-source = "git+https://github.com/jonmmease/arrow-datafusion?branch=fix-sqlparser-wasm-compatibility#58a67fe4cf54c2e26fe2e043a39e18f5b1fb18d1"
+source = "git+https://github.com/apache/datafusion?rev=87218a1e656f05da4c8374010b3ae550842606b8#87218a1e656f05da4c8374010b3ae550842606b8"
 dependencies = [
  "arrow",
  "dashmap",
@@ -1361,7 +1361,7 @@ dependencies = [
 [[package]]
 name = "datafusion-expr"
 version = "48.0.0"
-source = "git+https://github.com/jonmmease/arrow-datafusion?branch=fix-sqlparser-wasm-compatibility#58a67fe4cf54c2e26fe2e043a39e18f5b1fb18d1"
+source = "git+https://github.com/apache/datafusion?rev=87218a1e656f05da4c8374010b3ae550842606b8#87218a1e656f05da4c8374010b3ae550842606b8"
 dependencies = [
  "arrow",
  "chrono",
@@ -1381,7 +1381,7 @@ dependencies = [
 [[package]]
 name = "datafusion-expr-common"
 version = "48.0.0"
-source = "git+https://github.com/jonmmease/arrow-datafusion?branch=fix-sqlparser-wasm-compatibility#58a67fe4cf54c2e26fe2e043a39e18f5b1fb18d1"
+source = "git+https://github.com/apache/datafusion?rev=87218a1e656f05da4c8374010b3ae550842606b8#87218a1e656f05da4c8374010b3ae550842606b8"
 dependencies = [
  "arrow",
  "datafusion-common",
@@ -1393,7 +1393,7 @@ dependencies = [
 [[package]]
 name = "datafusion-functions"
 version = "48.0.0"
-source = "git+https://github.com/jonmmease/arrow-datafusion?branch=fix-sqlparser-wasm-compatibility#58a67fe4cf54c2e26fe2e043a39e18f5b1fb18d1"
+source = "git+https://github.com/apache/datafusion?rev=87218a1e656f05da4c8374010b3ae550842606b8#87218a1e656f05da4c8374010b3ae550842606b8"
 dependencies = [
  "arrow",
  "arrow-buffer",
@@ -1421,7 +1421,7 @@ dependencies = [
 [[package]]
 name = "datafusion-functions-aggregate"
 version = "48.0.0"
-source = "git+https://github.com/jonmmease/arrow-datafusion?branch=fix-sqlparser-wasm-compatibility#58a67fe4cf54c2e26fe2e043a39e18f5b1fb18d1"
+source = "git+https://github.com/apache/datafusion?rev=87218a1e656f05da4c8374010b3ae550842606b8#87218a1e656f05da4c8374010b3ae550842606b8"
 dependencies = [
  "ahash",
  "arrow",
@@ -1441,7 +1441,7 @@ dependencies = [
 [[package]]
 name = "datafusion-functions-aggregate-common"
 version = "48.0.0"
-source = "git+https://github.com/jonmmease/arrow-datafusion?branch=fix-sqlparser-wasm-compatibility#58a67fe4cf54c2e26fe2e043a39e18f5b1fb18d1"
+source = "git+https://github.com/apache/datafusion?rev=87218a1e656f05da4c8374010b3ae550842606b8#87218a1e656f05da4c8374010b3ae550842606b8"
 dependencies = [
  "ahash",
  "arrow",
@@ -1453,7 +1453,7 @@ dependencies = [
 [[package]]
 name = "datafusion-functions-nested"
 version = "48.0.0"
-source = "git+https://github.com/jonmmease/arrow-datafusion?branch=fix-sqlparser-wasm-compatibility#58a67fe4cf54c2e26fe2e043a39e18f5b1fb18d1"
+source = "git+https://github.com/apache/datafusion?rev=87218a1e656f05da4c8374010b3ae550842606b8#87218a1e656f05da4c8374010b3ae550842606b8"
 dependencies = [
  "arrow",
  "arrow-ord",
@@ -1473,7 +1473,7 @@ dependencies = [
 [[package]]
 name = "datafusion-functions-table"
 version = "48.0.0"
-source = "git+https://github.com/jonmmease/arrow-datafusion?branch=fix-sqlparser-wasm-compatibility#58a67fe4cf54c2e26fe2e043a39e18f5b1fb18d1"
+source = "git+https://github.com/apache/datafusion?rev=87218a1e656f05da4c8374010b3ae550842606b8#87218a1e656f05da4c8374010b3ae550842606b8"
 dependencies = [
  "arrow",
  "async-trait",
@@ -1488,7 +1488,7 @@ dependencies = [
 [[package]]
 name = "datafusion-functions-window"
 version = "48.0.0"
-source = "git+https://github.com/jonmmease/arrow-datafusion?branch=fix-sqlparser-wasm-compatibility#58a67fe4cf54c2e26fe2e043a39e18f5b1fb18d1"
+source = "git+https://github.com/apache/datafusion?rev=87218a1e656f05da4c8374010b3ae550842606b8#87218a1e656f05da4c8374010b3ae550842606b8"
 dependencies = [
  "arrow",
  "datafusion-common",
@@ -1505,7 +1505,7 @@ dependencies = [
 [[package]]
 name = "datafusion-functions-window-common"
 version = "48.0.0"
-source = "git+https://github.com/jonmmease/arrow-datafusion?branch=fix-sqlparser-wasm-compatibility#58a67fe4cf54c2e26fe2e043a39e18f5b1fb18d1"
+source = "git+https://github.com/apache/datafusion?rev=87218a1e656f05da4c8374010b3ae550842606b8#87218a1e656f05da4c8374010b3ae550842606b8"
 dependencies = [
  "datafusion-common",
  "datafusion-physical-expr-common",
@@ -1514,7 +1514,7 @@ dependencies = [
 [[package]]
 name = "datafusion-macros"
 version = "48.0.0"
-source = "git+https://github.com/jonmmease/arrow-datafusion?branch=fix-sqlparser-wasm-compatibility#58a67fe4cf54c2e26fe2e043a39e18f5b1fb18d1"
+source = "git+https://github.com/apache/datafusion?rev=87218a1e656f05da4c8374010b3ae550842606b8#87218a1e656f05da4c8374010b3ae550842606b8"
 dependencies = [
  "datafusion-expr",
  "quote",
@@ -1524,7 +1524,7 @@ dependencies = [
 [[package]]
 name = "datafusion-optimizer"
 version = "48.0.0"
-source = "git+https://github.com/jonmmease/arrow-datafusion?branch=fix-sqlparser-wasm-compatibility#58a67fe4cf54c2e26fe2e043a39e18f5b1fb18d1"
+source = "git+https://github.com/apache/datafusion?rev=87218a1e656f05da4c8374010b3ae550842606b8#87218a1e656f05da4c8374010b3ae550842606b8"
 dependencies = [
  "arrow",
  "chrono",
@@ -1542,7 +1542,7 @@ dependencies = [
 [[package]]
 name = "datafusion-physical-expr"
 version = "48.0.0"
-source = "git+https://github.com/jonmmease/arrow-datafusion?branch=fix-sqlparser-wasm-compatibility#58a67fe4cf54c2e26fe2e043a39e18f5b1fb18d1"
+source = "git+https://github.com/apache/datafusion?rev=87218a1e656f05da4c8374010b3ae550842606b8#87218a1e656f05da4c8374010b3ae550842606b8"
 dependencies = [
  "ahash",
  "arrow",
@@ -1563,7 +1563,7 @@ dependencies = [
 [[package]]
 name = "datafusion-physical-expr-common"
 version = "48.0.0"
-source = "git+https://github.com/jonmmease/arrow-datafusion?branch=fix-sqlparser-wasm-compatibility#58a67fe4cf54c2e26fe2e043a39e18f5b1fb18d1"
+source = "git+https://github.com/apache/datafusion?rev=87218a1e656f05da4c8374010b3ae550842606b8#87218a1e656f05da4c8374010b3ae550842606b8"
 dependencies = [
  "ahash",
  "arrow",
@@ -1576,7 +1576,7 @@ dependencies = [
 [[package]]
 name = "datafusion-physical-optimizer"
 version = "48.0.0"
-source = "git+https://github.com/jonmmease/arrow-datafusion?branch=fix-sqlparser-wasm-compatibility#58a67fe4cf54c2e26fe2e043a39e18f5b1fb18d1"
+source = "git+https://github.com/apache/datafusion?rev=87218a1e656f05da4c8374010b3ae550842606b8#87218a1e656f05da4c8374010b3ae550842606b8"
 dependencies = [
  "arrow",
  "datafusion-common",
@@ -1594,7 +1594,7 @@ dependencies = [
 [[package]]
 name = "datafusion-physical-plan"
 version = "48.0.0"
-source = "git+https://github.com/jonmmease/arrow-datafusion?branch=fix-sqlparser-wasm-compatibility#58a67fe4cf54c2e26fe2e043a39e18f5b1fb18d1"
+source = "git+https://github.com/apache/datafusion?rev=87218a1e656f05da4c8374010b3ae550842606b8#87218a1e656f05da4c8374010b3ae550842606b8"
 dependencies = [
  "ahash",
  "arrow",
@@ -1623,7 +1623,7 @@ dependencies = [
 [[package]]
 name = "datafusion-proto"
 version = "48.0.0"
-source = "git+https://github.com/jonmmease/arrow-datafusion?branch=fix-sqlparser-wasm-compatibility#58a67fe4cf54c2e26fe2e043a39e18f5b1fb18d1"
+source = "git+https://github.com/apache/datafusion?rev=87218a1e656f05da4c8374010b3ae550842606b8#87218a1e656f05da4c8374010b3ae550842606b8"
 dependencies = [
  "arrow",
  "chrono",
@@ -1638,7 +1638,7 @@ dependencies = [
 [[package]]
 name = "datafusion-proto-common"
 version = "48.0.0"
-source = "git+https://github.com/jonmmease/arrow-datafusion?branch=fix-sqlparser-wasm-compatibility#58a67fe4cf54c2e26fe2e043a39e18f5b1fb18d1"
+source = "git+https://github.com/apache/datafusion?rev=87218a1e656f05da4c8374010b3ae550842606b8#87218a1e656f05da4c8374010b3ae550842606b8"
 dependencies = [
  "arrow",
  "datafusion-common",
@@ -1648,7 +1648,7 @@ dependencies = [
 [[package]]
 name = "datafusion-session"
 version = "48.0.0"
-source = "git+https://github.com/jonmmease/arrow-datafusion?branch=fix-sqlparser-wasm-compatibility#58a67fe4cf54c2e26fe2e043a39e18f5b1fb18d1"
+source = "git+https://github.com/apache/datafusion?rev=87218a1e656f05da4c8374010b3ae550842606b8#87218a1e656f05da4c8374010b3ae550842606b8"
 dependencies = [
  "arrow",
  "async-trait",
@@ -1671,7 +1671,7 @@ dependencies = [
 [[package]]
 name = "datafusion-sql"
 version = "48.0.0"
-source = "git+https://github.com/jonmmease/arrow-datafusion?branch=fix-sqlparser-wasm-compatibility#58a67fe4cf54c2e26fe2e043a39e18f5b1fb18d1"
+source = "git+https://github.com/apache/datafusion?rev=87218a1e656f05da4c8374010b3ae550842606b8#87218a1e656f05da4c8374010b3ae550842606b8"
 dependencies = [
  "arrow",
  "bigdecimal",

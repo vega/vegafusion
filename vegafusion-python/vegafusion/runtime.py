@@ -15,9 +15,10 @@ from vegafusion.utils import get_inline_column_usage
 from .local_tz import get_local_tz
 
 if TYPE_CHECKING:
-    import pandas as pd
+    import pandas as pd  # noqa: F401
     import polars as pl  # noqa: F401
     import pyarrow as pa
+    import narwhals.stable.v1 as nw
     from narwhals.typing import IntoFrameT
 
     from vegafusion._vegafusion import (
@@ -549,7 +550,7 @@ class VegaFusionRuntime:
         )
 
         def normalize_timezones(
-            dfs: list[Any],  # list[nw.DataFrame[IntoFrameT] | nw.LazyFrame[IntoFrameT]]
+            dfs: list[nw.DataFrame[IntoFrameT] | nw.LazyFrame[IntoFrameT]],
         ) -> list[DataFrameLike]:
             import narwhals.stable.v1 as nw
 
