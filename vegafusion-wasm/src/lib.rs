@@ -6,7 +6,6 @@ use vegafusion_core::proto::gen::tasks::{
     NodeValueIndex, ResponseTaskValue, TaskGraph, TaskGraphValueRequest, TzConfig,
     VariableNamespace,
 };
-// Force rebuild - DataFusion 48 update
 use vegafusion_core::task_graph::task_value::NamedTaskValue;
 use wasm_bindgen::prelude::*;
 

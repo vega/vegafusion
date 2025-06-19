@@ -154,7 +154,7 @@ impl TransformTrait for Stack {
             // Determine the alias for the main dataframe based on whether we have grouping
             let (dataframe, main_alias) = if partition_by.is_empty() {
                 // Cross join total aggregation
-                // Add dummy join key for cross join since DataFusion 48.0 doesn't allow empty join conditions
+                // Add dummy join key for cross join since empty join conditions are not allowed
                 let dataframe_with_key = dataframe.with_column("__join_key", lit(1))?;
                 let agg_df = dataframe_with_key
                     .clone()

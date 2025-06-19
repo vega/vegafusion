@@ -128,7 +128,7 @@ impl TransformTrait for Impute {
             on_exprs.push(relation_col(&key, "lhs").eq(relation_col(&key, "rhs")));
 
             // Perform cross join by using a dummy always-true condition
-            // This is needed because DataFusion 48.0 no longer allows empty join conditions
+            // This is needed because empty join conditions are not allowed
             let pre_ordered_df = key_df
                 .join_on(groups_df, JoinType::Inner, vec![lit(true)])?
                 .alias("lhs")?

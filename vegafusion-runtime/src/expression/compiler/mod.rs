@@ -412,7 +412,7 @@ mod test_compile {
 
         let result_value = result_expr.eval_to_scalar().unwrap();
 
-        // In DataFusion 48.0, empty arrays might have different internal representation
+        // Empty arrays might have different internal representation
         // but should still be empty lists. We just verify it's an empty list.
         match &result_value {
             ScalarValue::List(arr) => {

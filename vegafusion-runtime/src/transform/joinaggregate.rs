@@ -67,7 +67,7 @@ impl TransformTrait for JoinAggregate {
             .collect::<Vec<_>>();
 
         // If there are no groupby columns, use a dummy always-true condition
-        // This is needed because DataFusion 48.0 no longer allows empty join conditions
+        // This is needed because empty join conditions are not allowed
         if on.is_empty() {
             on.push(lit(true));
         }
