@@ -592,13 +592,15 @@ impl TaskCall for DataSourceTask {
     }
 }
 
-async fn read_csv(
+// Try to read CSV using object_store
+async fn read_csv_with_object_store(
     url: &str,
     parse: &Option<Parse>,
-    ctx: Arc<SessionContext>,
+    ctx: &SessionContext,
     is_tsv: bool,
+    ext: &str,
 ) -> Result<DataFrame> {
-    // Build base CSV options
+    // Build CSV options
     let mut csv_opts = if is_tsv {
         CsvReadOptions {
             delimiter: b'\t',
@@ -607,7 +609,74 @@ async fn read_csv(
     } else {
         Default::default()
     };
+    csv_opts.file_extension = ext;
 
+    // Build schema from Vega parse options
+    let schema = build_csv_schema(&csv_opts, parse, url, ctx).await?;
+    csv_opts.schema = Some(&schema);
+
+    // Read the CSV
+    Ok(ctx.read_csv(url, csv_opts).await?)
+}
+
+// Read CSV using reqwest fallback
+#[cfg(feature = "http")]
+async fn read_csv_with_reqwest(
+    url: &str,
+    parse: &Option<Parse>,
+    ctx: &SessionContext,
+    is_tsv: bool,
+    ext: &str,
+) -> Result<DataFrame> {
+    // Fetch CSV content using reqwest
+    let client = reqwest::Client::new();
+    let response = client
+        .get(url)
+        .send()
+        .await
+        .external(format!("Failed to fetch URL: {url}"))?;
+
+    let text = response
+        .text()
+        .await
+        .external("Failed to read response as text")?;
+
+    // Create a temporary file to store the CSV content
+    use std::io::Write;
+    let temp_dir = tempfile::tempdir()?;
+    let temp_path = temp_dir.path().join("temp.csv");
+    let mut temp_file = std::fs::File::create(&temp_path)?;
+    temp_file.write_all(text.as_bytes())?;
+    temp_file.sync_all()?;
+
+    // Read the CSV from the temporary file
+    let temp_url = format!("file://{}", temp_path.display());
+
+    // Build CSV options
+    let mut csv_opts = if is_tsv {
+        CsvReadOptions {
+            delimiter: b'\t',
+            ..Default::default()
+        }
+    } else {
+        Default::default()
+    };
+    csv_opts.file_extension = ext;
+
+    // Build schema from the temporary file
+    let schema = build_csv_schema(&csv_opts, parse, &temp_url, ctx).await?;
+    csv_opts.schema = Some(&schema);
+
+    // Read the CSV
+    Ok(ctx.read_csv(&temp_url, csv_opts).await?)
+}
+
+async fn read_csv(
+    url: &str,
+    parse: &Option<Parse>,
+    ctx: Arc<SessionContext>,
+    is_tsv: bool,
+) -> Result<DataFrame> {
     // Add file extension based on URL
     let ext = if let Some(ext) = Path::new(url).extension().and_then(|ext| ext.to_str()) {
         ext.to_string()
@@ -615,15 +684,30 @@ async fn read_csv(
         "".to_string()
     };
 
-    csv_opts.file_extension = ext.as_str();
-
     maybe_register_object_stores_for_url(&ctx, url)?;
 
-    // Build schema from Vega parse options
-    let schema = build_csv_schema(&csv_opts, parse, url, &ctx).await?;
-    csv_opts.schema = Some(&schema);
+    #[cfg(feature = "http")]
+    {
+        // For HTTP URLs, try object_store first, fall back to reqwest on any error
+        if url.starts_with("http://") || url.starts_with("https://") {
+            match read_csv_with_object_store(url, parse, &ctx, is_tsv, &ext).await {
+                Ok(df) => Ok(df),
+                Err(_) => {
+                    // Any error, fall back to reqwest
+                    read_csv_with_reqwest(url, parse, &ctx, is_tsv, &ext).await
+                }
+            }
+        } else {
+            // Non-HTTP URL, use object_store
+            read_csv_with_object_store(url, parse, &ctx, is_tsv, &ext).await
+        }
+    }
 
-    Ok(ctx.read_csv(url, csv_opts).await?)
+    #[cfg(not(feature = "http"))]
+    {
+        // HTTP feature not enabled (e.g., WASM), use object_store only
+        read_csv_with_object_store(url, parse, &ctx, is_tsv, &ext).await
+    }
 }
 
 /// Build final schema by combining the input and inferred schemas
