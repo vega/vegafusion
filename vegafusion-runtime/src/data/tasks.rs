@@ -667,8 +667,19 @@ async fn read_csv_with_reqwest(
     let schema = build_csv_schema(&csv_opts, parse, &temp_url, ctx).await?;
     csv_opts.schema = Some(&schema);
 
-    // Read the CSV
-    Ok(ctx.read_csv(&temp_url, csv_opts).await?)
+    // Read the CSV and collect it immediately to ensure the data is loaded
+    // before the temporary file is deleted
+    let df = ctx.read_csv(&temp_url, csv_opts).await?;
+    let batches = df.collect().await?;
+
+    // Create a VegaFusionTable from the collected batches and convert back to DataFrame
+    let schema = if let Some(batch) = batches.first() {
+        batch.schema()
+    } else {
+        return Err(VegaFusionError::internal("No data in CSV file"));
+    };
+    let table = VegaFusionTable::try_new(schema, batches)?;
+    ctx.vegafusion_table(table).await
 }
 
 async fn read_csv(
