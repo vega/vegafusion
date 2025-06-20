@@ -26,3 +26,30 @@ conda install -c conda-forge vegafusion
 
 ## Documentation
 See [Documentation](https://vegafusion.io/) and [Examples](https://github.com/vega/vegafusion/tree/v2/examples/python-examples/chart_state.py).
+
+## Development
+
+### Prerequisites
+
+VegaFusion development requires:
+- **Rust**: Install from [rustup.rs](https://rustup.rs/)
+- **Pixi**: Install from [pixi.sh](https://pixi.sh/) - manages all other dependencies
+
+### Setup
+
+```bash
+# Clone the repository
+git clone https://github.com/vega/vegafusion.git
+cd vegafusion
+
+# Install Pixi (if not already installed)
+curl -fsSL https://pixi.sh/install.sh | bash
+
+# Install Rust (if not already installed)
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+
+# Run any pixi task (this will automatically install dependencies)
+pixi run test-rs
+```
+
+See [CLAUDE.md](CLAUDE.md) for detailed development instructions.

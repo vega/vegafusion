@@ -24,18 +24,25 @@ pub fn to_date_transform(
         let default_input_tz = if args.len() == 2 {
             // Second argument is an override local timezone string
             let input_tz_expr = &args[1];
-            if let Expr::Literal(ScalarValue::Utf8(Some(input_tz_str))) = input_tz_expr {
-                if input_tz_str == "local" {
-                    tz_config.local_tz
-                } else {
-                    chrono_tz::Tz::from_str(input_tz_str)
-                        .ok()
-                        .with_context(|| format!("Failed to parse {input_tz_str} as a timezone"))?
+            match input_tz_expr {
+                Expr::Literal(ScalarValue::Utf8(Some(input_tz_str)), _)
+                | Expr::Literal(ScalarValue::LargeUtf8(Some(input_tz_str)), _)
+                | Expr::Literal(ScalarValue::Utf8View(Some(input_tz_str)), _) => {
+                    if input_tz_str == "local" {
+                        tz_config.local_tz
+                    } else {
+                        chrono_tz::Tz::from_str(input_tz_str)
+                            .ok()
+                            .with_context(|| {
+                                format!("Failed to parse {input_tz_str} as a timezone")
+                            })?
+                    }
                 }
-            } else {
-                return Err(VegaFusionError::parse(
-                    "Second argument to toDate must be a timezone string",
-                ));
+                _ => {
+                    return Err(VegaFusionError::parse(
+                        "Second argument to toDate must be a timezone string",
+                    ));
+                }
             }
         } else {
             tz_config.default_input_tz

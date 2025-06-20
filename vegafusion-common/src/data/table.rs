@@ -53,7 +53,7 @@ use {
 
 #[cfg(feature = "base64")]
 use base64::{engine::general_purpose, Engine as _};
-use datafusion_common::utils::array_into_list_array;
+use datafusion_common::utils::SingleRowListArrayBuilder;
 
 #[derive(Clone, Debug)]
 pub struct VegaFusionTable {
@@ -231,14 +231,18 @@ impl VegaFusionTable {
         if self.num_rows() == 0 {
             // Return empty list with (arbitrary) Float64 type
             let array = Arc::new(new_empty_array(&DataType::Float64));
-            return Ok(ScalarValue::List(Arc::new(array_into_list_array(
-                array, true,
-            ))));
+            return Ok(ScalarValue::List(Arc::new(
+                SingleRowListArrayBuilder::new(array)
+                    .with_nullable(true)
+                    .build_list_array(),
+            )));
         }
         let array = Arc::new(StructArray::from(self.to_record_batch()?)) as ArrayRef;
-        Ok(ScalarValue::List(Arc::new(array_into_list_array(
-            array, true,
-        ))))
+        Ok(ScalarValue::List(Arc::new(
+            SingleRowListArrayBuilder::new(array)
+                .with_nullable(true)
+                .build_list_array(),
+        )))
     }
 
     #[cfg(feature = "json")]
@@ -328,7 +332,7 @@ impl VegaFusionTable {
         py: Python,
         data: &Bound<PyAny>,
     ) -> std::result::Result<(Self, u64), PyErr> {
-        let arro3_core = PyModule::import_bound(py, "arro3.core")?;
+        let arro3_core = PyModule::import(py, "arro3.core")?;
         let arro3_table_type = arro3_core.getattr("Table")?;
         if data.is_instance(&arro3_table_type)? {
             // Extract original table for single-threaded hashing
@@ -338,8 +342,8 @@ impl VegaFusionTable {
             let hash = vf_table.get_hash();
 
             // Now rechunk for better multithreaded efficiency with DataFusion
-            let seq = PyList::new_bound(py, vec![("max_chunksize", 8096)]);
-            let kwargs = PyDict::from_sequence_bound(seq.as_any())?;
+            let seq = PyList::new(py, vec![("max_chunksize", 8096)])?;
+            let kwargs = PyDict::from_sequence(seq.as_any())?;
 
             let rechunked_table = data
                 .call_method("rechunk", (), Some(&kwargs))?

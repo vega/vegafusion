@@ -4,7 +4,8 @@ import sys
 from types import ModuleType
 from typing import TYPE_CHECKING, Any, Literal, TypedDict, Union, cast
 
-import narwhals.stable.v1 as nw
+# Delay narwhals import to avoid eager pandas import
+# We'll import narwhals inside functions to avoid eager pandas import
 from arro3.core import Table
 
 from vegafusion._vegafusion import get_cpu_count, get_virtual_memory
@@ -14,7 +15,8 @@ from vegafusion.utils import get_inline_column_usage
 from .local_tz import get_local_tz
 
 if TYPE_CHECKING:
-    import pandas as pd
+    import narwhals.stable.v1 as nw
+    import pandas as pd  # noqa: F401
     import polars as pl  # noqa: F401
     import pyarrow as pa
     from narwhals.typing import IntoFrameT
@@ -32,6 +34,8 @@ UnaryUnaryMultiCallable = Any
 def _get_common_full_namespace(
     inline_datasets: dict[str, Any] | None,
 ) -> ModuleType | None:
+    import narwhals.stable.v1 as nw
+
     namespaces: set[ModuleType] = set()
     try:
         if inline_datasets is not None:
@@ -255,6 +259,8 @@ class VegaFusionRuntime:
             inline_dataset_usage: Columns that are referenced by datasets. If no
                 entry is found, then all columns should be included.
         """
+        import narwhals.stable.v1 as nw
+
         if not TYPE_CHECKING:
             pd = sys.modules.get("pandas", None)
             pa = sys.modules.get("pyarrow", None)
@@ -327,7 +333,7 @@ class VegaFusionRuntime:
                 except TypeError:
                     # Not supported by Narwhals, try pycapsule interface directly
                     if hasattr(value, "__arrow_c_stream__"):
-                        imported_inline_datasets[name] = Table(value)  # type: ignore[arg-type]
+                        imported_inline_datasets[name] = Table(value)  # type: ignore[call-overload]
                     else:
                         raise
 
@@ -519,6 +525,8 @@ class VegaFusionRuntime:
               key indicating the warning type, and a 'message' key containing a
               description of the warning.
         """
+        import narwhals.stable.v1 as nw
+
         local_tz = local_tz or get_local_tz()
 
         # Build input variables
@@ -544,6 +552,8 @@ class VegaFusionRuntime:
         def normalize_timezones(
             dfs: list[nw.DataFrame[IntoFrameT] | nw.LazyFrame[IntoFrameT]],
         ) -> list[DataFrameLike]:
+            import narwhals.stable.v1 as nw
+
             # Convert to `local_tz` (or, set to UTC and then convert if starting
             # from time-zone-naive data), then extract the native DataFrame to return.
             processed_datasets = []

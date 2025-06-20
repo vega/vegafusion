@@ -5,7 +5,7 @@ use async_trait::async_trait;
 use crate::data::util::DataFrameUtils;
 use datafusion::arrow::array::RecordBatch;
 use datafusion::prelude::DataFrame;
-use datafusion_common::utils::array_into_list_array;
+use datafusion_common::utils::SingleRowListArrayBuilder;
 use datafusion_common::{DFSchema, ScalarValue};
 use datafusion_expr::Expr;
 use datafusion_functions_aggregate::expr_fn::{max, min};
@@ -61,9 +61,13 @@ fn extract_extent_list(batch: &RecordBatch) -> Result<TaskValue> {
     let max_val_scalar = ScalarValue::try_from_array(max_val_array, 0).unwrap();
 
     // Build two-element list of the extents
-    let extent_list = TaskValue::Scalar(ScalarValue::List(Arc::new(array_into_list_array(
-        ScalarValue::iter_to_array(vec![min_val_scalar, max_val_scalar])?,
-        true,
-    ))));
+    let extent_list = TaskValue::Scalar(ScalarValue::List(Arc::new(
+        SingleRowListArrayBuilder::new(ScalarValue::iter_to_array(vec![
+            min_val_scalar,
+            max_val_scalar,
+        ])?)
+        .with_nullable(true)
+        .build_list_array(),
+    )));
     Ok(extent_list)
 }

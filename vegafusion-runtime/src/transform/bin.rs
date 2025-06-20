@@ -4,14 +4,13 @@ use crate::expression::compiler::utils::ExprHelpers;
 use crate::transform::TransformTrait;
 use async_trait::async_trait;
 
-use datafusion_expr::expr::WildcardOptions;
 use datafusion_expr::lit;
 
 use datafusion::prelude::DataFrame;
 use datafusion_common::scalar::ScalarValue;
-use datafusion_common::utils::array_into_list_array;
+use datafusion_common::utils::SingleRowListArrayBuilder;
 use datafusion_common::DFSchema;
-use datafusion_expr::{when, Expr};
+use datafusion_expr::when;
 use datafusion_functions::expr_fn::{abs, floor};
 use float_cmp::approx_eq;
 use std::ops::{Add, Div, Mul, Sub};
@@ -54,13 +53,7 @@ impl TransformTrait for Bin {
         let bin_index =
             floor((numeric_field.clone().sub(lit(start)).div(lit(step))).add(lit(1.0e-14)))
                 .alias(bin_index_name);
-        let sql_df = sql_df.select(vec![
-            Expr::Wildcard {
-                qualifier: None,
-                options: WildcardOptions::default(),
-            },
-            bin_index,
-        ])?;
+        let sql_df = sql_df.select(vec![datafusion_expr::expr_fn::wildcard(), bin_index.into()])?;
 
         // Add column with bin start
         let bin_start = (flat_col(bin_index_name).mul(lit(step))).add(lit(start));
@@ -130,10 +123,13 @@ impl TransformTrait for Bin {
 fn compute_output_value(bin_tx: &Bin, start: f64, stop: f64, step: f64) -> Option<TaskValue> {
     let mut fname = bin_tx.field.clone();
     fname.insert_str(0, "bin_");
-    let fields = ScalarValue::List(Arc::new(array_into_list_array(
-        ScalarValue::iter_to_array(vec![ScalarValue::from(bin_tx.field.as_str())]).ok()?,
-        true,
-    )));
+    let fields = ScalarValue::List(Arc::new(
+        SingleRowListArrayBuilder::new(
+            ScalarValue::iter_to_array(vec![ScalarValue::from(bin_tx.field.as_str())]).ok()?,
+        )
+        .with_nullable(true)
+        .build_list_array(),
+    ));
 
     if bin_tx.signal.is_some() {
         Some(TaskValue::Scalar(ScalarValue::from(vec![

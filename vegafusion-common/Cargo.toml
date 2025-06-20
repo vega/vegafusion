@@ -12,7 +12,6 @@ prettyprint = ["arrow/prettyprint"]
 proto = ["datafusion-proto", "datafusion-proto-common", "prost"]
 
 [dependencies]
-thiserror = "^1.0.29"
 
 [dependencies.chrono]
 workspace = true
@@ -44,10 +43,9 @@ workspace = true
 [dependencies.datafusion-functions]
 workspace = true
 features = [
-  "core_expressions",
+  "math_expressions",
   "string_expressions",
   "datetime_expressions",
-  "hashbrown",
 ]
 
 [dependencies.datafusion-functions-nested]
@@ -79,12 +77,11 @@ optional = true
 workspace = true
 optional = true
 
-[dependencies.jni]
-version = "0.21.1"
-optional = true
+[dependencies.thiserror]
+workspace = true
 
 [dependencies.base64]
-version = "0.21.2"
+workspace = true
 optional = true
 
 [dependencies.object_store]

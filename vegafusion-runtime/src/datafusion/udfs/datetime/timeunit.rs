@@ -9,7 +9,8 @@ use vegafusion_common::arrow::error::ArrowError;
 use vegafusion_common::arrow::temporal_conversions::date64_to_datetime;
 use vegafusion_common::datafusion_common::{DataFusionError, ScalarValue};
 use vegafusion_common::datafusion_expr::{
-    ColumnarValue, ScalarUDF, ScalarUDFImpl, Signature, Volatility,
+    ColumnarValue, ScalarFunctionArgs, ScalarUDF, ScalarUDFImpl, Signature, TypeSignature,
+    Volatility,
 };
 
 fn extract_bool(value: &ColumnarValue) -> std::result::Result<bool, DataFusionError> {
@@ -276,22 +277,22 @@ impl Default for TimeunitStartUDF {
 
 impl TimeunitStartUDF {
     pub fn new() -> Self {
-        let signature = Signature::exact(
-            vec![
+        let signature = Signature::new(
+            TypeSignature::Exact(vec![
                 DataType::Timestamp(TimeUnit::Millisecond, Some("UTC".into())), // [0] timestamp
-                DataType::Utf8,                                                 // [1] timezone
-                DataType::Boolean,                                              // [2] Year
-                DataType::Boolean,                                              // [3] Quarter
-                DataType::Boolean,                                              // [4] Month
-                DataType::Boolean,                                              // [5] Date
-                DataType::Boolean,                                              // [6] Week
-                DataType::Boolean,                                              // [7] Day
-                DataType::Boolean,                                              // [8] DayOfYear
-                DataType::Boolean,                                              // [9] Hours
-                DataType::Boolean,                                              // [10] Minutes
-                DataType::Boolean,                                              // [11] Seconds
-                DataType::Boolean,                                              // [12] Milliseconds
-            ],
+                DataType::Utf8, // [1] timezone - DataFusion will automatically coerce string types
+                DataType::Boolean, // [2] Year
+                DataType::Boolean, // [3] Quarter
+                DataType::Boolean, // [4] Month
+                DataType::Boolean, // [5] Date
+                DataType::Boolean, // [6] Week
+                DataType::Boolean, // [7] Day
+                DataType::Boolean, // [8] DayOfYear
+                DataType::Boolean, // [9] Hours
+                DataType::Boolean, // [10] Minutes
+                DataType::Boolean, // [11] Seconds
+                DataType::Boolean, // [12] Milliseconds
+            ]),
             Volatility::Immutable,
         );
 
@@ -322,10 +323,11 @@ impl ScalarUDFImpl for TimeunitStartUDF {
         ))
     }
 
-    fn invoke(
+    fn invoke_with_args(
         &self,
-        args: &[ColumnarValue],
+        args: ScalarFunctionArgs,
     ) -> vegafusion_common::datafusion_common::Result<ColumnarValue> {
+        let args = &args.args;
         let (timestamp, tz, units_mask) = unpack_timeunit_udf_args(args)?;
         let array = timestamp
             .as_any()

@@ -1,4 +1,4 @@
-use datafusion_common::utils::array_into_list_array;
+use datafusion_common::utils::SingleRowListArrayBuilder;
 use datafusion_expr::{lit, Expr};
 use itertools::Itertools;
 use std::collections::HashMap;
@@ -117,10 +117,11 @@ pub fn vl_selection_resolve_fn(
         .into_iter()
         .map(|(name, values)| {
             // Turn values into a scalar list
-            let values = ScalarValue::List(Arc::new(array_into_list_array(
-                ScalarValue::iter_to_array(values)?,
-                true,
-            )));
+            let values = ScalarValue::List(Arc::new(
+                SingleRowListArrayBuilder::new(ScalarValue::iter_to_array(values)?)
+                    .with_nullable(true)
+                    .build_list_array(),
+            ));
             Ok((name, values))
         })
         .collect::<Result<Vec<_>>>()?;

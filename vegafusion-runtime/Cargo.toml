@@ -33,29 +33,23 @@ multi-thread = ["tokio/rt-multi-thread"]
 rustls-tls = ["reqwest/rustls-tls"]
 
 [dependencies]
-regex = "^1.5.5"
-num-traits = "0.2.15"
-itertools = "0.11.0"
-float-cmp = "0.9.0"
-lru = "0.11.1"
-async-recursion = "1.0.5"
+float-cmp = "0.10.0"
+lru = "0.13.0"
+async-recursion = "1.1.1"
 async-lock = "2.8.0"
-tempfile = "3.3.0"
-futures-util = "0.3.21"
-bytes = "1.1.0"
-log = "0.4.17"
-env_logger = "0.10.0"
-ordered-float = "3.6.0"
+futures-util = "0.3.31"
 async-mutex = "1.4.0"
 
 [dev-dependencies]
-futures-util = "0.3.21"
-rstest = "0.18.2"
-test-case = "3.1.0"
-base64 = "0.21.0"
+futures-util = "0.3.31"
+rstest = "0.24.0"
+test-case = "3.3.1"
 pixelmatch = "0.1.0"
-rgb = "0.8.32"
-lodepng = "3.6.1"
+rgb = "0.8.50"
+lodepng = "3.11.0"
+
+[dev-dependencies.base64]
+workspace = true
 
 [dependencies.url]
 workspace = true
@@ -90,8 +84,32 @@ workspace = true
 [dependencies.prost]
 workspace = true
 
+[dependencies.regex]
+workspace = true
+
+[dependencies.num-traits]
+workspace = true
+
+[dependencies.itertools]
+workspace = true
+
+[dependencies.tempfile]
+workspace = true
+
+[dependencies.bytes]
+workspace = true
+
+[dependencies.log]
+workspace = true
+
+[dependencies.env_logger]
+workspace = true
+
+[dependencies.ordered-float]
+workspace = true
+
 [dependencies.uuid]
-version = "^1.2"
+workspace = true
 features = ["v4"]
 
 [dependencies.sqlparser]
@@ -108,8 +126,7 @@ features = ["sqlparser"]
 version = "2.0.2"
 
 [dependencies.serde]
-version = "1.0.137"
-features = ["derive"]
+workspace = true
 
 [dependencies.datafusion]
 workspace = true
@@ -163,5 +180,5 @@ default-features = false
 features = ["blocking", "rustls-tls"]
 
 [dev-dependencies.criterion]
-version = "0.4.0"
+version = "0.6.0"
 features = ["async_tokio"]

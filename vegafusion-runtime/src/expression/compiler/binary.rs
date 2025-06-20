@@ -1,7 +1,6 @@
 use crate::expression::compiler::{compile, config::CompilationConfig};
 use datafusion_expr::expr::BinaryExpr;
-use datafusion_expr::{lit, Expr, Operator};
-use datafusion_functions::expr_fn::coalesce;
+use datafusion_expr::{lit, when, Expr, Operator};
 use datafusion_functions::string::expr_fn::concat;
 use vegafusion_common::datafusion_common::DFSchema;
 use vegafusion_common::datatypes::{
@@ -184,8 +183,10 @@ pub fn compile_binary(
 
 fn bitwise_expr(lhs: Expr, op: Operator, rhs: Expr, schema: &DFSchema) -> Result<Expr> {
     // Vega treats null as zero for bitwise operations
-    let left = coalesce(vec![cast_to(lhs, &DataType::Int64, schema)?, lit(0)]);
-    let right = coalesce(vec![cast_to(rhs, &DataType::Int64, schema)?, lit(0)]);
+    let left_cast = cast_to(lhs, &DataType::Int64, schema)?;
+    let right_cast = cast_to(rhs, &DataType::Int64, schema)?;
+    let left = when(left_cast.clone().is_null(), lit(0)).otherwise(left_cast)?;
+    let right = when(right_cast.clone().is_null(), lit(0)).otherwise(right_cast)?;
 
     Ok(Expr::BinaryExpr(BinaryExpr {
         left: Box::new(left),

@@ -4,7 +4,9 @@ use crate::transform::TransformTrait;
 use async_trait::async_trait;
 use datafusion::prelude::DataFrame;
 use datafusion_common::ScalarValue;
-use datafusion_expr::{expr, lit, Expr, WindowFrame, WindowFunctionDefinition};
+use datafusion_expr::{
+    expr, expr::WindowFunctionParams, lit, Expr, WindowFrame, WindowFunctionDefinition,
+};
 use datafusion_functions_window::row_number::RowNumber;
 use sqlparser::ast::NullTreatment;
 use std::sync::Arc;
@@ -105,25 +107,27 @@ impl TransformTrait for Fold {
         final_selections.push(flat_col(&value_col));
 
         // Add new order column
-        let final_order_expr = Expr::WindowFunction(expr::WindowFunction {
+        let final_order_expr = Expr::WindowFunction(Box::new(expr::WindowFunction {
             fun: WindowFunctionDefinition::WindowUDF(Arc::new(RowNumber::new().into())),
-            args: vec![],
-            partition_by: vec![],
-            order_by: vec![
-                expr::Sort {
-                    expr: flat_col(ORDER_COL),
-                    asc: true,
-                    nulls_first: true,
-                },
-                expr::Sort {
-                    expr: flat_col(&field_order_col),
-                    asc: true,
-                    nulls_first: true,
-                },
-            ],
-            window_frame: WindowFrame::new(Some(true)),
-            null_treatment: Some(NullTreatment::IgnoreNulls),
-        })
+            params: WindowFunctionParams {
+                args: vec![],
+                partition_by: vec![],
+                order_by: vec![
+                    expr::Sort {
+                        expr: flat_col(ORDER_COL),
+                        asc: true,
+                        nulls_first: true,
+                    },
+                    expr::Sort {
+                        expr: flat_col(&field_order_col),
+                        asc: true,
+                        nulls_first: true,
+                    },
+                ],
+                window_frame: WindowFrame::new(Some(true)),
+                null_treatment: Some(NullTreatment::IgnoreNulls),
+            },
+        }))
         .alias(ORDER_COL);
         final_selections.push(final_order_expr);
 

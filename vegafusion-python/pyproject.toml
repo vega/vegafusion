@@ -15,7 +15,7 @@ classifiers = [
   "License :: OSI Approved :: BSD License",
   "Topic :: Scientific/Engineering :: Visualization",
 ]
-dependencies = ["arro3-core", "packaging", "narwhals>=1.13"]
+dependencies = ["arro3-core", "packaging", "narwhals>=1.42"]
 [[project.authors]]
 name = "VegaFusion Contributors"
 

@@ -10,17 +10,8 @@ tonic_support = ["tonic", "tonic-build"]
 py = ["pyo3", "vegafusion-common/py"]
 
 [dependencies]
-thiserror = "^1.0.29"
-bytes = "1.1.0"
-itertools = "0.10.3"
-regex = "^1.5.5"
-ordered-float = "3.6.0"
-petgraph = "0.6.0"
-chrono = "0.4.23"
-num-complex = "0.4.2"
-rand = "0.8.5"
-json-patch = "1.0.0"
-log = "0.4.22"
+petgraph = "0.8.2"
+rand = "0.9.0"
 
 [lints.clippy]
 module_inception = "allow"
@@ -38,6 +29,9 @@ workspace = true
 workspace = true
 
 [dependencies.chrono-tz]
+workspace = true
+
+[dependencies.chrono]
 workspace = true
 
 [dependencies.async-trait]
@@ -64,9 +58,26 @@ default-features = false
 workspace = true
 optional = true
 
+[dependencies.thiserror]
+workspace = true
+
+[dependencies.bytes]
+workspace = true
+
+[dependencies.itertools]
+workspace = true
+
+[dependencies.regex]
+workspace = true
+
+[dependencies.ordered-float]
+workspace = true
+
+[dependencies.log]
+workspace = true
+
 [dependencies.serde]
-version = "1.0.137"
-features = ["derive"]
+workspace = true
 
 [dependencies.tonic]
 workspace = true
@@ -80,5 +91,5 @@ workspace = true
 optional = true
 
 [build-dependencies.protobuf-src]
-version = "1.1.0"
+version = "2.1.1"
 optional = true

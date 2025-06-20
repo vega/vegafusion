@@ -1,8 +1,8 @@
 use crate::error::{Result, ResultWithContext};
 use arrow::datatypes::DataType;
 use datafusion_common::DFSchema;
-use datafusion_expr::{lit, Expr, ExprSchemable, TryCast};
-use datafusion_functions::{datetime::expr_fn::to_timestamp_millis, expr_fn::coalesce};
+use datafusion_expr::{lit, when, Expr, ExprSchemable, TryCast};
+use datafusion_functions::datetime::expr_fn::to_timestamp_millis;
 
 pub fn is_numeric_datatype(dtype: &DataType) -> bool {
     matches!(
@@ -49,7 +49,10 @@ pub fn is_float_datatype(dtype: &DataType) -> bool {
 }
 
 pub fn is_string_datatype(dtype: &DataType) -> bool {
-    matches!(dtype, DataType::Utf8 | DataType::LargeUtf8)
+    matches!(
+        dtype,
+        DataType::Utf8 | DataType::LargeUtf8 | DataType::Utf8View
+    )
 }
 
 /// get datatype for expression
@@ -63,23 +66,22 @@ pub fn data_type(value: &Expr, schema: &DFSchema) -> Result<DataType> {
 pub fn to_boolean(value: Expr, schema: &DFSchema) -> Result<Expr> {
     let dtype = data_type(&value, schema)?;
     let boolean_value = if matches!(dtype, DataType::Boolean) {
-        coalesce(vec![value, lit(false)])
+        when(value.clone().is_null(), lit(false)).otherwise(value)?
     } else if matches!(
         dtype,
         DataType::Int8 | DataType::Int16 | DataType::Int32 | DataType::Int64
     ) {
-        coalesce(vec![value.not_eq(lit(0)), lit(false)])
+        let not_eq_zero = value.not_eq(lit(0));
+        when(not_eq_zero.clone().is_null(), lit(false)).otherwise(not_eq_zero)?
     } else {
         // TODO: JavaScript falsey cast
         //  - empty string to false
         //  - NaN to false
-        coalesce(vec![
-            Expr::TryCast(TryCast {
-                expr: Box::new(value),
-                data_type: DataType::Boolean,
-            }),
-            lit(false),
-        ])
+        let cast_expr = Expr::TryCast(TryCast {
+            expr: Box::new(value),
+            data_type: DataType::Boolean,
+        });
+        when(cast_expr.clone().is_null(), lit(false)).otherwise(cast_expr)?
     };
 
     Ok(boolean_value)
@@ -111,20 +113,21 @@ pub fn to_numeric(value: Expr, schema: &DFSchema) -> Result<Expr> {
 /// Cast an expression to Utf8 if not already Utf8. If already numeric, don't perform cast.
 pub fn to_string(value: Expr, schema: &DFSchema) -> Result<Expr> {
     let dtype = data_type(&value, schema)?;
-    let utf8_value = if dtype == DataType::Utf8 || dtype == DataType::LargeUtf8 {
-        value
-    } else {
-        Expr::TryCast(TryCast {
-            expr: Box::new(value),
-            data_type: DataType::Utf8,
-        })
-    };
+    let utf8_value =
+        if dtype == DataType::Utf8 || dtype == DataType::LargeUtf8 || dtype == DataType::Utf8View {
+            value
+        } else {
+            Expr::TryCast(TryCast {
+                expr: Box::new(value),
+                data_type: DataType::Utf8,
+            })
+        };
 
     Ok(utf8_value)
 }
 
 pub fn is_null_literal(value: &Expr) -> bool {
-    if let Expr::Literal(literal) = &value {
+    if let Expr::Literal(literal, _) = &value {
         literal.is_null()
     } else {
         false

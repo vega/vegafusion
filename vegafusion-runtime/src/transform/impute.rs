@@ -6,8 +6,11 @@ use crate::transform::TransformTrait;
 use async_trait::async_trait;
 use datafusion::prelude::DataFrame;
 use datafusion_common::{JoinType, ScalarValue};
-use datafusion_expr::{expr, lit, Expr, SortExpr, WindowFrame, WindowFunctionDefinition};
-use datafusion_functions::expr_fn::coalesce;
+use datafusion_expr::{
+    expr, expr::WindowFunctionParams, lit, when, Expr, SortExpr, WindowFrame,
+    WindowFunctionDefinition,
+};
+// Remove coalesce import as we'll use when/otherwise instead
 use datafusion_functions_aggregate::expr_fn::min;
 use datafusion_functions_window::row_number::RowNumber;
 use itertools::Itertools;
@@ -78,11 +81,10 @@ impl TransformTrait for Impute {
                 .map(|f| {
                     let col_name = f.name();
                     Ok(if col_name == &field {
-                        coalesce(vec![
-                            flat_col(&field),
-                            lit(value.clone()).try_cast_to(field_type, schema)?,
-                        ])
-                        .alias(col_name)
+                        let casted_value = lit(value.clone()).try_cast_to(field_type, schema)?;
+                        when(flat_col(&field).is_null(), casted_value)
+                            .otherwise(flat_col(&field))?
+                            .alias(col_name)
                     } else {
                         flat_col(col_name)
                     })
@@ -125,8 +127,10 @@ impl TransformTrait for Impute {
                 .collect::<Vec<_>>();
             on_exprs.push(relation_col(&key, "lhs").eq(relation_col(&key, "rhs")));
 
+            // Perform cross join by using a dummy always-true condition
+            // This is needed because empty join conditions are not allowed
             let pre_ordered_df = key_df
-                .join_on(groups_df, JoinType::Inner, vec![])?
+                .join_on(groups_df, JoinType::Inner, vec![lit(true)])?
                 .alias("lhs")?
                 .join_on(dataframe.clone().alias("rhs")?, JoinType::Left, on_exprs)?;
 
@@ -140,12 +144,11 @@ impl TransformTrait for Impute {
                     continue;
                 } else if f.name() == &field {
                     // Coalesce to fill in null values in field
+                    let casted_value = lit(value.clone()).try_cast_to(field_type, schema)?;
                     final_selections.push(
-                        coalesce(vec![
-                            flat_col(&field),
-                            lit(value.clone()).try_cast_to(field_type, schema)?,
-                        ])
-                        .alias(f.name()),
+                        when(flat_col(&field).is_null(), casted_value)
+                            .otherwise(flat_col(&field))?
+                            .alias(f.name()),
                     );
                 } else {
                     // Keep other columns
@@ -160,21 +163,23 @@ impl TransformTrait for Impute {
                 }
             }
 
-            let final_order_expr = Expr::WindowFunction(expr::WindowFunction {
+            let final_order_expr = Expr::WindowFunction(Box::new(expr::WindowFunction {
                 fun: WindowFunctionDefinition::WindowUDF(Arc::new(RowNumber::new().into())),
-                args: vec![],
-                partition_by: vec![],
-                order_by: vec![
-                    // Sort first by the original row order, pushing imputed rows to the end
-                    SortExpr::new(order_col.clone(), true, false),
-                    // Sort imputed rows by first row that resides group
-                    // then by first row that matches a key
-                    SortExpr::new(order_group_col, true, true),
-                    SortExpr::new(order_key_col, true, true),
-                ],
-                window_frame: WindowFrame::new(Some(true)),
-                null_treatment: Some(NullTreatment::RespectNulls),
-            })
+                params: WindowFunctionParams {
+                    args: vec![],
+                    partition_by: vec![],
+                    order_by: vec![
+                        // Sort first by the original row order, pushing imputed rows to the end
+                        SortExpr::new(order_col.clone(), true, false),
+                        // Sort imputed rows by first row that resides group
+                        // then by first row that matches a key
+                        SortExpr::new(order_group_col, true, true),
+                        SortExpr::new(order_key_col, true, true),
+                    ],
+                    window_frame: WindowFrame::new(Some(true)),
+                    null_treatment: Some(NullTreatment::RespectNulls),
+                },
+            }))
             .alias(ORDER_COL);
             final_selections.push(final_order_expr);
 

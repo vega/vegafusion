@@ -4,16 +4,20 @@ on:
     types: [opened, synchronize]
 jobs:
   check-rust:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
       - name: Check out repository code
         uses: actions/checkout@v4.2.2
-      - uses: prefix-dev/setup-pixi@v0.8.1
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
         with:
-          pixi-version: v0.34.0
+          toolchain: stable
+          components: rustfmt, clippy
+      - uses: prefix-dev/setup-pixi@v0.8.9
+        with:
           cache: true
       - name: Cache
-        uses: actions/cache@v4.1.2
+        uses: actions/cache@v4
         with:
           key: ${{ runner.os }}-${{ hashFiles('pixi.lock', 'Cargo.lock', 'vegafusion-python/pyproject.toml') }}-check-rust
           path: |
@@ -33,17 +37,19 @@ jobs:
       fail-fast: false
       matrix:
         os:
-          - ubuntu-20.04
+          - ubuntu-22.04
           - windows-2022
           - macos-14
     steps:
       - name: Check out repository code
         uses: actions/checkout@v4.2.2
-      - uses: prefix-dev/setup-pixi@v0.8.1
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
         with:
-          pixi-version: v0.34.0
+          toolchain: stable
+      - uses: prefix-dev/setup-pixi@v0.8.9
       - name: Cache
-        uses: actions/cache@v4.1.2
+        uses: actions/cache@v4
         with:
           key: ${{ runner.os }}-${{ hashFiles('pixi.lock', 'Cargo.lock', 'vegafusion-python/pyproject.toml') }}-test-rust2
           path: |
@@ -64,15 +70,18 @@ jobs:
             vegafusion-runtime/tests/output
 
   build-vegafusion-wasm:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
       - name: Check out repository code
         uses: actions/checkout@v4.2.2
-      - uses: prefix-dev/setup-pixi@v0.8.1
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
         with:
-          pixi-version: v0.34.0
+          toolchain: stable
+          targets: wasm32-unknown-unknown
+      - uses: prefix-dev/setup-pixi@v0.8.9
       - name: Cache
-        uses: actions/cache@v4.1.2
+        uses: actions/cache@v4
         with:
           key: ${{ runner.os }}-${{ hashFiles('pixi.lock', 'Cargo.lock', 'vegafusion-python/pyproject.toml') }}-build-vegafusion-wasm
           path: |
@@ -92,15 +101,17 @@ jobs:
           path: package
 
   check-vegafusion-python:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
       - name: Check out repository code
         uses: actions/checkout@v4.2.2
-      - uses: prefix-dev/setup-pixi@v0.8.1
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
         with:
-          pixi-version: v0.34.0
+          toolchain: stable
+      - uses: prefix-dev/setup-pixi@v0.8.9
       - name: Cache
-        uses: actions/cache@v4.1.2
+        uses: actions/cache@v4
         with:
           key: ${{ runner.os }}-${{ hashFiles('pixi.lock', 'Cargo.lock', 'vegafusion-python/pyproject.toml') }}-build-vegafusion-wasm
           path: |
@@ -172,11 +183,13 @@ jobs:
     steps:
       - name: Check out repository code
         uses: actions/checkout@v4.2.2
-      - uses: prefix-dev/setup-pixi@v0.8.1
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
         with:
-          pixi-version: v0.34.0
+          toolchain: stable
+      - uses: prefix-dev/setup-pixi@v0.8.9
       - name: Cache
-        uses: actions/cache@v4.1.2
+        uses: actions/cache@v4
         with:
           key: ${{ runner.os }}-${{ hashFiles('pixi.lock', 'Cargo.lock', 'vegafusion-python/pyproject.toml') }}-build-vegafusion-python-win-64
           path: |
@@ -201,11 +214,13 @@ jobs:
     steps:
       - name: Check out repository code
         uses: actions/checkout@v4.2.2
-      - uses: prefix-dev/setup-pixi@v0.8.1
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
         with:
-          pixi-version: v0.34.0
+          toolchain: stable
+      - uses: prefix-dev/setup-pixi@v0.8.9
       - name: Cache
-        uses: actions/cache@v4.1.2
+        uses: actions/cache@v4
         with:
           key: ${{ runner.os }}-${{ hashFiles('pixi.lock', 'Cargo.lock', 'vegafusion-python/pyproject.toml') }}-build-vegafusion-python-osx-64
           path: |
@@ -230,11 +245,14 @@ jobs:
     steps:
       - name: Check out repository code
         uses: actions/checkout@v4.2.2
-      - uses: prefix-dev/setup-pixi@v0.8.1
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
         with:
-          pixi-version: v0.34.0
+          toolchain: stable
+          targets: aarch64-apple-darwin
+      - uses: prefix-dev/setup-pixi@v0.8.9
       - name: Cache
-        uses: actions/cache@v4.1.2
+        uses: actions/cache@v4
         with:
           key: osx-arm64-${{ hashFiles('pixi.lock', 'Cargo.lock', 'vegafusion-python/pyproject.toml') }}-build-vegafusion-python-osx-arm64
           path: |
@@ -255,7 +273,7 @@ jobs:
           if-no-files-found: error
 
   test-vegafusion-python-linux-64:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     needs: [build-vegafusion-python-linux-64]
     steps:
       - name: Check out repository code
@@ -370,15 +388,17 @@ jobs:
         run: pytest --ignore=tests/test_jupyter_widget.py
 
   build-vegafusion-server-linux-64:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
       - name: Check out repository code
         uses: actions/checkout@v4.2.2
-      - uses: prefix-dev/setup-pixi@v0.8.1
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
         with:
-          pixi-version: v0.34.0
+          toolchain: stable
+      - uses: prefix-dev/setup-pixi@v0.8.9
       - name: Cache
-        uses: actions/cache@v4.1.2
+        uses: actions/cache@v4
         with:
           key: ${{ runner.os }}-${{ hashFiles('pixi.lock', 'Cargo.lock', 'vegafusion-python/pyproject.toml') }}-build-vegafusion-server-linux-64
           path: |
@@ -407,14 +427,14 @@ jobs:
   # # cargo (without involving conda).
   #
   #  build-vegafusion-server-linux-arm64:
-  #    runs-on: ubuntu-20.04
+  #    runs-on: ubuntu-22.04
   #    steps:
   #      - name: Check out repository code
   #        uses: actions/checkout@v4.2.2
   #      - name: Install pixi
   #        run: curl -fsSL https://pixi.sh/install.sh | bash && echo "${HOME}/.pixi/bin" >> $GITHUB_PATH
   #      - name: Cache
-  #        uses: actions/cache@v4.1.2
+  #        uses: actions/cache@v4
   #        with:
   #          key: linux-arm64-${{ hashFiles('pixi.lock', 'Cargo.lock', 'vegafusion-python/pyproject.toml') }}-server
   #          path: |
@@ -483,11 +503,13 @@ jobs:
     steps:
       - name: Check out repository code
         uses: actions/checkout@v4.2.2
-      - uses: prefix-dev/setup-pixi@v0.8.1
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
         with:
-          pixi-version: v0.34.0
+          toolchain: stable
+      - uses: prefix-dev/setup-pixi@v0.8.9
       - name: Cache
-        uses: actions/cache@v4.1.2
+        uses: actions/cache@v4
         with:
           key: ${{ runner.os }}-${{ hashFiles('pixi.lock', 'Cargo.lock', 'vegafusion-python/pyproject.toml') }}-build-vegafusion-server-win-64b
           path: |
@@ -517,11 +539,13 @@ jobs:
     steps:
       - name: Check out repository code
         uses: actions/checkout@v4.2.2
-      - uses: prefix-dev/setup-pixi@v0.8.1
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
         with:
-          pixi-version: v0.34.0
+          toolchain: stable
+      - uses: prefix-dev/setup-pixi@v0.8.9
       - name: Cache
-        uses: actions/cache@v4.1.2
+        uses: actions/cache@v4
         with:
           key: ${{ runner.os }}-${{ hashFiles('pixi.lock', 'Cargo.lock', 'vegafusion-python/pyproject.toml') }}-build-vegafusion-server-osx-64
           path: |
@@ -550,11 +574,14 @@ jobs:
     steps:
       - name: Check out repository code
         uses: actions/checkout@v4.2.2
-      - uses: prefix-dev/setup-pixi@v0.8.1
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
         with:
-          pixi-version: v0.34.0
+          toolchain: stable
+          targets: aarch64-apple-darwin
+      - uses: prefix-dev/setup-pixi@v0.8.9
       - name: Cache
-        uses: actions/cache@v4.1.2
+        uses: actions/cache@v4
         with:
           key: osx-arm64-${{ hashFiles('pixi.lock', 'Cargo.lock', 'vegafusion-python/pyproject.toml') }}-build-vegafusion-server-osx-arm64
           path: |

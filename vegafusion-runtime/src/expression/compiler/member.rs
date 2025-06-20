@@ -3,7 +3,8 @@ use crate::expression::compiler::compile;
 use crate::expression::compiler::config::CompilationConfig;
 use crate::expression::compiler::utils::ExprHelpers;
 use datafusion_expr::{lit, Expr};
-use datafusion_functions::expr_fn::{get_field, substring};
+use datafusion_functions::expr_fn::get_field;
+use datafusion_functions::unicode::expr_fn::substring;
 use datafusion_functions_nested::expr_fn::array_element;
 use std::convert::TryFrom;
 use vegafusion_common::arrow::array::Int64Array;
@@ -81,7 +82,10 @@ pub fn compile_member(
         _ => {
             if property_string == "length" {
                 length_transform(&[compiled_object], schema)?
-            } else if matches!(dtype, DataType::Utf8 | DataType::LargeUtf8) {
+            } else if matches!(
+                dtype,
+                DataType::Utf8 | DataType::LargeUtf8 | DataType::Utf8View
+            ) {
                 if let Some(index) = index {
                     // SQL substr function is 1-indexed so add one
                     substring(compiled_object, lit((index + 1) as i32), lit(1i64))

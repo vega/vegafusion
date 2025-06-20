@@ -18,6 +18,16 @@ serde-wasm-bindgen = "0.6"
 js-sys = "0.3.55"
 indexmap = "1.9.2"
 
+# Override sqlparser to disable recursive-protection feature for WASM
+[dependencies.sqlparser]
+workspace = true
+
+# Add datafusion-sql to control its features
+[dependencies.datafusion-sql]
+version = "48.0.0"
+default-features = false
+features = ["unicode_expressions", "unparser"]
+
 [dev-dependencies]
 wasm-bindgen-test = "0.3.13"
 
@@ -52,9 +62,14 @@ features = ["derive"]
 [dependencies.wasm-bindgen]
 version = "0.2.78"
 
+# Ensure both getrandom versions have proper WASM support
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+getrandom = { version = "0.2", features = ["js"] }
+
+# Force getrandom 0.3 to have wasm_js feature
 [dependencies.getrandom]
-version = "0.2.8"
-features = ["js"]
+workspace = true
+features = ["wasm_js"]
 
 [dependencies.chrono]
 version = "0.4.31"
