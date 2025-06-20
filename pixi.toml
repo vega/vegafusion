@@ -156,10 +156,11 @@ anywidget = ">=0.9.6,<0.10"
 polars = "1.8.*"
 grpcio = ">=1.56.2,<2"
 pyarrow = "16.*"
+libgfortran = ">=15.1.0"
 
 [pypi-dependencies]
 # Works around pixi solve conflict with arrow >13
-scikit-image = ">=0.24"
+scikit-image = ">=0.25"
 
 [target.osx-arm64.build-dependencies]
 # These dependencies are for building node canvas from source on apple silicon
