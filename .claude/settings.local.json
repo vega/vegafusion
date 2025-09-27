@@ -2,7 +2,8 @@
   "permissions": {
     "allow": [
       "Bash(gh api:*)",
-      "Bash(pixi run type-check-py:*)"
+      "Bash(pixi run type-check-py:*)",
+      "Bash(gh pr checks:*)"
     ],
     "deny": [],
     "ask": []

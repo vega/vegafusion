@@ -329,11 +329,11 @@ class VegaFusionRuntime:
                             raise ValueError(msg)
                         df_nw = df_nw.select(columns)
 
-                    imported_inline_datasets[name] = Table(df_nw)  # type: ignore[arg-type]
+                    imported_inline_datasets[name] = Table(df_nw)  # type: ignore
                 except TypeError:
                     # Not supported by Narwhals, try pycapsule interface directly
                     if hasattr(value, "__arrow_c_stream__"):
-                        imported_inline_datasets[name] = Table(value)  # type: ignore[call-overload]
+                        imported_inline_datasets[name] = Table(value)  # type: ignore
                     else:
                         raise
 
