@@ -2,7 +2,7 @@
 name = "vegafusion-core"
 license = "BSD-3-Clause"
 edition = "2021"
-version = "2.0.2"
+version = "2.0.3"
 description = "Core components required by multiple VegaFusion crates, with WASM compatibility"
 
 [features]
@@ -12,9 +12,6 @@ py = ["pyo3", "vegafusion-common/py"]
 [dependencies]
 petgraph = "0.8.2"
 rand = "0.9.0"
-
-[lints.clippy]
-module_inception = "allow"
 
 [dependencies.lazy_static]
 workspace = true
@@ -48,7 +45,7 @@ features = ["preserve_order"]
 [dependencies.vegafusion-common]
 path = "../vegafusion-common"
 features = ["json", "sqlparser"]
-version = "2.0.2"
+version = "2.0.3"
 
 [dependencies.datafusion-common]
 workspace = true
@@ -82,6 +79,9 @@ workspace = true
 [dependencies.tonic]
 workspace = true
 optional = true
+
+[lints.clippy]
+module_inception = "allow"
 
 [build-dependencies.prost-build]
 workspace = true
