@@ -93,7 +93,7 @@ struct Tokenizer<'a> {
 }
 
 impl Tokenizer<'_> {
-    fn new(src: &str) -> Tokenizer {
+    fn new(src: &str) -> Tokenizer<'_> {
         Tokenizer {
             current_index: 0,
             remaining_text: src,

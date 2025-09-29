@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(gh api:*)",
+      "Bash(pixi run type-check-py:*)",
+      "Bash(gh pr checks:*)",
+      "WebFetch(domain:narwhals-dev.github.io)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

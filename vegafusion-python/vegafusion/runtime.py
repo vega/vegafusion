@@ -245,7 +245,7 @@ class VegaFusionRuntime:
 
     def _import_inline_datasets(
         self,
-        inline_datasets: dict[str, IntoFrameT] | None = None,
+        inline_datasets: dict[str, Any] | None = None,
         inline_dataset_usage: dict[str, list[str]] | None = None,
     ) -> dict[str, Table]:
         """
@@ -329,11 +329,11 @@ class VegaFusionRuntime:
                             raise ValueError(msg)
                         df_nw = df_nw.select(columns)
 
-                    imported_inline_datasets[name] = Table(df_nw)  # type: ignore[arg-type]
+                    imported_inline_datasets[name] = Table(df_nw)
                 except TypeError:
                     # Not supported by Narwhals, try pycapsule interface directly
                     if hasattr(value, "__arrow_c_stream__"):
-                        imported_inline_datasets[name] = Table(value)  # type: ignore[call-overload]
+                        imported_inline_datasets[name] = Table(value)
                     else:
                         raise
 
@@ -550,7 +550,7 @@ class VegaFusionRuntime:
         )
 
         def normalize_timezones(
-            dfs: list[nw.DataFrame[IntoFrameT] | nw.LazyFrame[IntoFrameT]],
+            dfs: list[nw.DataFrame[IntoFrameT] | nw.LazyFrame[IntoFrameT]],  # type: ignore[type-var]
         ) -> list[DataFrameLike]:
             import narwhals.stable.v1 as nw
 
