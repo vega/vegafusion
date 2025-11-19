@@ -61,7 +61,7 @@ async fn test_extract_server_data() {
     let mapping = graph.build_mapping();
     // println!("{:#?}", mapping);
 
-    let graph_runtime = VegaFusionRuntime::new(None);
+    let graph_runtime = VegaFusionRuntime::default();
     let _data_3 = graph_runtime
         .get_node_value(
             graph.clone(),
@@ -69,6 +69,7 @@ async fn test_extract_server_data() {
                 .get(&(Variable::new_data("data_3"), Vec::new()))
                 .unwrap(),
             Default::default(),
+            None,
         )
         .await
         .unwrap();
@@ -85,6 +86,7 @@ async fn test_extract_server_data() {
                 ))
                 .unwrap(),
             Default::default(),
+            None,
         )
         .await
         .unwrap();

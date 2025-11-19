@@ -9,7 +9,7 @@ use vegafusion_runtime::task_graph::runtime::VegaFusionRuntime;
 async fn main() {
     let spec = get_spec();
 
-    let runtime = VegaFusionRuntime::new(None);
+    let runtime = VegaFusionRuntime::default();
 
     let (transformed_spec, datasets, warnings) = runtime
         .pre_transform_extract(

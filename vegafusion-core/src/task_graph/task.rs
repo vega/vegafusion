@@ -3,7 +3,7 @@ use crate::proto::gen::tasks::{
     task::TaskKind, DataSourceTask, DataUrlTask, DataValuesTask, NodeValueIndex, Task, TzConfig,
     Variable,
 };
-use crate::proto::gen::tasks::{SignalTask, TaskValue as ProtoTaskValue};
+use crate::proto::gen::tasks::{MaterializedTaskValue as ProtoMaterializedTaskValue, SignalTask};
 use crate::task_graph::task_value::TaskValue;
 use std::convert::TryFrom;
 
@@ -33,7 +33,9 @@ impl Task {
         Self {
             variable: Some(variable),
             scope: Vec::from(scope),
-            task_kind: Some(TaskKind::Value(ProtoTaskValue::try_from(&value).unwrap())),
+            task_kind: Some(TaskKind::Value(
+                ProtoMaterializedTaskValue::try_from(&value).unwrap(),
+            )),
             tz_config: None,
         }
     }

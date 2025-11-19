@@ -5,6 +5,7 @@ use vegafusion_common::arrow::array::ArrayRef;
 use vegafusion_common::arrow::datatypes::{DataType, Field, FieldRef, Schema};
 use vegafusion_common::arrow::record_batch::RecordBatch;
 use vegafusion_common::data::table::VegaFusionTable;
+use vegafusion_common::datafusion_expr::LogicalPlan;
 
 /// Get the size of a Field value, including any inner heap-allocated data
 fn size_of_field(field: &FieldRef) -> usize {
@@ -93,4 +94,13 @@ pub fn inner_size_of_table(value: &VegaFusionTable) -> usize {
     let schema_size: usize = size_of_schema(&value.schema);
     let size_of_batches: usize = value.batches.iter().map(size_of_record_batch).sum();
     schema_size + size_of_batches
+}
+
+pub fn inner_size_of_logical_plan(plan: &LogicalPlan) -> usize {
+    size_of_val(plan)
+        + plan
+            .inputs()
+            .iter()
+            .map(|p| inner_size_of_logical_plan(p))
+            .sum::<usize>()
 }

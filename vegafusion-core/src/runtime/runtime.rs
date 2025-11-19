@@ -1,29 +1,30 @@
 use std::{any::Any, collections::HashMap, sync::Arc};
 
 use crate::proto::gen::pretransform::pre_transform_values_warning::WarningType as ValuesWarningType;
+use crate::runtime::{NoOpPlanExecutor, PlanExecutor};
+use crate::task_graph::task_value::MaterializedTaskValue;
 use crate::{
     data::dataset::VegaFusionDataset,
     planning::{
         apply_pre_transform::apply_pre_transform_datasets,
         destringify_selection_datetimes::destringify_selection_datetimes,
         plan::{PlannerConfig, SpecPlan},
-        watch::{ExportUpdateArrow, ExportUpdateNamespace},
+        watch::{ExportUpdate, ExportUpdateArrow, ExportUpdateNamespace},
     },
     proto::gen::{
         pretransform::{
             pre_transform_extract_warning, PlannerWarning, PreTransformExtractOpts,
-            PreTransformExtractWarning, PreTransformRowLimitWarning, PreTransformSpecOpts,
+            PreTransformExtractWarning, PreTransformLogicalPlanOpts,
+            PreTransformLogicalPlanWarning, PreTransformRowLimitWarning, PreTransformSpecOpts,
             PreTransformSpecWarning, PreTransformValuesOpts, PreTransformValuesWarning,
         },
         tasks::{NodeValueIndex, TaskGraph, TzConfig, VariableNamespace},
     },
     spec::{chart::ChartSpec, values::MissingNullOrValue},
-    task_graph::{
-        graph::ScopedVariable,
-        task_value::{NamedTaskValue, TaskValue},
-    },
+    task_graph::{graph::ScopedVariable, task_value::NamedTaskValue},
 };
 use async_trait::async_trait;
+use futures::future::try_join_all;
 use vegafusion_common::{
     data::table::VegaFusionTable,
     error::{Result, ResultWithContext, VegaFusionError},
@@ -40,12 +41,36 @@ pub struct PreTransformExtractTable {
 pub trait VegaFusionRuntimeTrait: Send + Sync {
     fn as_any(&self) -> &dyn Any;
 
+    fn plan_executor(&self) -> Arc<dyn PlanExecutor> {
+        Arc::new(NoOpPlanExecutor::default())
+    }
+
     async fn query_request(
         &self,
         task_graph: Arc<TaskGraph>,
         indices: &[NodeValueIndex],
         inline_datasets: &HashMap<String, VegaFusionDataset>,
     ) -> Result<Vec<NamedTaskValue>>;
+
+    async fn materialize_export_updates(
+        &self,
+        export_updates: Vec<ExportUpdate>,
+    ) -> Result<Vec<ExportUpdateArrow>> {
+        let executor = self.plan_executor();
+        try_join_all(export_updates.into_iter().map(|eu| {
+            let exec = executor.clone();
+            async move {
+                let value = eu.value.to_materialized(exec).await?;
+                Ok(ExportUpdateArrow {
+                    namespace: eu.namespace,
+                    name: eu.name,
+                    scope: eu.scope,
+                    value,
+                })
+            }
+        }))
+        .await
+    }
 
     async fn pre_transform_spec_plan(
         &self,
@@ -55,7 +80,7 @@ pub trait VegaFusionRuntimeTrait: Send + Sync {
         preserve_interactivity: bool,
         inline_datasets: &HashMap<String, VegaFusionDataset>,
         keep_variables: Vec<ScopedVariable>,
-    ) -> Result<(SpecPlan, Vec<ExportUpdateArrow>)> {
+    ) -> Result<(SpecPlan, Vec<ExportUpdate>)> {
         // Create spec plan
         let plan = SpecPlan::try_new(
             spec,
@@ -97,7 +122,7 @@ pub trait VegaFusionRuntimeTrait: Send + Sync {
             .with_context(|| "Failed to query node values")?;
 
         for (var, response_value) in plan.comm_plan.server_to_client.iter().zip(response_values) {
-            init.push(ExportUpdateArrow {
+            init.push(ExportUpdate {
                 namespace: ExportUpdateNamespace::try_from(var.0.namespace()).unwrap(),
                 name: var.0.name.clone(),
                 scope: var.1.clone(),
@@ -132,7 +157,9 @@ pub trait VegaFusionRuntimeTrait: Send + Sync {
             )
             .await?;
 
-        apply_pre_transform_datasets(input_spec, &plan, init, options.row_limit)
+        let init_arrow = self.materialize_export_updates(init).await?;
+
+        apply_pre_transform_datasets(input_spec, &plan, init_arrow, options.row_limit)
     }
 
     async fn pre_transform_extract(
@@ -163,13 +190,14 @@ pub trait VegaFusionRuntimeTrait: Send + Sync {
                 keep_variables,
             )
             .await?;
+        let init_arrow = self.materialize_export_updates(init).await?;
 
         // Update client spec with server values
         let mut spec = plan.client_spec.clone();
         let mut datasets: Vec<PreTransformExtractTable> = Vec::new();
         let extract_threshold = options.extract_threshold as usize;
 
-        for export_update in init {
+        for export_update in init_arrow {
             let scope = export_update.scope.clone();
             let name = export_update.name.as_str();
             match export_update.namespace {
@@ -199,7 +227,7 @@ pub trait VegaFusionRuntimeTrait: Send + Sync {
                     if let Some(input_values) = input_values {
                         // Set inline value
                         data.values = Some(input_values);
-                    } else if let TaskValue::Table(table) = export_update.value {
+                    } else if let MaterializedTaskValue::Table(table) = export_update.value {
                         if table.num_rows() <= extract_threshold {
                             // Inline small tables
                             data.values = Some(table.to_json()?);
@@ -246,7 +274,7 @@ pub trait VegaFusionRuntimeTrait: Send + Sync {
         variables: &[ScopedVariable],
         inline_datasets: &HashMap<String, VegaFusionDataset>,
         options: &PreTransformValuesOpts,
-    ) -> Result<(Vec<TaskValue>, Vec<PreTransformValuesWarning>)> {
+    ) -> Result<(Vec<MaterializedTaskValue>, Vec<PreTransformValuesWarning>)> {
         // Check that requested variables exist and collect indices
         for var in variables {
             let scope = var.1.as_slice();
@@ -347,28 +375,96 @@ pub trait VegaFusionRuntimeTrait: Send + Sync {
             .query_request(Arc::new(task_graph.clone()), &indices, inline_datasets)
             .await?;
 
-        // Collect values and handle row limit
-        let mut task_values: Vec<TaskValue> = Vec::new();
+        // Collect values and handle row limit in parallel
         let row_limit = options.row_limit.map(|l| l as usize);
-        for named_task_value in named_task_values {
-            let value = named_task_value.value;
-            let variable = named_task_value.variable;
+        let plan_executor = self.plan_executor();
 
-            // Apply row_limit
-            let value = if let (Some(row_limit), TaskValue::Table(table)) = (row_limit, &value) {
-                warnings.push(PreTransformValuesWarning {
-                    warning_type: Some(ValuesWarningType::RowLimit(PreTransformRowLimitWarning {
-                        datasets: vec![variable.clone()],
-                    })),
-                });
-                TaskValue::Table(table.head(row_limit))
-            } else {
-                value
-            };
+        let materialized_futures = named_task_values.into_iter().map(|named_task_value| {
+            let plan_executor = plan_executor.clone();
+            let row_limit = row_limit;
+            async move {
+                let value = named_task_value.value;
+                let variable = named_task_value.variable;
 
+                let materialized_value = value.to_materialized(plan_executor).await?;
+
+                // Apply row_limit and collect warnings
+                let (final_value, warning) =
+                    if let (Some(row_limit), MaterializedTaskValue::Table(table)) =
+                        (row_limit, &materialized_value)
+                    {
+                        let warning = PreTransformValuesWarning {
+                            warning_type: Some(ValuesWarningType::RowLimit(
+                                PreTransformRowLimitWarning {
+                                    datasets: vec![variable],
+                                },
+                            )),
+                        };
+                        (
+                            MaterializedTaskValue::Table(table.head(row_limit)),
+                            Some(warning),
+                        )
+                    } else {
+                        (materialized_value, None)
+                    };
+
+                Ok::<_, VegaFusionError>((final_value, warning))
+            }
+        });
+
+        let materialized_results = try_join_all(materialized_futures).await?;
+        let mut task_values = Vec::new();
+        for (value, warning) in materialized_results {
             task_values.push(value);
+            if let Some(warning) = warning {
+                warnings.push(warning);
+            }
         }
 
         Ok((task_values, warnings))
+    }
+
+    async fn pre_transform_logical_plan(
+        &self,
+        spec: &ChartSpec,
+        inline_datasets: HashMap<String, VegaFusionDataset>,
+        options: &PreTransformLogicalPlanOpts,
+    ) -> Result<(
+        ChartSpec,
+        Vec<ExportUpdate>,
+        Vec<PreTransformLogicalPlanWarning>,
+    )> {
+        let keep_variables: Vec<ScopedVariable> = options
+            .keep_variables
+            .clone()
+            .into_iter()
+            .map(|var| (var.variable.unwrap(), var.scope))
+            .collect();
+        let (plan, export_updates) = self
+            .pre_transform_spec_plan(
+                spec,
+                &options.local_tz,
+                &options.default_input_tz,
+                options.preserve_interactivity,
+                &inline_datasets,
+                keep_variables,
+            )
+            .await?;
+
+        let warnings: Vec<PreTransformLogicalPlanWarning> = plan
+            .warnings
+            .iter()
+            .map(|planner_warning| PreTransformLogicalPlanWarning {
+                warning_type: Some(
+                    crate::proto::gen::pretransform::pre_transform_logical_plan_warning::WarningType::Planner(
+                        PlannerWarning {
+                            message: planner_warning.message(),
+                        },
+                    ),
+                ),
+            })
+            .collect();
+
+        Ok((plan.client_spec, export_updates, warnings))
     }
 }

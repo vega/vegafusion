@@ -1,7 +1,7 @@
 use crate::planning::stitch::CommPlan;
 use crate::proto::gen::tasks::{Variable, VariableNamespace};
 use crate::task_graph::graph::ScopedVariable;
-use crate::task_graph::task_value::TaskValue;
+use crate::task_graph::task_value::{MaterializedTaskValue, TaskValue};
 use datafusion_common::ScalarValue;
 use itertools::Itertools;
 use serde::{Deserialize, Serialize};
@@ -120,11 +120,19 @@ impl TryFrom<VariableNamespace> for ExportUpdateNamespace {
 }
 
 #[derive(Debug, Clone)]
-pub struct ExportUpdateArrow {
+pub struct ExportUpdate {
     pub namespace: ExportUpdateNamespace,
     pub name: String,
     pub scope: Vec<u32>,
     pub value: TaskValue,
+}
+
+#[derive(Debug, Clone)]
+pub struct ExportUpdateArrow {
+    pub namespace: ExportUpdateNamespace,
+    pub name: String,
+    pub scope: Vec<u32>,
+    pub value: MaterializedTaskValue,
 }
 
 impl ExportUpdateArrow {

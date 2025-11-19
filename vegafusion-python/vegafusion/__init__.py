@@ -4,7 +4,7 @@ from typing import cast
 
 from ._vegafusion import __version__
 from .local_tz import get_local_tz, set_local_tz
-from .runtime import runtime
+from .runtime import VegaFusionRuntime, runtime
 from .utils import get_column_usage
 
 
@@ -24,6 +24,7 @@ importlib.metadata.version = patched_version
 
 __all__ = [
     "runtime",
+    "VegaFusionRuntime",
     "set_local_tz",
     "get_local_tz",
     "get_column_usage",

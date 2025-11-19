@@ -6,7 +6,7 @@ use vegafusion_common::datafusion_common::DFSchema;
 use vegafusion_core::error::Result;
 use vegafusion_core::proto::gen::expression::ObjectExpression;
 
-pub fn compile_object(
+pub async fn compile_object(
     node: &ObjectExpression,
     config: &CompilationConfig,
     schema: &DFSchema,
@@ -14,7 +14,7 @@ pub fn compile_object(
     let mut named_struct_args = Vec::new();
     for prop in &node.properties {
         let name = prop.key().to_object_key_string();
-        let value_expr = compile(prop.value(), config, Some(schema))?;
+        let value_expr = compile(prop.value(), config, Some(schema)).await?;
         named_struct_args.push(lit(name));
         named_struct_args.push(value_expr);
     }

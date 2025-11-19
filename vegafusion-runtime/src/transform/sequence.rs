@@ -24,16 +24,16 @@ impl TransformTrait for Sequence {
         dataframe: DataFrame,
         config: &CompilationConfig,
     ) -> Result<(DataFrame, Vec<TaskValue>)> {
-        let start_expr = compile(self.start.as_ref().unwrap(), config, None)?;
+        let start_expr = compile(self.start.as_ref().unwrap(), config, None).await?;
         let start_scalar = start_expr.eval_to_scalar()?;
         let start = start_scalar.to_f64()?;
 
-        let stop_expr = compile(self.stop.as_ref().unwrap(), config, None)?;
+        let stop_expr = compile(self.stop.as_ref().unwrap(), config, None).await?;
         let stop_scalar = stop_expr.eval_to_scalar()?;
         let stop = stop_scalar.to_f64()?;
 
         let step = if let Some(step_signal) = &self.step {
-            let step_expr = compile(step_signal, config, None)?;
+            let step_expr = compile(step_signal, config, None).await?;
             let step_scalar = step_expr.eval_to_scalar()?;
             step_scalar.to_f64()?
         } else if stop >= start {

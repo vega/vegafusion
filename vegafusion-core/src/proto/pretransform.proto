@@ -115,3 +115,23 @@ message PreTransformExtractRequest {
   repeated tasks.InlineDataset inline_datasets = 2;
   PreTransformExtractOpts opts = 3;
 }
+
+message PreTransformLogicalPlanOpts {
+  string local_tz = 1;
+  optional string default_input_tz = 2;
+  bool preserve_interactivity = 3;
+  repeated PreTransformVariable keep_variables = 4;
+}
+
+message ExportUpdate {
+  string namespace = 1;
+  string name = 2;
+  repeated uint32 scope = 3;
+  tasks.MaterializedTaskValue value = 4;
+}
+
+message PreTransformLogicalPlanWarning {
+  oneof warning_type {
+    PlannerWarning planner = 1;
+  }
+}

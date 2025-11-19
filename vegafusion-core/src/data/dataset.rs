@@ -9,6 +9,20 @@ pub enum VegaFusionDataset {
 }
 
 impl VegaFusionDataset {
+    pub fn as_table(&self) -> Option<&VegaFusionTable> {
+        match self {
+            VegaFusionDataset::Table { table, .. } => Some(table),
+            _ => None,
+        }
+    }
+
+    pub fn as_plan(&self) -> Option<&LogicalPlan> {
+        match self {
+            VegaFusionDataset::Plan { plan } => Some(plan),
+            _ => None,
+        }
+    }
+
     pub fn fingerprint(&self) -> String {
         match self {
             VegaFusionDataset::Table { hash, .. } => hash.to_string(),

@@ -42,6 +42,9 @@ optional = true
 workspace = true
 features = ["preserve_order"]
 
+[dependencies.futures]
+workspace = true
+
 [dependencies.vegafusion-common]
 path = "../vegafusion-common"
 features = ["json", "sqlparser"]

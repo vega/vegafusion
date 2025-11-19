@@ -15,7 +15,7 @@ use vegafusion_common::error::Result;
 use vegafusion_core::expression::parser::parse;
 use vegafusion_core::proto::gen::transforms::TransformPipeline;
 use vegafusion_core::spec::transform::TransformSpec;
-use vegafusion_runtime::data::util::SessionContextUtils;
+use vegafusion_runtime::data::util::{DataFrameUtils, SessionContextUtils};
 use vegafusion_runtime::datafusion::context::make_datafusion_context;
 use vegafusion_runtime::expression::compiler::compile;
 use vegafusion_runtime::expression::compiler::config::CompilationConfig;
@@ -59,7 +59,9 @@ pub fn check_scalar_evaluation(expr_str: &str, config: &CompilationConfig) {
     let parsed = parse(expr_str).unwrap();
 
     // Build compilation config
-    let compiled = compile(&parsed, &config, None).unwrap();
+    let compiled = TOKIO_RUNTIME
+        .block_on(compile(&parsed, &config, None))
+        .unwrap();
     let result = compiled.eval_to_scalar().unwrap();
 
     // Serialize and deserialize to normalize types to those supported by JavaScript
@@ -127,13 +129,19 @@ pub fn eval_vegafusion_transforms(
         .block_on(ctx.vegafusion_table(data))
         .unwrap();
 
-    let (result_data, result_signals) = TOKIO_RUNTIME
+    let (result_df, result_signals) = TOKIO_RUNTIME
         .block_on(pipeline.eval_sql(sql_df, compilation_config))
         .unwrap();
+    let result_data = TOKIO_RUNTIME
+        .block_on(result_df.collect_to_table())
+        .unwrap()
+        .without_ordering()
+        .unwrap();
+
     let result_signals = result_signals
         .into_iter()
         .map(|v| v.as_scalar().cloned())
         .collect::<Result<Vec<ScalarValue>>>()
         .unwrap();
-    (result_data.without_ordering().unwrap(), result_signals)
+    (result_data, result_signals)
 }
