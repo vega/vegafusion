@@ -5,9 +5,7 @@ from types import ModuleType
 from typing import (
     TYPE_CHECKING,
     Any,
-    Callable,
     Literal,
-    Protocol,
     TypedDict,
     Union,
     cast,
@@ -36,21 +34,6 @@ if TYPE_CHECKING:
         PyVegaFusionRuntime,
     )
 
-
-class PlanExecutorProtocol(Protocol):
-    """Protocol for objects with execute_plan method."""
-
-    def execute_plan(self, logical_plan_json: str) -> pa.Table:
-        """Execute a logical plan and return an Arrow table."""
-        ...
-
-
-# Type alias for plan executors
-PlanExecutor = Union[
-    # Callable that takes logical plan JSON and returns Arrow table
-    Callable[[str], "pa.Table"],
-    PlanExecutorProtocol,  # Object with execute_plan method
-]
 
 # This type isn't defined in the grpcio package, so let's at least name it
 UnaryUnaryMultiCallable = Any
