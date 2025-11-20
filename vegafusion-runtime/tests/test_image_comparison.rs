@@ -1466,12 +1466,7 @@ async fn check_spec_sequence(
     for var in &spec_plan.comm_plan.server_to_client {
         let node_index = task_graph_mapping.get(var).unwrap();
         let value = runtime
-            .get_node_value(
-                Arc::new(task_graph.clone()),
-                node_index,
-                Default::default(),
-                None,
-            )
+            .get_node_value(Arc::new(task_graph.clone()), node_index, Default::default())
             .await
             .expect("Failed to get node value");
 
@@ -1543,12 +1538,7 @@ async fn check_spec_sequence(
         let mut server_to_client_value_batch = HashMap::new();
         for (var, node_index) in watch_vars.iter().zip(&watch_indices) {
             let value = runtime
-                .get_node_value(
-                    Arc::new(task_graph.clone()),
-                    node_index,
-                    Default::default(),
-                    None,
-                )
+                .get_node_value(Arc::new(task_graph.clone()), node_index, Default::default())
                 .await
                 .unwrap();
 

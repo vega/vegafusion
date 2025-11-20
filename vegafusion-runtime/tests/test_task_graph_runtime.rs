@@ -83,12 +83,7 @@ async fn try_it() {
     let graph_runtime = VegaFusionRuntime::default();
     // let result = graph_runtime.get_node_value(graph, 2, None).await.unwrap();
     let result = graph_runtime
-        .get_node_value(
-            graph,
-            &NodeValueIndex::new(2, Some(0)),
-            Default::default(),
-            None,
-        )
+        .get_node_value(graph, &NodeValueIndex::new(2, Some(0)), Default::default())
         .await
         .unwrap();
 
@@ -145,12 +140,7 @@ async fn try_it_from_spec() {
 
     let graph_runtime = VegaFusionRuntime::default();
     let result = graph_runtime
-        .get_node_value(
-            graph,
-            &NodeValueIndex::new(2, Some(0)),
-            Default::default(),
-            None,
-        )
+        .get_node_value(graph, &NodeValueIndex::new(2, Some(0)), Default::default())
         .await
         .unwrap();
     println!("result: {result:?}");

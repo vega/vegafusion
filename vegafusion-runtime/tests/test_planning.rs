@@ -69,7 +69,6 @@ async fn test_extract_server_data() {
                 .get(&(Variable::new_data("data_3"), Vec::new()))
                 .unwrap(),
             Default::default(),
-            None,
         )
         .await
         .unwrap();
@@ -86,7 +85,6 @@ async fn test_extract_server_data() {
                 ))
                 .unwrap(),
             Default::default(),
-            None,
         )
         .await
         .unwrap();

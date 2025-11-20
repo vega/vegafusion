@@ -154,10 +154,6 @@ workspace = true
 [dependencies.datafusion-functions-window]
 workspace = true
 
-[dependencies.datafusion-sql]
-workspace = true
-features = ["unparser"]
-
 [dependencies.datafusion-proto]
 workspace = true
 optional = true
