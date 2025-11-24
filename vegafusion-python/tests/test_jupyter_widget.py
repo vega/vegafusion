@@ -33,7 +33,7 @@ failure_output = here / "output" / "failures"
 altair_default_template = r"""
 ```python
 import altair as alt
-alt.renderers.enable('default', embed_options={'actions': False});
+alt.renderers.enable('default', embed_options={'actions': False, 'renderer': 'canvas'});
 ```
 
 ```python
@@ -50,7 +50,7 @@ altair_vegafusion_jupyter_template = r"""
 ```python
 import vegafusion
 import altair as alt
-alt.renderers.enable('jupyter', embed_options={'actions': False});
+alt.renderers.enable('jupyter', embed_options={'actions': False, 'renderer': 'canvas'});
 alt.data_transformers.enable('vegafusion');
 ```
 
