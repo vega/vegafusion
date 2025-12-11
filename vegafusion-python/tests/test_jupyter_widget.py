@@ -333,6 +333,11 @@ widget
     # Display with default altair renderer
     notebook_text_alt = f"""
 ```python
+import altair as alt
+alt.renderers.enable('default', embed_options={{'actions': False, 'renderer': 'canvas'}});
+```
+
+```python
 {altair_chart_str}
 
 chart
