@@ -278,16 +278,12 @@ jobs:
     steps:
       - name: Check out repository code
         uses: actions/checkout@v4.2.2
-      - name: Setup Python
-        uses: actions/setup-python@v5.3.0
-        with:
-          python-version: "3.11"
+      - uses: prefix-dev/setup-pixi@v0.8.9
       - name: Install Chrome
         uses: browser-actions/setup-chrome@v1
         with:
           chrome-version: stable
       - name: Install fonts on Linux
-        if: runner.os == 'Linux'
         run: |
           echo ttf-mscorefonts-installer msttcorefonts/accepted-mscorefonts-eula select true | sudo debconf-set-selections
           sudo apt-get install ttf-mscorefonts-installer
@@ -296,25 +292,18 @@ jobs:
         with:
           name: python-wheels-linux-64
           path: target/wheels/
-      - name: install wheels
-        working-directory: target/wheels/
+      - name: Install wheel and chromedriver
         run: |
-          ls -la
-          python -m pip install vegafusion-*manylinux_2_17_x86_64*.whl
-
-          # Optional dependencies
-          python -m pip install pyarrow pandas polars-lts-cpu "duckdb>=1.0" "vl-convert-python>=1.0.1rc1" scikit-image "pandas>=2.2" jupytext voila anywidget ipywidgets chromedriver-binary-auto
-
-          # Test dependencies
-          python -m pip install pytest altair vega-datasets scikit-image jupytext voila ipykernel anywidget ipywidgets selenium flaky tenacity chromedriver-binary-auto
+          pixi run pip install target/wheels/vegafusion-*manylinux_2_17_x86_64*.whl
+          pixi run pip install chromedriver-binary-auto
       - name: Test lazy imports
         working-directory: vegafusion-python/
-        run: python checks/check_lazy_imports.py
+        run: pixi run python checks/check_lazy_imports.py
       - name: Test vegafusion
         working-directory: vegafusion-python/
         env:
           VEGAFUSION_TEST_HEADLESS: 1
-        run: pytest
+        run: pixi run pytest
       - name: Upload test artifacts
         uses: actions/upload-artifact@v4.4.3
         if: failure()
