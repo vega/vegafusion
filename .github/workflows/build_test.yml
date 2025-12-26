@@ -210,7 +210,7 @@ jobs:
           if-no-files-found: error
 
   build-vegafusion-python-osx-64:
-    runs-on: macos-13
+    runs-on: macos-15-intel
     steps:
       - name: Check out repository code
         uses: actions/checkout@v4.2.2
@@ -535,7 +535,7 @@ jobs:
           if-no-files-found: error
 
   build-vegafusion-server-osx-64:
-    runs-on: macos-13
+    runs-on: macos-15-intel
     steps:
       - name: Check out repository code
         uses: actions/checkout@v4.2.2
