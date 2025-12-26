@@ -45,7 +45,7 @@ use {
 use {
     pyo3::{
         prelude::*,
-        types::{PyDict, PyList},
+        types::{IntoPyDict, PyList},
         Bound, PyAny, PyErr, Python,
     },
     pyo3_arrow::{PyRecordBatch, PySchema, PyTable},
@@ -342,8 +342,7 @@ impl VegaFusionTable {
             let hash = vf_table.get_hash();
 
             // Now rechunk for better multithreaded efficiency with DataFusion
-            let seq = PyList::new(py, vec![("max_chunksize", 8096)])?;
-            let kwargs = PyDict::from_sequence(seq.as_any())?;
+            let kwargs = [("max_chunksize", 8096)].into_py_dict(py)?;
 
             let rechunked_table = data
                 .call_method("rechunk", (), Some(&kwargs))?
