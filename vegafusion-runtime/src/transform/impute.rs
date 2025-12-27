@@ -11,10 +11,10 @@ use datafusion_expr::{
     WindowFunctionDefinition,
 };
 // Remove coalesce import as we'll use when/otherwise instead
+use datafusion_expr::expr::NullTreatment;
 use datafusion_functions_aggregate::expr_fn::min;
 use datafusion_functions_window::row_number::RowNumber;
 use itertools::Itertools;
-use sqlparser::ast::NullTreatment;
 use std::sync::Arc;
 use vegafusion_common::column::{flat_col, relation_col};
 use vegafusion_common::data::scalar::ScalarValueHelpers;

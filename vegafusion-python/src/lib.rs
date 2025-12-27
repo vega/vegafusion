@@ -1,3 +1,6 @@
+// PyO3 0.27 deprecated many APIs. These will be addressed in a follow-up PR.
+#![allow(deprecated)]
+
 use lazy_static::lazy_static;
 use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
@@ -393,7 +396,7 @@ impl PyVegaFusionRuntime {
             let py_response_list = PyList::empty(py);
             for value in values {
                 let pytable: PyObject = if let TaskValue::Table(table) = value {
-                    table.to_pyo3_arrow()?.to_pyarrow(py)?.into()
+                    table.to_pyo3_arrow()?.into_pyarrow(py)?.into()
                 } else {
                     return Err(PyErr::from(VegaFusionError::internal(
                         "Unexpected value type",
@@ -479,9 +482,9 @@ impl PyVegaFusionRuntime {
                     let table = match extracted_format.as_str() {
                         "arro3" => {
                             let pytable = tbl.table.to_pyo3_arrow()?;
-                            pytable.to_pyarrow(py)?.into()
+                            pytable.into_pyarrow(py)?.into()
                         }
-                        "pyarrow" => tbl.table.to_pyo3_arrow()?.to_pyarrow(py)?.into(),
+                        "pyarrow" => tbl.table.to_pyo3_arrow()?.into_pyarrow(py)?.into(),
                         "arrow-ipc" => {
                             PyBytes::new(py, tbl.table.to_ipc_bytes()?.as_slice()).into()
                         }

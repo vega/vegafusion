@@ -29,11 +29,11 @@ opt-level = "z"
 codegen-units = 1
 
 [workspace.dependencies.arrow]
-version = "=56.0.0"
+version = "=57.0.0"
 default-features = false
 
 [workspace.dependencies.sqlparser]
-version = "0.58.0"
+version = "0.59.0"
 default-features = false
 features = [ "std", "visitor",]
 
@@ -67,13 +67,13 @@ version = "0.12.3"
 version = "1.36.0"
 
 [workspace.dependencies.pyo3]
-version = "0.25.0"
+version = "0.27.0"
 
 [workspace.dependencies.pythonize]
-version = "0.25.0"
+version = "0.27.0"
 
 [workspace.dependencies.pyo3-arrow]
-version = "0.11.0"
+version = "0.15.0"
 default-features = false
 
 [workspace.dependencies.prost]
@@ -99,49 +99,50 @@ version = "1.0.140"
 default-features = false
 
 [workspace.dependencies.datafusion]
-version = "=50.1.0"
+version = "=51.0.0"
 default-features = false
 features = [ "nested_expressions",]
 
 [workspace.dependencies.datafusion-common]
-version = "=50.1.0"
+version = "=51.0.0"
 default-features = false
 
 [workspace.dependencies.datafusion-expr]
-version = "=50.1.0"
+version = "=51.0.0"
 default-features = false
 
 [workspace.dependencies.datafusion-proto]
-version = "=50.1.0"
+version = "=51.0.0"
 default-features = false
 features = [ "parquet",]
 
 [workspace.dependencies.datafusion-proto-common]
-version = "=50.1.0"
+version = "=51.0.0"
 default-features = false
 
 [workspace.dependencies.datafusion-physical-expr]
-version = "=50.1.0"
+version = "=51.0.0"
 default-features = false
 
 [workspace.dependencies.datafusion-optimizer]
-version = "=50.1.0"
+version = "=51.0.0"
 default-features = false
 
 [workspace.dependencies.datafusion-functions]
-version = "=50.1.0"
+version = "=51.0.0"
 default-features = false
 
 [workspace.dependencies.datafusion-functions-nested]
-version = "=50.1.0"
+version = "=51.0.0"
 default-features = false
+features = ["sql"]
 
 [workspace.dependencies.datafusion-functions-aggregate]
-version = "=50.1.0"
+version = "=51.0.0"
 default-features = false
 
 [workspace.dependencies.datafusion-functions-window]
-version = "=50.1.0"
+version = "=51.0.0"
 default-features = false
 
 [workspace.dependencies.thiserror]

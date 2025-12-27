@@ -25,7 +25,7 @@ wasm-bindgen-test = "0.3.13"
 workspace = true
 
 [dependencies.datafusion-sql]
-version = "=50.1.0"
+version = "=51.0.0"
 default-features = false
 features = ["unicode_expressions", "unparser"]
 
