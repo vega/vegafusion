@@ -58,6 +58,8 @@ impl TransformTrait for Collect {
                 order_by: sort_exprs,
                 window_frame: WindowFrame::new(Some(true)),
                 null_treatment: Some(NullTreatment::IgnoreNulls),
+                distinct: false,
+                filter: None,
             },
         }))
         .alias(ORDER_COL);

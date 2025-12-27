@@ -29,11 +29,11 @@ opt-level = "z"
 codegen-units = 1
 
 [workspace.dependencies.arrow]
-version = "=55.2.0"
+version = "=56.0.0"
 default-features = false
 
 [workspace.dependencies.sqlparser]
-version = "0.55.0"
+version = "0.58.0"
 default-features = false
 features = [ "std", "visitor",]
 
@@ -73,7 +73,7 @@ version = "0.25.0"
 version = "0.25.0"
 
 [workspace.dependencies.pyo3-arrow]
-version = "0.10.1"
+version = "0.11.0"
 default-features = false
 
 [workspace.dependencies.prost]
@@ -99,49 +99,49 @@ version = "1.0.140"
 default-features = false
 
 [workspace.dependencies.datafusion]
-version = "=49.0.0"
+version = "=50.1.0"
 default-features = false
 features = [ "nested_expressions",]
 
 [workspace.dependencies.datafusion-common]
-version = "=49.0.0"
+version = "=50.1.0"
 default-features = false
 
 [workspace.dependencies.datafusion-expr]
-version = "=49.0.0"
+version = "=50.1.0"
 default-features = false
 
 [workspace.dependencies.datafusion-proto]
-version = "=49.0.0"
+version = "=50.1.0"
 default-features = false
 features = [ "parquet",]
 
 [workspace.dependencies.datafusion-proto-common]
-version = "=49.0.0"
+version = "=50.1.0"
 default-features = false
 
 [workspace.dependencies.datafusion-physical-expr]
-version = "=49.0.0"
+version = "=50.1.0"
 default-features = false
 
 [workspace.dependencies.datafusion-optimizer]
-version = "=49.0.0"
+version = "=50.1.0"
 default-features = false
 
 [workspace.dependencies.datafusion-functions]
-version = "=49.0.0"
+version = "=50.1.0"
 default-features = false
 
 [workspace.dependencies.datafusion-functions-nested]
-version = "=49.0.0"
+version = "=50.1.0"
 default-features = false
 
 [workspace.dependencies.datafusion-functions-aggregate]
-version = "=49.0.0"
+version = "=50.1.0"
 default-features = false
 
 [workspace.dependencies.datafusion-functions-window]
-version = "=49.0.0"
+version = "=50.1.0"
 default-features = false
 
 [workspace.dependencies.thiserror]

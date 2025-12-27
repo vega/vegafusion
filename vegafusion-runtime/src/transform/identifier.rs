@@ -35,6 +35,8 @@ impl TransformTrait for Identifier {
                 }],
                 window_frame: WindowFrame::new(Some(true)),
                 null_treatment: Some(NullTreatment::IgnoreNulls),
+                distinct: false,
+                filter: None,
             },
         }))
         .alias(&self.r#as);

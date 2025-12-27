@@ -80,6 +80,8 @@ impl TransformTrait for Stack {
                     order_by,
                     window_frame: WindowFrame::new(Some(true)),
                     null_treatment: Some(NullTreatment::IgnoreNulls),
+                    distinct: false,
+                    filter: None,
                 },
             }));
 
@@ -219,6 +221,8 @@ impl TransformTrait for Stack {
                     order_by: order_by_qualified,
                     window_frame: WindowFrame::new(Some(true)),
                     null_treatment: Some(NullTreatment::IgnoreNulls),
+                    distinct: false,
+                    filter: None,
                 },
             }))
             .alias(cumulative_field);

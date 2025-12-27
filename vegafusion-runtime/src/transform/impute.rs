@@ -178,6 +178,8 @@ impl TransformTrait for Impute {
                     ],
                     window_frame: WindowFrame::new(Some(true)),
                     null_treatment: Some(NullTreatment::RespectNulls),
+                    distinct: false,
+                    filter: None,
                 },
             }))
             .alias(ORDER_COL);

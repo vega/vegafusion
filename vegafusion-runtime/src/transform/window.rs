@@ -229,6 +229,8 @@ impl TransformTrait for Window {
                         order_by: order_by.clone(),
                         window_frame: window_frame.clone(),
                         null_treatment: None,
+                        distinct: false,
+                        filter: None,
                     },
                 }));
 

@@ -126,6 +126,8 @@ impl TransformTrait for Fold {
                 ],
                 window_frame: WindowFrame::new(Some(true)),
                 null_treatment: Some(NullTreatment::IgnoreNulls),
+                distinct: false,
+                filter: None,
             },
         }))
         .alias(ORDER_COL);

@@ -15,7 +15,7 @@ use vegafusion_common::{
     },
 };
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct MakeTimestamptzUDF {
     signature: Signature,
 }
