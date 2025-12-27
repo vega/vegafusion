@@ -145,7 +145,7 @@ impl TransformTrait for Stack {
                     args: vec![flat_col(stack_col_name)],
                     distinct: false,
                     filter: None,
-                    order_by: None,
+                    order_by: vec![],
                     null_treatment: Some(NullTreatment::IgnoreNulls),
                 },
             })
