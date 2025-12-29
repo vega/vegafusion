@@ -359,8 +359,7 @@ impl VegaFusionTable {
 
             // Extract table.to_batches() as a Rust Vec<RecordBatch>
             let batches_object = data.call_method0("to_batches")?;
-            #[allow(deprecated)]
-            let batches_list: &Bound<'_, PyList> = batches_object.downcast()?;
+            let batches_list: &Bound<'_, PyList> = batches_object.cast()?;
             let batches = batches_list
                 .iter()
                 .map(|batch_any| Ok(batch_any.extract::<PyRecordBatch>()?.into_inner()))

@@ -1,6 +1,3 @@
-// PyO3 0.27 deprecated many APIs. These will be addressed in a follow-up PR.
-#![allow(deprecated)]
-
 use lazy_static::lazy_static;
 use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
@@ -91,13 +88,13 @@ impl PyChartState {
 #[pymethods]
 impl PyChartState {
     /// Update chart state with updates from the client
-    pub fn update(&self, py: Python, updates: Vec<PyObject>) -> PyResult<Vec<PyObject>> {
+    pub fn update(&self, py: Python, updates: Vec<Py<PyAny>>) -> PyResult<Vec<Py<PyAny>>> {
         let updates = updates
             .into_iter()
             .map(|el| Ok(depythonize::<ExportUpdateJSON>(&el.bind(py).clone())?))
             .collect::<PyResult<Vec<_>>>()?;
 
-        let result_updates = py.allow_threads(|| {
+        let result_updates = py.detach(|| {
             self.tokio_runtime
                 .block_on(self.state.update(self.runtime.as_ref(), updates))
         })?;
@@ -105,38 +102,38 @@ impl PyChartState {
         let a = result_updates
             .into_iter()
             .map(|el| Ok(pythonize(py, &el)?.into()))
-            .collect::<PyResult<Vec<PyObject>>>()?;
+            .collect::<PyResult<Vec<Py<PyAny>>>>()?;
         Ok(a)
     }
 
     /// Get ChartState's initial input spec
-    pub fn get_input_spec(&self, py: Python) -> PyResult<PyObject> {
+    pub fn get_input_spec(&self, py: Python) -> PyResult<Py<PyAny>> {
         Ok(pythonize(py, self.state.get_input_spec())?.into())
     }
 
     /// Get ChartState's server spec
-    pub fn get_server_spec(&self, py: Python) -> PyResult<PyObject> {
+    pub fn get_server_spec(&self, py: Python) -> PyResult<Py<PyAny>> {
         Ok(pythonize(py, self.state.get_server_spec())?.into())
     }
 
     /// Get ChartState's client spec
-    pub fn get_client_spec(&self, py: Python) -> PyResult<PyObject> {
+    pub fn get_client_spec(&self, py: Python) -> PyResult<Py<PyAny>> {
         Ok(pythonize(py, self.state.get_client_spec())?.into())
     }
 
     /// Get ChartState's initial transformed spec
-    pub fn get_transformed_spec(&self, py: Python) -> PyResult<PyObject> {
+    pub fn get_transformed_spec(&self, py: Python) -> PyResult<Py<PyAny>> {
         Ok(pythonize(py, self.state.get_transformed_spec())?.into())
     }
 
     /// Get ChartState's watch plan
-    pub fn get_comm_plan(&self, py: Python) -> PyResult<PyObject> {
+    pub fn get_comm_plan(&self, py: Python) -> PyResult<Py<PyAny>> {
         let comm_plan = WatchPlan::from(self.state.get_comm_plan().clone());
         Ok(pythonize(py, &comm_plan)?.into())
     }
 
     /// Get list of transform warnings
-    pub fn get_warnings(&self, py: Python) -> PyResult<PyObject> {
+    pub fn get_warnings(&self, py: Python) -> PyResult<Py<PyAny>> {
         let warnings: Vec<_> = self
             .state
             .get_warnings()
@@ -159,7 +156,7 @@ impl PyVegaFusionRuntime {
         inline_datasets: Option<&Bound<PyDict>>,
     ) -> PyResult<HashMap<String, VegaFusionDataset>> {
         if let Some(inline_datasets) = inline_datasets {
-            Python::with_gil(|py| -> PyResult<_> {
+            Python::attach(|py| -> PyResult<_> {
                 let imported_datasets = inline_datasets
                     .iter()
                     .map(|(name, inline_dataset)| {
@@ -251,7 +248,7 @@ impl PyVegaFusionRuntime {
     pub fn new_chart_state(
         &self,
         py: Python,
-        spec: PyObject,
+        spec: Py<PyAny>,
         local_tz: String,
         default_input_tz: Option<String>,
         row_limit: Option<u32>,
@@ -265,7 +262,7 @@ impl PyVegaFusionRuntime {
 
         let inline_datasets = self.process_inline_datasets(inline_datasets)?;
 
-        py.allow_threads(|| {
+        py.detach(|| {
             PyChartState::try_new(
                 self.runtime.clone(),
                 self.tokio_runtime.clone(),
@@ -282,7 +279,7 @@ impl PyVegaFusionRuntime {
     pub fn pre_transform_spec(
         &self,
         py: Python,
-        spec: PyObject,
+        spec: Py<PyAny>,
         local_tz: String,
         default_input_tz: Option<String>,
         row_limit: Option<u32>,
@@ -290,7 +287,7 @@ impl PyVegaFusionRuntime {
         inline_datasets: Option<&Bound<PyDict>>,
         keep_signals: Option<Vec<(String, Vec<u32>)>>,
         keep_datasets: Option<Vec<(String, Vec<u32>)>>,
-    ) -> PyResult<(PyObject, PyObject)> {
+    ) -> PyResult<(Py<PyAny>, Py<PyAny>)> {
         let inline_datasets = self.process_inline_datasets(inline_datasets)?;
 
         let spec = parse_json_spec(spec)?;
@@ -305,7 +302,7 @@ impl PyVegaFusionRuntime {
             keep_variables.push((Variable::new_data(&name), scope))
         }
 
-        let (spec, warnings) = py.allow_threads(|| {
+        let (spec, warnings) = py.detach(|| {
             self.tokio_runtime.block_on(
                 self.runtime.pre_transform_spec(
                     &spec,
@@ -332,7 +329,7 @@ impl PyVegaFusionRuntime {
             .map(PreTransformSpecWarningSpec::from)
             .collect();
 
-        Python::with_gil(|py| -> PyResult<(PyObject, PyObject)> {
+        Python::attach(|py| -> PyResult<(Py<PyAny>, Py<PyAny>)> {
             let py_spec = pythonize::pythonize(py, &spec)?;
             let py_warnings = pythonize::pythonize(py, &warnings)?;
             Ok((py_spec.into(), py_warnings.into()))
@@ -344,13 +341,13 @@ impl PyVegaFusionRuntime {
     pub fn pre_transform_datasets(
         &self,
         py: Python,
-        spec: PyObject,
+        spec: Py<PyAny>,
         variables: Vec<(String, Vec<u32>)>,
         local_tz: String,
         default_input_tz: Option<String>,
         row_limit: Option<u32>,
         inline_datasets: Option<&Bound<PyDict>>,
-    ) -> PyResult<(PyObject, PyObject)> {
+    ) -> PyResult<(Py<PyAny>, Py<PyAny>)> {
         let inline_datasets = self.process_inline_datasets(inline_datasets)?;
         let spec = parse_json_spec(spec)?;
 
@@ -364,7 +361,7 @@ impl PyVegaFusionRuntime {
             })
             .collect();
 
-        let (values, warnings) = py.allow_threads(|| {
+        let (values, warnings) = py.detach(|| {
             self.tokio_runtime
                 .block_on(self.runtime.pre_transform_values(
                     &spec,
@@ -392,10 +389,10 @@ impl PyVegaFusionRuntime {
             })
             .collect();
 
-        Python::with_gil(|py| -> PyResult<(PyObject, PyObject)> {
+        Python::attach(|py| -> PyResult<(Py<PyAny>, Py<PyAny>)> {
             let py_response_list = PyList::empty(py);
             for value in values {
-                let pytable: PyObject = if let TaskValue::Table(table) = value {
+                let pytable: Py<PyAny> = if let TaskValue::Table(table) = value {
                     table.to_pyo3_arrow()?.into_pyarrow(py)?.into()
                 } else {
                     return Err(PyErr::from(VegaFusionError::internal(
@@ -415,7 +412,7 @@ impl PyVegaFusionRuntime {
     pub fn pre_transform_extract(
         &self,
         py: Python,
-        spec: PyObject,
+        spec: Py<PyAny>,
         local_tz: String,
         default_input_tz: Option<String>,
         preserve_interactivity: Option<bool>,
@@ -424,7 +421,7 @@ impl PyVegaFusionRuntime {
         inline_datasets: Option<&Bound<PyDict>>,
         keep_signals: Option<Vec<(String, Vec<u32>)>>,
         keep_datasets: Option<Vec<(String, Vec<u32>)>>,
-    ) -> PyResult<(PyObject, Vec<PyObject>, PyObject)> {
+    ) -> PyResult<(Py<PyAny>, Vec<Py<PyAny>>, Py<PyAny>)> {
         let inline_datasets = self.process_inline_datasets(inline_datasets)?;
         let spec = parse_json_spec(spec)?;
         let preserve_interactivity = preserve_interactivity.unwrap_or(true);
@@ -446,7 +443,7 @@ impl PyVegaFusionRuntime {
             });
         }
 
-        let (tx_spec, datasets, warnings) = py.allow_threads(|| {
+        let (tx_spec, datasets, warnings) = py.detach(|| {
             self.tokio_runtime
                 .block_on(self.runtime.pre_transform_extract(
                     &spec,
@@ -471,14 +468,14 @@ impl PyVegaFusionRuntime {
             })
             .collect();
 
-        Python::with_gil(|py| {
+        Python::attach(|py| {
             let tx_spec = pythonize::pythonize(py, &tx_spec)?;
 
             let datasets = datasets
                 .into_iter()
                 .map(|tbl| {
-                    let name: PyObject = tbl.name.into_pyobject(py)?.into();
-                    let scope: PyObject = tbl.scope.into_pyobject(py)?.into();
+                    let name: Py<PyAny> = tbl.name.into_pyobject(py)?.into();
+                    let scope: Py<PyAny> = tbl.scope.into_pyobject(py)?.into();
                     let table = match extracted_format.as_str() {
                         "arro3" => {
                             let pytable = tbl.table.to_pyo3_arrow()?;
@@ -497,7 +494,7 @@ impl PyVegaFusionRuntime {
                         }
                     };
 
-                    let dataset: PyObject = PyTuple::new(py, &[name, scope, table])?.into();
+                    let dataset: Py<PyAny> = PyTuple::new(py, &[name, scope, table])?.into();
                     Ok(dataset)
                 })
                 .collect::<PyResult<Vec<_>>>()?;
@@ -574,7 +571,7 @@ pub fn get_cpu_count() -> u64 {
 
 #[pyfunction]
 #[pyo3(signature = (spec))]
-pub fn get_column_usage(py: Python, spec: PyObject) -> PyResult<PyObject> {
+pub fn get_column_usage(py: Python, spec: Py<PyAny>) -> PyResult<Py<PyAny>> {
     let spec = parse_json_spec(spec)?;
     let usage = rs_get_column_usage(&spec)?;
     Ok(pythonize::pythonize(py, &usage)?.into())
@@ -584,11 +581,11 @@ pub fn get_column_usage(py: Python, spec: PyObject) -> PyResult<PyObject> {
 #[allow(clippy::too_many_arguments)]
 #[pyo3(signature = (spec, preserve_interactivity=None, keep_signals=None, keep_datasets=None))]
 pub fn build_pre_transform_spec_plan(
-    spec: PyObject,
+    spec: Py<PyAny>,
     preserve_interactivity: Option<bool>,
     keep_signals: Option<Vec<(String, Vec<u32>)>>,
     keep_datasets: Option<Vec<(String, Vec<u32>)>>,
-) -> PyResult<PyObject> {
+) -> PyResult<Py<PyAny>> {
     let spec = parse_json_spec(spec)?;
     let preserve_interactivity = preserve_interactivity.unwrap_or(false);
 
@@ -614,7 +611,7 @@ pub fn build_pre_transform_spec_plan(
         "warnings": plan.warnings,
     });
 
-    Python::with_gil(|py| -> PyResult<PyObject> {
+    Python::attach(|py| -> PyResult<Py<PyAny>> {
         let py_plan = pythonize::pythonize(py, &json_plan)?;
         Ok(py_plan.into())
     })
@@ -636,8 +633,8 @@ fn _vegafusion(_py: Python, m: &Bound<PyModule>) -> PyResult<()> {
 }
 
 /// Helper function to parse an input Python string or dict as a ChartSpec
-fn parse_json_spec(chart_spec: PyObject) -> PyResult<ChartSpec> {
-    Python::with_gil(|py| -> PyResult<ChartSpec> {
+fn parse_json_spec(chart_spec: Py<PyAny>) -> PyResult<ChartSpec> {
+    Python::attach(|py| -> PyResult<ChartSpec> {
         if let Ok(chart_spec) = chart_spec.extract::<Cow<str>>(py) {
             match serde_json::from_str::<ChartSpec>(&chart_spec) {
                 Ok(chart_spec) => Ok(chart_spec),
@@ -645,7 +642,7 @@ fn parse_json_spec(chart_spec: PyObject) -> PyResult<ChartSpec> {
                     "Failed to parse chart_spec string as Vega: {err}"
                 ))),
             }
-        } else if let Ok(chart_spec) = chart_spec.downcast_bound::<PyAny>(py) {
+        } else if let Ok(chart_spec) = chart_spec.cast_bound::<PyAny>(py) {
             match depythonize::<ChartSpec>(&chart_spec.clone()) {
                 Ok(chart_spec) => Ok(chart_spec),
                 Err(err) => Err(PyValueError::new_err(format!(
