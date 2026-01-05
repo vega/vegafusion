@@ -1,10 +1,10 @@
 use crate::expression::compiler::config::CompilationConfig;
 use crate::transform::TransformTrait;
 
+use datafusion_expr::expr::NullTreatment;
 use datafusion_expr::{expr::AggregateFunctionParams, lit, Expr};
 use datafusion_functions_aggregate::median::median_udaf;
 use datafusion_functions_aggregate::variance::{var_pop_udaf, var_samp_udaf};
-use sqlparser::ast::NullTreatment;
 use std::collections::HashMap;
 
 use crate::data::util::DataFrameUtils;
@@ -174,7 +174,7 @@ pub fn make_agg_expr_for_col_expr(
                 distinct: false,
                 args: vec![numeric_column()?],
                 filter: None,
-                order_by: None,
+                order_by: vec![],
                 null_treatment: Some(NullTreatment::IgnoreNulls),
             },
         }),
@@ -184,7 +184,7 @@ pub fn make_agg_expr_for_col_expr(
                 distinct: false,
                 args: vec![numeric_column()?],
                 filter: None,
-                order_by: None,
+                order_by: vec![],
                 null_treatment: Some(NullTreatment::IgnoreNulls),
             },
         }),
@@ -194,7 +194,7 @@ pub fn make_agg_expr_for_col_expr(
                 distinct: false,
                 args: vec![numeric_column()?],
                 filter: None,
-                order_by: None,
+                order_by: vec![],
                 null_treatment: Some(NullTreatment::IgnoreNulls),
             },
         }),
@@ -204,7 +204,7 @@ pub fn make_agg_expr_for_col_expr(
                 distinct: false,
                 args: vec![numeric_column()?],
                 filter: None,
-                order_by: None,
+                order_by: vec![],
                 null_treatment: Some(NullTreatment::IgnoreNulls),
             },
         }),
@@ -214,7 +214,7 @@ pub fn make_agg_expr_for_col_expr(
                 distinct: false,
                 args: vec![numeric_column()?],
                 filter: None,
-                order_by: None,
+                order_by: vec![],
                 null_treatment: Some(NullTreatment::IgnoreNulls),
             },
         }),
@@ -246,7 +246,7 @@ pub fn make_agg_expr_for_col_expr(
                 distinct: false,
                 args: vec![numeric_column()?],
                 filter: None,
-                order_by: None,
+                order_by: vec![],
                 null_treatment: Some(NullTreatment::IgnoreNulls),
             },
         }),
@@ -256,7 +256,7 @@ pub fn make_agg_expr_for_col_expr(
                 distinct: false,
                 args: vec![numeric_column()?],
                 filter: None,
-                order_by: None,
+                order_by: vec![],
                 null_treatment: Some(NullTreatment::IgnoreNulls),
             },
         }),

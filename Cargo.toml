@@ -29,11 +29,11 @@ opt-level = "z"
 codegen-units = 1
 
 [workspace.dependencies.arrow]
-version = "55.1.0"
+version = "=57.0.0"
 default-features = false
 
 [workspace.dependencies.sqlparser]
-version = "0.55.0"
+version = "0.59.0"
 default-features = false
 features = [ "std", "visitor",]
 
@@ -67,13 +67,13 @@ version = "0.12.3"
 version = "1.36.0"
 
 [workspace.dependencies.pyo3]
-version = "0.25.0"
+version = "0.27.0"
 
 [workspace.dependencies.pythonize]
-version = "0.25.0"
+version = "0.27.0"
 
 [workspace.dependencies.pyo3-arrow]
-version = "0.10.1"
+version = "0.15.0"
 default-features = false
 
 [workspace.dependencies.prost]
@@ -99,46 +99,51 @@ version = "1.0.140"
 default-features = false
 
 [workspace.dependencies.datafusion]
-version = "48.0.0"
+version = "=51.0.0"
 default-features = false
 features = [ "nested_expressions",]
 
 [workspace.dependencies.datafusion-common]
-version = "48.0.0"
+version = "=51.0.0"
 default-features = false
 
 [workspace.dependencies.datafusion-expr]
-version = "48.0.0"
+version = "=51.0.0"
+default-features = false
 
 [workspace.dependencies.datafusion-proto]
-version = "48.0.0"
+version = "=51.0.0"
 default-features = false
 features = [ "parquet",]
 
 [workspace.dependencies.datafusion-proto-common]
-version = "48.0.0"
+version = "=51.0.0"
 default-features = false
 
 [workspace.dependencies.datafusion-physical-expr]
-version = "48.0.0"
+version = "=51.0.0"
 default-features = false
 
 [workspace.dependencies.datafusion-optimizer]
-version = "48.0.0"
+version = "=51.0.0"
 default-features = false
 
 [workspace.dependencies.datafusion-functions]
-version = "48.0.0"
+version = "=51.0.0"
 default-features = false
 
 [workspace.dependencies.datafusion-functions-nested]
-version = "48.0.0"
+version = "=51.0.0"
+default-features = false
+features = ["sql"]
 
 [workspace.dependencies.datafusion-functions-aggregate]
-version = "48.0.0"
+version = "=51.0.0"
+default-features = false
 
 [workspace.dependencies.datafusion-functions-window]
-version = "48.0.0"
+version = "=51.0.0"
+default-features = false
 
 [workspace.dependencies.thiserror]
 version = "1.0.69"
@@ -179,51 +184,3 @@ version = "0.2.19"
 
 [workspace.dependencies.getrandom]
 version = "0.3"
-
-[patch.crates-io.datafusion]
-git = "https://github.com/apache/datafusion"
-rev = "87218a1e656f05da4c8374010b3ae550842606b8"
-
-[patch.crates-io.datafusion-common]
-git = "https://github.com/apache/datafusion"
-rev = "87218a1e656f05da4c8374010b3ae550842606b8"
-
-[patch.crates-io.datafusion-expr]
-git = "https://github.com/apache/datafusion"
-rev = "87218a1e656f05da4c8374010b3ae550842606b8"
-
-[patch.crates-io.datafusion-proto]
-git = "https://github.com/apache/datafusion"
-rev = "87218a1e656f05da4c8374010b3ae550842606b8"
-
-[patch.crates-io.datafusion-proto-common]
-git = "https://github.com/apache/datafusion"
-rev = "87218a1e656f05da4c8374010b3ae550842606b8"
-
-[patch.crates-io.datafusion-physical-expr]
-git = "https://github.com/apache/datafusion"
-rev = "87218a1e656f05da4c8374010b3ae550842606b8"
-
-[patch.crates-io.datafusion-optimizer]
-git = "https://github.com/apache/datafusion"
-rev = "87218a1e656f05da4c8374010b3ae550842606b8"
-
-[patch.crates-io.datafusion-functions]
-git = "https://github.com/apache/datafusion"
-rev = "87218a1e656f05da4c8374010b3ae550842606b8"
-
-[patch.crates-io.datafusion-functions-nested]
-git = "https://github.com/apache/datafusion"
-rev = "87218a1e656f05da4c8374010b3ae550842606b8"
-
-[patch.crates-io.datafusion-functions-aggregate]
-git = "https://github.com/apache/datafusion"
-rev = "87218a1e656f05da4c8374010b3ae550842606b8"
-
-[patch.crates-io.datafusion-functions-window]
-git = "https://github.com/apache/datafusion"
-rev = "87218a1e656f05da4c8374010b3ae550842606b8"
-
-[patch.crates-io.datafusion-sql]
-git = "https://github.com/apache/datafusion"
-rev = "87218a1e656f05da4c8374010b3ae550842606b8"

@@ -264,7 +264,7 @@ fn perform_timeunit_start_from_utc<T: TimeZone>(
     Ok(dt_value)
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct TimeunitStartUDF {
     signature: Signature,
 }

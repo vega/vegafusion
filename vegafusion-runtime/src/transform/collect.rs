@@ -1,9 +1,9 @@
 use crate::expression::compiler::config::CompilationConfig;
 use crate::transform::TransformTrait;
 
+use datafusion_expr::expr::NullTreatment;
 use datafusion_expr::{expr, expr::WindowFunctionParams, Expr, WindowFunctionDefinition};
 use datafusion_functions_window::row_number::RowNumber;
-use sqlparser::ast::NullTreatment;
 
 use std::sync::Arc;
 use vegafusion_core::error::{Result, ResultWithContext};
@@ -58,6 +58,8 @@ impl TransformTrait for Collect {
                 order_by: sort_exprs,
                 window_frame: WindowFrame::new(Some(true)),
                 null_treatment: Some(NullTreatment::IgnoreNulls),
+                distinct: false,
+                filter: None,
             },
         }))
         .alias(ORDER_COL);

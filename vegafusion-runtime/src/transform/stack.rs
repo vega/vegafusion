@@ -3,6 +3,7 @@ use crate::transform::TransformTrait;
 use async_trait::async_trait;
 use datafusion::prelude::DataFrame;
 use datafusion_common::JoinType;
+use datafusion_expr::expr::NullTreatment;
 use datafusion_expr::{
     expr, expr::AggregateFunctionParams, expr::WindowFunctionParams, lit, when, Expr, WindowFrame,
     WindowFunctionDefinition,
@@ -10,7 +11,6 @@ use datafusion_expr::{
 use datafusion_functions::expr_fn::abs;
 use datafusion_functions_aggregate::expr_fn::max;
 use datafusion_functions_aggregate::sum::sum_udaf;
-use sqlparser::ast::NullTreatment;
 use std::ops::{Add, Div, Sub};
 use vegafusion_common::column::{flat_col, relation_col, unescaped_col};
 use vegafusion_common::data::ORDER_COL;
@@ -80,6 +80,8 @@ impl TransformTrait for Stack {
                     order_by,
                     window_frame: WindowFrame::new(Some(true)),
                     null_treatment: Some(NullTreatment::IgnoreNulls),
+                    distinct: false,
+                    filter: None,
                 },
             }));
 
@@ -145,7 +147,7 @@ impl TransformTrait for Stack {
                     args: vec![flat_col(stack_col_name)],
                     distinct: false,
                     filter: None,
-                    order_by: None,
+                    order_by: vec![],
                     null_treatment: Some(NullTreatment::IgnoreNulls),
                 },
             })
@@ -219,6 +221,8 @@ impl TransformTrait for Stack {
                     order_by: order_by_qualified,
                     window_frame: WindowFrame::new(Some(true)),
                     null_treatment: Some(NullTreatment::IgnoreNulls),
+                    distinct: false,
+                    filter: None,
                 },
             }))
             .alias(cumulative_field);

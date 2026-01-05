@@ -241,7 +241,7 @@ pub async fn decode_inline_datasets(
             }
             #[cfg(feature = "proto")]
             Dataset::Plan(plan) => {
-                let logical_plan = logical_plan_from_bytes(&plan.plan, ctx)?;
+                let logical_plan = logical_plan_from_bytes(&plan.plan, &ctx.task_ctx())?;
                 let dataset = VegaFusionDataset::from_plan(logical_plan);
                 (plan.name.clone(), dataset)
             }

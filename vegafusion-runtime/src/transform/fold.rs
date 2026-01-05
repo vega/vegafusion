@@ -4,11 +4,11 @@ use crate::transform::TransformTrait;
 use async_trait::async_trait;
 use datafusion::prelude::DataFrame;
 use datafusion_common::ScalarValue;
+use datafusion_expr::expr::NullTreatment;
 use datafusion_expr::{
     expr, expr::WindowFunctionParams, lit, Expr, WindowFrame, WindowFunctionDefinition,
 };
 use datafusion_functions_window::row_number::RowNumber;
-use sqlparser::ast::NullTreatment;
 use std::sync::Arc;
 use vegafusion_common::column::flat_col;
 use vegafusion_common::data::ORDER_COL;
@@ -126,6 +126,8 @@ impl TransformTrait for Fold {
                 ],
                 window_frame: WindowFrame::new(Some(true)),
                 null_treatment: Some(NullTreatment::IgnoreNulls),
+                distinct: false,
+                filter: None,
             },
         }))
         .alias(ORDER_COL);
