@@ -5,7 +5,7 @@ use datafusion::datasource::empty::EmptyTable;
 use datafusion::datasource::provider_as_source;
 use pyo3::exceptions::PyValueError as PyValErr;
 use pyo3::prelude::*;
-use pyo3::types::PyDict;
+use pyo3::types::{PyAny, PyDict};
 use pyo3_arrow::PySchema;
 use pythonize::depythonize;
 use std::borrow::Cow;
@@ -19,7 +19,7 @@ pub fn process_inline_datasets(
     inline_datasets: Option<&Bound<PyDict>>,
 ) -> PyResult<HashMap<String, VegaFusionDataset>> {
     if let Some(inline_datasets) = inline_datasets {
-        Python::with_gil(|py| -> PyResult<_> {
+        Python::attach(|py| -> PyResult<_> {
             let imported_datasets = inline_datasets
                 .iter()
                 .map(|(name, inline_dataset)| {
@@ -37,7 +37,7 @@ pub fn process_inline_datasets(
                         let provider = Arc::new(EmptyTable::new(schema.clone()));
                         let table_source = provider_as_source(provider);
                         let logical_plan =
-                            LogicalPlanBuilder::scan(&name.to_string(), table_source, None)
+                            LogicalPlanBuilder::scan(name.to_string(), table_source, None)
                                 .map_err(|e| {
                                     PyValErr::new_err(format!(
                                         "Failed to build logical plan from schema: {}",
@@ -73,8 +73,8 @@ pub fn process_inline_datasets(
 }
 
 /// Parse a Python string or dict into a ChartSpec
-pub fn parse_json_spec(chart_spec: PyObject) -> PyResult<ChartSpec> {
-    Python::with_gil(|py| -> PyResult<ChartSpec> {
+pub fn parse_json_spec(chart_spec: Py<PyAny>) -> PyResult<ChartSpec> {
+    Python::attach(|py| -> PyResult<ChartSpec> {
         if let Ok(chart_spec) = chart_spec.extract::<Cow<str>>(py) {
             match serde_json::from_str::<ChartSpec>(&chart_spec) {
                 Ok(chart_spec) => Ok(chart_spec),
@@ -82,7 +82,7 @@ pub fn parse_json_spec(chart_spec: PyObject) -> PyResult<ChartSpec> {
                     "Failed to parse chart_spec string as Vega: {err}"
                 ))),
             }
-        } else if let Ok(chart_spec) = chart_spec.downcast_bound::<PyAny>(py) {
+        } else if let Ok(chart_spec) = chart_spec.cast_bound::<PyAny>(py) {
             match depythonize::<ChartSpec>(&chart_spec.clone()) {
                 Ok(chart_spec) => Ok(chart_spec),
                 Err(err) => Err(PyValErr::new_err(format!(

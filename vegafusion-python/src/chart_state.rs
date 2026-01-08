@@ -50,13 +50,13 @@ impl PyChartState {
 #[pymethods]
 impl PyChartState {
     /// Update chart state with updates from the client
-    pub fn update(&self, py: Python, updates: Vec<PyObject>) -> PyResult<Vec<PyObject>> {
+    pub fn update(&self, py: Python, updates: Vec<Py<PyAny>>) -> PyResult<Vec<Py<PyAny>>> {
         let updates = updates
             .into_iter()
-            .map(|el| Ok(depythonize::<ExportUpdateJSON>(&el.bind(py))?))
+            .map(|el| Ok(depythonize::<ExportUpdateJSON>(el.bind(py))?))
             .collect::<PyResult<Vec<_>>>()?;
 
-        let result_updates = py.allow_threads(|| {
+        let result_updates = py.detach(|| {
             self.tokio_runtime
                 .block_on(self.state.update(self.runtime.as_ref(), updates))
         })?;
@@ -64,38 +64,38 @@ impl PyChartState {
         let py_updates = result_updates
             .into_iter()
             .map(|el| Ok(pythonize(py, &el)?.into()))
-            .collect::<PyResult<Vec<PyObject>>>()?;
+            .collect::<PyResult<Vec<Py<PyAny>>>>()?;
         Ok(py_updates)
     }
 
     /// Get ChartState's initial input spec
-    pub fn get_input_spec(&self, py: Python) -> PyResult<PyObject> {
+    pub fn get_input_spec(&self, py: Python) -> PyResult<Py<PyAny>> {
         Ok(pythonize(py, self.state.get_input_spec())?.into())
     }
 
     /// Get ChartState's server spec
-    pub fn get_server_spec(&self, py: Python) -> PyResult<PyObject> {
+    pub fn get_server_spec(&self, py: Python) -> PyResult<Py<PyAny>> {
         Ok(pythonize(py, self.state.get_server_spec())?.into())
     }
 
     /// Get ChartState's client spec
-    pub fn get_client_spec(&self, py: Python) -> PyResult<PyObject> {
+    pub fn get_client_spec(&self, py: Python) -> PyResult<Py<PyAny>> {
         Ok(pythonize(py, self.state.get_client_spec())?.into())
     }
 
     /// Get ChartState's initial transformed spec
-    pub fn get_transformed_spec(&self, py: Python) -> PyResult<PyObject> {
+    pub fn get_transformed_spec(&self, py: Python) -> PyResult<Py<PyAny>> {
         Ok(pythonize(py, self.state.get_transformed_spec())?.into())
     }
 
     /// Get ChartState's watch plan
-    pub fn get_comm_plan(&self, py: Python) -> PyResult<PyObject> {
+    pub fn get_comm_plan(&self, py: Python) -> PyResult<Py<PyAny>> {
         let comm_plan = WatchPlan::from(self.state.get_comm_plan().clone());
         Ok(pythonize(py, &comm_plan)?.into())
     }
 
     /// Get list of transform warnings
-    pub fn get_warnings(&self, py: Python) -> PyResult<PyObject> {
+    pub fn get_warnings(&self, py: Python) -> PyResult<Py<PyAny>> {
         let warnings: Vec<_> = self
             .state
             .get_warnings()

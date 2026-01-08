@@ -42,7 +42,7 @@ pub trait VegaFusionRuntimeTrait: Send + Sync {
     fn as_any(&self) -> &dyn Any;
 
     fn plan_executor(&self) -> Arc<dyn PlanExecutor> {
-        Arc::new(NoOpPlanExecutor::default())
+        Arc::new(NoOpPlanExecutor)
     }
 
     async fn query_request(
@@ -381,7 +381,6 @@ pub trait VegaFusionRuntimeTrait: Send + Sync {
 
         let materialized_futures = named_task_values.into_iter().map(|named_task_value| {
             let plan_executor = plan_executor.clone();
-            let row_limit = row_limit;
             async move {
                 let value = named_task_value.value;
                 let variable = named_task_value.variable;

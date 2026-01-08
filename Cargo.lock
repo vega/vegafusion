@@ -81,9 +81,9 @@ checksum = "4b46cbb362ab8752921c97e041f5e366ee6297bd428a31275b9fcf1e380f7299"
 
 [[package]]
 name = "anstream"
-version = "0.6.20"
+version = "0.6.19"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3ae563653d1938f79b1ab1b5e668c87c76a9930414574a6583a7b7e11a8e6192"
+checksum = "301af1932e46185686725e0fad2f8f2aa7da69dd70bf6ecc44d6b703844a3933"
 dependencies = [
  "anstyle",
  "anstyle-parse",
@@ -111,22 +111,22 @@ dependencies = [
 
 [[package]]
 name = "anstyle-query"
-version = "1.1.4"
+version = "1.1.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9e231f6134f61b71076a3eab506c379d4f36122f2af15a9ff04415ea4c3339e2"
+checksum = "6c8bdeb6047d8983be085bab0ba1472e6dc604e7041dbf6fcd5e71523014fae9"
 dependencies = [
- "windows-sys 0.60.2",
+ "windows-sys 0.59.0",
 ]
 
 [[package]]
 name = "anstyle-wincon"
-version = "3.0.10"
+version = "3.0.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3e0633414522a32ffaac8ac6cc8f748e090c5717661fddeea04219e2344f5f2a"
+checksum = "403f75924867bb1033c59fbf0797484329750cfbe3c4325cd33127941fabc882"
 dependencies = [
  "anstyle",
  "once_cell_polyfill",
- "windows-sys 0.60.2",
+ "windows-sys 0.59.0",
 ]
 
 [[package]]
@@ -137,15 +137,9 @@ checksum = "e16d2d3311acee920a9eb8d33b8cbc1787ce4a264e85f964c2404b969bdcd487"
 
 [[package]]
 name = "arrow"
-<<<<<<< HEAD
 version = "57.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "4df8bb5b0bd64c0b9bc61317fcc480bad0f00e56d3bc32c69a4c8dada4786bae"
-=======
-version = "55.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f3f15b4c6b148206ff3a2b35002e08929c2462467b62b9c02036d9c34f9ef994"
->>>>>>> 14aa8670 (feat: Add support for custom plan executors)
 dependencies = [
  "arrow-arith",
  "arrow-array",
@@ -164,15 +158,9 @@ dependencies = [
 
 [[package]]
 name = "arrow-arith"
-<<<<<<< HEAD
 version = "57.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0f377dcd19e440174596d83deb49cd724886d91060c07fec4f67014ef9d54049"
-=======
-version = "55.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "30feb679425110209ae35c3fbf82404a39a4c0436bb3ec36164d8bffed2a4ce4"
->>>>>>> 14aa8670 (feat: Add support for custom plan executors)
 dependencies = [
  "arrow-array",
  "arrow-buffer",
@@ -184,22 +172,16 @@ dependencies = [
 
 [[package]]
 name = "arrow-array"
-<<<<<<< HEAD
 version = "57.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a23eaff85a44e9fa914660fb0d0bb00b79c4a3d888b5334adb3ea4330c84f002"
-=======
-version = "55.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "70732f04d285d49054a48b72c54f791bb3424abae92d27aafdf776c98af161c8"
->>>>>>> 14aa8670 (feat: Add support for custom plan executors)
 dependencies = [
  "ahash",
  "arrow-buffer",
  "arrow-data",
  "arrow-schema",
  "chrono",
- "chrono-tz 0.10.4",
+ "chrono-tz 0.10.3",
  "half",
  "hashbrown 0.16.1",
  "num-complex",
@@ -209,15 +191,9 @@ dependencies = [
 
 [[package]]
 name = "arrow-buffer"
-<<<<<<< HEAD
 version = "57.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a2819d893750cb3380ab31ebdc8c68874dd4429f90fd09180f3c93538bd21626"
-=======
-version = "55.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "169b1d5d6cb390dd92ce582b06b23815c7953e9dfaaea75556e89d890d19993d"
->>>>>>> 14aa8670 (feat: Add support for custom plan executors)
 dependencies = [
  "bytes",
  "half",
@@ -227,15 +203,9 @@ dependencies = [
 
 [[package]]
 name = "arrow-cast"
-<<<<<<< HEAD
 version = "57.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e3d131abb183f80c450d4591dc784f8d7750c50c6e2bc3fcaad148afc8361271"
-=======
-version = "55.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e4f12eccc3e1c05a766cafb31f6a60a46c2f8efec9b74c6e0648766d30686af8"
->>>>>>> 14aa8670 (feat: Add support for custom plan executors)
 dependencies = [
  "arrow-array",
  "arrow-buffer",
@@ -255,15 +225,9 @@ dependencies = [
 
 [[package]]
 name = "arrow-csv"
-<<<<<<< HEAD
 version = "57.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2275877a0e5e7e7c76954669366c2aa1a829e340ab1f612e647507860906fb6b"
-=======
-version = "55.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "012c9fef3f4a11573b2c74aec53712ff9fdae4a95f4ce452d1bbf088ee00f06b"
->>>>>>> 14aa8670 (feat: Add support for custom plan executors)
 dependencies = [
  "arrow-array",
  "arrow-cast",
@@ -276,15 +240,9 @@ dependencies = [
 
 [[package]]
 name = "arrow-data"
-<<<<<<< HEAD
 version = "57.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "05738f3d42cb922b9096f7786f606fcb8669260c2640df8490533bb2fa38c9d3"
-=======
-version = "55.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8de1ce212d803199684b658fc4ba55fb2d7e87b213de5af415308d2fee3619c2"
->>>>>>> 14aa8670 (feat: Add support for custom plan executors)
 dependencies = [
  "arrow-buffer",
  "arrow-schema",
@@ -295,15 +253,9 @@ dependencies = [
 
 [[package]]
 name = "arrow-ipc"
-<<<<<<< HEAD
 version = "57.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3d09446e8076c4b3f235603d9ea7c5494e73d441b01cd61fb33d7254c11964b3"
-=======
-version = "55.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d9ea5967e8b2af39aff5d9de2197df16e305f47f404781d3230b2dc672da5d92"
->>>>>>> 14aa8670 (feat: Add support for custom plan executors)
 dependencies = [
  "arrow-array",
  "arrow-buffer",
@@ -312,20 +264,13 @@ dependencies = [
  "arrow-select",
  "flatbuffers",
  "lz4_flex",
- "zstd",
 ]
 
 [[package]]
 name = "arrow-json"
-<<<<<<< HEAD
 version = "57.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "371ffd66fa77f71d7628c63f209c9ca5341081051aa32f9c8020feb0def787c0"
-=======
-version = "55.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5709d974c4ea5be96d900c01576c7c0b99705f4a3eec343648cb1ca863988a9c"
->>>>>>> 14aa8670 (feat: Add support for custom plan executors)
 dependencies = [
  "arrow-array",
  "arrow-buffer",
@@ -334,12 +279,8 @@ dependencies = [
  "arrow-schema",
  "chrono",
  "half",
-<<<<<<< HEAD
  "indexmap 2.12.1",
  "itoa",
-=======
- "indexmap 2.10.0",
->>>>>>> 14aa8670 (feat: Add support for custom plan executors)
  "lexical-core",
  "memchr",
  "num-traits",
@@ -351,15 +292,9 @@ dependencies = [
 
 [[package]]
 name = "arrow-ord"
-<<<<<<< HEAD
 version = "57.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "cbc94fc7adec5d1ba9e8cd1b1e8d6f72423b33fe978bf1f46d970fafab787521"
-=======
-version = "55.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6506e3a059e3be23023f587f79c82ef0bcf6d293587e3272d20f2d30b969b5a7"
->>>>>>> 14aa8670 (feat: Add support for custom plan executors)
 dependencies = [
  "arrow-array",
  "arrow-buffer",
@@ -370,15 +305,9 @@ dependencies = [
 
 [[package]]
 name = "arrow-row"
-<<<<<<< HEAD
 version = "57.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "169676f317157dc079cc5def6354d16db63d8861d61046d2f3883268ced6f99f"
-=======
-version = "55.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "52bf7393166beaf79b4bed9bfdf19e97472af32ce5b6b48169d321518a08cae2"
->>>>>>> 14aa8670 (feat: Add support for custom plan executors)
 dependencies = [
  "arrow-array",
  "arrow-buffer",
@@ -389,15 +318,9 @@ dependencies = [
 
 [[package]]
 name = "arrow-schema"
-<<<<<<< HEAD
 version = "57.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d27609cd7dd45f006abae27995c2729ef6f4b9361cde1ddd019dc31a5aa017e0"
-=======
-version = "55.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "af7686986a3bf2254c9fb130c623cdcb2f8e1f15763e7c71c310f0834da3d292"
->>>>>>> 14aa8670 (feat: Add support for custom plan executors)
 dependencies = [
  "bitflags 2.9.1",
  "serde_core",
@@ -406,15 +329,9 @@ dependencies = [
 
 [[package]]
 name = "arrow-select"
-<<<<<<< HEAD
 version = "57.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ae980d021879ea119dd6e2a13912d81e64abed372d53163e804dfe84639d8010"
-=======
-version = "55.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "dd2b45757d6a2373faa3352d02ff5b54b098f5e21dccebc45a21806bc34501e5"
->>>>>>> 14aa8670 (feat: Add support for custom plan executors)
 dependencies = [
  "ahash",
  "arrow-array",
@@ -426,15 +343,9 @@ dependencies = [
 
 [[package]]
 name = "arrow-string"
-<<<<<<< HEAD
 version = "57.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "cf35e8ef49dcf0c5f6d175edee6b8af7b45611805333129c541a8b89a0fc0534"
-=======
-version = "55.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0377d532850babb4d927a06294314b316e23311503ed580ec6ce6a0158f49d40"
->>>>>>> 14aa8670 (feat: Add support for custom plan executors)
 dependencies = [
  "arrow-array",
  "arrow-buffer",
@@ -464,26 +375,6 @@ dependencies = [
 ]
 
 [[package]]
-<<<<<<< HEAD
-=======
-name = "async-compression"
-version = "0.4.19"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "06575e6a9673580f52661c92107baabffbf41e2141373441cbcdc47cb733003c"
-dependencies = [
- "bzip2 0.5.2",
- "flate2",
- "futures-core",
- "memchr",
- "pin-project-lite",
- "tokio",
- "xz2",
- "zstd",
- "zstd-safe",
-]
-
-[[package]]
->>>>>>> 14aa8670 (feat: Add support for custom plan executors)
 name = "async-lock"
 version = "2.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -509,11 +400,7 @@ checksum = "3b43422f69d8ff38f95f1b2bb76517c91589a924d1559a0e935d7c8ce0274c11"
 dependencies = [
  "proc-macro2",
  "quote",
-<<<<<<< HEAD
  "syn 2.0.111",
-=======
- "syn 2.0.104",
->>>>>>> 14aa8670 (feat: Add support for custom plan executors)
 ]
 
 [[package]]
@@ -535,11 +422,7 @@ checksum = "c7c24de15d275a1ecfd47a380fb4d5ec9bfe0933f309ed5e705b775596a3574d"
 dependencies = [
  "proc-macro2",
  "quote",
-<<<<<<< HEAD
  "syn 2.0.111",
-=======
- "syn 2.0.104",
->>>>>>> 14aa8670 (feat: Add support for custom plan executors)
 ]
 
 [[package]]
@@ -550,11 +433,7 @@ checksum = "9035ad2d096bed7955a320ee7e2230574d28fd3c3a0f186cbea1ff3c7eed5dbb"
 dependencies = [
  "proc-macro2",
  "quote",
-<<<<<<< HEAD
  "syn 2.0.111",
-=======
- "syn 2.0.104",
->>>>>>> 14aa8670 (feat: Add support for custom plan executors)
 ]
 
 [[package]]
@@ -574,9 +453,9 @@ checksum = "1505bd5d3d116872e7271a6d4e16d81d0c8570876c8de68093a09ac269d8aac0"
 
 [[package]]
 name = "autocfg"
-version = "1.5.0"
+version = "1.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c08606f8c3cbf4ce6ec8e28fb0014a2c086708fe954eaa885384a6165172e7e8"
+checksum = "ace50bade8e6234aa140d9a2f552bbee1db4d353f69b8217bc503490fc1a9f26"
 
 [[package]]
 name = "axum"
@@ -717,9 +596,9 @@ dependencies = [
 
 [[package]]
 name = "bumpalo"
-version = "3.19.0"
+version = "3.18.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "46c5e41b57b8bba42a04676d81cb89e9ee8e859a1a66f80a5a72e1cb76b34d43"
+checksum = "793db76d6187cd04dff33004d8e6c9cc4e05cd330500379d2394209271b4aeee"
 
 [[package]]
 name = "bytemuck"
@@ -740,37 +619,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d71b6127be86fdcfddb610f7182ac57211d4b18a3e9c82eb2d17662f2227ad6a"
 
 [[package]]
-<<<<<<< HEAD
-=======
-name = "bzip2"
-version = "0.5.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "49ecfb22d906f800d4fe833b6282cf4dc1c298f5057ca0b5445e5c209735ca47"
-dependencies = [
- "bzip2-sys",
-]
-
-[[package]]
-name = "bzip2"
-version = "0.6.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bea8dcd42434048e4f7a304411d9273a411f647446c1234a65ce0554923f4cff"
-dependencies = [
- "libbz2-rs-sys",
-]
-
-[[package]]
-name = "bzip2-sys"
-version = "0.1.13+1.0.8"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "225bff33b2141874fe80d71e07d6eec4f85c5c216453dd96388240f96e1acc14"
-dependencies = [
- "cc",
- "pkg-config",
-]
-
-[[package]]
->>>>>>> 14aa8670 (feat: Add support for custom plan executors)
 name = "cast"
 version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -778,9 +626,9 @@ checksum = "37b2a672a2cb129a2e41c10b1224bb368f9f37a2b16b612598138befd7b37eb5"
 
 [[package]]
 name = "cc"
-version = "1.2.31"
+version = "1.2.27"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c3a42d84bb6b69d3a8b3eaacf0d88f179e1929695e1ad012b6cf64d9caaa5fd2"
+checksum = "d487aa071b5f64da6f19a3e848e3578944b726ee5a4854b82172f02aa876bfdc"
 dependencies = [
  "jobserver",
  "libc",
@@ -820,19 +668,20 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "93698b29de5e97ad0ae26447b344c482a7284c737d9ddc5f9e52b74a336671bb"
 dependencies = [
  "chrono",
- "chrono-tz-build",
- "phf 0.11.3",
+ "chrono-tz-build 0.3.0",
+ "phf",
  "uncased",
 ]
 
 [[package]]
 name = "chrono-tz"
-version = "0.10.4"
+version = "0.10.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a6139a8597ed92cf816dfb33f5dd6cf0bb93a6adc938f11039f371bc5bcd26c3"
+checksum = "efdce149c370f133a071ca8ef6ea340b7b88748ab0810097a9e2976eaa34b4f3"
 dependencies = [
  "chrono",
- "phf 0.12.1",
+ "chrono-tz-build 0.4.1",
+ "phf",
 ]
 
 [[package]]
@@ -842,10 +691,20 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0c088aee841df9c3041febbb73934cfc39708749bf96dc827e3359cd39ef11b1"
 dependencies = [
  "parse-zoneinfo",
- "phf 0.11.3",
+ "phf",
  "phf_codegen",
  "regex",
  "uncased",
+]
+
+[[package]]
+name = "chrono-tz-build"
+version = "0.4.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8f10f8c9340e31fc120ff885fcdb54a0b48e474bbd77cab557f0c30a3e569402"
+dependencies = [
+ "parse-zoneinfo",
+ "phf_codegen",
 ]
 
 [[package]]
@@ -877,9 +736,9 @@ dependencies = [
 
 [[package]]
 name = "clap"
-version = "4.5.43"
+version = "4.5.40"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "50fd97c9dc2399518aa331917ac6f274280ec5eb34e555dd291899745c48ec6f"
+checksum = "40b6887a1d8685cebccf115538db5c0efe625ccac9696ad45c409d96566e910f"
 dependencies = [
  "clap_builder",
  "clap_derive",
@@ -887,9 +746,9 @@ dependencies = [
 
 [[package]]
 name = "clap_builder"
-version = "4.5.43"
+version = "4.5.40"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c35b5830294e1fa0462034af85cc95225a4cb07092c088c55bda3147cfcd8f65"
+checksum = "e0c66c08ce9f0c698cbce5c0279d0bb6ac936d8674174fe48f736533b964f59e"
 dependencies = [
  "anstream",
  "anstyle",
@@ -899,18 +758,14 @@ dependencies = [
 
 [[package]]
 name = "clap_derive"
-version = "4.5.41"
+version = "4.5.40"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ef4f52386a59ca4c860f7393bcf8abd8dfd91ecccc0f774635ff68e92eeef491"
+checksum = "d2c7947ae4cc3d851207c1adb5b5e260ff0cca11446b1d6d1423788e442257ce"
 dependencies = [
  "heck 0.5.0",
  "proc-macro2",
  "quote",
-<<<<<<< HEAD
  "syn 2.0.111",
-=======
- "syn 2.0.104",
->>>>>>> 14aa8670 (feat: Add support for custom plan executors)
 ]
 
 [[package]]
@@ -1009,9 +864,9 @@ checksum = "773648b94d0e5d620f64f280777445740e61fe701025087ec8b57f45c791888b"
 
 [[package]]
 name = "crc32fast"
-version = "1.5.0"
+version = "1.4.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9481c1c90cbf2ac953f07c8d4a58aa3945c425b7185c9154d67a65e4230da511"
+checksum = "a97769d94ddab943e4510d138150169a2758b5ef3eb191a9ee688de3e23ef7b3"
 dependencies = [
  "cfg-if",
 ]
@@ -1077,9 +932,9 @@ checksum = "d0a5c400df2834b80a4c3327b3aad3a4c4cd4de0629063962b03235697506a28"
 
 [[package]]
 name = "crunchy"
-version = "0.2.4"
+version = "0.2.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "460fbee9c2c2f33933d720630a6a0bac33ba7053db5344fac858d4b8952d77d5"
+checksum = "43da5946c66ffcc7745f48db692ffbb10a83bfe0afd96235c5c2a4fb23994929"
 
 [[package]]
 name = "crypto-common"
@@ -1128,24 +983,14 @@ dependencies = [
 
 [[package]]
 name = "datafusion"
-<<<<<<< HEAD
 version = "51.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8ba7cb113e9c0bedf9e9765926031e132fa05a1b09ba6e93a6d1a4d7044457b8"
-=======
-version = "49.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0f47772c28553d837e12cdcc0fb04c2a0fe8eca8b704a30f721d076f32407435"
->>>>>>> 14aa8670 (feat: Add support for custom plan executors)
 dependencies = [
  "arrow",
  "arrow-schema",
  "async-trait",
  "bytes",
-<<<<<<< HEAD
-=======
- "bzip2 0.6.0",
->>>>>>> 14aa8670 (feat: Add support for custom plan executors)
  "chrono",
  "datafusion-catalog",
  "datafusion-catalog-listing",
@@ -1172,13 +1017,12 @@ dependencies = [
  "datafusion-physical-plan",
  "datafusion-session",
  "futures",
- "hex",
  "itertools 0.14.0",
  "log",
  "object_store",
  "parking_lot",
  "parquet",
- "rand 0.9.2",
+ "rand 0.9.1",
  "regex",
  "rstest 0.26.1",
  "tempfile",
@@ -1189,15 +1033,9 @@ dependencies = [
 
 [[package]]
 name = "datafusion-catalog"
-<<<<<<< HEAD
 version = "51.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "66a3a799f914a59b1ea343906a0486f17061f39509af74e874a866428951130d"
-=======
-version = "49.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4b6b29c9c922959285fac53139e12c81014e2ca54704f20355edd7e9d11fd773"
->>>>>>> 14aa8670 (feat: Add support for custom plan executors)
 dependencies = [
  "arrow",
  "async-trait",
@@ -1220,15 +1058,9 @@ dependencies = [
 
 [[package]]
 name = "datafusion-catalog-listing"
-<<<<<<< HEAD
 version = "51.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6db1b113c80d7a0febcd901476a57aef378e717c54517a163ed51417d87621b0"
-=======
-version = "49.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7313553e4c01d184dd49183afdfa22f23204a10a26dd12e6f799203d8fdb95c2"
->>>>>>> 14aa8670 (feat: Add support for custom plan executors)
 dependencies = [
  "arrow",
  "async-trait",
@@ -1250,32 +1082,17 @@ dependencies = [
 
 [[package]]
 name = "datafusion-common"
-<<<<<<< HEAD
 version = "51.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7c10f7659e96127d25e8366be7c8be4109595d6a2c3eac70421f380a7006a1b0"
-=======
-version = "49.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3d66104731b7476a8c86fbe7a6fd741e6329791166ac89a91fcd8336a560ddaf"
->>>>>>> 14aa8670 (feat: Add support for custom plan executors)
 dependencies = [
  "ahash",
  "arrow",
  "arrow-ipc",
-<<<<<<< HEAD
  "chrono",
  "half",
  "hashbrown 0.14.5",
  "indexmap 2.12.1",
-=======
- "base64 0.22.1",
- "chrono",
- "half",
- "hashbrown 0.14.5",
- "hex",
- "indexmap 2.10.0",
->>>>>>> 14aa8670 (feat: Add support for custom plan executors)
  "libc",
  "log",
  "object_store",
@@ -1288,15 +1105,9 @@ dependencies = [
 
 [[package]]
 name = "datafusion-common-runtime"
-<<<<<<< HEAD
 version = "51.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b92065bbc6532c6651e2f7dd30b55cba0c7a14f860c7e1d15f165c41a1868d95"
-=======
-version = "49.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0e7527ecdfeae6961a8564d3b036507a67bd467fd36a9f10cf8ad7a99db1f1bc"
->>>>>>> 14aa8670 (feat: Add support for custom plan executors)
 dependencies = [
  "futures",
  "log",
@@ -1305,23 +1116,13 @@ dependencies = [
 
 [[package]]
 name = "datafusion-datasource"
-<<<<<<< HEAD
 version = "51.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "fde13794244bc7581cd82f6fff217068ed79cdc344cafe4ab2c3a1c3510b38d6"
-=======
-version = "49.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "40e5076be33d8eb9f4d99858e5f3477b36c07e61eee8eb93c4320428d9e1e344"
->>>>>>> 14aa8670 (feat: Add support for custom plan executors)
 dependencies = [
  "arrow",
  "async-trait",
  "bytes",
-<<<<<<< HEAD
-=======
- "bzip2 0.6.0",
->>>>>>> 14aa8670 (feat: Add support for custom plan executors)
  "chrono",
  "datafusion-common",
  "datafusion-common-runtime",
@@ -1337,19 +1138,12 @@ dependencies = [
  "itertools 0.14.0",
  "log",
  "object_store",
-<<<<<<< HEAD
  "rand 0.9.1",
-=======
- "parquet",
- "rand 0.9.2",
- "tempfile",
->>>>>>> 14aa8670 (feat: Add support for custom plan executors)
  "tokio",
  "url",
 ]
 
 [[package]]
-<<<<<<< HEAD
 name = "datafusion-datasource-arrow"
 version = "51.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1378,12 +1172,6 @@ name = "datafusion-datasource-csv"
 version = "51.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "61a1641a40b259bab38131c5e6f48fac0717bedb7dc93690e604142a849e0568"
-=======
-name = "datafusion-datasource-csv"
-version = "49.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "785518d0f2f136c19b9389a10762c01a5aeb5fcdebdb244297bb656b2862dc88"
->>>>>>> 14aa8670 (feat: Add support for custom plan executors)
 dependencies = [
  "arrow",
  "async-trait",
@@ -1404,15 +1192,9 @@ dependencies = [
 
 [[package]]
 name = "datafusion-datasource-json"
-<<<<<<< HEAD
 version = "51.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "adeacdb00c1d37271176f8fb6a1d8ce096baba16ea7a4b2671840c5c9c64fe85"
-=======
-version = "49.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "71cb7c3bad0951bf5c52505d0e6d87e6c0098156d2a195924cbcdc82238d29ba"
->>>>>>> 14aa8670 (feat: Add support for custom plan executors)
 dependencies = [
  "arrow",
  "async-trait",
@@ -1432,15 +1214,9 @@ dependencies = [
 
 [[package]]
 name = "datafusion-datasource-parquet"
-<<<<<<< HEAD
 version = "51.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "43d0b60ffd66f28bfb026565d62b0a6cbc416da09814766a3797bba7d85a3cd9"
-=======
-version = "49.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ea76ad2c5189c98a6b1d4bdf6c3b3caacc9701c417af6661597c946a201bc328"
->>>>>>> 14aa8670 (feat: Add support for custom plan executors)
 dependencies = [
  "arrow",
  "async-trait",
@@ -1458,22 +1234,16 @@ dependencies = [
  "datafusion-pruning",
  "datafusion-session",
  "futures",
- "hex",
  "itertools 0.14.0",
  "log",
  "object_store",
  "parking_lot",
  "parquet",
-<<<<<<< HEAD
-=======
- "rand 0.9.2",
->>>>>>> 14aa8670 (feat: Add support for custom plan executors)
  "tokio",
 ]
 
 [[package]]
 name = "datafusion-doc"
-<<<<<<< HEAD
 version = "51.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2b99e13947667b36ad713549237362afb054b2d8f8cc447751e23ec61202db07"
@@ -1483,17 +1253,6 @@ name = "datafusion-execution"
 version = "51.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "63695643190679037bc946ad46a263b62016931547bf119859c511f7ff2f5178"
-=======
-version = "49.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6bcc45e380db5c6033c3f39e765a3d752679f14315060a7f4030a60066a36946"
-
-[[package]]
-name = "datafusion-execution"
-version = "49.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8209805fdce3d5c6e1625f674d3e4ce93e995a56d3709a0bb8d4361062652596"
->>>>>>> 14aa8670 (feat: Add support for custom plan executors)
 dependencies = [
  "arrow",
  "async-trait",
@@ -1504,22 +1263,16 @@ dependencies = [
  "log",
  "object_store",
  "parking_lot",
- "rand 0.9.2",
+ "rand 0.9.1",
  "tempfile",
  "url",
 ]
 
 [[package]]
 name = "datafusion-expr"
-<<<<<<< HEAD
 version = "51.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f9a4787cbf5feb1ab351f789063398f67654a6df75c4d37d7f637dc96f951a91"
-=======
-version = "49.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7879a845e72a00cacffacbdf5f40626049cb9584d2ba8aa0b9172f09833110ab"
->>>>>>> 14aa8670 (feat: Add support for custom plan executors)
 dependencies = [
  "arrow",
  "async-trait",
@@ -1530,12 +1283,8 @@ dependencies = [
  "datafusion-functions-aggregate-common",
  "datafusion-functions-window-common",
  "datafusion-physical-expr-common",
-<<<<<<< HEAD
  "indexmap 2.12.1",
  "itertools 0.14.0",
-=======
- "indexmap 2.10.0",
->>>>>>> 14aa8670 (feat: Add support for custom plan executors)
  "paste",
  "serde_json",
  "sqlparser",
@@ -1543,7 +1292,6 @@ dependencies = [
 
 [[package]]
 name = "datafusion-expr-common"
-<<<<<<< HEAD
 version = "51.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5ce2fb1b8c15c9ac45b0863c30b268c69dc9ee7a1ee13ecf5d067738338173dc"
@@ -1551,30 +1299,15 @@ dependencies = [
  "arrow",
  "datafusion-common",
  "indexmap 2.12.1",
-=======
-version = "49.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6da7e47e70ef2c7678735c82c392bd74687004043f5fc8072ab8678dc6fa459d"
-dependencies = [
- "arrow",
- "datafusion-common",
- "indexmap 2.10.0",
->>>>>>> 14aa8670 (feat: Add support for custom plan executors)
  "itertools 0.14.0",
  "paste",
 ]
 
 [[package]]
 name = "datafusion-functions"
-<<<<<<< HEAD
 version = "51.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "794a9db7f7b96b3346fc007ff25e994f09b8f0511b4cf7dff651fadfe3ebb28f"
-=======
-version = "49.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5e7b92b04c5c3b1151f055251b36e272071f9088d9701826a533cb4f764af1c8"
->>>>>>> 14aa8670 (feat: Add support for custom plan executors)
 dependencies = [
  "arrow",
  "arrow-buffer",
@@ -1589,13 +1322,8 @@ dependencies = [
  "hex",
  "itertools 0.14.0",
  "log",
-<<<<<<< HEAD
  "num-traits",
  "rand 0.9.1",
-=======
- "md-5",
- "rand 0.9.2",
->>>>>>> 14aa8670 (feat: Add support for custom plan executors)
  "regex",
  "unicode-segmentation",
  "uuid",
@@ -1603,15 +1331,9 @@ dependencies = [
 
 [[package]]
 name = "datafusion-functions-aggregate"
-<<<<<<< HEAD
 version = "51.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1c25210520a9dcf9c2b2cbbce31ebd4131ef5af7fc60ee92b266dc7d159cb305"
-=======
-version = "49.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3f16cb922b62e535a4d484961ac2c1c6d188dbe02e85e026c05f0fabbc8f814e"
->>>>>>> 14aa8670 (feat: Add support for custom plan executors)
 dependencies = [
  "ahash",
  "arrow",
@@ -1630,15 +1352,9 @@ dependencies = [
 
 [[package]]
 name = "datafusion-functions-aggregate-common"
-<<<<<<< HEAD
 version = "51.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "62f4a66f3b87300bb70f4124b55434d2ae3fe80455f3574701d0348da040b55d"
-=======
-version = "49.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6f71bb59dc8b4dc985c911f2e0d8cf426c21f565b56dca4b852c244101a1a7a2"
->>>>>>> 14aa8670 (feat: Add support for custom plan executors)
 dependencies = [
  "ahash",
  "arrow",
@@ -1649,15 +1365,9 @@ dependencies = [
 
 [[package]]
 name = "datafusion-functions-nested"
-<<<<<<< HEAD
 version = "51.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ae5c06eed03918dc7fe7a9f082a284050f0e9ecf95d72f57712d1496da03b8c4"
-=======
-version = "49.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "27eb3b98a2eb02a8af4ef19cc793cac21fc98d8720b987f15d7d25b8cc875f4d"
->>>>>>> 14aa8670 (feat: Add support for custom plan executors)
 dependencies = [
  "arrow",
  "arrow-ord",
@@ -1678,15 +1388,9 @@ dependencies = [
 
 [[package]]
 name = "datafusion-functions-table"
-<<<<<<< HEAD
 version = "51.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "db4fed1d71738fbe22e2712d71396db04c25de4111f1ec252b8f4c6d3b25d7f5"
-=======
-version = "49.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "350e0940fc3e2fa4645a4d323f9ebf9258b2d7fdad12013a471cae4ae5568683"
->>>>>>> 14aa8670 (feat: Add support for custom plan executors)
 dependencies = [
  "arrow",
  "async-trait",
@@ -1700,15 +1404,9 @@ dependencies = [
 
 [[package]]
 name = "datafusion-functions-window"
-<<<<<<< HEAD
 version = "51.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1d92206aa5ae21892f1552b4d61758a862a70956e6fd7a95cb85db1de74bc6d1"
-=======
-version = "49.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "df03c6c62039578fd110b327c474846fdf3d9077a568f1e8706e585ed30cb98d"
->>>>>>> 14aa8670 (feat: Add support for custom plan executors)
 dependencies = [
  "arrow",
  "datafusion-common",
@@ -1724,15 +1422,9 @@ dependencies = [
 
 [[package]]
 name = "datafusion-functions-window-common"
-<<<<<<< HEAD
 version = "51.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "53ae9bcc39800820d53a22d758b3b8726ff84a5a3e24cecef04ef4e5fdf1c7cc"
-=======
-version = "49.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "083659a95914bf3ca568a72b085cb8654576fef1236b260dc2379cb8e5f922b2"
->>>>>>> 14aa8670 (feat: Add support for custom plan executors)
 dependencies = [
  "datafusion-common",
  "datafusion-physical-expr-common",
@@ -1740,36 +1432,20 @@ dependencies = [
 
 [[package]]
 name = "datafusion-macros"
-<<<<<<< HEAD
 version = "51.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1063ad4c9e094b3f798acee16d9a47bd7372d9699be2de21b05c3bd3f34ab848"
-=======
-version = "49.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4cabe1f32daa2fa54e6b20d14a13a9e85bef97c4161fe8a90d76b6d9693a5ac4"
->>>>>>> 14aa8670 (feat: Add support for custom plan executors)
 dependencies = [
  "datafusion-doc",
  "quote",
-<<<<<<< HEAD
  "syn 2.0.111",
-=======
- "syn 2.0.104",
->>>>>>> 14aa8670 (feat: Add support for custom plan executors)
 ]
 
 [[package]]
 name = "datafusion-optimizer"
-<<<<<<< HEAD
 version = "51.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9f35f9ec5d08b87fd1893a30c2929f2559c2f9806ca072d8fefca5009dc0f06a"
-=======
-version = "49.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6e12a97dcb0ccc569798be1289c744829cce5f18cc9b037054f8d7f93e1d57be"
->>>>>>> 14aa8670 (feat: Add support for custom plan executors)
 dependencies = [
  "arrow",
  "chrono",
@@ -1777,11 +1453,7 @@ dependencies = [
  "datafusion-expr",
  "datafusion-expr-common",
  "datafusion-physical-expr",
-<<<<<<< HEAD
  "indexmap 2.12.1",
-=======
- "indexmap 2.10.0",
->>>>>>> 14aa8670 (feat: Add support for custom plan executors)
  "itertools 0.14.0",
  "log",
  "regex",
@@ -1790,15 +1462,9 @@ dependencies = [
 
 [[package]]
 name = "datafusion-physical-expr"
-<<<<<<< HEAD
 version = "51.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c30cc8012e9eedcb48bbe112c6eff4ae5ed19cf3003cb0f505662e88b7014c5d"
-=======
-version = "49.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "41312712b8659a82b4e9faa8d97a018e7f2ccbdedf2f7cb93ecf256e39858c86"
->>>>>>> 14aa8670 (feat: Add support for custom plan executors)
 dependencies = [
  "ahash",
  "arrow",
@@ -1809,11 +1475,7 @@ dependencies = [
  "datafusion-physical-expr-common",
  "half",
  "hashbrown 0.14.5",
-<<<<<<< HEAD
  "indexmap 2.12.1",
-=======
- "indexmap 2.10.0",
->>>>>>> 14aa8670 (feat: Add support for custom plan executors)
  "itertools 0.14.0",
  "parking_lot",
  "paste",
@@ -1837,15 +1499,9 @@ dependencies = [
 
 [[package]]
 name = "datafusion-physical-expr-common"
-<<<<<<< HEAD
 version = "51.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "90da43e1ec550b172f34c87ec68161986ced70fd05c8d2a2add66eef9c276f03"
-=======
-version = "49.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "be1649a60ea0319496d616ae3554e84dfcc262c201ab4439abcd83cca989b85b"
->>>>>>> 14aa8670 (feat: Add support for custom plan executors)
 dependencies = [
  "ahash",
  "arrow",
@@ -1857,15 +1513,9 @@ dependencies = [
 
 [[package]]
 name = "datafusion-physical-optimizer"
-<<<<<<< HEAD
 version = "51.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ce9804f799acd7daef3be7aaffe77c0033768ed8fdbf5fb82fc4c5f2e6bc14e6"
-=======
-version = "49.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ea3f5b8ba6122426774aaaf11325740b8e5d3afaab9ab39dc63423adca554748"
->>>>>>> 14aa8670 (feat: Add support for custom plan executors)
 dependencies = [
  "arrow",
  "datafusion-common",
@@ -1881,15 +1531,9 @@ dependencies = [
 
 [[package]]
 name = "datafusion-physical-plan"
-<<<<<<< HEAD
 version = "51.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0acf0ad6b6924c6b1aa7d213b181e012e2d3ec0a64ff5b10ee6282ab0f8532ac"
-=======
-version = "49.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6a595f296929d6cffa12b993ea53e9fe8215fada050d78626c5cf0e2f02b0205"
->>>>>>> 14aa8670 (feat: Add support for custom plan executors)
 dependencies = [
  "ahash",
  "arrow",
@@ -1908,11 +1552,7 @@ dependencies = [
  "futures",
  "half",
  "hashbrown 0.14.5",
-<<<<<<< HEAD
  "indexmap 2.12.1",
-=======
- "indexmap 2.10.0",
->>>>>>> 14aa8670 (feat: Add support for custom plan executors)
  "itertools 0.14.0",
  "log",
  "parking_lot",
@@ -1922,15 +1562,9 @@ dependencies = [
 
 [[package]]
 name = "datafusion-proto"
-<<<<<<< HEAD
 version = "51.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d368093a98a17d1449b1083ac22ed16b7128e4c67789991869480d8c4a40ecb9"
-=======
-version = "49.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f4ab6f4fa0f3bbfbc0b4f89485bcd7cbed6cca0347e8d1eda50b66b779725b6e"
->>>>>>> 14aa8670 (feat: Add support for custom plan executors)
 dependencies = [
  "arrow",
  "chrono",
@@ -1955,15 +1589,9 @@ dependencies = [
 
 [[package]]
 name = "datafusion-proto-common"
-<<<<<<< HEAD
 version = "51.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3b6aef3d5e5c1d2bc3114c4876730cb76a9bdc5a8df31ef1b6db48f0c1671895"
-=======
-version = "49.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5ba94d76d85459ebbf7c29aa1b001234d551e840192c742a4237ec22de45a557"
->>>>>>> 14aa8670 (feat: Add support for custom plan executors)
 dependencies = [
  "arrow",
  "datafusion-common",
@@ -1988,34 +1616,10 @@ dependencies = [
 ]
 
 [[package]]
-name = "datafusion-pruning"
-version = "49.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "391a457b9d23744c53eeb89edd1027424cba100581488d89800ed841182df905"
-dependencies = [
- "arrow",
- "arrow-schema",
- "datafusion-common",
- "datafusion-datasource",
- "datafusion-expr-common",
- "datafusion-physical-expr",
- "datafusion-physical-expr-common",
- "datafusion-physical-plan",
- "itertools 0.14.0",
- "log",
-]
-
-[[package]]
 name = "datafusion-session"
-<<<<<<< HEAD
 version = "51.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8f96eebd17555386f459037c65ab73aae8df09f464524c709d6a3134ad4f4776"
-=======
-version = "49.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "dd5f2fe790f43839c70fb9604c4f9b59ad290ef64e1d2f927925dd34a9245406"
->>>>>>> 14aa8670 (feat: Add support for custom plan executors)
 dependencies = [
  "async-trait",
  "datafusion-common",
@@ -2027,26 +1631,16 @@ dependencies = [
 
 [[package]]
 name = "datafusion-sql"
-<<<<<<< HEAD
 version = "51.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3fc195fe60634b2c6ccfd131b487de46dc30eccae8a3c35a13f136e7f440414f"
-=======
-version = "49.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2ebebb82fda37f62f06fe14339f4faa9f197a0320cc4d26ce2a5fd53a5ccd27c"
->>>>>>> 14aa8670 (feat: Add support for custom plan executors)
 dependencies = [
  "arrow",
  "bigdecimal",
  "chrono",
  "datafusion-common",
  "datafusion-expr",
-<<<<<<< HEAD
  "indexmap 2.12.1",
-=======
- "indexmap 2.10.0",
->>>>>>> 14aa8670 (feat: Add support for custom plan executors)
  "log",
  "regex",
  "sqlparser",
@@ -2086,11 +1680,7 @@ checksum = "97369cbbc041bc366949bc74d34658d6cda5621039731c6310521892a3a20ae0"
 dependencies = [
  "proc-macro2",
  "quote",
-<<<<<<< HEAD
  "syn 2.0.111",
-=======
- "syn 2.0.104",
->>>>>>> 14aa8670 (feat: Add support for custom plan executors)
 ]
 
 [[package]]
@@ -2145,12 +1735,12 @@ checksum = "877a4ace8713b0bcf2a4e7eec82529c029f1d0619886d18145fea96c3ffe5c0f"
 
 [[package]]
 name = "errno"
-version = "0.3.13"
+version = "0.3.12"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "778e2ac28f6c47af28e4907f13ffd1e1ddbd400980a9abd7c8df189bf578a5ad"
+checksum = "cea14ef9355e3beab063703aa9dab15afd25f0667c341310c1e5274bb1d0da18"
 dependencies = [
  "libc",
- "windows-sys 0.60.2",
+ "windows-sys 0.59.0",
 ]
 
 [[package]]
@@ -2278,11 +1868,7 @@ checksum = "162ee34ebcb7c64a8abebc059ce0fee27c2262618d7b60ed8faf72fef13c3650"
 dependencies = [
  "proc-macro2",
  "quote",
-<<<<<<< HEAD
  "syn 2.0.111",
-=======
- "syn 2.0.104",
->>>>>>> 14aa8670 (feat: Add support for custom plan executors)
 ]
 
 [[package]]
@@ -2376,9 +1962,9 @@ checksum = "a8d1add55171497b4705a648c6b583acafb01d58050a51727785f0b2c8e0a2b2"
 
 [[package]]
 name = "h2"
-version = "0.3.27"
+version = "0.3.26"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0beca50380b1fc32983fc1cb4587bfa4bb9e78fc259aad4a0032d2080309222d"
+checksum = "81fe527a889e1532da5c525686d96d4c2e74cdd345badf8dfef9f6b39dd5f5e8"
 dependencies = [
  "bytes",
  "fnv",
@@ -2386,11 +1972,7 @@ dependencies = [
  "futures-sink",
  "futures-util",
  "http 0.2.12",
-<<<<<<< HEAD
  "indexmap 2.12.1",
-=======
- "indexmap 2.10.0",
->>>>>>> 14aa8670 (feat: Add support for custom plan executors)
  "slab",
  "tokio",
  "tokio-util",
@@ -2399,9 +1981,9 @@ dependencies = [
 
 [[package]]
 name = "h2"
-version = "0.4.12"
+version = "0.4.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f3c0b69cfcb4e1b9f1bf2f53f95f766e4661169728ec61cd3fe5a0166f2d1386"
+checksum = "a9421a676d1b147b16b82c9225157dc629087ef8ec4d5e2960f9437a90dac0a5"
 dependencies = [
  "atomic-waker",
  "bytes",
@@ -2409,11 +1991,7 @@ dependencies = [
  "futures-core",
  "futures-sink",
  "http 1.3.1",
-<<<<<<< HEAD
  "indexmap 2.12.1",
-=======
- "indexmap 2.10.0",
->>>>>>> 14aa8670 (feat: Add support for custom plan executors)
  "slab",
  "tokio",
  "tokio-util",
@@ -2567,7 +2145,7 @@ dependencies = [
  "futures-channel",
  "futures-core",
  "futures-util",
- "h2 0.3.27",
+ "h2 0.3.26",
  "http 0.2.12",
  "http-body 0.4.6",
  "httparse",
@@ -2590,7 +2168,7 @@ dependencies = [
  "bytes",
  "futures-channel",
  "futures-util",
- "h2 0.4.12",
+ "h2 0.4.10",
  "http 1.3.1",
  "http-body 1.0.1",
  "httparse",
@@ -2635,9 +2213,9 @@ dependencies = [
 
 [[package]]
 name = "hyper-util"
-version = "0.1.16"
+version = "0.1.14"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8d9b05277c7e8da2c93a568989bb6207bef0112e8d17df7a6eda4a3cf143bc5e"
+checksum = "dc2fdfdbff08affe55bb779f33b053aa1fe5dd5b54c257343c17edfa55711bdb"
 dependencies = [
  "base64 0.22.1",
  "bytes",
@@ -2651,11 +2229,7 @@ dependencies = [
  "libc",
  "percent-encoding",
  "pin-project-lite",
-<<<<<<< HEAD
  "socket2 0.5.10",
-=======
- "socket2 0.6.0",
->>>>>>> 14aa8670 (feat: Add support for custom plan executors)
  "tokio",
  "tower-service",
  "tracing",
@@ -2823,15 +2397,9 @@ dependencies = [
 
 [[package]]
 name = "indexmap"
-<<<<<<< HEAD
 version = "2.12.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0ad4bb2b565bca0645f4d68c5c9af97fba094e9791da685bf83cb5f3ce74acf2"
-=======
-version = "2.10.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fe4cd85333e22411419a0bcae1297d25e58c9443848b11dc6a86fefe8c78a661"
->>>>>>> 14aa8670 (feat: Add support for custom plan executors)
 dependencies = [
  "equivalent",
  "hashbrown 0.16.1",
@@ -2848,17 +2416,6 @@ name = "integer-encoding"
 version = "3.0.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8bb03732005da905c88227371639bf1ad885cc712789c011c31c5fb3ab3ccf02"
-
-[[package]]
-name = "io-uring"
-version = "0.7.9"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d93587f37623a1a17d94ef2bc9ada592f5465fe7732084ab7beefabe5c77c0c4"
-dependencies = [
- "bitflags 2.9.1",
- "cfg-if",
- "libc",
-]
 
 [[package]]
 name = "ipnet"
@@ -2945,11 +2502,7 @@ checksum = "03343451ff899767262ec32146f6d559dd759fdadf42ff0e227c7c48f72594b4"
 dependencies = [
  "proc-macro2",
  "quote",
-<<<<<<< HEAD
  "syn 2.0.111",
-=======
- "syn 2.0.104",
->>>>>>> 14aa8670 (feat: Add support for custom plan executors)
 ]
 
 [[package]]
@@ -3052,23 +2605,10 @@ dependencies = [
 ]
 
 [[package]]
-<<<<<<< HEAD
 name = "libc"
 version = "0.2.178"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "37c93d8daa9d8a012fd8ab92f088405fb202ea0b6ab73ee2482ae66af4f42091"
-=======
-name = "libbz2-rs-sys"
-version = "0.2.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2c4a545a15244c7d945065b5d392b2d2d7f21526fba56ce51467b06ed445e8f7"
-
-[[package]]
-name = "libc"
-version = "0.2.174"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1171693293099992e19cddea4e8b849964e9846f4acee11b3948bcc337be8776"
->>>>>>> 14aa8670 (feat: Add support for custom plan executors)
 
 [[package]]
 name = "libm"
@@ -3109,9 +2649,9 @@ dependencies = [
 
 [[package]]
 name = "lodepng"
-version = "3.12.1"
+version = "3.11.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "77a32335d22e44238e2bb0b4d726964d18952ce1f1279ec3305305d2c61539eb"
+checksum = "a7720115060cd38dcfe5c758525a43fd34dc615d0566374212ff0dc3b6151eac"
 dependencies = [
  "crc32fast",
  "flate2",
@@ -3142,15 +2682,9 @@ checksum = "112b39cec0b298b6c1999fee3e31427f74f676e4cb9879ed1a121b43661a4154"
 
 [[package]]
 name = "lz4_flex"
-<<<<<<< HEAD
 version = "0.12.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ab6473172471198271ff72e9379150e9dfd70d8e533e0752a27e515b48dd375e"
-=======
-version = "0.11.5"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "08ab2867e3eeeca90e844d1940eab391c9dc5228783db2ed999acbc0a9ed375a"
->>>>>>> 14aa8670 (feat: Add support for custom plan executors)
 dependencies = [
  "twox-hash",
 ]
@@ -3411,15 +2945,9 @@ dependencies = [
 
 [[package]]
 name = "object_store"
-<<<<<<< HEAD
 version = "0.12.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "4c1be0c6c22ec0817cdc77d3842f721a17fd30ab6965001415b5402a74e6b740"
-=======
-version = "0.12.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "efc4f07659e11cd45a341cd24d71e683e3be65d9ff1f8150061678fe60437496"
->>>>>>> 14aa8670 (feat: Add support for custom plan executors)
 dependencies = [
  "async-trait",
  "base64 0.22.1",
@@ -3436,8 +2964,8 @@ dependencies = [
  "parking_lot",
  "percent-encoding",
  "quick-xml",
- "rand 0.9.2",
- "reqwest 0.12.22",
+ "rand 0.9.1",
+ "reqwest 0.12.20",
  "ring",
  "serde",
  "serde_json",
@@ -3518,15 +3046,9 @@ dependencies = [
 
 [[package]]
 name = "parquet"
-<<<<<<< HEAD
 version = "57.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "be3e4f6d320dd92bfa7d612e265d7d08bba0a240bab86af3425e1d255a511d89"
-=======
-version = "55.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b17da4150748086bd43352bc77372efa9b6e3dbd06a04831d2a98c041c225cfa"
->>>>>>> 14aa8670 (feat: Add support for custom plan executors)
 dependencies = [
  "ahash",
  "arrow-array",
@@ -3550,7 +3072,6 @@ dependencies = [
  "num-traits",
  "object_store",
  "paste",
- "ring",
  "seq-macro",
  "simdutf8",
  "snap",
@@ -3588,11 +3109,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3672b37090dbd86368a4145bc067582552b29c27377cad4e0a306c97f9bd7772"
 dependencies = [
  "fixedbitset",
-<<<<<<< HEAD
  "indexmap 2.12.1",
-=======
- "indexmap 2.10.0",
->>>>>>> 14aa8670 (feat: Add support for custom plan executors)
 ]
 
 [[package]]
@@ -3603,11 +3120,7 @@ checksum = "8701b58ea97060d5e5b155d383a69952a60943f0e6dfe30b04c287beb0b27455"
 dependencies = [
  "fixedbitset",
  "hashbrown 0.15.4",
-<<<<<<< HEAD
  "indexmap 2.12.1",
-=======
- "indexmap 2.10.0",
->>>>>>> 14aa8670 (feat: Add support for custom plan executors)
  "serde",
 ]
 
@@ -3617,16 +3130,7 @@ version = "0.11.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1fd6780a80ae0c52cc120a26a1a42c1ae51b247a253e4e06113d23d2c2edd078"
 dependencies = [
- "phf_shared 0.11.3",
-]
-
-[[package]]
-name = "phf"
-version = "0.12.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "913273894cec178f401a31ec4b656318d95473527be05c0752cc41cdc32be8b7"
-dependencies = [
- "phf_shared 0.12.1",
+ "phf_shared",
 ]
 
 [[package]]
@@ -3636,7 +3140,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "aef8048c789fa5e851558d709946d6d79a8ff88c0440c587967f8e94bfb1216a"
 dependencies = [
  "phf_generator",
- "phf_shared 0.11.3",
+ "phf_shared",
 ]
 
 [[package]]
@@ -3645,7 +3149,7 @@ version = "0.11.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3c80231409c20246a13fddb31776fb942c38553c51e871f8cbd687a4cfb5843d"
 dependencies = [
- "phf_shared 0.11.3",
+ "phf_shared",
  "rand 0.8.5",
 ]
 
@@ -3657,15 +3161,6 @@ checksum = "67eabc2ef2a60eb7faa00097bd1ffdb5bd28e62bf39990626a582201b7a754e5"
 dependencies = [
  "siphasher",
  "uncased",
-]
-
-[[package]]
-name = "phf_shared"
-version = "0.12.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "06005508882fb681fd97892ecff4b7fd0fee13ef1aa569f8695dae7ab9099981"
-dependencies = [
- "siphasher",
 ]
 
 [[package]]
@@ -3685,11 +3180,7 @@ checksum = "6e918e4ff8c4549eb882f14b3a4bc8c8bc93de829416eacf579f1207a8fbf861"
 dependencies = [
  "proc-macro2",
  "quote",
-<<<<<<< HEAD
  "syn 2.0.111",
-=======
- "syn 2.0.104",
->>>>>>> 14aa8670 (feat: Add support for custom plan executors)
 ]
 
 [[package]]
@@ -3824,16 +3315,12 @@ dependencies = [
 
 [[package]]
 name = "prettyplease"
-version = "0.2.36"
+version = "0.2.34"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ff24dfcda44452b9816fff4cd4227e1bb73ff5a2f1bc1105aa92fb8565ce44d2"
+checksum = "6837b9e10d61f45f987d50808f83d1ee3d206c66acf650c3e4ae2e1f6ddedf55"
 dependencies = [
  "proc-macro2",
-<<<<<<< HEAD
  "syn 2.0.111",
-=======
- "syn 2.0.104",
->>>>>>> 14aa8670 (feat: Add support for custom plan executors)
 ]
 
 [[package]]
@@ -3890,11 +3377,7 @@ dependencies = [
  "prost 0.13.5",
  "prost-types",
  "regex",
-<<<<<<< HEAD
  "syn 2.0.111",
-=======
- "syn 2.0.104",
->>>>>>> 14aa8670 (feat: Add support for custom plan executors)
  "tempfile",
 ]
 
@@ -3908,7 +3391,6 @@ dependencies = [
  "itertools 0.14.0",
  "proc-macro2",
  "quote",
-<<<<<<< HEAD
  "syn 2.0.111",
 ]
 
@@ -3923,9 +3405,6 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn 2.0.111",
-=======
- "syn 2.0.104",
->>>>>>> 14aa8670 (feat: Add support for custom plan executors)
 ]
 
 [[package]]
@@ -3953,13 +3432,8 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ab53c047fcd1a1d2a8820fe84f05d6be69e9526be40cb03b73f86b6b03e6d87d"
 dependencies = [
  "chrono",
-<<<<<<< HEAD
  "chrono-tz 0.10.3",
  "indexmap 2.12.1",
-=======
- "chrono-tz 0.10.4",
- "indexmap 2.10.0",
->>>>>>> 14aa8670 (feat: Add support for custom plan executors)
  "indoc",
  "libc",
  "memoffset",
@@ -3968,7 +3442,6 @@ dependencies = [
  "pyo3-build-config",
  "pyo3-ffi",
  "pyo3-macros",
- "serde",
  "unindent",
 ]
 
@@ -3987,11 +3460,7 @@ dependencies = [
  "chrono",
  "chrono-tz 0.10.3",
  "half",
-<<<<<<< HEAD
  "indexmap 2.12.1",
-=======
- "indexmap 2.10.0",
->>>>>>> 14aa8670 (feat: Add support for custom plan executors)
  "numpy",
  "pyo3",
  "thiserror 1.0.69",
@@ -4025,11 +3494,7 @@ dependencies = [
  "proc-macro2",
  "pyo3-macros-backend",
  "quote",
-<<<<<<< HEAD
  "syn 2.0.111",
-=======
- "syn 2.0.104",
->>>>>>> 14aa8670 (feat: Add support for custom plan executors)
 ]
 
 [[package]]
@@ -4042,11 +3507,7 @@ dependencies = [
  "proc-macro2",
  "pyo3-build-config",
  "quote",
-<<<<<<< HEAD
  "syn 2.0.111",
-=======
- "syn 2.0.104",
->>>>>>> 14aa8670 (feat: Add support for custom plan executors)
 ]
 
 [[package]]
@@ -4061,15 +3522,9 @@ dependencies = [
 
 [[package]]
 name = "quick-xml"
-<<<<<<< HEAD
 version = "0.38.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b66c2058c55a409d601666cffe35f04333cf1013010882cec174a7467cd4e21c"
-=======
-version = "0.38.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9845d9dccf565065824e69f9f235fafba1587031eda353c1f1561cd6a6be78f4"
->>>>>>> 14aa8670 (feat: Add support for custom plan executors)
 dependencies = [
  "memchr",
  "serde",
@@ -4104,7 +3559,7 @@ dependencies = [
  "bytes",
  "getrandom 0.3.3",
  "lru-slab",
- "rand 0.9.2",
+ "rand 0.9.1",
  "ring",
  "rustc-hash",
  "rustls",
@@ -4118,9 +3573,9 @@ dependencies = [
 
 [[package]]
 name = "quinn-udp"
-version = "0.5.13"
+version = "0.5.12"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fcebb1209ee276352ef14ff8732e24cc2b02bbac986cd74a4c81bcb2f9881970"
+checksum = "ee4e529991f949c5e25755532370b8af5d114acae52326361d68d47af64aa842"
 dependencies = [
  "cfg_aliases",
  "libc",
@@ -4141,9 +3596,9 @@ dependencies = [
 
 [[package]]
 name = "r-efi"
-version = "5.3.0"
+version = "5.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "69cdb34c158ceb288df11e18b4bd39de994f6657d83847bdffdbd7f346754b0f"
+checksum = "74765f6d916ee2faa39bc8e68e4f3ed8949b48cccdac59983d287a7cb71ce9c5"
 
 [[package]]
 name = "rand"
@@ -4158,9 +3613,9 @@ dependencies = [
 
 [[package]]
 name = "rand"
-version = "0.9.2"
+version = "0.9.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6db2770f06117d490610c7488547d543617b21bfa07796d7a12f6f1bd53850d1"
+checksum = "9fbfd9d094a40bf3ae768db9361049ace4c0e04a4fd6b359518bd7b73a73dd97"
 dependencies = [
  "rand_chacha 0.9.0",
  "rand_core 0.9.3",
@@ -4231,33 +3686,10 @@ dependencies = [
 ]
 
 [[package]]
-<<<<<<< HEAD
-=======
-name = "recursive"
-version = "0.1.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0786a43debb760f491b1bc0269fe5e84155353c67482b9e60d0cfb596054b43e"
-dependencies = [
- "recursive-proc-macro-impl",
- "stacker",
-]
-
-[[package]]
-name = "recursive-proc-macro-impl"
-version = "0.1.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "76009fbe0614077fc1a2ce255e3a1881a2e3a3527097d5dc6d8212c585e7e38b"
-dependencies = [
- "quote",
- "syn 2.0.104",
-]
-
-[[package]]
->>>>>>> 14aa8670 (feat: Add support for custom plan executors)
 name = "redox_syscall"
-version = "0.5.17"
+version = "0.5.13"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5407465600fb0548f1442edf71dd20683c6ed326200ace4b1ef0763521bb3b77"
+checksum = "0d04b7d0ee6b4a0207a0a7adb104d23ecb0b47d6beae7152d0fa34b692b29fd6"
 dependencies = [
  "bitflags 2.9.1",
 ]
@@ -4308,7 +3740,7 @@ dependencies = [
  "encoding_rs",
  "futures-core",
  "futures-util",
- "h2 0.3.27",
+ "h2 0.3.26",
  "http 0.2.12",
  "http-body 0.4.6",
  "hyper 0.14.32",
@@ -4337,16 +3769,16 @@ dependencies = [
 
 [[package]]
 name = "reqwest"
-version = "0.12.22"
+version = "0.12.20"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cbc931937e6ca3a06e3b6c0aa7841849b160a90351d6ab467a8b9b9959767531"
+checksum = "eabf4c97d9130e2bf606614eb937e86edac8292eaa6f422f995d7e8de1eb1813"
 dependencies = [
  "base64 0.22.1",
  "bytes",
  "futures-channel",
  "futures-core",
  "futures-util",
- "h2 0.4.12",
+ "h2 0.4.10",
  "http 1.3.1",
  "http-body 1.0.1",
  "http-body-util",
@@ -4381,9 +3813,9 @@ dependencies = [
 
 [[package]]
 name = "rgb"
-version = "0.8.52"
+version = "0.8.50"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0c6a884d2998352bb4daf0183589aec883f16a6da1f4dde84d8e2e9a5409a1ce"
+checksum = "57397d16646700483b67d2dd6511d79318f9d057fdbd21a4066aeac8b41d310a"
 dependencies = [
  "bytemuck",
 ]
@@ -4439,7 +3871,6 @@ dependencies = [
  "regex",
  "relative-path",
  "rustc_version",
-<<<<<<< HEAD
  "syn 2.0.111",
  "unicode-ident",
 ]
@@ -4459,9 +3890,6 @@ dependencies = [
  "relative-path",
  "rustc_version",
  "syn 2.0.111",
-=======
- "syn 2.0.104",
->>>>>>> 14aa8670 (feat: Add support for custom plan executors)
  "unicode-ident",
 ]
 
@@ -4471,7 +3899,7 @@ version = "0.1.0"
 dependencies = [
  "async-trait",
  "datafusion",
- "reqwest 0.12.22",
+ "reqwest 0.12.20",
  "serde_json",
  "tokio",
  "tonic",
@@ -4481,15 +3909,6 @@ dependencies = [
 ]
 
 [[package]]
-<<<<<<< HEAD
-=======
-name = "rustc-demangle"
-version = "0.1.26"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "56f7d92ca342cea22a06f2121d944b4fd82af56988c270852495420f961d4ace"
-
-[[package]]
->>>>>>> 14aa8670 (feat: Add support for custom plan executors)
 name = "rustc-hash"
 version = "2.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4506,22 +3925,22 @@ dependencies = [
 
 [[package]]
 name = "rustix"
-version = "1.0.8"
+version = "1.0.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "11181fbabf243db407ef8df94a6ce0b2f9a733bd8be4ad02b4eda9602296cac8"
+checksum = "c71e83d6afe7ff64890ec6b71d6a69bb8a610ab78ce364b3352876bb4c801266"
 dependencies = [
  "bitflags 2.9.1",
  "errno",
  "libc",
  "linux-raw-sys",
- "windows-sys 0.60.2",
+ "windows-sys 0.59.0",
 ]
 
 [[package]]
 name = "rustls"
-version = "0.23.31"
+version = "0.23.27"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c0ebcbd2f03de0fc1122ad9bb24b127a5a6cd51d72604a3f3c50ac459762b6cc"
+checksum = "730944ca083c1c233a75c09f199e973ca499344a2b7ba9e755c457e86fb4a321"
 dependencies = [
  "log",
  "once_cell",
@@ -4565,9 +3984,9 @@ dependencies = [
 
 [[package]]
 name = "rustls-webpki"
-version = "0.103.4"
+version = "0.103.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0a17884ae0c1b773f1ccd2bd4a8c72f16da897310a98b0e84bf349ad5ead92fc"
+checksum = "e4a72fe2bcf7a6ac6fd7d0b9e5cb68aeb7d4c0a0271730218b3e92d43b4eb435"
 dependencies = [
  "ring",
  "rustls-pki-types",
@@ -4618,9 +4037,9 @@ checksum = "94143f37725109f92c262ed2cf5e59bce7498c01bcc1502d7b9afe439a4e9f49"
 
 [[package]]
 name = "security-framework"
-version = "3.3.0"
+version = "3.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "80fb1d92c5028aa318b4b8bd7302a5bfcf48be96a37fc6fc790f806b0004ee0c"
+checksum = "271720403f46ca04f7ba6f55d438f8bd878d6b8ca0a1046e8228c4145bcbb316"
 dependencies = [
  "bitflags 2.9.1",
  "core-foundation 0.10.1",
@@ -4689,24 +4108,16 @@ checksum = "d540f220d3187173da220f885ab66608367b6574e925011a9353e4badda91d79"
 dependencies = [
  "proc-macro2",
  "quote",
-<<<<<<< HEAD
  "syn 2.0.111",
-=======
- "syn 2.0.104",
->>>>>>> 14aa8670 (feat: Add support for custom plan executors)
 ]
 
 [[package]]
 name = "serde_json"
-version = "1.0.142"
+version = "1.0.140"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "030fedb782600dcbd6f02d479bf0d817ac3bb40d644745b769d6a96bc3afc5a7"
+checksum = "20068b6e96dc6c9bd23e01df8827e6c7e1f2fddd43c21810382803c136b99373"
 dependencies = [
-<<<<<<< HEAD
  "indexmap 2.12.1",
-=======
- "indexmap 2.10.0",
->>>>>>> 14aa8670 (feat: Add support for custom plan executors)
  "itoa",
  "memchr",
  "ryu",
@@ -4795,21 +4206,7 @@ dependencies = [
 
 [[package]]
 name = "socket2"
-<<<<<<< HEAD
 version = "0.6.1"
-=======
-version = "0.6.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "233504af464074f9d066d7b5416c5f9b894a5862a6506e306f7b816cdd6f1807"
-dependencies = [
- "libc",
- "windows-sys 0.59.0",
-]
-
-[[package]]
-name = "sqlparser"
-version = "0.55.0"
->>>>>>> 14aa8670 (feat: Add support for custom plan executors)
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "17129e116933cf371d018bb80ae557e889637989d8638274fb25622827b03881"
 dependencies = [
@@ -4835,11 +4232,7 @@ checksum = "da5fc6819faabb412da764b99d3b713bb55083c11e7e0c00144d386cd6a1939c"
 dependencies = [
  "proc-macro2",
  "quote",
-<<<<<<< HEAD
  "syn 2.0.111",
-=======
- "syn 2.0.104",
->>>>>>> 14aa8670 (feat: Add support for custom plan executors)
 ]
 
 [[package]]
@@ -4898,15 +4291,9 @@ dependencies = [
 
 [[package]]
 name = "syn"
-<<<<<<< HEAD
 version = "2.0.111"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "390cc9a294ab71bdb1aa2e99d13be9c753cd2d7bd6560c77118597410c4d2e87"
-=======
-version = "2.0.104"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "17b6f705963418cdb9927482fa304bc562ece2fdd4f616084c50b7023b435a40"
->>>>>>> 14aa8670 (feat: Add support for custom plan executors)
 dependencies = [
  "proc-macro2",
  "quote",
@@ -4936,11 +4323,7 @@ checksum = "728a70f3dbaf5bab7f0c4b1ac8d7ae5ea60a4b5549c8a5914361c99147a709d2"
 dependencies = [
  "proc-macro2",
  "quote",
-<<<<<<< HEAD
  "syn 2.0.111",
-=======
- "syn 2.0.104",
->>>>>>> 14aa8670 (feat: Add support for custom plan executors)
 ]
 
 [[package]]
@@ -5021,11 +4404,7 @@ dependencies = [
  "cfg-if",
  "proc-macro2",
  "quote",
-<<<<<<< HEAD
  "syn 2.0.111",
-=======
- "syn 2.0.104",
->>>>>>> 14aa8670 (feat: Add support for custom plan executors)
 ]
 
 [[package]]
@@ -5036,11 +4415,7 @@ checksum = "5c89e72a01ed4c579669add59014b9a524d609c0c88c6a585ce37485879f6ffb"
 dependencies = [
  "proc-macro2",
  "quote",
-<<<<<<< HEAD
  "syn 2.0.111",
-=======
- "syn 2.0.104",
->>>>>>> 14aa8670 (feat: Add support for custom plan executors)
  "test-case-core",
 ]
 
@@ -5070,11 +4445,7 @@ checksum = "4fee6c4efc90059e10f81e6d42c60a18f76588c3d74cb83a0b242a2b6c7504c1"
 dependencies = [
  "proc-macro2",
  "quote",
-<<<<<<< HEAD
  "syn 2.0.111",
-=======
- "syn 2.0.104",
->>>>>>> 14aa8670 (feat: Add support for custom plan executors)
 ]
 
 [[package]]
@@ -5085,11 +4456,7 @@ checksum = "7f7cf42b4507d8ea322120659672cf1b9dbb93f8f2d4ecfd6e51350ff5b17a1d"
 dependencies = [
  "proc-macro2",
  "quote",
-<<<<<<< HEAD
  "syn 2.0.111",
-=======
- "syn 2.0.104",
->>>>>>> 14aa8670 (feat: Add support for custom plan executors)
 ]
 
 [[package]]
@@ -5160,31 +4527,17 @@ checksum = "1f3ccbac311fea05f86f61904b462b55fb3df8837a366dfc601a0161d0532f20"
 
 [[package]]
 name = "tokio"
-<<<<<<< HEAD
 version = "1.48.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ff360e02eab121e0bc37a2d3b4d4dc622e6eda3a8e5253d5435ecf5bd4c68408"
-=======
-version = "1.47.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "89e49afdadebb872d3145a5638b59eb0691ea23e46ca484037cfab3b76b95038"
->>>>>>> 14aa8670 (feat: Add support for custom plan executors)
 dependencies = [
  "bytes",
- "io-uring",
  "libc",
  "mio",
  "pin-project-lite",
-<<<<<<< HEAD
  "socket2 0.6.1",
  "tokio-macros",
  "windows-sys 0.61.2",
-=======
- "slab",
- "socket2 0.6.0",
- "tokio-macros",
- "windows-sys 0.59.0",
->>>>>>> 14aa8670 (feat: Add support for custom plan executors)
 ]
 
 [[package]]
@@ -5195,11 +4548,7 @@ checksum = "af407857209536a95c8e56f8231ef2c2e2aff839b22e07a1ffcbc617e9db9fa5"
 dependencies = [
  "proc-macro2",
  "quote",
-<<<<<<< HEAD
  "syn 2.0.111",
-=======
- "syn 2.0.104",
->>>>>>> 14aa8670 (feat: Add support for custom plan executors)
 ]
 
 [[package]]
@@ -5225,15 +4574,9 @@ dependencies = [
 
 [[package]]
 name = "tokio-util"
-<<<<<<< HEAD
 version = "0.7.17"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2efa149fe76073d6e8fd97ef4f4eca7b67f599660115591483572e406e165594"
-=======
-version = "0.7.16"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "14307c986784f72ef81c89db7d9e28d6ac26d16213b109ea501696195e6e3ce5"
->>>>>>> 14aa8670 (feat: Add support for custom plan executors)
 dependencies = [
  "bytes",
  "futures-core",
@@ -5254,11 +4597,7 @@ version = "0.22.27"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "41fe8c660ae4257887cf66394862d21dbca4a6ddd26f04a3560410406a2f819a"
 dependencies = [
-<<<<<<< HEAD
  "indexmap 2.12.1",
-=======
- "indexmap 2.10.0",
->>>>>>> 14aa8670 (feat: Add support for custom plan executors)
  "toml_datetime",
  "winnow",
 ]
@@ -5274,7 +4613,7 @@ dependencies = [
  "axum",
  "base64 0.22.1",
  "bytes",
- "h2 0.4.12",
+ "h2 0.4.10",
  "http 1.3.1",
  "http-body 1.0.1",
  "http-body-util",
@@ -5306,11 +4645,7 @@ dependencies = [
  "prost-build",
  "prost-types",
  "quote",
-<<<<<<< HEAD
  "syn 2.0.111",
-=======
- "syn 2.0.104",
->>>>>>> 14aa8670 (feat: Add support for custom plan executors)
 ]
 
 [[package]]
@@ -5427,17 +4762,13 @@ dependencies = [
 
 [[package]]
 name = "tracing-attributes"
-version = "0.1.30"
+version = "0.1.29"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "81383ab64e72a7a8b8e13130c49e3dab29def6d0c7d76a03087b3cf71c5c6903"
+checksum = "1b1ffbcf9c6f6b99d386e7444eb608ba646ae452a36b39737deb9663b610f662"
 dependencies = [
  "proc-macro2",
  "quote",
-<<<<<<< HEAD
  "syn 2.0.111",
-=======
- "syn 2.0.104",
->>>>>>> 14aa8670 (feat: Add support for custom plan executors)
 ]
 
 [[package]]
@@ -5611,7 +4942,7 @@ dependencies = [
  "prost-types",
  "protobuf-src",
  "pyo3",
- "rand 0.9.2",
+ "rand 0.9.1",
  "regex",
  "serde",
  "serde_json",
@@ -5662,7 +4993,7 @@ dependencies = [
  "pixelmatch",
  "prost 0.13.5",
  "regex",
- "reqwest 0.12.22",
+ "reqwest 0.12.20",
  "rgb",
  "rstest 0.24.0",
  "serde",
@@ -5686,7 +5017,7 @@ dependencies = [
  "clap",
  "datafusion",
  "futures",
- "h2 0.3.27",
+ "h2 0.3.26",
  "predicates",
  "prost 0.13.5",
  "prost-build",
@@ -5800,11 +5131,7 @@ dependencies = [
  "log",
  "proc-macro2",
  "quote",
-<<<<<<< HEAD
  "syn 2.0.111",
-=======
- "syn 2.0.104",
->>>>>>> 14aa8670 (feat: Add support for custom plan executors)
  "wasm-bindgen-shared",
 ]
 
@@ -5839,11 +5166,7 @@ checksum = "8ae87ea40c9f689fc23f209965b6fb8a99ad69aeeb0231408be24920604395de"
 dependencies = [
  "proc-macro2",
  "quote",
-<<<<<<< HEAD
  "syn 2.0.111",
-=======
- "syn 2.0.104",
->>>>>>> 14aa8670 (feat: Add support for custom plan executors)
  "wasm-bindgen-backend",
  "wasm-bindgen-shared",
 ]
@@ -5878,11 +5201,7 @@ checksum = "17d5042cc5fa009658f9a7333ef24291b1291a25b6382dd68862a7f3b969f69b"
 dependencies = [
  "proc-macro2",
  "quote",
-<<<<<<< HEAD
  "syn 2.0.111",
-=======
- "syn 2.0.104",
->>>>>>> 14aa8670 (feat: Add support for custom plan executors)
 ]
 
 [[package]]
@@ -5920,9 +5239,9 @@ dependencies = [
 
 [[package]]
 name = "webpki-roots"
-version = "1.0.2"
+version = "1.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7e8983c3ab33d6fb807cfcdad2491c4ea8cbc8ed839181c7dfd9c67c83e261b2"
+checksum = "2853738d1cc4f2da3a225c18ec6c3721abb31961096e9dbf5ab35fa88b19cfdb"
 dependencies = [
  "rustls-pki-types",
 ]
@@ -6018,11 +5337,7 @@ checksum = "a47fddd13af08290e67f4acabf4b459f647552718f683a7b415d290ac744a836"
 dependencies = [
  "proc-macro2",
  "quote",
-<<<<<<< HEAD
  "syn 2.0.111",
-=======
- "syn 2.0.104",
->>>>>>> 14aa8670 (feat: Add support for custom plan executors)
 ]
 
 [[package]]
@@ -6033,11 +5348,7 @@ checksum = "bd9211b69f8dcdfa817bfd14bf1c97c9188afa36f4750130fcdf3f400eca9fa8"
 dependencies = [
  "proc-macro2",
  "quote",
-<<<<<<< HEAD
  "syn 2.0.111",
-=======
- "syn 2.0.104",
->>>>>>> 14aa8670 (feat: Add support for custom plan executors)
 ]
 
 [[package]]
@@ -6113,7 +5424,6 @@ version = "0.60.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f2f500e4d28234f72040990ec9d39e3a6b950f9f22d3dba18416c35882612bcb"
 dependencies = [
-<<<<<<< HEAD
  "windows-targets 0.53.5",
 ]
 
@@ -6124,9 +5434,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ae137229bcbd6cdf0f7b80a31df61766145077ddf49416a728b02cb3921ff3fc"
 dependencies = [
  "windows-link 0.2.1",
-=======
- "windows-targets 0.53.3",
->>>>>>> 14aa8670 (feat: Add support for custom plan executors)
 ]
 
 [[package]]
@@ -6162,7 +5469,6 @@ dependencies = [
 
 [[package]]
 name = "windows-targets"
-<<<<<<< HEAD
 version = "0.53.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "4945f9f551b88e0d65f3db0bc25c33b8acea4d9e41163edf90dcd0b19f9069f3"
@@ -6176,21 +5482,6 @@ dependencies = [
  "windows_x86_64_gnu 0.53.1",
  "windows_x86_64_gnullvm 0.53.1",
  "windows_x86_64_msvc 0.53.1",
-=======
-version = "0.53.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d5fe6031c4041849d7c496a8ded650796e7b6ecc19df1a431c1a363342e5dc91"
-dependencies = [
- "windows-link",
- "windows_aarch64_gnullvm 0.53.0",
- "windows_aarch64_msvc 0.53.0",
- "windows_i686_gnu 0.53.0",
- "windows_i686_gnullvm 0.53.0",
- "windows_i686_msvc 0.53.0",
- "windows_x86_64_gnu 0.53.0",
- "windows_x86_64_gnullvm 0.53.0",
- "windows_x86_64_msvc 0.53.0",
->>>>>>> 14aa8670 (feat: Add support for custom plan executors)
 ]
 
 [[package]]
@@ -6216,15 +5507,9 @@ checksum = "32a4622180e7a0ec044bb555404c800bc9fd9ec262ec147edd5989ccd0c02cd3"
 
 [[package]]
 name = "windows_aarch64_gnullvm"
-<<<<<<< HEAD
 version = "0.53.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a9d8416fa8b42f5c947f8482c43e7d89e73a173cead56d044f6a56104a6d1b53"
-=======
-version = "0.53.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "86b8d5f90ddd19cb4a147a5fa63ca848db3df085e25fee3cc10b39b6eebae764"
->>>>>>> 14aa8670 (feat: Add support for custom plan executors)
 
 [[package]]
 name = "windows_aarch64_msvc"
@@ -6240,15 +5525,9 @@ checksum = "09ec2a7bb152e2252b53fa7803150007879548bc709c039df7627cabbd05d469"
 
 [[package]]
 name = "windows_aarch64_msvc"
-<<<<<<< HEAD
 version = "0.53.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b9d782e804c2f632e395708e99a94275910eb9100b2114651e04744e9b125006"
-=======
-version = "0.53.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c7651a1f62a11b8cbd5e0d42526e55f2c99886c77e007179efff86c2b137e66c"
->>>>>>> 14aa8670 (feat: Add support for custom plan executors)
 
 [[package]]
 name = "windows_i686_gnu"
@@ -6264,15 +5543,9 @@ checksum = "8e9b5ad5ab802e97eb8e295ac6720e509ee4c243f69d781394014ebfe8bbfa0b"
 
 [[package]]
 name = "windows_i686_gnu"
-<<<<<<< HEAD
 version = "0.53.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "960e6da069d81e09becb0ca57a65220ddff016ff2d6af6a223cf372a506593a3"
-=======
-version = "0.53.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c1dc67659d35f387f5f6c479dc4e28f1d4bb90ddd1a5d3da2e5d97b42d6272c3"
->>>>>>> 14aa8670 (feat: Add support for custom plan executors)
 
 [[package]]
 name = "windows_i686_gnullvm"
@@ -6282,15 +5555,9 @@ checksum = "0eee52d38c090b3caa76c563b86c3a4bd71ef1a819287c19d586d7334ae8ed66"
 
 [[package]]
 name = "windows_i686_gnullvm"
-<<<<<<< HEAD
 version = "0.53.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "fa7359d10048f68ab8b09fa71c3daccfb0e9b559aed648a8f95469c27057180c"
-=======
-version = "0.53.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9ce6ccbdedbf6d6354471319e781c0dfef054c81fbc7cf83f338a4296c0cae11"
->>>>>>> 14aa8670 (feat: Add support for custom plan executors)
 
 [[package]]
 name = "windows_i686_msvc"
@@ -6306,15 +5573,9 @@ checksum = "240948bc05c5e7c6dabba28bf89d89ffce3e303022809e73deaefe4f6ec56c66"
 
 [[package]]
 name = "windows_i686_msvc"
-<<<<<<< HEAD
 version = "0.53.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1e7ac75179f18232fe9c285163565a57ef8d3c89254a30685b57d83a38d326c2"
-=======
-version = "0.53.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "581fee95406bb13382d2f65cd4a908ca7b1e4c2f1917f143ba16efe98a589b5d"
->>>>>>> 14aa8670 (feat: Add support for custom plan executors)
 
 [[package]]
 name = "windows_x86_64_gnu"
@@ -6330,15 +5591,9 @@ checksum = "147a5c80aabfbf0c7d901cb5895d1de30ef2907eb21fbbab29ca94c5b08b1a78"
 
 [[package]]
 name = "windows_x86_64_gnu"
-<<<<<<< HEAD
 version = "0.53.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9c3842cdd74a865a8066ab39c8a7a473c0778a3f29370b5fd6b4b9aa7df4a499"
-=======
-version = "0.53.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2e55b5ac9ea33f2fc1716d1742db15574fd6fc8dadc51caab1c16a3d3b4190ba"
->>>>>>> 14aa8670 (feat: Add support for custom plan executors)
 
 [[package]]
 name = "windows_x86_64_gnullvm"
@@ -6354,15 +5609,9 @@ checksum = "24d5b23dc417412679681396f2b49f3de8c1473deb516bd34410872eff51ed0d"
 
 [[package]]
 name = "windows_x86_64_gnullvm"
-<<<<<<< HEAD
 version = "0.53.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0ffa179e2d07eee8ad8f57493436566c7cc30ac536a3379fdf008f47f6bb7ae1"
-=======
-version = "0.53.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0a6e035dd0599267ce1ee132e51c27dd29437f63325753051e71dd9e42406c57"
->>>>>>> 14aa8670 (feat: Add support for custom plan executors)
 
 [[package]]
 name = "windows_x86_64_msvc"
@@ -6378,7 +5627,6 @@ checksum = "589f6da84c646204747d1270a2a5661ea66ed1cced2631d546fdfb155959f9ec"
 
 [[package]]
 name = "windows_x86_64_msvc"
-<<<<<<< HEAD
 version = "0.53.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d6bbff5f0aada427a1e5a6da5f1f98158182f26556f345ac9e04d36d0ebed650"
@@ -6386,17 +5634,8 @@ checksum = "d6bbff5f0aada427a1e5a6da5f1f98158182f26556f345ac9e04d36d0ebed650"
 [[package]]
 name = "winnow"
 version = "0.7.11"
-=======
-version = "0.53.0"
->>>>>>> 14aa8670 (feat: Add support for custom plan executors)
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "271414315aff87387382ec3d271b52d7ae78726f5d44ac98b4f4030c91880486"
-
-[[package]]
-name = "winnow"
-version = "0.7.12"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f3edebf492c8125044983378ecb5766203ad3b4c2f7a922bd7dd207f6d443e95"
+checksum = "74c7b26e3480b707944fc872477815d29a8e429d2f93a1ce000f5fa84a15cbcd"
 dependencies = [
  "memchr",
 ]
@@ -6446,32 +5685,21 @@ checksum = "38da3c9736e16c5d3c8c597a9aaa5d1fa565d0532ae05e27c24aa62fb32c0ab6"
 dependencies = [
  "proc-macro2",
  "quote",
-<<<<<<< HEAD
  "syn 2.0.111",
-=======
- "syn 2.0.104",
->>>>>>> 14aa8670 (feat: Add support for custom plan executors)
  "synstructure",
 ]
 
 [[package]]
 name = "zerocopy"
-<<<<<<< HEAD
 version = "0.8.31"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "fd74ec98b9250adb3ca554bdde269adf631549f51d8a8f8f0a10b50f1cb298c3"
-=======
-version = "0.8.26"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1039dd0d3c310cf05de012d8a39ff557cb0d23087fd44cad61df08fc31907a2f"
->>>>>>> 14aa8670 (feat: Add support for custom plan executors)
 dependencies = [
  "zerocopy-derive",
 ]
 
 [[package]]
 name = "zerocopy-derive"
-<<<<<<< HEAD
 version = "0.8.31"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d8a8d209fdf45cf5138cbb5a506f6b52522a25afccc534d1475dad8e31105c6a"
@@ -6479,15 +5707,6 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn 2.0.111",
-=======
-version = "0.8.26"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9ecf5b4cc5364572d7f4c329661bcc82724222973f2cab6f050a4e5c22f75181"
-dependencies = [
- "proc-macro2",
- "quote",
- "syn 2.0.104",
->>>>>>> 14aa8670 (feat: Add support for custom plan executors)
 ]
 
 [[package]]
@@ -6507,11 +5726,7 @@ checksum = "d71e5d6e06ab090c67b5e44993ec16b72dcbaabc526db883a360057678b48502"
 dependencies = [
  "proc-macro2",
  "quote",
-<<<<<<< HEAD
  "syn 2.0.111",
-=======
- "syn 2.0.104",
->>>>>>> 14aa8670 (feat: Add support for custom plan executors)
  "synstructure",
 ]
 
@@ -6534,9 +5749,9 @@ dependencies = [
 
 [[package]]
 name = "zerovec"
-version = "0.11.4"
+version = "0.11.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e7aa2bd55086f1ab526693ecbe444205da57e25f4489879da80635a46d90e73b"
+checksum = "4a05eb080e015ba39cc9e23bbe5e7fb04d5fb040350f99f34e338d5fdd294428"
 dependencies = [
  "yoke",
  "zerofrom",
@@ -6551,11 +5766,7 @@ checksum = "5b96237efa0c878c64bd89c436f661be4e46b2f3eff1ebb976f7ef2321d2f58f"
 dependencies = [
  "proc-macro2",
  "quote",
-<<<<<<< HEAD
  "syn 2.0.111",
-=======
- "syn 2.0.104",
->>>>>>> 14aa8670 (feat: Add support for custom plan executors)
 ]
 
 [[package]]

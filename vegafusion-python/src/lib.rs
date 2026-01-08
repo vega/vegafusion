@@ -167,7 +167,7 @@ impl PyVegaFusionRuntime {
         inline_datasets: Option<&Bound<PyDict>>,
         keep_signals: Option<Vec<(String, Vec<u32>)>>,
         keep_datasets: Option<Vec<(String, Vec<u32>)>>,
-    ) -> PyResult<(PyObject, PyObject)> {
+    ) -> PyResult<(Py<PyAny>, Py<PyAny>)> {
         let inline_datasets = process_inline_datasets(inline_datasets)?;
 
         let spec = parse_json_spec(spec)?;
@@ -227,7 +227,7 @@ impl PyVegaFusionRuntime {
         default_input_tz: Option<String>,
         row_limit: Option<u32>,
         inline_datasets: Option<&Bound<PyDict>>,
-    ) -> PyResult<(PyObject, PyObject)> {
+    ) -> PyResult<(Py<PyAny>, Py<PyAny>)> {
         let inline_datasets = process_inline_datasets(inline_datasets)?;
         let spec = parse_json_spec(spec)?;
 
@@ -272,8 +272,8 @@ impl PyVegaFusionRuntime {
         Python::attach(|py| -> PyResult<(Py<PyAny>, Py<PyAny>)> {
             let py_response_list = PyList::empty(py);
             for value in values {
-                let pytable: PyObject = if let MaterializedTaskValue::Table(table) = value {
-                    table.to_pyo3_arrow()?.to_pyarrow(py)?.into()
+                let pytable: Py<PyAny> = if let MaterializedTaskValue::Table(table) = value {
+                    table.to_pyo3_arrow()?.into_pyarrow(py)?.into()
                 } else {
                     return Err(PyErr::from(VegaFusionError::internal(
                         "Unexpected value type",
@@ -301,7 +301,7 @@ impl PyVegaFusionRuntime {
         inline_datasets: Option<&Bound<PyDict>>,
         keep_signals: Option<Vec<(String, Vec<u32>)>>,
         keep_datasets: Option<Vec<(String, Vec<u32>)>>,
-    ) -> PyResult<(PyObject, Vec<PyObject>, PyObject)> {
+    ) -> PyResult<(Py<PyAny>, Vec<Py<PyAny>>, Py<PyAny>)> {
         let inline_datasets = process_inline_datasets(inline_datasets)?;
         let spec = parse_json_spec(spec)?;
         let preserve_interactivity = preserve_interactivity.unwrap_or(true);
