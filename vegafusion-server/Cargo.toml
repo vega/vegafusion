@@ -14,7 +14,6 @@ repository = "https://github.com/vega/vegafusion"
 protobuf-src = ["vegafusion-core/protobuf-src", "dep:protobuf-src"]
 
 [dependencies]
-futures-util = "0.3.31"
 h2 = "0.3.26"
 
 [dev-dependencies]
@@ -28,6 +27,9 @@ workspace = true
 workspace = true
 
 [dependencies.serde_json]
+workspace = true
+
+[dependencies.futures]
 workspace = true
 
 [dependencies.vegafusion-common]

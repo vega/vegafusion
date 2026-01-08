@@ -1,4 +1,5 @@
 use crate::datafusion::context::make_datafusion_context;
+use crate::plan_executor::DataFusionPlanExecutor;
 use crate::task_graph::cache::VegaFusionCache;
 use crate::task_graph::task::TaskCall;
 use crate::task_graph::timezone::RuntimeTzConfig;
@@ -17,6 +18,7 @@ use vegafusion_core::proto::gen::tasks::inline_dataset::Dataset;
 use vegafusion_core::proto::gen::tasks::{
     task::TaskKind, InlineDataset, InlineDatasetTable, NodeValueIndex, TaskGraph,
 };
+use vegafusion_core::runtime::PlanExecutor;
 use vegafusion_core::runtime::VegaFusionRuntimeTrait;
 use vegafusion_core::task_graph::task_value::{NamedTaskValue, TaskValue};
 
@@ -32,13 +34,21 @@ type CacheValue = (TaskValue, Vec<TaskValue>);
 pub struct VegaFusionRuntime {
     pub cache: VegaFusionCache,
     pub ctx: Arc<SessionContext>,
+    pub plan_executor: Arc<dyn PlanExecutor>,
 }
 
 impl VegaFusionRuntime {
-    pub fn new(cache: Option<VegaFusionCache>) -> Self {
+    pub fn new(
+        cache: Option<VegaFusionCache>,
+        plan_executor: Option<Arc<dyn PlanExecutor>>,
+    ) -> Self {
+        let ctx = Arc::new(make_datafusion_context());
+        let plan_executor =
+            plan_executor.unwrap_or_else(|| Arc::new(DataFusionPlanExecutor::new(ctx.clone())));
         Self {
             cache: cache.unwrap_or_else(|| VegaFusionCache::new(Some(32), None)),
-            ctx: Arc::new(make_datafusion_context()),
+            plan_executor,
+            ctx,
         }
     }
 
@@ -50,12 +60,14 @@ impl VegaFusionRuntime {
     ) -> Result<TaskValue> {
         // We shouldn't panic inside get_or_compute_node_value, but since this may be used
         // in a server context, wrap in catch_unwind just in case.
+        let executor = self.plan_executor();
         let node_value = AssertUnwindSafe(get_or_compute_node_value(
             task_graph,
             node_value_index.node_index as usize,
             self.cache.clone(),
             inline_datasets,
             self.ctx.clone(),
+            executor,
         ))
         .catch_unwind()
         .await;
@@ -75,10 +87,20 @@ impl VegaFusionRuntime {
     }
 }
 
+impl Default for VegaFusionRuntime {
+    fn default() -> Self {
+        Self::new(None, None)
+    }
+}
+
 #[async_trait::async_trait]
 impl VegaFusionRuntimeTrait for VegaFusionRuntime {
     fn as_any(&self) -> &dyn Any {
         self
+    }
+
+    fn plan_executor(&self) -> Arc<dyn PlanExecutor> {
+        self.plan_executor.clone()
     }
 
     async fn query_request(
@@ -140,6 +162,7 @@ async fn get_or_compute_node_value(
     cache: VegaFusionCache,
     inline_datasets: HashMap<String, VegaFusionDataset>,
     ctx: Arc<SessionContext>,
+    plan_executor: Arc<dyn PlanExecutor>,
 ) -> Result<CacheValue> {
     // Get the cache key for requested node
     let node = task_graph.node(node_index).unwrap();
@@ -172,6 +195,7 @@ async fn get_or_compute_node_value(
                     cloned_cache.clone(),
                     inline_datasets.clone(),
                     ctx.clone(),
+                    plan_executor.clone(),
                 );
 
                 cfg_if! {
@@ -219,8 +243,14 @@ async fn get_or_compute_node_value(
                 })
                 .collect::<Result<Vec<_>>>()?;
 
-            task.eval(&input_values, &tz_config, inline_datasets, ctx)
-                .await
+            task.eval(
+                &input_values,
+                &tz_config,
+                inline_datasets,
+                ctx,
+                plan_executor,
+            )
+            .await
         };
 
         // get or construct from cache

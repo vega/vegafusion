@@ -29,7 +29,7 @@ impl TransformTrait for Pivot {
     async fn eval(
         &self,
         dataframe: DataFrame,
-        _config: &CompilationConfig,
+        config: &CompilationConfig,
     ) -> Result<(DataFrame, Vec<TaskValue>)> {
         // Make sure the pivot column is a string
         let pivot_dtype = data_type(&unescaped_col(&self.field), dataframe.schema())?;
@@ -105,11 +105,15 @@ impl TransformTrait for Pivot {
             dataframe.select(select_exprs)?
         };
 
-        pivot_case(self, dataframe).await
+        pivot_case(self, dataframe, config).await
     }
 }
 
-async fn extract_sorted_pivot_values(tx: &Pivot, dataframe: DataFrame) -> Result<Vec<String>> {
+async fn extract_sorted_pivot_values(
+    tx: &Pivot,
+    dataframe: DataFrame,
+    config: &CompilationConfig,
+) -> Result<Vec<String>> {
     let agg_query = dataframe.aggregate_mixed(vec![unescaped_col(&tx.field)], vec![])?;
 
     let limit = match tx.limit {
@@ -121,7 +125,9 @@ async fn extract_sorted_pivot_values(tx: &Pivot, dataframe: DataFrame) -> Result
         .sort(vec![unescaped_col(&tx.field).sort(true, false)])?
         .limit(0, limit)?;
 
-    let pivot_batch = sorted_query.collect_flat().await?;
+    let logical_plan = sorted_query.logical_plan().clone();
+    let result_table = config.plan_executor.execute_plan(logical_plan).await?;
+    let pivot_batch = result_table.to_record_batch()?;
     let pivot_array = pivot_batch
         .column_by_name(&tx.field)
         .with_context(|| format!("No column named {}", tx.field))?;
@@ -136,8 +142,12 @@ async fn extract_sorted_pivot_values(tx: &Pivot, dataframe: DataFrame) -> Result
     Ok(pivot_vec)
 }
 
-async fn pivot_case(tx: &Pivot, dataframe: DataFrame) -> Result<(DataFrame, Vec<TaskValue>)> {
-    let pivot_vec = extract_sorted_pivot_values(tx, dataframe.clone()).await?;
+async fn pivot_case(
+    tx: &Pivot,
+    dataframe: DataFrame,
+    config: &CompilationConfig,
+) -> Result<(DataFrame, Vec<TaskValue>)> {
+    let pivot_vec = extract_sorted_pivot_values(tx, dataframe.clone(), config).await?;
 
     if pivot_vec.is_empty() {
         return Err(VegaFusionError::internal("Unexpected empty pivot dataset"));

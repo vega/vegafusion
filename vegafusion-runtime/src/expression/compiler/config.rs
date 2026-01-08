@@ -1,27 +1,36 @@
+use crate::datafusion::context::make_datafusion_context;
 use crate::expression::compiler::call::{default_callables, VegaFusionCallable};
+use crate::plan_executor::DataFusionPlanExecutor;
 use crate::task_graph::timezone::RuntimeTzConfig;
 use num_traits::float::FloatConst;
 use std::collections::HashMap;
-use vegafusion_common::data::table::VegaFusionTable;
+use std::sync::Arc;
 use vegafusion_common::datafusion_common::ScalarValue;
+use vegafusion_core::data::dataset::VegaFusionDataset;
+use vegafusion_core::runtime::PlanExecutor;
 
 #[derive(Clone)]
 pub struct CompilationConfig {
     pub signal_scope: HashMap<String, ScalarValue>,
-    pub data_scope: HashMap<String, VegaFusionTable>,
+    pub data_scope: HashMap<String, VegaFusionDataset>,
     pub callable_scope: HashMap<String, VegaFusionCallable>,
     pub constants: HashMap<String, ScalarValue>,
     pub tz_config: Option<RuntimeTzConfig>,
+    pub plan_executor: Arc<dyn PlanExecutor>,
 }
 
 impl Default for CompilationConfig {
     fn default() -> Self {
+        let ctx = Arc::new(make_datafusion_context());
+        let plan_executor = Arc::new(DataFusionPlanExecutor::new(ctx)) as Arc<dyn PlanExecutor>;
+
         Self {
             signal_scope: Default::default(),
             data_scope: Default::default(),
             callable_scope: default_callables(),
             constants: default_constants(),
             tz_config: None,
+            plan_executor,
         }
     }
 }

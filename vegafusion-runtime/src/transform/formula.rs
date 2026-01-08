@@ -23,7 +23,8 @@ impl TransformTrait for Formula {
             self.expr.as_ref().unwrap(),
             config,
             Some(dataframe.schema()),
-        )?;
+        )
+        .await?;
 
         // Simplify expression prior to evaluation
         let simplifier = ExprSimplifier::new(VfSimplifyInfo::from(dataframe.schema().clone()));
