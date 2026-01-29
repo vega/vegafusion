@@ -75,6 +75,7 @@ pub fn compile_binary(
             } else if is_null_literal(&rhs) {
                 Expr::IsNull(Box::new(lhs))
             } else if is_numeric_datatype(&lhs_dtype) && is_numeric_datatype(&rhs_dtype)
+                || is_string_datatype(&lhs_dtype) && is_string_datatype(&rhs_dtype)
                 || lhs_dtype == rhs_dtype
             {
                 Expr::BinaryExpr(BinaryExpr {
@@ -93,6 +94,7 @@ pub fn compile_binary(
             } else if is_null_literal(&rhs) {
                 Expr::IsNotNull(Box::new(lhs))
             } else if is_numeric_datatype(&lhs_dtype) && is_numeric_datatype(&rhs_dtype)
+                || is_string_datatype(&lhs_dtype) && is_string_datatype(&rhs_dtype)
                 || lhs_dtype == rhs_dtype
             {
                 Expr::BinaryExpr(BinaryExpr {
@@ -102,7 +104,7 @@ pub fn compile_binary(
                 })
             } else {
                 // Types are not compatible
-                lit(false)
+                lit(true)
             }
         }
         BinaryOperator::Plus => {

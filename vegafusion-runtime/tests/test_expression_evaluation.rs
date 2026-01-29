@@ -583,3 +583,102 @@ mod test_span {
     #[test]
     fn test_marker() {} // Help IDE detect test module
 }
+
+/// Test that strict equality (===) works correctly between different Arrow string types
+/// (Utf8, LargeUtf8, Utf8View). This is important because polars may use Utf8View while
+/// string literals compile to Utf8.
+/// See: https://github.com/vega/vegafusion/issues/572
+mod test_string_type_equality {
+    use datafusion_common::ScalarValue;
+    use std::collections::HashMap;
+    use vegafusion_core::expression::parser::parse;
+    use vegafusion_runtime::expression::compiler::compile;
+    use vegafusion_runtime::expression::compiler::config::CompilationConfig;
+    use vegafusion_runtime::expression::compiler::utils::ExprHelpers;
+
+    fn scope_with_utf8view() -> HashMap<String, ScalarValue> {
+        vec![
+            // Utf8View string (as polars would produce)
+            ("name_view", ScalarValue::Utf8View(Some("Bob".to_string()))),
+            // LargeUtf8 string
+            (
+                "name_large",
+                ScalarValue::LargeUtf8(Some("Bob".to_string())),
+            ),
+            // Regular Utf8 string
+            ("name_utf8", ScalarValue::Utf8(Some("Bob".to_string()))),
+        ]
+        .into_iter()
+        .map(|(k, v)| (k.to_string(), v))
+        .collect()
+    }
+
+    fn config() -> CompilationConfig {
+        CompilationConfig {
+            signal_scope: scope_with_utf8view(),
+            ..Default::default()
+        }
+    }
+
+    fn eval_expr(expr_str: &str) -> ScalarValue {
+        let config = config();
+        let parsed = parse(expr_str).unwrap();
+        let compiled = compile(&parsed, &config, None).unwrap();
+        compiled.eval_to_scalar().unwrap()
+    }
+
+    #[test]
+    fn test_utf8view_strict_equals_literal() {
+        // Utf8View === Utf8 literal should be true when values match
+        let result = eval_expr("name_view === 'Bob'");
+        assert_eq!(result, ScalarValue::Boolean(Some(true)));
+
+        // Should be false when values don't match
+        let result = eval_expr("name_view === 'Alice'");
+        assert_eq!(result, ScalarValue::Boolean(Some(false)));
+    }
+
+    #[test]
+    fn test_large_utf8_strict_equals_literal() {
+        // LargeUtf8 === Utf8 literal should be true when values match
+        let result = eval_expr("name_large === 'Bob'");
+        assert_eq!(result, ScalarValue::Boolean(Some(true)));
+
+        // Should be false when values don't match
+        let result = eval_expr("name_large === 'Alice'");
+        assert_eq!(result, ScalarValue::Boolean(Some(false)));
+    }
+
+    #[test]
+    fn test_utf8_strict_equals_literal() {
+        // Utf8 === Utf8 literal (baseline)
+        let result = eval_expr("name_utf8 === 'Bob'");
+        assert_eq!(result, ScalarValue::Boolean(Some(true)));
+
+        let result = eval_expr("name_utf8 === 'Alice'");
+        assert_eq!(result, ScalarValue::Boolean(Some(false)));
+    }
+
+    #[test]
+    fn test_utf8view_not_strict_equals_literal() {
+        // Utf8View !== Utf8 literal
+        let result = eval_expr("name_view !== 'Bob'");
+        assert_eq!(result, ScalarValue::Boolean(Some(false)));
+
+        let result = eval_expr("name_view !== 'Alice'");
+        assert_eq!(result, ScalarValue::Boolean(Some(true)));
+    }
+
+    #[test]
+    fn test_mixed_string_types_equality() {
+        // Cross-type comparisons should work
+        let result = eval_expr("name_view === name_large");
+        assert_eq!(result, ScalarValue::Boolean(Some(true)));
+
+        let result = eval_expr("name_view === name_utf8");
+        assert_eq!(result, ScalarValue::Boolean(Some(true)));
+
+        let result = eval_expr("name_large === name_utf8");
+        assert_eq!(result, ScalarValue::Boolean(Some(true)));
+    }
+}
