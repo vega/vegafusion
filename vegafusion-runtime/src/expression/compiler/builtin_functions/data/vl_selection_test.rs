@@ -58,7 +58,9 @@ impl TryFrom<ScalarValue> for Op {
 
     fn try_from(value: ScalarValue) -> Result<Self> {
         match value {
-            ScalarValue::Utf8(Some(op)) => Self::from_str(&op),
+            ScalarValue::Utf8(Some(op))
+            | ScalarValue::LargeUtf8(Some(op))
+            | ScalarValue::Utf8View(Some(op)) => Self::from_str(&op),
             _ => Err(VegaFusionError::internal(
                 "Expected selection op to be a string",
             )),
@@ -100,7 +102,9 @@ impl TryFrom<ScalarValue> for SelectionType {
 
     fn try_from(value: ScalarValue) -> Result<Self> {
         match value {
-            ScalarValue::Utf8(Some(op)) => Self::from_str(&op),
+            ScalarValue::Utf8(Some(op))
+            | ScalarValue::LargeUtf8(Some(op))
+            | ScalarValue::Utf8View(Some(op)) => Self::from_str(&op),
             _ => Err(VegaFusionError::internal(
                 "Expected selection type to be a string",
             )),
@@ -314,7 +318,9 @@ impl TryFrom<ScalarValue> for FieldSpec {
                 let field_value = ScalarValue::try_from_array(sa.column(*field_index), 0)?;
 
                 let field = match field_value {
-                    ScalarValue::Utf8(Some(field)) => field.clone(),
+                    ScalarValue::Utf8(Some(field))
+                    | ScalarValue::LargeUtf8(Some(field))
+                    | ScalarValue::Utf8View(Some(field)) => field.clone(),
                     _ => {
                         return Err(VegaFusionError::internal(
                             "Expected field to be a string".to_string(),
@@ -534,4 +540,65 @@ pub fn vl_selection_test_fn(
     };
 
     Ok(expr)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// Test that Op::try_from handles all three Arrow string types.
+    /// This is important for compatibility with Polars which uses Utf8View.
+    #[test]
+    fn test_op_try_from_string_types() {
+        // Test with Utf8
+        let utf8_val = ScalarValue::Utf8(Some("union".to_string()));
+        let op = Op::try_from(utf8_val).unwrap();
+        assert!(matches!(op, Op::Union));
+
+        // Test with LargeUtf8
+        let large_utf8_val = ScalarValue::LargeUtf8(Some("intersect".to_string()));
+        let op = Op::try_from(large_utf8_val).unwrap();
+        assert!(matches!(op, Op::Intersect));
+
+        // Test with Utf8View (as Polars would produce)
+        let utf8view_val = ScalarValue::Utf8View(Some("union".to_string()));
+        let op = Op::try_from(utf8view_val).unwrap();
+        assert!(matches!(op, Op::Union));
+    }
+
+    /// Test that SelectionType::try_from handles all three Arrow string types.
+    #[test]
+    fn test_selection_type_try_from_string_types() {
+        // Test with Utf8
+        let utf8_val = ScalarValue::Utf8(Some("E".to_string()));
+        let typ = SelectionType::try_from(utf8_val).unwrap();
+        assert!(matches!(typ, SelectionType::Enum));
+
+        // Test with LargeUtf8
+        let large_utf8_val = ScalarValue::LargeUtf8(Some("R".to_string()));
+        let typ = SelectionType::try_from(large_utf8_val).unwrap();
+        assert!(matches!(typ, SelectionType::RangeInc));
+
+        // Test with Utf8View (as Polars would produce)
+        let utf8view_val = ScalarValue::Utf8View(Some("R-E".to_string()));
+        let typ = SelectionType::try_from(utf8view_val).unwrap();
+        assert!(matches!(typ, SelectionType::RangeExc));
+    }
+
+    /// Test that non-string types are rejected appropriately.
+    #[test]
+    fn test_op_try_from_rejects_non_string() {
+        let int_val = ScalarValue::Int64(Some(42));
+        assert!(Op::try_from(int_val).is_err());
+
+        let null_val = ScalarValue::Utf8(None);
+        assert!(Op::try_from(null_val).is_err());
+    }
+
+    /// Test that SelectionType::try_from rejects non-string types.
+    #[test]
+    fn test_selection_type_try_from_rejects_non_string() {
+        let bool_val = ScalarValue::Boolean(Some(true));
+        assert!(SelectionType::try_from(bool_val).is_err());
+    }
 }

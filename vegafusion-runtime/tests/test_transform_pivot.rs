@@ -234,3 +234,168 @@ mod test_pivot_with_empty_string {
         assert_eq!(name0.as_str(), " ");
     }
 }
+
+/// Test that pivot transform works correctly with different Arrow string types.
+/// This is important because polars uses Utf8View for string columns, while the
+/// original pivot transform only handled Utf8 (StringArray).
+/// See: https://github.com/vega/vegafusion/issues/572
+#[cfg(test)]
+mod test_pivot_with_different_string_types {
+    use crate::util::check::eval_vegafusion_transforms;
+    use std::sync::Arc;
+    use vegafusion_common::arrow::array::{
+        ArrayRef, Float64Array, LargeStringArray, StringArray, StringViewArray, UInt64Array,
+    };
+    use vegafusion_common::arrow::datatypes::{DataType, Field, Schema};
+    use vegafusion_common::arrow::record_batch::RecordBatch;
+    use vegafusion_common::data::table::VegaFusionTable;
+    use vegafusion_common::data::ORDER_COL;
+    use vegafusion_core::spec::transform::aggregate::AggregateOpSpec;
+    use vegafusion_core::spec::transform::pivot::PivotTransformSpec;
+    use vegafusion_core::spec::transform::TransformSpec;
+    use vegafusion_runtime::expression::compiler::config::CompilationConfig;
+
+    /// Create a test table with a pivot column using the specified string array type
+    fn create_medals_table_with_string_type(string_array: ArrayRef) -> VegaFusionTable {
+        let order_col: ArrayRef = Arc::new(UInt64Array::from(vec![0, 1, 2, 3, 4]));
+        let country: ArrayRef = Arc::new(StringArray::from(vec![
+            "Germany", "Norway", "Canada", "Germany", "Canada",
+        ]));
+        let count: ArrayRef = Arc::new(Float64Array::from(vec![14.0, 14.0, 10.0, 10.0, 8.0]));
+
+        let schema = Arc::new(Schema::new(vec![
+            Field::new(ORDER_COL, DataType::UInt64, true),
+            Field::new("type", string_array.data_type().clone(), true),
+            Field::new("country", DataType::Utf8, true),
+            Field::new("count", DataType::Float64, true),
+        ]));
+
+        let batch = RecordBatch::try_new(
+            schema.clone(),
+            vec![order_col, string_array, country, count],
+        )
+        .unwrap();
+
+        VegaFusionTable::try_new(schema, vec![batch]).unwrap()
+    }
+
+    #[test]
+    fn test_pivot_with_utf8view_strings() {
+        // Create Utf8View array (as polars would produce)
+        let type_array: ArrayRef = Arc::new(StringViewArray::from(vec![
+            Some("gold"),
+            Some("gold"),
+            Some("copper"),
+            Some("silver"),
+            Some("silver"),
+        ]));
+
+        let dataset = create_medals_table_with_string_type(type_array);
+
+        let pivot_spec = PivotTransformSpec {
+            field: "type".to_string(),
+            value: "count".to_string(),
+            groupby: Some(vec!["country".to_string()]),
+            limit: None,
+            op: Some(AggregateOpSpec::Sum),
+            extra: Default::default(),
+        };
+        let transform_specs = vec![TransformSpec::Pivot(pivot_spec)];
+
+        let compilation_config = CompilationConfig::default();
+        let (result_data, _result_signals) =
+            eval_vegafusion_transforms(&dataset, transform_specs.as_slice(), &compilation_config);
+
+        // Should have columns: copper, gold, silver, country (plus order col)
+        let field_names: Vec<_> = result_data
+            .schema
+            .fields
+            .iter()
+            .map(|f| f.name().as_str())
+            .collect();
+        assert!(field_names.contains(&"gold"));
+        assert!(field_names.contains(&"silver"));
+        assert!(field_names.contains(&"copper"));
+        assert!(field_names.contains(&"country"));
+    }
+
+    #[test]
+    fn test_pivot_with_large_utf8_strings() {
+        // Create LargeUtf8 array
+        let type_array: ArrayRef = Arc::new(LargeStringArray::from(vec![
+            Some("gold"),
+            Some("gold"),
+            Some("copper"),
+            Some("silver"),
+            Some("silver"),
+        ]));
+
+        let dataset = create_medals_table_with_string_type(type_array);
+
+        let pivot_spec = PivotTransformSpec {
+            field: "type".to_string(),
+            value: "count".to_string(),
+            groupby: Some(vec!["country".to_string()]),
+            limit: None,
+            op: Some(AggregateOpSpec::Sum),
+            extra: Default::default(),
+        };
+        let transform_specs = vec![TransformSpec::Pivot(pivot_spec)];
+
+        let compilation_config = CompilationConfig::default();
+        let (result_data, _result_signals) =
+            eval_vegafusion_transforms(&dataset, transform_specs.as_slice(), &compilation_config);
+
+        // Should have columns: copper, gold, silver, country
+        let field_names: Vec<_> = result_data
+            .schema
+            .fields
+            .iter()
+            .map(|f| f.name().as_str())
+            .collect();
+        assert!(field_names.contains(&"gold"));
+        assert!(field_names.contains(&"silver"));
+        assert!(field_names.contains(&"copper"));
+        assert!(field_names.contains(&"country"));
+    }
+
+    #[test]
+    fn test_pivot_with_standard_utf8_strings() {
+        // Create standard Utf8 array (baseline test)
+        let type_array: ArrayRef = Arc::new(StringArray::from(vec![
+            Some("gold"),
+            Some("gold"),
+            Some("copper"),
+            Some("silver"),
+            Some("silver"),
+        ]));
+
+        let dataset = create_medals_table_with_string_type(type_array);
+
+        let pivot_spec = PivotTransformSpec {
+            field: "type".to_string(),
+            value: "count".to_string(),
+            groupby: Some(vec!["country".to_string()]),
+            limit: None,
+            op: Some(AggregateOpSpec::Sum),
+            extra: Default::default(),
+        };
+        let transform_specs = vec![TransformSpec::Pivot(pivot_spec)];
+
+        let compilation_config = CompilationConfig::default();
+        let (result_data, _result_signals) =
+            eval_vegafusion_transforms(&dataset, transform_specs.as_slice(), &compilation_config);
+
+        // Should have columns: copper, gold, silver, country
+        let field_names: Vec<_> = result_data
+            .schema
+            .fields
+            .iter()
+            .map(|f| f.name().as_str())
+            .collect();
+        assert!(field_names.contains(&"gold"));
+        assert!(field_names.contains(&"silver"));
+        assert!(field_names.contains(&"copper"));
+        assert!(field_names.contains(&"country"));
+    }
+}
