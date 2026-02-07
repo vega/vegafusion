@@ -21,10 +21,32 @@ use crate::task_graph::scope::TaskScope;
 use itertools::{sorted, Itertools};
 use petgraph::algo::toposort;
 use std::collections::HashMap;
-use vegafusion_common::arrow::array::StringArray;
+use vegafusion_common::arrow::array::{ArrayRef, LargeStringArray, StringArray, StringViewArray};
+use vegafusion_common::arrow::datatypes::DataType;
 use vegafusion_common::data::table::VegaFusionTable;
 use vegafusion_common::error::Result;
 use vegafusion_common::escape::{escape_field, unescape_field};
+
+fn extract_string_values(array: &ArrayRef) -> Vec<&str> {
+    match array.data_type() {
+        DataType::Utf8 => array
+            .as_any()
+            .downcast_ref::<StringArray>()
+            .map(|arr| arr.iter().flatten().collect())
+            .unwrap_or_default(),
+        DataType::LargeUtf8 => array
+            .as_any()
+            .downcast_ref::<LargeStringArray>()
+            .map(|arr| arr.iter().flatten().collect())
+            .unwrap_or_default(),
+        DataType::Utf8View => array
+            .as_any()
+            .downcast_ref::<StringViewArray>()
+            .map(|arr| arr.iter().flatten().collect())
+            .unwrap_or_default(),
+        _ => Vec::new(),
+    }
+}
 
 /// This planning phase attempts to identify the precise subset of columns that are required
 /// of each dataset. If this can be determined for a particular dataset, then a projection
@@ -869,17 +891,13 @@ impl ChartVisitor for CollectVlSelectionTestFieldsVisitor {
                             if let Ok(field_index) = schema.index_of("field") {
                                 if let Ok(batch) = table.to_record_batch() {
                                     let field_array = batch.column(field_index);
-                                    if let Some(field_array) =
-                                        field_array.as_any().downcast_ref::<StringArray>()
-                                    {
-                                        for col in field_array.iter().flatten() {
-                                            let usage = self
-                                                .vl_selection_fields
-                                                .entry(scoped_brush_var.clone())
-                                                .or_insert_with(ColumnUsage::empty);
+                                    for col in extract_string_values(field_array) {
+                                        let usage = self
+                                            .vl_selection_fields
+                                            .entry(scoped_brush_var.clone())
+                                            .or_insert_with(ColumnUsage::empty);
 
-                                            *usage = usage.with_column(col);
-                                        }
+                                        *usage = usage.with_column(col);
                                     }
                                 }
                             }
@@ -894,6 +912,7 @@ impl ChartVisitor for CollectVlSelectionTestFieldsVisitor {
 
 #[cfg(test)]
 mod tests {
+    use super::*;
     use crate::expression::column_usage::{
         ColumnUsage, DatasetsColumnUsage, GetDatasetsColumnUsage, VlSelectionFields,
     };
@@ -905,6 +924,7 @@ mod tests {
     use crate::task_graph::graph::ScopedVariable;
     use crate::task_graph::scope::TaskScope;
     use serde_json::json;
+    use std::sync::Arc;
 
     fn selection_fields() -> VlSelectionFields {
         vec![(
@@ -1068,5 +1088,19 @@ mod tests {
             .with_unknown_usage(&(Variable::new_data("dataA"), Vec::new()));
 
         assert_eq!(usage, expected);
+    }
+
+    #[test]
+    fn test_extract_string_values_all_arrow_string_types() {
+        let utf8 = Arc::new(StringArray::from(vec![Some("a"), Some("b"), None])) as ArrayRef;
+        assert_eq!(extract_string_values(&utf8), vec!["a", "b"]);
+
+        let large_utf8 =
+            Arc::new(LargeStringArray::from(vec![Some("a"), Some("b"), None])) as ArrayRef;
+        assert_eq!(extract_string_values(&large_utf8), vec!["a", "b"]);
+
+        let utf8_view =
+            Arc::new(StringViewArray::from(vec![Some("a"), Some("b"), None])) as ArrayRef;
+        assert_eq!(extract_string_values(&utf8_view), vec!["a", "b"]);
     }
 }
