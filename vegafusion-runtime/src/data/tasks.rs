@@ -6,7 +6,7 @@ use std::borrow::Cow;
 
 use async_trait::async_trait;
 
-use datafusion_expr::{expr, lit, Expr};
+use datafusion_expr::{lit, Expr};
 use std::collections::{HashMap, HashSet};
 use std::path::Path;
 use vegafusion_core::data::dataset::VegaFusionDataset;

@@ -21,32 +21,10 @@ use crate::task_graph::scope::TaskScope;
 use itertools::{sorted, Itertools};
 use petgraph::algo::toposort;
 use std::collections::HashMap;
-use vegafusion_common::arrow::array::{ArrayRef, LargeStringArray, StringArray, StringViewArray};
-use vegafusion_common::arrow::datatypes::DataType;
 use vegafusion_common::data::table::VegaFusionTable;
+use vegafusion_common::datatypes::extract_string_values;
 use vegafusion_common::error::Result;
 use vegafusion_common::escape::{escape_field, unescape_field};
-
-fn extract_string_values(array: &ArrayRef) -> Vec<&str> {
-    match array.data_type() {
-        DataType::Utf8 => array
-            .as_any()
-            .downcast_ref::<StringArray>()
-            .map(|arr| arr.iter().flatten().collect())
-            .unwrap_or_default(),
-        DataType::LargeUtf8 => array
-            .as_any()
-            .downcast_ref::<LargeStringArray>()
-            .map(|arr| arr.iter().flatten().collect())
-            .unwrap_or_default(),
-        DataType::Utf8View => array
-            .as_any()
-            .downcast_ref::<StringViewArray>()
-            .map(|arr| arr.iter().flatten().collect())
-            .unwrap_or_default(),
-        _ => Vec::new(),
-    }
-}
 
 /// This planning phase attempts to identify the precise subset of columns that are required
 /// of each dataset. If this can be determined for a particular dataset, then a projection
@@ -917,6 +895,9 @@ mod tests {
         ColumnUsage, DatasetsColumnUsage, GetDatasetsColumnUsage, VlSelectionFields,
     };
     use crate::proto::gen::tasks::Variable;
+    use vegafusion_common::arrow::array::{
+        ArrayRef, LargeStringArray, StringArray, StringViewArray,
+    };
 
     use crate::spec::mark::{MarkEncodeSpec, MarkSpec};
     use crate::spec::scale::ScaleSpec;
