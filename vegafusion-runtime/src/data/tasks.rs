@@ -6,7 +6,7 @@ use std::borrow::Cow;
 
 use async_trait::async_trait;
 
-use datafusion_expr::{expr, lit, Expr};
+use datafusion_expr::{lit, Expr};
 use std::collections::{HashMap, HashSet};
 use std::path::Path;
 use vegafusion_core::data::dataset::VegaFusionDataset;
@@ -185,9 +185,6 @@ impl TaskCall for DataUrlTask {
             df
         };
 
-        // Perform any up-front type conversions
-        let df = pre_process_column_types(df).await?;
-
         // Process datetime columns
         let df = process_datetimes(&parse, df, &config.tz_config).await?;
 
@@ -313,32 +310,6 @@ fn check_builtin_dataset(url: String) -> String {
         }
     } else {
         url
-    }
-}
-
-async fn pre_process_column_types(df: DataFrame) -> Result<DataFrame> {
-    let mut selections: Vec<Expr> = Vec::new();
-    let mut pre_proc_needed = false;
-    for field in df.schema().fields().iter() {
-        if field.data_type() == &DataType::LargeUtf8 {
-            // Work around https://github.com/apache/arrow-rs/issues/2654 by converting
-            // LargeUtf8 to Utf8
-            selections.push(
-                Expr::Cast(expr::Cast {
-                    expr: Box::new(flat_col(field.name())),
-                    data_type: DataType::Utf8,
-                })
-                .alias(field.name()),
-            );
-            pre_proc_needed = true;
-        } else {
-            selections.push(flat_col(field.name()))
-        }
-    }
-    if pre_proc_needed {
-        Ok(df.select(selections)?)
-    } else {
-        Ok(df)
     }
 }
 

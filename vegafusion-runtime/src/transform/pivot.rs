@@ -6,12 +6,13 @@ use async_trait::async_trait;
 use datafusion::prelude::DataFrame;
 use datafusion_expr::{lit, when};
 use datafusion_functions_aggregate::expr_fn::min;
-use vegafusion_common::arrow::array::StringArray;
 use vegafusion_common::arrow::datatypes::DataType;
 use vegafusion_common::column::{flat_col, unescaped_col};
 use vegafusion_common::data::scalar::ScalarValue;
 use vegafusion_common::data::ORDER_COL;
-use vegafusion_common::datatypes::{cast_to, data_type, is_string_datatype, to_numeric};
+use vegafusion_common::datatypes::{
+    cast_to, data_type, extract_string_values_owned, is_string_datatype, to_numeric,
+};
 use vegafusion_common::error::{Result, ResultWithContext, VegaFusionError};
 use vegafusion_common::escape::unescape_field;
 use vegafusion_core::proto::gen::transforms::{AggregateOp, Pivot};
@@ -125,15 +126,8 @@ async fn extract_sorted_pivot_values(tx: &Pivot, dataframe: DataFrame) -> Result
     let pivot_array = pivot_batch
         .column_by_name(&tx.field)
         .with_context(|| format!("No column named {}", tx.field))?;
-    let pivot_array = pivot_array
-        .as_any()
-        .downcast_ref::<StringArray>()
-        .with_context(|| "Failed to downcast pivot column to String")?;
-    let pivot_vec: Vec<_> = pivot_array
-        .iter()
-        .filter_map(|val| val.map(|s| s.to_string()))
-        .collect();
-    Ok(pivot_vec)
+
+    extract_string_values_owned(pivot_array.as_ref())
 }
 
 async fn pivot_case(tx: &Pivot, dataframe: DataFrame) -> Result<(DataFrame, Vec<TaskValue>)> {

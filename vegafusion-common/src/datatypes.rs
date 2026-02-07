@@ -1,4 +1,5 @@
-use crate::error::{Result, ResultWithContext};
+use crate::error::{Result, ResultWithContext, VegaFusionError};
+use arrow::array::{Array, AsArray};
 use arrow::datatypes::DataType;
 use datafusion_common::DFSchema;
 use datafusion_expr::{lit, when, Expr, ExprSchemable, TryCast};
@@ -53,6 +54,28 @@ pub fn is_string_datatype(dtype: &DataType) -> bool {
         dtype,
         DataType::Utf8 | DataType::LargeUtf8 | DataType::Utf8View
     )
+}
+
+pub fn extract_string_values<'a>(array: &'a dyn Array) -> Vec<&'a str> {
+    match array.data_type() {
+        DataType::Utf8 => array.as_string::<i32>().iter().flatten().collect(),
+        DataType::LargeUtf8 => array.as_string::<i64>().iter().flatten().collect(),
+        DataType::Utf8View => array.as_string_view().iter().flatten().collect(),
+        _ => Vec::new(),
+    }
+}
+
+pub fn extract_string_values_owned(array: &dyn Array) -> Result<Vec<String>> {
+    if !is_string_datatype(array.data_type()) {
+        return Err(VegaFusionError::internal(format!(
+            "Expected string array type, got: {:?}",
+            array.data_type()
+        )));
+    }
+    Ok(extract_string_values(array)
+        .into_iter()
+        .map(|s| s.to_string())
+        .collect())
 }
 
 /// get datatype for expression
