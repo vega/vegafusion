@@ -1,4 +1,4 @@
-[project]
+[workspace]
 name = "vegafusion"
 version = "0.1.0"
 description = "Add a short description here"
@@ -109,8 +109,8 @@ cargo publish -p vegafusion-runtime &&
 cargo publish -p vegafusion-server
 """
 
-# Build dependencies are those required to build and test all packages
-[build-dependencies]
+# Build, test, and runtime dependencies
+[dependencies]
 python = "3.10.*"
 nodejs = "20.5.1.*"
 maturin = "1.7.4.*"
@@ -148,8 +148,7 @@ sphinx-design = ">=0.6.0,<1"
 ablog = ">=0.11.0,<0.12"
 pydata-sphinx-theme = ">=0.16.0,<0.17"
 
-# Dependencies are those required at runtime by the Python packages
-[dependencies]
+# Dependencies required at runtime by the Python packages
 psutil = "5.9.5.*"
 altair = "5.5.*"
 ipywidgets = "8.1.0.*"
