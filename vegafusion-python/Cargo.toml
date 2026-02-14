@@ -29,7 +29,7 @@ workspace = true
 
 [dependencies.tonic]
 workspace = true
-features = ["tls"]
+features = ["tls-ring"]
 
 [dependencies.log]
 workspace = true

@@ -1,6 +1,5 @@
 use crate::proto::gen::tasks::{Variable, VariableNamespace};
 use std::cmp::Ordering;
-use std::hash::{Hash, Hasher};
 
 impl Variable {
     pub fn new(ns: VariableNamespace, name: &str) -> Self {
@@ -27,8 +26,6 @@ impl Variable {
     }
 }
 
-impl Eq for Variable {}
-
 impl PartialOrd for Variable {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         Some(self.cmp(other))
@@ -42,18 +39,6 @@ impl Ord for Variable {
         } else {
             self.namespace.cmp(&other.namespace)
         }
-    }
-}
-
-// The Prost structs derive PartialEq but not Hash, so we need to implement Hash here.
-// This is a bad idea in general since PartialEq and Hash must be consistent, but there's
-// not a prost option to disable deriving PartialEq, or to derive Hash. This Hash implementation
-// is simple enough that the risk of inconsistency is low.
-#[allow(clippy::derived_hash_with_manual_eq)]
-impl Hash for Variable {
-    fn hash<H: Hasher>(&self, state: &mut H) {
-        self.namespace.hash(state);
-        self.name.hash(state);
     }
 }
 

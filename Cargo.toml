@@ -3,7 +3,7 @@ resolver = "2"
 members = [ "vegafusion-common", "vegafusion-core", "vegafusion-runtime", "vegafusion-python", "vegafusion-wasm", "vegafusion-server", "examples/rust-examples",]
 
 [workspace.dependencies]
-async-trait = "0.1.88"
+async-trait = "0.1.89"
 futures = "0.3.31"
 url = "2.5.4"
 cfg-if = "1.0.0"
@@ -29,7 +29,7 @@ opt-level = "z"
 codegen-units = 1
 
 [workspace.dependencies.arrow]
-version = "=57.0.0"
+version = "=57.3.0"
 default-features = false
 
 [workspace.dependencies.sqlparser]
@@ -38,7 +38,7 @@ default-features = false
 features = [ "std", "visitor",]
 
 [workspace.dependencies.chrono]
-version = "0.4.35"
+version = "0.4.42"
 default-features = false
 
 [workspace.dependencies.ahash]
@@ -55,16 +55,22 @@ version = "0.12.11"
 default-features = false
 
 [workspace.dependencies.tonic]
-version = "0.12.3"
+version = "0.14.4"
 
 [workspace.dependencies.tonic-web]
-version = "0.12.3"
+version = "0.14.4"
 
 [workspace.dependencies.tonic-build]
-version = "0.12.3"
+version = "0.14.4"
+
+[workspace.dependencies.tonic-prost]
+version = "0.14.4"
+
+[workspace.dependencies.tonic-prost-build]
+version = "0.14.4"
 
 [workspace.dependencies.tokio]
-version = "1.36.0"
+version = "1.48.0"
 
 [workspace.dependencies.pyo3]
 version = "0.27.0"
@@ -77,16 +83,16 @@ version = "0.15.0"
 default-features = false
 
 [workspace.dependencies.prost]
-version = "0.13.3"
+version = "0.14.1"
 
 [workspace.dependencies.prost-types]
-version = "0.13.3"
+version = "0.14.1"
 
 [workspace.dependencies.prost-build]
-version = "0.13.3"
+version = "0.14.1"
 
 [workspace.dependencies.object_store]
-version = "0.12.0"
+version = "0.12.4"
 
 [workspace.dependencies.object-store-wasm]
 version = "0.0.7"
@@ -99,50 +105,50 @@ version = "1.0.140"
 default-features = false
 
 [workspace.dependencies.datafusion]
-version = "=51.0.0"
+version = "=52.1.0"
 default-features = false
 features = [ "nested_expressions",]
 
 [workspace.dependencies.datafusion-common]
-version = "=51.0.0"
+version = "=52.1.0"
 default-features = false
 
 [workspace.dependencies.datafusion-expr]
-version = "=51.0.0"
+version = "=52.1.0"
 default-features = false
 
 [workspace.dependencies.datafusion-proto]
-version = "=51.0.0"
+version = "=52.1.0"
 default-features = false
 features = [ "parquet",]
 
 [workspace.dependencies.datafusion-proto-common]
-version = "=51.0.0"
+version = "=52.1.0"
 default-features = false
 
 [workspace.dependencies.datafusion-physical-expr]
-version = "=51.0.0"
+version = "=52.1.0"
 default-features = false
 
 [workspace.dependencies.datafusion-optimizer]
-version = "=51.0.0"
+version = "=52.1.0"
 default-features = false
 
 [workspace.dependencies.datafusion-functions]
-version = "=51.0.0"
+version = "=52.1.0"
 default-features = false
 
 [workspace.dependencies.datafusion-functions-nested]
-version = "=51.0.0"
+version = "=52.1.0"
 default-features = false
 features = ["sql"]
 
 [workspace.dependencies.datafusion-functions-aggregate]
-version = "=51.0.0"
+version = "=52.1.0"
 default-features = false
 
 [workspace.dependencies.datafusion-functions-window]
-version = "=51.0.0"
+version = "=52.1.0"
 default-features = false
 
 [workspace.dependencies.thiserror]
@@ -165,7 +171,7 @@ version = "0.11.5"
 version = "3.9.2"
 
 [workspace.dependencies.itertools]
-version = "0.12.1"
+version = "0.14.0"
 
 [workspace.dependencies.log]
 version = "0.4.22"

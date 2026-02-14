@@ -2,7 +2,7 @@ use crate::proto::gen::tasks::data_url_task::Url;
 use crate::proto::gen::tasks::{DataSourceTask, DataUrlTask, DataValuesTask, SignalTask, Variable};
 use crate::task_graph::task::{InputVariable, TaskDependencies};
 use crate::transform::TransformDependencies;
-use itertools::sorted;
+use itertools::Itertools;
 use std::collections::HashSet;
 
 impl TaskDependencies for DataValuesTask {
@@ -15,7 +15,7 @@ impl TaskDependencies for DataValuesTask {
         }
 
         // Return variables sorted for determinism
-        sorted(vars).collect()
+        vars.into_iter().sorted().collect()
     }
 
     fn output_vars(&self) -> Vec<Variable> {
@@ -42,7 +42,7 @@ impl TaskDependencies for DataUrlTask {
         }
 
         // Return variables sorted for determinism
-        sorted(vars).collect()
+        vars.into_iter().sorted().collect()
     }
 
     fn output_vars(&self) -> Vec<Variable> {
@@ -70,7 +70,7 @@ impl TaskDependencies for DataSourceTask {
         }
 
         // Return variables sorted for determinism
-        sorted(vars).collect()
+        vars.into_iter().sorted().collect()
     }
 
     fn output_vars(&self) -> Vec<Variable> {
