@@ -4,7 +4,7 @@ use crate::proto::gen::transforms::Sequence;
 use crate::spec::transform::sequence::SequenceTransformSpec;
 use crate::spec::values::{NumberOrSignalSpec, SignalExpressionSpec};
 use crate::transform::TransformDependencies;
-use itertools::sorted;
+use itertools::Itertools;
 use std::collections::HashSet;
 
 use crate::task_graph::task::InputVariable;
@@ -47,6 +47,6 @@ impl TransformDependencies for Sequence {
         if let Some(step) = &self.step {
             input_vars.extend(step.input_vars());
         }
-        sorted(input_vars).collect()
+        input_vars.into_iter().sorted().collect()
     }
 }

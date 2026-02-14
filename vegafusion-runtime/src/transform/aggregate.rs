@@ -1,7 +1,6 @@
 use crate::expression::compiler::config::CompilationConfig;
 use crate::transform::TransformTrait;
 
-use datafusion_expr::expr::NullTreatment;
 use datafusion_expr::{expr::AggregateFunctionParams, lit, Expr};
 use datafusion_functions_aggregate::median::median_udaf;
 use datafusion_functions_aggregate::variance::{var_pop_udaf, var_samp_udaf};
@@ -175,7 +174,7 @@ pub fn make_agg_expr_for_col_expr(
                 args: vec![numeric_column()?],
                 filter: None,
                 order_by: vec![],
-                null_treatment: Some(NullTreatment::IgnoreNulls),
+                null_treatment: None,
             },
         }),
         AggregateOp::Variance => Expr::AggregateFunction(expr::AggregateFunction {
@@ -185,7 +184,7 @@ pub fn make_agg_expr_for_col_expr(
                 args: vec![numeric_column()?],
                 filter: None,
                 order_by: vec![],
-                null_treatment: Some(NullTreatment::IgnoreNulls),
+                null_treatment: None,
             },
         }),
         AggregateOp::Variancep => Expr::AggregateFunction(expr::AggregateFunction {
@@ -195,7 +194,7 @@ pub fn make_agg_expr_for_col_expr(
                 args: vec![numeric_column()?],
                 filter: None,
                 order_by: vec![],
-                null_treatment: Some(NullTreatment::IgnoreNulls),
+                null_treatment: None,
             },
         }),
         AggregateOp::Stdev => Expr::AggregateFunction(expr::AggregateFunction {
@@ -205,7 +204,7 @@ pub fn make_agg_expr_for_col_expr(
                 args: vec![numeric_column()?],
                 filter: None,
                 order_by: vec![],
-                null_treatment: Some(NullTreatment::IgnoreNulls),
+                null_treatment: None,
             },
         }),
         AggregateOp::Stdevp => Expr::AggregateFunction(expr::AggregateFunction {
@@ -215,7 +214,7 @@ pub fn make_agg_expr_for_col_expr(
                 args: vec![numeric_column()?],
                 filter: None,
                 order_by: vec![],
-                null_treatment: Some(NullTreatment::IgnoreNulls),
+                null_treatment: None,
             },
         }),
         AggregateOp::Valid => {
@@ -247,7 +246,7 @@ pub fn make_agg_expr_for_col_expr(
                 args: vec![numeric_column()?],
                 filter: None,
                 order_by: vec![],
-                null_treatment: Some(NullTreatment::IgnoreNulls),
+                null_treatment: None,
             },
         }),
         AggregateOp::Q3 => Expr::AggregateFunction(expr::AggregateFunction {
@@ -257,7 +256,7 @@ pub fn make_agg_expr_for_col_expr(
                 args: vec![numeric_column()?],
                 filter: None,
                 order_by: vec![],
-                null_treatment: Some(NullTreatment::IgnoreNulls),
+                null_treatment: None,
             },
         }),
         _ => {

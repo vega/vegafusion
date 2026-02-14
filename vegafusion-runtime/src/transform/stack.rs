@@ -3,7 +3,6 @@ use crate::transform::TransformTrait;
 use async_trait::async_trait;
 use datafusion::prelude::DataFrame;
 use datafusion_common::JoinType;
-use datafusion_expr::expr::NullTreatment;
 use datafusion_expr::{
     expr, expr::AggregateFunctionParams, expr::WindowFunctionParams, lit, when, Expr, WindowFrame,
     WindowFunctionDefinition,
@@ -79,7 +78,7 @@ impl TransformTrait for Stack {
                     partition_by,
                     order_by,
                     window_frame: WindowFrame::new(Some(true)),
-                    null_treatment: Some(NullTreatment::IgnoreNulls),
+                    null_treatment: None,
                     distinct: false,
                     filter: None,
                 },
@@ -148,7 +147,7 @@ impl TransformTrait for Stack {
                     distinct: false,
                     filter: None,
                     order_by: vec![],
-                    null_treatment: Some(NullTreatment::IgnoreNulls),
+                    null_treatment: None,
                 },
             })
             .alias("__total");
@@ -220,7 +219,7 @@ impl TransformTrait for Stack {
                     partition_by: partition_by_qualified,
                     order_by: order_by_qualified,
                     window_frame: WindowFrame::new(Some(true)),
-                    null_treatment: Some(NullTreatment::IgnoreNulls),
+                    null_treatment: None,
                     distinct: false,
                     filter: None,
                 },

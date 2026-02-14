@@ -18,7 +18,7 @@ use crate::spec::transform::project::ProjectTransformSpec;
 use crate::spec::transform::{TransformColumns, TransformSpec};
 use crate::task_graph::graph::ScopedVariable;
 use crate::task_graph::scope::TaskScope;
-use itertools::{sorted, Itertools};
+use itertools::Itertools;
 use petgraph::algo::toposort;
 use std::collections::HashMap;
 use vegafusion_common::data::table::VegaFusionTable;
@@ -795,8 +795,10 @@ impl MutChartVisitor for InsertProjectionVisitor<'_> {
                 // We know exactly which columns are required of this dataset (and it's not none),
                 // so we can append a projection transform to limit the columns that are produced
                 // Note: empty strings here seem to break vega, filter them out
-                let proj_fields: Vec<_> = sorted(columns)
-                    .filter(|&f| !f.is_empty())
+                let proj_fields: Vec<_> = columns
+                    .into_iter()
+                    .sorted()
+                    .filter(|f| !f.is_empty())
                     .cloned()
                     .map(|f| escape_field(&f))
                     .collect();

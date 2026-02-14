@@ -1,7 +1,6 @@
 use crate::expression::compiler::config::CompilationConfig;
 use crate::transform::TransformTrait;
 
-use datafusion_expr::expr::NullTreatment;
 use datafusion_expr::{expr, expr::WindowFunctionParams, Expr, WindowFunctionDefinition};
 use datafusion_functions_window::row_number::RowNumber;
 
@@ -57,7 +56,7 @@ impl TransformTrait for Collect {
                 partition_by: vec![],
                 order_by: sort_exprs,
                 window_frame: WindowFrame::new(Some(true)),
-                null_treatment: Some(NullTreatment::IgnoreNulls),
+                null_treatment: None,
                 distinct: false,
                 filter: None,
             },

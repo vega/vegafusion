@@ -11,7 +11,6 @@ use datafusion_expr::{
     WindowFunctionDefinition,
 };
 // Remove coalesce import as we'll use when/otherwise instead
-use datafusion_expr::expr::NullTreatment;
 use datafusion_functions_aggregate::expr_fn::min;
 use datafusion_functions_window::row_number::RowNumber;
 use itertools::Itertools;
@@ -177,7 +176,7 @@ impl TransformTrait for Impute {
                         SortExpr::new(order_key_col, true, true),
                     ],
                     window_frame: WindowFrame::new(Some(true)),
-                    null_treatment: Some(NullTreatment::RespectNulls),
+                    null_treatment: None,
                     distinct: false,
                     filter: None,
                 },
