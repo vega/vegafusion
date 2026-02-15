@@ -2,7 +2,7 @@ use crate::expression::parser::parse;
 use crate::proto::gen::tasks::data_url_task::Url;
 use crate::proto::gen::tasks::{
     scan_url_format, DataSourceTask, DataUrlTask, DataValuesTask, ParseFieldSpec, ParseFieldSpecs,
-    ScanUrlFormat, Task, TzConfig, Variable, VariableNamespace,
+    ScaleTask, ScanUrlFormat, Task, TzConfig, Variable, VariableNamespace,
 };
 use crate::proto::gen::transforms::TransformPipeline;
 use crate::spec::chart::{ChartSpec, ChartVisitor};
@@ -256,10 +256,14 @@ impl ChartVisitor for MakeTasksVisitor<'_> {
         Ok(())
     }
 
-    fn visit_scale(&mut self, _scale: &ScaleSpec, _scope: &[u32]) -> Result<()> {
-        Err(VegaFusionError::internal(
-            "Scale tasks are not yet supported. Set PlannerConfig.copy_scales_to_server=false for evaluation",
-        ))
+    fn visit_scale(&mut self, scale: &ScaleSpec, scope: &[u32]) -> Result<()> {
+        let scale_var = Variable::new_scale(&scale.name);
+        let task = ScaleTask {
+            spec: serde_json::to_string(scale).map_err(VegaFusionError::from)?,
+        };
+        self.tasks
+            .push(Task::new_scale(scale_var, scope, task, &self.tz_config));
+        Ok(())
     }
 
     fn visit_projection(&mut self, _projection: &ProjectionSpec, _scope: &[u32]) -> Result<()> {

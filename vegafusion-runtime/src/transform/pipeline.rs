@@ -63,7 +63,9 @@ impl TransformPipelineUtils for TransformPipeline {
                             .insert(var.name.clone(), val.as_table()?.clone());
                     }
                     VariableNamespace::Scale => {
-                        unimplemented!()
+                        config
+                            .scale_scope
+                            .insert(var.name.clone(), val.as_scale()?.clone());
                     }
                 }
                 Ok(())

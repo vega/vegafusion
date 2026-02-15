@@ -5,6 +5,7 @@ extern crate core;
 pub mod data;
 pub mod datafusion;
 pub mod expression;
+pub mod scale;
 pub mod signal;
 pub mod task_graph;
 pub mod tokio_runtime;

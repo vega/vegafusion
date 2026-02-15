@@ -10,6 +10,7 @@ use vegafusion_core::planning::split_domain_data::split_domain_data;
 
 use vegafusion_core::planning::stitch::stitch_specs;
 use vegafusion_core::planning::strip_encodings::strip_encodings;
+use vegafusion_core::proto::gen::tasks::task::TaskKind;
 
 #[tokio::test(flavor = "multi_thread")]
 async fn test_extract_server_data() {
@@ -224,6 +225,40 @@ fn test_copy_scales_to_server_comm_plan_excludes_scale_transport() {
         .client_to_server
         .iter()
         .all(|(var, _)| !matches!(var.ns(), VariableNamespace::Scale)));
+}
+
+#[test]
+fn test_copy_scales_to_server_generates_scale_tasks() {
+    let tz_config = TzConfig {
+        local_tz: "America/New_York".to_string(),
+        default_input_tz: None,
+    };
+
+    let mut spec_false = spec1();
+    let mut task_scope_false = spec_false.to_task_scope().unwrap();
+    let mut config_false = PlannerConfig::default();
+    config_false.copy_scales_to_server = false;
+    let server_spec_false =
+        extract_server_data(&mut spec_false, &mut task_scope_false, &config_false).unwrap();
+    let tasks_false = server_spec_false
+        .to_tasks(&tz_config, &Default::default())
+        .unwrap();
+    assert!(!tasks_false
+        .iter()
+        .any(|task| matches!(task.task_kind, Some(TaskKind::Scale(_)))));
+
+    let mut spec_true = spec1();
+    let mut task_scope_true = spec_true.to_task_scope().unwrap();
+    let mut config_true = PlannerConfig::default();
+    config_true.copy_scales_to_server = true;
+    let server_spec_true =
+        extract_server_data(&mut spec_true, &mut task_scope_true, &config_true).unwrap();
+    let tasks_true = server_spec_true
+        .to_tasks(&tz_config, &Default::default())
+        .unwrap();
+    assert!(tasks_true
+        .iter()
+        .any(|task| matches!(task.task_kind, Some(TaskKind::Scale(_)))));
 }
 
 #[allow(dead_code)]

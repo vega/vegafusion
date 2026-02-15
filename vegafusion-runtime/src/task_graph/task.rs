@@ -36,6 +36,7 @@ impl TaskCall for Task {
             TaskKind::DataValues(task) => task.eval(values, tz_config, inline_datasets, ctx).await,
             TaskKind::DataSource(task) => task.eval(values, tz_config, inline_datasets, ctx).await,
             TaskKind::Signal(task) => task.eval(values, tz_config, inline_datasets, ctx).await,
+            TaskKind::Scale(task) => task.eval(values, tz_config, inline_datasets, ctx).await,
         }
     }
 }

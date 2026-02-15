@@ -4,11 +4,13 @@ use num_traits::float::FloatConst;
 use std::collections::HashMap;
 use vegafusion_common::data::table::VegaFusionTable;
 use vegafusion_common::datafusion_common::ScalarValue;
+use vegafusion_core::task_graph::scale_state::ScaleState;
 
 #[derive(Clone)]
 pub struct CompilationConfig {
     pub signal_scope: HashMap<String, ScalarValue>,
     pub data_scope: HashMap<String, VegaFusionTable>,
+    pub scale_scope: HashMap<String, ScaleState>,
     pub callable_scope: HashMap<String, VegaFusionCallable>,
     pub constants: HashMap<String, ScalarValue>,
     pub tz_config: Option<RuntimeTzConfig>,
@@ -19,6 +21,7 @@ impl Default for CompilationConfig {
         Self {
             signal_scope: Default::default(),
             data_scope: Default::default(),
+            scale_scope: Default::default(),
             callable_scope: default_callables(),
             constants: default_constants(),
             tz_config: None,

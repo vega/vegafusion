@@ -1555,6 +1555,7 @@ async fn check_spec_sequence(
                     let json_value = match value {
                         TaskValue::Scalar(value) => value.to_json().unwrap(),
                         TaskValue::Table(value) => value.to_json().unwrap(),
+                        TaskValue::Scale(_) => serde_json::Value::Null,
                     };
                     ExportUpdateJSON {
                         namespace: ExportUpdateNamespace::try_from(scoped_var.0.namespace())

@@ -3,6 +3,8 @@ use crate::expression::compiler::builtin_functions::date_time::datetime::{
     datetime_transform_fn, make_datetime_components_fn, to_date_transform,
 };
 
+#[cfg(feature = "scales")]
+use crate::datafusion::udfs::scale::make_scale_udf;
 use crate::expression::compiler::builtin_functions::array::indexof::indexof_transform;
 use crate::expression::compiler::builtin_functions::array::length::length_transform;
 use crate::expression::compiler::builtin_functions::array::span::span_transform;
@@ -31,6 +33,8 @@ use crate::expression::compiler::builtin_functions::type_coercion::to_string::to
 use crate::expression::compiler::compile;
 use crate::expression::compiler::config::CompilationConfig;
 use crate::task_graph::timezone::RuntimeTzConfig;
+#[cfg(feature = "scales")]
+use datafusion_expr::lit;
 use datafusion_expr::{expr, Expr, ScalarUDF};
 use datafusion_functions::expr_fn::isnan;
 use datafusion_functions::math::{
@@ -42,6 +46,8 @@ use std::sync::Arc;
 use vegafusion_common::arrow::datatypes::DataType;
 use vegafusion_common::data::table::VegaFusionTable;
 use vegafusion_common::datafusion_common::DFSchema;
+#[cfg(feature = "scales")]
+use vegafusion_common::datafusion_common::ScalarValue;
 use vegafusion_common::datatypes::cast_to;
 use vegafusion_common::error::{Result, ResultWithContext, VegaFusionError};
 use vegafusion_core::proto::gen::expression::{
@@ -91,9 +97,7 @@ pub enum VegaFusionCallable {
     Data(DataFn),
 
     /// A custom runtime function that operates on a scale dataset
-    ///
-    /// Placeholder for now
-    Scale,
+    Scale { invert: bool },
 }
 
 pub fn compile_scalar_arguments(
@@ -202,9 +206,72 @@ pub fn compile_call(
             };
             callable(&tz_config, &args, schema)
         }
-        _ => {
-            todo!()
-        }
+        VegaFusionCallable::Scale { invert } => compile_scale_call(node, config, schema, *invert),
+    }
+}
+
+fn scale_name_arg(node: &CallExpression, fn_name: &str) -> Result<String> {
+    let arg0 = node.arguments.first().ok_or_else(|| {
+        VegaFusionError::compilation(format!(
+            "The {fn_name} function requires a scale name as the first argument"
+        ))
+    })?;
+
+    match arg0.expr() {
+        expression::Expr::Literal(Literal {
+            value: Some(literal::Value::String(name)),
+            ..
+        }) => Ok(name.clone()),
+        _ => Err(VegaFusionError::compilation(format!(
+            "The first argument to the {fn_name} function must be a literal string scale name"
+        ))),
+    }
+}
+
+fn compile_scale_call(
+    node: &CallExpression,
+    config: &CompilationConfig,
+    schema: &DFSchema,
+    invert: bool,
+) -> Result<Expr> {
+    let fn_name = if invert { "invert" } else { "scale" };
+    if node.arguments.len() == 3 {
+        return Err(VegaFusionError::compilation(format!(
+            "The optional group argument to {fn_name} is not yet supported by the VegaFusion runtime"
+        )));
+    }
+    if node.arguments.len() != 2 {
+        return Err(VegaFusionError::compilation(format!(
+            "The {fn_name} function requires exactly 2 arguments in this phase. Received {}",
+            node.arguments.len()
+        )));
+    }
+
+    let scale_name = scale_name_arg(node, fn_name)?;
+    let value_expr = compile(&node.arguments[1], config, Some(schema))?;
+
+    #[cfg(not(feature = "scales"))]
+    {
+        let _ = scale_name;
+        let _ = value_expr;
+        return Err(VegaFusionError::compilation(format!(
+            "The {fn_name} function requires the vegafusion-runtime `scales` feature"
+        )));
+    }
+
+    #[cfg(feature = "scales")]
+    let Some(scale_state) = config.scale_scope.get(&scale_name) else {
+        // Vega returns undefined for unknown scales. Represent this as SQL NULL.
+        return Ok(lit(ScalarValue::Null));
+    };
+
+    #[cfg(feature = "scales")]
+    {
+        let udf = make_scale_udf(&scale_name, invert, scale_state, &config.tz_config)?;
+        Ok(Expr::ScalarFunction(expr::ScalarFunction {
+            func: udf,
+            args: vec![value_expr],
+        }))
     }
 }
 
@@ -212,20 +279,14 @@ pub fn default_callables() -> HashMap<String, VegaFusionCallable> {
     let mut callables: HashMap<String, VegaFusionCallable> = HashMap::new();
     callables.insert("if".to_string(), VegaFusionCallable::Macro(Arc::new(if_fn)));
 
-    // Scale function support in planning is enabled before runtime implementations are ready.
-    // Keep runtime behavior explicit in this phase.
-    for name in ["scale", "invert"] {
-        let function_name = name.to_string();
-        let key = function_name.clone();
-        callables.insert(
-            key,
-            VegaFusionCallable::Macro(Arc::new(move |_args| {
-                Err(VegaFusionError::compilation(format!(
-                    "The {function_name} expression function is not yet supported by the VegaFusion runtime"
-                )))
-            })),
-        );
-    }
+    callables.insert(
+        "scale".to_string(),
+        VegaFusionCallable::Scale { invert: false },
+    );
+    callables.insert(
+        "invert".to_string(),
+        VegaFusionCallable::Scale { invert: true },
+    );
 
     // Numeric functions built into DataFusion with mapping to Vega names
     for (fun_name, udf) in [
@@ -446,30 +507,102 @@ pub fn default_callables() -> HashMap<String, VegaFusionCallable> {
 #[cfg(test)]
 mod tests {
     use crate::expression::compiler::call::{default_callables, VegaFusionCallable};
-    use vegafusion_core::proto::gen::expression::Expression;
+    use crate::expression::compiler::compile;
+    use crate::expression::compiler::config::CompilationConfig;
+    use crate::expression::compiler::utils::ExprHelpers;
+    use std::collections::HashMap;
+    use std::sync::Arc;
+    use vegafusion_common::arrow::array::Float64Array;
+    use vegafusion_common::data::scalar::ScalarValueHelpers;
+    use vegafusion_common::datafusion_common::ScalarValue;
+    use vegafusion_core::expression::parser::parse;
+    use vegafusion_core::spec::scale::ScaleTypeSpec;
+    use vegafusion_core::task_graph::scale_state::ScaleState;
 
-    fn assert_scale_stub_error(name: &str) {
+    #[test]
+    fn test_scale_and_invert_callables_registered() {
         let callables = default_callables();
-        let callable = callables.get(name).unwrap();
-        let err = match callable {
-            VegaFusionCallable::Macro(callable) => {
-                let args: Vec<Expression> = Vec::new();
-                callable(&args).unwrap_err()
-            }
-            _ => panic!("Expected {name} to be a macro callable"),
-        };
-        assert!(format!("{err}").contains(&format!(
-            "The {name} expression function is not yet supported by the VegaFusion runtime"
-        )));
+        assert!(matches!(
+            callables.get("scale"),
+            Some(VegaFusionCallable::Scale { invert: false })
+        ));
+        assert!(matches!(
+            callables.get("invert"),
+            Some(VegaFusionCallable::Scale { invert: true })
+        ));
     }
 
     #[test]
-    fn test_scale_callable_stub_returns_explicit_error() {
-        assert_scale_stub_error("scale");
+    fn test_scale_returns_null_for_unknown_scale() {
+        let expr = parse("scale('missing', 5)").unwrap();
+        let compiled = compile(&expr, &CompilationConfig::default(), None).unwrap();
+        let result = compiled.eval_to_scalar().unwrap();
+        assert!(matches!(result, ScalarValue::Null));
     }
 
     #[test]
-    fn test_invert_callable_stub_returns_explicit_error() {
-        assert_scale_stub_error("invert");
+    fn test_scale_group_arg_not_supported() {
+        let expr = parse("scale('x', 5, 0)").unwrap();
+        let err = compile(&expr, &CompilationConfig::default(), None).unwrap_err();
+        assert!(format!("{err}").contains("optional group argument"));
+    }
+
+    #[cfg(feature = "scales")]
+    #[test]
+    fn test_scale_linear_executes() {
+        let mut config = CompilationConfig::default();
+        config.scale_scope.insert(
+            "x".to_string(),
+            ScaleState {
+                scale_type: ScaleTypeSpec::Linear,
+                domain: Arc::new(Float64Array::from(vec![0.0, 10.0])),
+                range: Arc::new(Float64Array::from(vec![0.0, 100.0])),
+                options: HashMap::new(),
+            },
+        );
+
+        let expr = parse("scale('x', 2)").unwrap();
+        let compiled = compile(&expr, &config, None).unwrap();
+        let result = compiled.eval_to_scalar().unwrap();
+        assert_eq!(result.to_f64().unwrap(), 20.0);
+    }
+
+    #[cfg(feature = "scales")]
+    #[test]
+    fn test_invert_interval_executes() {
+        let mut config = CompilationConfig::default();
+        config.scale_scope.insert(
+            "x".to_string(),
+            ScaleState {
+                scale_type: ScaleTypeSpec::Linear,
+                domain: Arc::new(Float64Array::from(vec![0.0, 10.0])),
+                range: Arc::new(Float64Array::from(vec![0.0, 100.0])),
+                options: HashMap::new(),
+            },
+        );
+
+        let expr = parse("invert('x', [20, 80])").unwrap();
+        let compiled = compile(&expr, &config, None).unwrap();
+        let result = compiled.eval_to_scalar().unwrap();
+        assert_eq!(result.to_f64x2().unwrap(), [2.0, 8.0]);
+    }
+
+    #[cfg(feature = "scales")]
+    #[test]
+    fn test_scale_unsupported_type_returns_explicit_error() {
+        let mut config = CompilationConfig::default();
+        config.scale_scope.insert(
+            "x".to_string(),
+            ScaleState {
+                scale_type: ScaleTypeSpec::Threshold,
+                domain: Arc::new(Float64Array::from(vec![0.0, 1.0])),
+                range: Arc::new(Float64Array::from(vec![0.0, 100.0])),
+                options: HashMap::new(),
+            },
+        );
+
+        let expr = parse("scale('x', 0.5)").unwrap();
+        let err = compile(&expr, &config, None).unwrap_err();
+        assert!(format!("{err}").contains("Scale type not supported"));
     }
 }

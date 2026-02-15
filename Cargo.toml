@@ -185,6 +185,9 @@ version = "0.22.1"
 [workspace.dependencies.tempfile]
 version = "3.14.0"
 
+[workspace.dependencies.avenger-scales]
+path = "../avenger/avenger-scales"
+
 [workspace.dependencies.num-traits]
 version = "0.2.19"
 

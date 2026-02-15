@@ -1,7 +1,10 @@
 use crate::proto::gen::tasks::task_value::Data;
 use crate::proto::gen::tasks::ResponseTaskValue;
 use crate::proto::gen::tasks::{TaskGraphValueResponse, TaskValue as ProtoTaskValue, Variable};
-use crate::task_graph::memory::{inner_size_of_scalar, inner_size_of_table};
+use crate::task_graph::memory::{
+    inner_size_of_scalar, inner_size_of_scale_state, inner_size_of_table,
+};
+use crate::task_graph::scale_state::ScaleState;
 use datafusion_common::ScalarValue;
 use serde_json::Value;
 use std::convert::TryFrom;
@@ -14,6 +17,7 @@ use vegafusion_common::error::{Result, ResultWithContext, VegaFusionError};
 pub enum TaskValue {
     Scalar(ScalarValue),
     Table(VegaFusionTable),
+    Scale(ScaleState),
 }
 
 impl TaskValue {
@@ -31,10 +35,20 @@ impl TaskValue {
         }
     }
 
+    pub fn as_scale(&self) -> Result<&ScaleState> {
+        match self {
+            TaskValue::Scale(value) => Ok(value),
+            _ => Err(VegaFusionError::internal("Value is not a scale")),
+        }
+    }
+
     pub fn to_json(&self) -> Result<Value> {
         match self {
             TaskValue::Scalar(value) => value.to_json(),
             TaskValue::Table(value) => Ok(value.to_json()?),
+            TaskValue::Scale(_) => Err(VegaFusionError::internal(
+                "Scale TaskValue cannot be serialized to JSON",
+            )),
         }
     }
 
@@ -42,6 +56,7 @@ impl TaskValue {
         let inner_size = match self {
             TaskValue::Scalar(scalar) => inner_size_of_scalar(scalar),
             TaskValue::Table(table) => inner_size_of_table(table),
+            TaskValue::Scale(scale_state) => inner_size_of_scale_state(scale_state),
         };
 
         std::mem::size_of::<Self>() + inner_size
@@ -81,6 +96,9 @@ impl TryFrom<&TaskValue> for ProtoTaskValue {
             TaskValue::Table(table) => Ok(Self {
                 data: Some(Data::Table(table.to_ipc_bytes()?)),
             }),
+            TaskValue::Scale(_) => Err(VegaFusionError::internal(
+                "Scale TaskValue cannot be serialized to proto TaskValue",
+            )),
         }
     }
 }

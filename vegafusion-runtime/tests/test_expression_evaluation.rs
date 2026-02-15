@@ -682,3 +682,148 @@ mod test_string_type_equality {
         assert_eq!(result, ScalarValue::Boolean(Some(true)));
     }
 }
+
+#[cfg(feature = "scales")]
+mod test_scale_calls {
+    use crate::util::equality::{assert_scalars_almost_equals, normalize_scalar};
+    use crate::util::vegajs_runtime::vegajs_runtime;
+    use datafusion_common::ScalarValue;
+    use serde_json::{json, Value};
+    use std::collections::HashMap;
+    use std::sync::Arc;
+    use vegafusion_common::arrow::array::Float64Array;
+    use vegafusion_common::data::scalar::ScalarValueHelpers;
+    use vegafusion_core::expression::parser::parse;
+    use vegafusion_core::planning::watch::{Watch, WatchNamespace};
+    use vegafusion_core::spec::scale::ScaleTypeSpec;
+    use vegafusion_core::task_graph::scale_state::ScaleState;
+    use vegafusion_runtime::expression::compiler::compile;
+    use vegafusion_runtime::expression::compiler::config::CompilationConfig;
+    use vegafusion_runtime::expression::compiler::utils::ExprHelpers;
+    use vegafusion_runtime::task_graph::timezone::RuntimeTzConfig;
+
+    fn linear_scale_state() -> ScaleState {
+        ScaleState {
+            scale_type: ScaleTypeSpec::Linear,
+            domain: Arc::new(Float64Array::from(vec![0.0, 10.0])),
+            range: Arc::new(Float64Array::from(vec![0.0, 100.0])),
+            options: HashMap::new(),
+        }
+    }
+
+    fn band_scale_state() -> ScaleState {
+        ScaleState {
+            scale_type: ScaleTypeSpec::Band,
+            domain: ScalarValue::iter_to_array(vec![
+                ScalarValue::from("A"),
+                ScalarValue::from("B"),
+                ScalarValue::from("C"),
+            ])
+            .unwrap(),
+            range: Arc::new(Float64Array::from(vec![0.0, 300.0])),
+            options: HashMap::new(),
+        }
+    }
+
+    fn config_with_scale(name: &str, scale_state: ScaleState) -> CompilationConfig {
+        let mut config = CompilationConfig::default();
+        config.scale_scope.insert(name.to_string(), scale_state);
+        config
+    }
+
+    fn check_scale_scalar_evaluation(
+        expr_str: &str,
+        scales: Vec<Value>,
+        config: &CompilationConfig,
+    ) {
+        let vegajs_runtime = vegajs_runtime();
+
+        let mut signals = vec![json!({"name": "_sig", "init": expr_str})];
+        for (sig, val) in &config.signal_scope {
+            signals.push(json!({"name": sig.clone(), "value": val.to_json().unwrap()}))
+        }
+
+        let mut data = vec![];
+        for (name, val) in &config.data_scope {
+            data.push(json!({"name": name, "values": val.to_json().unwrap()}));
+        }
+
+        let spec = json!({
+            "signals": signals,
+            "data": data,
+            "scales": scales,
+        });
+
+        let watches = vec![Watch {
+            namespace: WatchNamespace::Signal,
+            name: "_sig".to_string(),
+            scope: vec![],
+        }];
+        let watch_values = vegajs_runtime.eval_spec(&spec, &watches).unwrap();
+        let expected = normalize_scalar(&ScalarValue::from_json(&watch_values[0].value).unwrap());
+
+        let local_tz_str = vegajs_runtime.nodejs_runtime.local_timezone().unwrap();
+        let config = CompilationConfig {
+            tz_config: Some(RuntimeTzConfig::try_new(&local_tz_str, &None).unwrap()),
+            ..config.clone()
+        };
+
+        let parsed = parse(expr_str).unwrap();
+        let compiled = compile(&parsed, &config, None).unwrap();
+        let result = compiled.eval_to_scalar().unwrap();
+        let result = ScalarValue::from_json(&result.to_json().unwrap()).unwrap();
+        let result = normalize_scalar(&result);
+
+        assert_scalars_almost_equals(&result, &expected, 1e-6, "scalar", 0, false);
+    }
+
+    #[test]
+    fn test_scale_linear_matches_vega() {
+        let config = config_with_scale("x", linear_scale_state());
+        let scales = vec![json!({
+            "name": "x",
+            "type": "linear",
+            "domain": [0, 10],
+            "range": [0, 100]
+        })];
+        check_scale_scalar_evaluation("scale('x', 2.5)", scales, &config);
+    }
+
+    #[test]
+    fn test_invert_linear_matches_vega() {
+        let config = config_with_scale("x", linear_scale_state());
+        let scales = vec![json!({
+            "name": "x",
+            "type": "linear",
+            "domain": [0, 10],
+            "range": [0, 100]
+        })];
+        check_scale_scalar_evaluation("invert('x', 75)", scales, &config);
+    }
+
+    #[test]
+    fn test_invert_linear_interval_matches_vega() {
+        let config = config_with_scale("x", linear_scale_state());
+        let scales = vec![json!({
+            "name": "x",
+            "type": "linear",
+            "domain": [0, 10],
+            "range": [0, 100]
+        })];
+        check_scale_scalar_evaluation("invert('x', [20, 70])", scales, &config);
+    }
+
+    #[test]
+    fn test_scale_band_matches_vega() {
+        let config = config_with_scale("b", band_scale_state());
+        let scales = vec![json!({
+            "name": "b",
+            "type": "band",
+            "domain": ["A", "B", "C"],
+            "range": [0, 300],
+            "paddingInner": 0,
+            "paddingOuter": 0
+        })];
+        check_scale_scalar_evaluation("scale('b', 'B')", scales, &config);
+    }
+}

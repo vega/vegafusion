@@ -1,6 +1,7 @@
 use crate::error::{Result, VegaFusionError};
 use crate::proto::gen::tasks::{
-    task::TaskKind, DataSourceTask, DataUrlTask, DataValuesTask, Task, TzConfig, Variable,
+    task::TaskKind, DataSourceTask, DataUrlTask, DataValuesTask, ScaleTask, Task, TzConfig,
+    Variable,
 };
 use crate::proto::gen::tasks::{SignalTask, TaskValue as ProtoTaskValue};
 use crate::task_graph::task_value::TaskValue;
@@ -102,6 +103,20 @@ impl Task {
         }
     }
 
+    pub fn new_scale(
+        variable: Variable,
+        scope: &[u32],
+        task: ScaleTask,
+        tz_config: &TzConfig,
+    ) -> Self {
+        Self {
+            variable: Some(variable),
+            scope: Vec::from(scope),
+            task_kind: Some(TaskKind::Scale(task)),
+            tz_config: Some(tz_config.clone()),
+        }
+    }
+
     pub fn input_vars(&self) -> Vec<InputVariable> {
         match self.task_kind() {
             TaskKind::Value(_) => Vec::new(),
@@ -112,6 +127,7 @@ impl Task {
                 let expr = task.expr.as_ref().unwrap();
                 expr.input_vars()
             }
+            TaskKind::Scale(task) => task.input_vars(),
         }
     }
 
@@ -122,6 +138,7 @@ impl Task {
             TaskKind::DataSource(task) => task.output_vars(),
             TaskKind::DataValues(task) => task.output_vars(),
             TaskKind::Signal(_) => Vec::new(),
+            TaskKind::Scale(_) => Vec::new(),
         }
     }
 }

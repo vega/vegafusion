@@ -19,6 +19,7 @@ default = [
   "parquet",
   "proto",
   "tonic",
+  "scales",
 ]
 py = ["vegafusion-core/py"]
 proto = ["vegafusion-common/proto", "dep:datafusion-proto"]
@@ -31,6 +32,7 @@ fs = ["tokio/fs"]
 parquet = ["datafusion-common/parquet", "datafusion/parquet"]
 multi-thread = ["tokio/rt-multi-thread"]
 rustls-tls = ["reqwest/rustls-tls"]
+scales = ["dep:avenger-scales"]
 
 [dependencies]
 float-cmp = "0.10.0"
@@ -170,6 +172,10 @@ optional = true
 workspace = true
 default-features = false
 features = ["json"]
+
+[dependencies.avenger-scales]
+workspace = true
+optional = true
 
 [dev-dependencies.base64]
 workspace = true

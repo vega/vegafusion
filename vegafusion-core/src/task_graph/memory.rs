@@ -1,4 +1,5 @@
 use crate::arrow::array::ListArray;
+use crate::task_graph::scale_state::ScaleState;
 use datafusion_common::ScalarValue;
 use std::mem::{size_of, size_of_val};
 use vegafusion_common::arrow::array::ArrayRef;
@@ -94,6 +95,22 @@ pub fn inner_size_of_table(value: &VegaFusionTable) -> usize {
     let schema_size: usize = size_of_schema(&value.schema);
     let size_of_batches: usize = value.batches.iter().map(size_of_record_batch).sum();
     schema_size + size_of_batches
+}
+
+pub fn inner_size_of_scale_state(value: &ScaleState) -> usize {
+    let domain_size = size_of_array_ref(&value.domain);
+    let range_size = size_of_array_ref(&value.range);
+    let options_size = value
+        .options
+        .iter()
+        .map(|(k, v)| {
+            size_of::<String>()
+                + size_of_val(k.as_bytes())
+                + size_of::<ScalarValue>()
+                + inner_size_of_scalar(v)
+        })
+        .sum::<usize>();
+    domain_size + range_size + options_size
 }
 
 #[cfg(test)]

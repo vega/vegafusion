@@ -28,8 +28,11 @@ use vegafusion_common::error::{Result, ResultWithContext, VegaFusionError};
 use vegafusion_core::proto::gen::tasks::data_url_task::Url;
 use vegafusion_core::proto::gen::tasks::scan_url_format;
 use vegafusion_core::proto::gen::tasks::scan_url_format::Parse;
-use vegafusion_core::proto::gen::tasks::{DataSourceTask, DataUrlTask, DataValuesTask};
+use vegafusion_core::proto::gen::tasks::{
+    DataSourceTask, DataUrlTask, DataValuesTask, VariableNamespace,
+};
 use vegafusion_core::proto::gen::transforms::TransformPipeline;
+use vegafusion_core::task_graph::scale_state::ScaleState;
 use vegafusion_core::task_graph::task::{InputVariable, TaskDependencies};
 use vegafusion_core::task_graph::task_value::TaskValue;
 
@@ -68,15 +71,22 @@ pub fn build_compilation_config(
     // Build compilation config from input_vals
     let mut signal_scope: HashMap<String, ScalarValue> = HashMap::new();
     let mut data_scope: HashMap<String, VegaFusionTable> = HashMap::new();
+    let mut scale_scope: HashMap<String, ScaleState> = HashMap::new();
 
     for (input_var, input_val) in input_vars.iter().zip(values) {
-        match input_val {
-            TaskValue::Scalar(value) => {
+        match (input_var.var.ns(), input_val) {
+            (VariableNamespace::Signal, TaskValue::Scalar(value)) => {
                 signal_scope.insert(input_var.var.name.clone(), value.clone());
             }
-            TaskValue::Table(table) => {
+            (VariableNamespace::Data, TaskValue::Table(table)) => {
                 data_scope.insert(input_var.var.name.clone(), table.clone());
             }
+            (VariableNamespace::Scale, TaskValue::Scale(scale_state)) => {
+                scale_scope.insert(input_var.var.name.clone(), scale_state.clone());
+            }
+            // Keep fail-open for now so callers continue to surface an evaluation error
+            // at compile/use sites rather than panicking here.
+            _ => {}
         }
     }
 
@@ -85,6 +95,7 @@ pub fn build_compilation_config(
     CompilationConfig {
         signal_scope,
         data_scope,
+        scale_scope,
         tz_config: *tz_config,
         ..Default::default()
     }

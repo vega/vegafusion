@@ -98,6 +98,12 @@ message SignalTask {
   expression.Expression expr = 2;
 }
 
+// ## Scale Task
+message ScaleTask {
+  // Serialized JSON for a `ScaleSpec`
+  string spec = 1;
+}
+
 // ## Timezone config
 message TzConfig {
   string local_tz = 1;
@@ -114,6 +120,7 @@ message Task {
     DataUrlTask data_url = 5;
     DataSourceTask data_source = 6;
     SignalTask signal = 7;
+    ScaleTask scale = 9;
   }
   TzConfig tz_config = 8;
 }
