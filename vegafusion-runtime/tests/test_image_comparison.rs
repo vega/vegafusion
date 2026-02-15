@@ -22,7 +22,7 @@ use vegafusion_core::planning::watch::{
     ExportUpdateBatch, ExportUpdateJSON, ExportUpdateNamespace, Watch, WatchNamespace, WatchPlan,
 };
 use vegafusion_core::proto::gen::pretransform::PreTransformSpecOpts;
-use vegafusion_core::proto::gen::tasks::{TaskGraph, TzConfig};
+use vegafusion_core::proto::gen::tasks::{TaskGraph, TzConfig, VariableNamespace};
 use vegafusion_core::spec::chart::ChartSpec;
 use vegafusion_core::task_graph::graph::ScopedVariable;
 use vegafusion_core::task_graph::task_value::TaskValue;
@@ -165,6 +165,48 @@ mod test_custom_specs {
             extract_inline_values,
         ));
         TOKIO_RUNTIME.block_on(check_pre_transform_spec_from_files(spec_name, tolerance));
+    }
+
+    #[test]
+    fn test_marker() {} // Help IDE detect test module
+}
+
+#[cfg(test)]
+mod test_mark_encoding_extraction_specs {
+    use super::*;
+
+    #[rstest(
+        spec_name,
+        tolerance,
+        extract_inline_data,
+        expect_markenc_dataset,
+        case("custom/point_bubble", 0.001, false, true),
+        case("custom/bar_colors", 0.001, true, true),
+        case("custom/line_color_stocks", 0.001, false, false)
+    )]
+    fn test_image_comparison_mark_encoding_extraction(
+        spec_name: &str,
+        tolerance: f64,
+        extract_inline_data: bool,
+        expect_markenc_dataset: bool,
+    ) {
+        println!("spec_name: {spec_name}");
+
+        let planner_config = PlannerConfig {
+            extract_inline_data,
+            copy_scales_to_server: true,
+            precompute_mark_encodings: true,
+            split_domain_data: false,
+            ..Default::default()
+        };
+
+        TOKIO_RUNTIME.block_on(check_spec_sequence_with_planner_config_from_files(
+            spec_name,
+            tolerance,
+            planner_config,
+            Some("markenc"),
+            Some(expect_markenc_dataset),
+        ));
     }
 
     #[test]
@@ -1272,6 +1314,77 @@ fn load_spec(spec_name: &str) -> ChartSpec {
     serde_json::from_str(&spec_str).unwrap()
 }
 
+fn normalize_markenc_test_spec(spec_name: &str, full_spec: ChartSpec) -> ChartSpec {
+    let mut spec_json = serde_json::to_value(full_spec).unwrap();
+    normalize_scale_ranges_for_markenc_tests(&mut spec_json);
+
+    if spec_name == "custom/bar_colors" {
+        // Keep this case focused on server mark-encoding extraction of scale/value channels.
+        // Signal-based fill / padding currently introduce unsupported server signal dependencies.
+        spec_json["marks"][0]["encode"]["update"]["fill"] = serde_json::json!({
+            "value": "steelblue"
+        });
+        spec_json["scales"][0]["padding"] = serde_json::json!(0);
+        spec_json["scales"][1]["zero"] = serde_json::json!(true);
+    }
+
+    serde_json::from_value(spec_json).unwrap()
+}
+
+fn normalize_scale_ranges_for_markenc_tests(spec_json: &mut serde_json::Value) {
+    let Some(root) = spec_json.as_object_mut() else {
+        return;
+    };
+
+    let width = root.get("width").cloned();
+    let height = root.get("height").cloned();
+
+    let Some(scales) = root.get_mut("scales").and_then(|v| v.as_array_mut()) else {
+        return;
+    };
+
+    for scale in scales {
+        let Some(scale_obj) = scale.as_object_mut() else {
+            continue;
+        };
+
+        if let Some(range) = scale_obj.get_mut("range") {
+            match range {
+                serde_json::Value::String(v) if v == "width" => {
+                    if let Some(width) = &width {
+                        *range = serde_json::json!([0, width]);
+                    }
+                }
+                serde_json::Value::String(v) if v == "height" => {
+                    if let Some(height) = &height {
+                        *range = serde_json::json!([height, 0]);
+                    }
+                }
+                serde_json::Value::Array(values) => {
+                    for value in values.iter_mut() {
+                        if let Some(signal_name) = value
+                            .as_object()
+                            .and_then(|obj| obj.get("signal"))
+                            .and_then(|v| v.as_str())
+                        {
+                            if signal_name == "width" {
+                                if let Some(width) = &width {
+                                    *value = width.clone();
+                                }
+                            } else if signal_name == "height" {
+                                if let Some(height) = &height {
+                                    *value = height.clone();
+                                }
+                            }
+                        }
+                    }
+                }
+                _ => {}
+            }
+        }
+    }
+}
+
 fn load_updates(spec_name: &str) -> Vec<ExportUpdateBatch> {
     let updates_path = format!("{}/tests/specs/{}.updates.json", crate_dir(), spec_name);
     let updates_path = std::path::Path::new(&updates_path);
@@ -1285,7 +1398,11 @@ fn load_updates(spec_name: &str) -> Vec<ExportUpdateBatch> {
 }
 
 fn load_expected_watch_plan(spec_name: &str) -> WatchPlan {
-    let watch_plan_path = format!("{}/tests/specs/{}.comm_plan.json", crate_dir(), spec_name);
+    load_expected_watch_plan_with_suffix(spec_name, None)
+}
+
+fn load_expected_watch_plan_with_suffix(spec_name: &str, suffix: Option<&str>) -> WatchPlan {
+    let watch_plan_path = watch_plan_path(spec_name, suffix);
     let watch_plan_path = std::path::Path::new(&watch_plan_path);
 
     let comm_plan_str = fs::read_to_string(watch_plan_path).unwrap();
@@ -1294,9 +1411,27 @@ fn load_expected_watch_plan(spec_name: &str) -> WatchPlan {
 
 #[allow(dead_code)]
 fn write_updated_watch_plan(spec_name: &str, plan: &WatchPlan) {
-    let watch_plan_path = format!("{}/tests/specs/{}.comm_plan.json", crate_dir(), spec_name);
+    write_updated_watch_plan_with_suffix(spec_name, None, plan);
+}
+
+#[allow(dead_code)]
+fn write_updated_watch_plan_with_suffix(spec_name: &str, suffix: Option<&str>, plan: &WatchPlan) {
+    let watch_plan_path = watch_plan_path(spec_name, suffix);
     let watch_plan_path = std::path::Path::new(&watch_plan_path);
     fs::write(watch_plan_path, serde_json::to_string_pretty(plan).unwrap()).unwrap()
+}
+
+fn watch_plan_path(spec_name: &str, suffix: Option<&str>) -> String {
+    if let Some(suffix) = suffix {
+        format!(
+            "{}/tests/specs/{}.{}.comm_plan.json",
+            crate_dir(),
+            spec_name,
+            suffix
+        )
+    } else {
+        format!("{}/tests/specs/{}.comm_plan.json", crate_dir(), spec_name)
+    }
 }
 
 async fn check_spec_sequence_from_files(
@@ -1304,24 +1439,51 @@ async fn check_spec_sequence_from_files(
     tolerance: f64,
     extract_inline_values: bool,
 ) {
+    let planner_config = PlannerConfig {
+        extract_inline_data: extract_inline_values,
+        ..Default::default()
+    };
+    check_spec_sequence_with_planner_config_from_files(
+        spec_name,
+        tolerance,
+        planner_config,
+        None,
+        None,
+    )
+    .await
+}
+
+async fn check_spec_sequence_with_planner_config_from_files(
+    spec_name: &str,
+    tolerance: f64,
+    planner_config: PlannerConfig,
+    watch_plan_suffix: Option<&str>,
+    expect_markenc_dataset: Option<bool>,
+) {
     initialize();
 
     // Load spec
     let full_spec = load_spec(spec_name);
+    let full_spec = if expect_markenc_dataset.is_some() {
+        normalize_markenc_test_spec(spec_name, full_spec)
+    } else {
+        full_spec
+    };
 
     // Load updates
     let full_updates = load_updates(spec_name);
 
     // Load expected watch plan
-    let watch_plan = load_expected_watch_plan(spec_name);
+    let watch_plan = load_expected_watch_plan_with_suffix(spec_name, watch_plan_suffix);
 
-    check_spec_sequence(
+    check_spec_sequence_with_planner_config(
         full_spec,
         full_updates,
         watch_plan,
         spec_name,
         tolerance,
-        extract_inline_values,
+        planner_config,
+        expect_markenc_dataset,
     )
     .await
 }
@@ -1407,6 +1569,31 @@ async fn check_spec_sequence(
     tolerance: f64,
     extract_inline_data: bool,
 ) {
+    let planner_config = PlannerConfig {
+        extract_inline_data,
+        ..Default::default()
+    };
+    check_spec_sequence_with_planner_config(
+        full_spec,
+        full_updates,
+        watch_plan,
+        spec_name,
+        tolerance,
+        planner_config,
+        None,
+    )
+    .await
+}
+
+async fn check_spec_sequence_with_planner_config(
+    full_spec: ChartSpec,
+    full_updates: Vec<ExportUpdateBatch>,
+    watch_plan: WatchPlan,
+    spec_name: &str,
+    tolerance: f64,
+    planner_config: PlannerConfig,
+    expect_markenc_dataset: Option<bool>,
+) {
     // Initialize runtime
     let vegajs_runtime = vegajs_runtime();
     let local_tz = vegajs_runtime.nodejs_runtime.local_timezone().unwrap();
@@ -1415,11 +1602,26 @@ async fn check_spec_sequence(
         default_input_tz: None,
     };
 
-    let planner_config = PlannerConfig {
-        extract_inline_data,
-        ..Default::default()
-    };
     let spec_plan = SpecPlan::try_new(&full_spec, &planner_config).unwrap();
+
+    if let Some(expect_markenc_dataset) = expect_markenc_dataset {
+        assert!(spec_plan
+            .comm_plan
+            .server_to_client
+            .iter()
+            .all(|(var, _)| !matches!(var.namespace(), VariableNamespace::Scale)));
+        assert!(spec_plan
+            .comm_plan
+            .client_to_server
+            .iter()
+            .all(|(var, _)| !matches!(var.namespace(), VariableNamespace::Scale)));
+
+        let has_markenc_dataset = spec_plan.comm_plan.server_to_client.iter().any(|(var, _)| {
+            matches!(var.namespace(), VariableNamespace::Data)
+                && var.name.starts_with("_vf_markenc_")
+        });
+        assert_eq!(has_markenc_dataset, expect_markenc_dataset);
+    }
 
     let task_scope = spec_plan.server_spec.to_task_scope().unwrap();
 
@@ -1468,7 +1670,7 @@ async fn check_spec_sequence(
         let value = runtime
             .get_node_value(Arc::new(task_graph.clone()), node_index, Default::default())
             .await
-            .expect("Failed to get node value");
+            .unwrap_or_else(|err| panic!("Failed to get node value for {:?}: {err:?}", var));
 
         init.push(ExportUpdateJSON {
             namespace: ExportUpdateNamespace::try_from(var.0.namespace()).unwrap(),
@@ -1536,7 +1738,7 @@ async fn check_spec_sequence(
             let value = runtime
                 .get_node_value(Arc::new(task_graph.clone()), node_index, Default::default())
                 .await
-                .unwrap();
+                .unwrap_or_else(|err| panic!("Failed to get node value for {:?}: {err:?}", var));
 
             server_to_client_value_batch.insert(var.clone(), value);
         }
@@ -1613,5 +1815,10 @@ async fn check_spec_sequence(
     }
 
     // Check for expected comm plan
-    assert_eq!(watch_plan, WatchPlan::from(spec_plan.comm_plan))
+    let actual_watch_plan = WatchPlan::from(spec_plan.comm_plan);
+    assert_eq!(
+        watch_plan, actual_watch_plan,
+        "comm-plan mismatch for {}",
+        spec_name
+    )
 }

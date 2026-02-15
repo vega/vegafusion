@@ -1,0 +1,15 @@
+{
+  "server_to_client": [
+    {
+      "namespace": "data",
+      "name": "_vf_markenc_root_mark_0",
+      "scope": []
+    },
+    {
+      "namespace": "data",
+      "name": "table",
+      "scope": []
+    }
+  ],
+  "client_to_server": []
+}
