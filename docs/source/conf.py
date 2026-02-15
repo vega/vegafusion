@@ -20,11 +20,6 @@ html_favicon = "_static/favicon.ico"
 html_theme_options = {
     "icon_links": [
         {
-            "name": "Twitter",
-            "url": "https://twitter.com/vegafusion_io",
-            "icon": "fa-brands fa-twitter",
-        },
-        {
             "name": "GitHub",
             "url": "https://github.com/vega/vegafusion",
             "icon": "fa-brands fa-github",
