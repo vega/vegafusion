@@ -1,6 +1,9 @@
 use vegafusion_core::planning::extract::extract_server_data;
+use vegafusion_core::planning::extract_mark_encodings::extract_mark_encodings;
 use vegafusion_core::proto::gen::tasks::{TaskGraph, TzConfig, Variable, VariableNamespace};
 use vegafusion_core::spec::chart::ChartSpec;
+use vegafusion_core::spec::mark::MarkEncodingField;
+use vegafusion_core::spec::transform::TransformSpec;
 use vegafusion_runtime::task_graph::runtime::VegaFusionRuntime;
 
 use std::collections::HashSet;
@@ -259,6 +262,117 @@ fn test_copy_scales_to_server_generates_scale_tasks() {
     assert!(tasks_true
         .iter()
         .any(|task| matches!(task.task_kind, Some(TaskKind::Scale(_)))));
+}
+
+#[test]
+fn test_precompute_mark_encodings_rewrites_update_channels() {
+    let mut spec: ChartSpec = serde_json::from_value(serde_json::json!({
+        "$schema": "https://vega.github.io/schema/vega/v5.json",
+        "data": [
+            {
+                "name": "source",
+                "values": [{"v": 1, "flag": 1}, {"v": 2, "flag": 0}],
+                "transform": [{"type": "formula", "expr": "datum.v * 2", "as": "v2"}]
+            }
+        ],
+        "scales": [{"name": "x", "type": "linear", "domain": [0, 2], "range": [0, 100]}],
+        "marks": [
+            {
+                "type": "symbol",
+                "name": "pt",
+                "from": {"data": "source"},
+                "encode": {
+                    "update": {
+                        "x": {"field": "v", "scale": "x", "offset": 3},
+                        "opacity": [{"test": "datum.flag > 0", "value": 1}, {"value": 0.2}],
+                        "bad": {"field": {"group": "foo"}}
+                    }
+                }
+            }
+        ]
+    }))
+    .unwrap();
+
+    let mut task_scope = spec.to_task_scope().unwrap();
+    let mut config = PlannerConfig::default();
+    config.extract_inline_data = true;
+    config.copy_scales_to_server = true;
+    config.precompute_mark_encodings = true;
+
+    let mut server_spec = extract_server_data(&mut spec, &mut task_scope, &config).unwrap();
+    extract_mark_encodings(&mut spec, &mut server_spec, &mut task_scope, &config).unwrap();
+
+    let mark = &spec.marks[0];
+    let mark_source = mark.from.as_ref().and_then(|f| f.data.clone()).unwrap();
+    assert!(mark_source.starts_with("_vf_markenc_"));
+
+    let derived = server_spec
+        .data
+        .iter()
+        .find(|d| d.name == mark_source)
+        .expect("expected derived server dataset");
+    assert!(matches!(
+        derived.transform.first(),
+        Some(TransformSpec::MarkEncoding(_))
+    ));
+
+    let update = mark
+        .encode
+        .as_ref()
+        .unwrap()
+        .encodings
+        .get("update")
+        .unwrap();
+    let x = update.channels.get("x").unwrap().to_vec();
+    assert!(matches!(x[0].field, Some(MarkEncodingField::Field(_))));
+    assert!(x[0].scale.is_none());
+
+    let bad = update.channels.get("bad").unwrap().to_vec();
+    assert!(matches!(bad[0].field, Some(MarkEncodingField::Object(_))));
+}
+
+#[test]
+fn test_precompute_mark_encodings_skips_marks_inside_facet_groups() {
+    let mut spec: ChartSpec = serde_json::from_value(serde_json::json!({
+        "$schema": "https://vega.github.io/schema/vega/v5.json",
+        "data": [{"name": "source", "values": [{"g": "a", "v": 1}, {"g": "b", "v": 2}]}],
+        "scales": [{"name": "x", "type": "linear", "domain": [0, 2], "range": [0, 100]}],
+        "marks": [
+            {
+                "type": "group",
+                "from": {"facet": {"data": "source", "name": "facet_data", "groupby": "g"}},
+                "marks": [
+                    {
+                        "type": "symbol",
+                        "from": {"data": "facet_data"},
+                        "encode": {"update": {"x": {"field": "v", "scale": "x"}}}
+                    }
+                ]
+            }
+        ]
+    }))
+    .unwrap();
+
+    let mut task_scope = spec.to_task_scope().unwrap();
+    let mut config = PlannerConfig::default();
+    config.extract_inline_data = true;
+    config.copy_scales_to_server = true;
+    config.precompute_mark_encodings = true;
+
+    let mut server_spec = extract_server_data(&mut spec, &mut task_scope, &config).unwrap();
+    extract_mark_encodings(&mut spec, &mut server_spec, &mut task_scope, &config).unwrap();
+
+    let child_mark = &spec.marks[0].marks[0];
+    assert_eq!(
+        child_mark.from.as_ref().and_then(|f| f.data.as_deref()),
+        Some("facet_data")
+    );
+    assert!(!server_spec
+        .get_nested_group(&[0])
+        .unwrap()
+        .data
+        .iter()
+        .any(|d| d.name.starts_with("_vf_markenc_")));
 }
 
 #[allow(dead_code)]

@@ -1,5 +1,6 @@
 use crate::error::Result;
 use crate::planning::extract::extract_server_data;
+use crate::planning::extract_mark_encodings::extract_mark_encodings;
 use crate::planning::fuse::fuse_datasets;
 use crate::planning::lift_facet_aggregations::lift_facet_aggregations;
 use crate::planning::optimize_server::split_data_url_nodes;
@@ -84,6 +85,7 @@ pub struct PlannerConfig {
     pub split_domain_data: bool,
     pub split_url_data_nodes: bool,
     pub copy_scales_to_server: bool,
+    pub precompute_mark_encodings: bool,
     pub stringify_local_datetimes: bool,
     pub projection_pushdown: bool,
     pub extract_inline_data: bool,
@@ -104,6 +106,7 @@ impl Default for PlannerConfig {
             split_domain_data: true,
             split_url_data_nodes: true,
             copy_scales_to_server: false,
+            precompute_mark_encodings: false,
             stringify_local_datetimes: false,
             projection_pushdown: true,
             extract_inline_data: false,
@@ -185,6 +188,7 @@ impl SpecPlan {
             let mut task_scope = client_spec.to_task_scope()?;
             let input_client_spec = client_spec.clone();
             let mut server_spec = extract_server_data(&mut client_spec, &mut task_scope, config)?;
+            extract_mark_encodings(&mut client_spec, &mut server_spec, &mut task_scope, config)?;
             let mut comm_plan = stitch_specs(
                 &task_scope,
                 &mut server_spec,
@@ -250,8 +254,20 @@ mod tests {
     }
 
     #[test]
+    fn test_precompute_mark_encodings_default_false() {
+        let config = PlannerConfig::default();
+        assert!(!config.precompute_mark_encodings);
+    }
+
+    #[test]
     fn test_pre_transformed_spec_config_keeps_scale_copy_disabled() {
         let config = PlannerConfig::pre_transformed_spec_config(false, vec![]);
         assert!(!config.copy_scales_to_server);
+    }
+
+    #[test]
+    fn test_pre_transformed_spec_config_keeps_mark_encoding_precompute_disabled() {
+        let config = PlannerConfig::pre_transformed_spec_config(false, vec![]);
+        assert!(!config.precompute_mark_encodings);
     }
 }

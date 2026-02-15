@@ -2,6 +2,7 @@ pub mod apply_pre_transform;
 pub mod dependency_graph;
 pub mod destringify_selection_datetimes;
 pub mod extract;
+pub mod extract_mark_encodings;
 pub mod fuse;
 pub mod lift_facet_aggregations;
 pub mod optimize_server;

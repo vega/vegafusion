@@ -9,6 +9,7 @@ pub mod identifier;
 pub mod impute;
 pub mod joinaggregate;
 pub mod lookup;
+pub mod mark_encoding;
 pub mod pivot;
 pub mod project;
 pub mod sequence;
@@ -32,6 +33,7 @@ use crate::spec::transform::identifier::IdentifierTransformSpec;
 use crate::spec::transform::impute::ImputeTransformSpec;
 use crate::spec::transform::joinaggregate::JoinAggregateTransformSpec;
 use crate::spec::transform::lookup::LookupTransformSpec;
+use crate::spec::transform::mark_encoding::MarkEncodingTransformSpec;
 use crate::spec::transform::pivot::PivotTransformSpec;
 use crate::spec::transform::project::ProjectTransformSpec;
 use crate::spec::transform::sequence::SequenceTransformSpec;
@@ -64,6 +66,8 @@ pub enum TransformSpec {
     Identifier(IdentifierTransformSpec),
     Fold(FoldTransformSpec),
     Sequence(SequenceTransformSpec),
+    #[serde(rename = "mark_encoding")]
+    MarkEncoding(MarkEncodingTransformSpec),
 
     // Unsupported
     CountPattern(CountpatternTransformSpec),
@@ -120,6 +124,7 @@ impl Deref for TransformSpec {
             TransformSpec::Impute(t) => t,
             TransformSpec::Pivot(t) => t,
             TransformSpec::Sequence(t) => t,
+            TransformSpec::MarkEncoding(t) => t,
 
             // Supported for dependency determination, not implementation
             TransformSpec::Lookup(t) => t,

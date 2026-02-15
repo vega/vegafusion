@@ -252,6 +252,18 @@ message Sequence {
   optional string as = 4;
 }
 
+// MarkEncoding (internal transform IR)
+message MarkEncodingChannel {
+  string channel = 1;
+  string as = 2;
+  string encoding_json = 3;
+}
+
+message MarkEncoding {
+  string encode_set = 1;
+  repeated MarkEncodingChannel channels = 2;
+}
+
 // Top-level transform
 message Transform {
   oneof transform_kind {
@@ -271,6 +283,7 @@ message Transform {
     Identifier identifier = 14;
     Fold fold = 15;
     Sequence sequence = 16;
+    MarkEncoding mark_encoding = 17;
   }
 }
 
