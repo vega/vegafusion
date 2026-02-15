@@ -83,6 +83,7 @@ impl PlannerWarnings {
 pub struct PlannerConfig {
     pub split_domain_data: bool,
     pub split_url_data_nodes: bool,
+    pub copy_scales_to_server: bool,
     pub stringify_local_datetimes: bool,
     pub projection_pushdown: bool,
     pub extract_inline_data: bool,
@@ -102,6 +103,7 @@ impl Default for PlannerConfig {
         Self {
             split_domain_data: true,
             split_url_data_nodes: true,
+            copy_scales_to_server: false,
             stringify_local_datetimes: false,
             projection_pushdown: true,
             extract_inline_data: false,
@@ -234,5 +236,22 @@ impl SpecPlan {
                 warnings,
             })
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::PlannerConfig;
+
+    #[test]
+    fn test_copy_scales_to_server_default_false() {
+        let config = PlannerConfig::default();
+        assert!(!config.copy_scales_to_server);
+    }
+
+    #[test]
+    fn test_pre_transformed_spec_config_keeps_scale_copy_disabled() {
+        let config = PlannerConfig::pre_transformed_spec_config(false, vec![]);
+        assert!(!config.copy_scales_to_server);
     }
 }

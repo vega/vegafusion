@@ -5,6 +5,7 @@ use crate::spec::chart::{ChartSpec, MutChartVisitor};
 use crate::spec::data::{DataSpec, DependencyNodeSupported};
 use crate::spec::mark::MarkSpec;
 
+use crate::spec::scale::ScaleSpec;
 use crate::spec::signal::SignalSpec;
 use crate::task_graph::scope::TaskScope;
 
@@ -193,6 +194,19 @@ impl MutChartVisitor for ExtractServerDependenciesVisitor<'_> {
         Ok(())
     }
 
+    fn visit_scale(&mut self, scale: &mut ScaleSpec, scope: &[u32]) -> Result<()> {
+        if self.planner_config.copy_scales_to_server {
+            let server_scale = scale.clone();
+            if scope.is_empty() {
+                self.server_spec.scales.push(server_scale);
+            } else {
+                let server_group = self.server_spec.get_nested_group_mut(scope)?;
+                server_group.scales.push(server_scale);
+            }
+        }
+        Ok(())
+    }
+
     fn visit_group_mark(&mut self, _mark: &mut MarkSpec, scope: &[u32]) -> Result<()> {
         // Initialize group mark in server spec
         let parent_scope = &scope[..scope.len() - 1];
@@ -219,5 +233,70 @@ impl MutChartVisitor for ExtractServerDependenciesVisitor<'_> {
         }
 
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::planning::extract::extract_server_data;
+    use crate::planning::plan::PlannerConfig;
+    use crate::spec::chart::ChartSpec;
+    use serde_json::json;
+
+    fn chart_with_scale_formula_data() -> ChartSpec {
+        serde_json::from_value(json!({
+            "$schema": "https://vega.github.io/schema/vega/v5.json",
+            "data": [
+                {
+                    "name": "source",
+                    "values": [{"value": 1}],
+                    "transform": [
+                        {"type": "formula", "expr": "scale('x', datum.value)", "as": "scaled"}
+                    ]
+                }
+            ],
+            "scales": [
+                {"name": "x", "type": "linear", "domain": [0, 1], "range": [0, 100]}
+            ]
+        }))
+        .unwrap()
+    }
+
+    #[test]
+    fn test_scale_dependent_pipeline_stays_client_when_scale_copy_disabled() {
+        let mut client_spec = chart_with_scale_formula_data();
+        let mut task_scope = client_spec.to_task_scope().unwrap();
+
+        let mut config = PlannerConfig::default();
+        config.extract_inline_data = true;
+        config.copy_scales_to_server = false;
+
+        let server_spec = extract_server_data(&mut client_spec, &mut task_scope, &config).unwrap();
+
+        assert!(server_spec.data.is_empty());
+        assert!(server_spec.scales.is_empty());
+        assert_eq!(client_spec.data[0].transform.len(), 1);
+    }
+
+    #[test]
+    fn test_scale_copied_and_pipeline_extractable_when_scale_copy_enabled() {
+        let mut client_spec = chart_with_scale_formula_data();
+        let mut task_scope = client_spec.to_task_scope().unwrap();
+
+        let mut config = PlannerConfig::default();
+        config.extract_inline_data = true;
+        config.copy_scales_to_server = true;
+
+        let server_spec = extract_server_data(&mut client_spec, &mut task_scope, &config).unwrap();
+
+        assert_eq!(server_spec.scales.len(), 1);
+        assert_eq!(server_spec.scales[0].name, "x");
+        assert_eq!(server_spec.data.len(), 1);
+        assert_eq!(server_spec.data[0].name, "source");
+        assert_eq!(server_spec.data[0].transform.len(), 1);
+
+        assert_eq!(client_spec.data[0].name, "source");
+        assert!(client_spec.data[0].transform.is_empty());
+        assert!(client_spec.data[0].values.is_none());
     }
 }

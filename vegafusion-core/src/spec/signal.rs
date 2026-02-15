@@ -1,5 +1,6 @@
 use crate::expression::parser::parse;
 use crate::planning::plan::PlannerConfig;
+use crate::proto::gen::tasks::VariableNamespace;
 use crate::spec::data::DependencyNodeSupported;
 use crate::spec::values::{MissingNullOrValue, StringOrStringList};
 use crate::task_graph::scope::TaskScope;
@@ -44,6 +45,12 @@ impl SignalSpec {
                 if let Ok(expression) = parse(expr) {
                     // Check if signal has direct dependency on client-only variable
                     for input_var in expression.input_vars() {
+                        if matches!(input_var.var.ns(), VariableNamespace::Scale)
+                            && !planner_config.copy_scales_to_server
+                        {
+                            return DependencyNodeSupported::Unsupported;
+                        }
+
                         if let Ok(resolved) = task_scope.resolve_scope(&input_var.var, scope) {
                             let resolved_var = (resolved.var, resolved.scope);
                             if planner_config.client_only_vars.contains(&resolved_var) {
@@ -132,7 +139,11 @@ pub struct SignalOnSourceEvent {
 
 #[cfg(test)]
 mod tests {
+    use crate::planning::plan::PlannerConfig;
+    use crate::spec::data::DependencyNodeSupported;
     use crate::spec::signal::SignalSpec;
+    use crate::task_graph::scope::TaskScope;
+    use serde_json::json;
 
     #[test]
     fn test_signal_null_value_not_dropped() {
@@ -147,5 +158,28 @@ mod tests {
         let sig: SignalSpec = serde_json::from_str(s).unwrap();
         let res = serde_json::to_string(&sig).unwrap();
         assert_eq!(res, s);
+    }
+
+    #[test]
+    fn test_signal_scale_expression_requires_copy_scales_flag() {
+        let signal: SignalSpec = serde_json::from_value(json!({
+            "name": "scaled_signal",
+            "update": "scale('x', 1)"
+        }))
+        .unwrap();
+
+        let mut no_scales = PlannerConfig::default();
+        no_scales.copy_scales_to_server = false;
+        assert!(matches!(
+            signal.supported(&no_scales, &TaskScope::default(), &[]),
+            DependencyNodeSupported::Unsupported
+        ));
+
+        let mut with_scales = PlannerConfig::default();
+        with_scales.copy_scales_to_server = true;
+        assert!(matches!(
+            signal.supported(&with_scales, &TaskScope::default(), &[]),
+            DependencyNodeSupported::Supported
+        ));
     }
 }

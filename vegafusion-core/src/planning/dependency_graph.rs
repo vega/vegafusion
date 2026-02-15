@@ -89,7 +89,8 @@ pub fn get_supported_data_variables(
     }
 
     // Traverse again, this time keep all data nodes, but only keep signals that are ancestors
-    // of supported data nodes. This is to avoid bringing over unnecessary signals
+    // of supported data nodes. This is to avoid bringing over unnecessary signals.
+    // Keep supported scales when scale copying is enabled so expressions can depend on them.
     let mut supported_vars = HashMap::new();
     for node_index in &nodes {
         let (scoped_var, _) = data_graph.node_weight(*node_index).unwrap();
@@ -120,7 +121,11 @@ pub fn get_supported_data_variables(
                     }
                 }
             }
-            _ => {}
+            VariableNamespace::Scale => {
+                if let Some(supported) = all_supported_vars.get(scoped_var) {
+                    supported_vars.insert(scoped_var.clone(), supported.clone());
+                }
+            }
         }
     }
 
@@ -218,9 +223,14 @@ impl ChartVisitor for AddDependencyNodesVisitor<'_> {
 
     fn visit_scale(&mut self, scale: &ScaleSpec, scope: &[u32]) -> Result<()> {
         let scoped_var = (Variable::new_scale(&scale.name), Vec::from(scope));
+        let supported = if self.planner_config.copy_scales_to_server {
+            DependencyNodeSupported::Supported
+        } else {
+            DependencyNodeSupported::Unsupported
+        };
         let node_index = self
             .dependency_graph
-            .add_node((scoped_var.clone(), DependencyNodeSupported::Unsupported));
+            .add_node((scoped_var.clone(), supported));
         self.node_indexes.insert(scoped_var, node_index);
         Ok(())
     }
@@ -449,13 +459,7 @@ impl ChartVisitor for AddDependencyEdgesVisitor<'_> {
 
         if let Some(update) = &signal.update {
             let expression = parse(update)?;
-            // Add edges from nodes to signal (Scale dependencies not supported on server yet)
-            input_vars.extend(
-                expression
-                    .input_vars()
-                    .into_iter()
-                    .filter(|v| v.var.namespace() != VariableNamespace::Scale),
-            );
+            input_vars.extend(expression.input_vars());
         }
 
         if let Some(init) = &signal.init {
@@ -489,5 +493,95 @@ pub fn scoped_var_for_input_var(
         Ok((output_var, resolved.scope))
     } else {
         Ok((resolved.var, resolved.scope))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{build_dependency_graph, get_supported_data_variables};
+    use crate::planning::plan::PlannerConfig;
+    use crate::proto::gen::tasks::Variable;
+    use crate::spec::chart::ChartSpec;
+    use crate::spec::data::DependencyNodeSupported;
+    use serde_json::json;
+
+    fn chart_with_scale_and_signal() -> ChartSpec {
+        serde_json::from_value(json!({
+            "$schema": "https://vega.github.io/schema/vega/v5.json",
+            "scales": [
+                {"name": "x"}
+            ],
+            "signals": [
+                {"name": "s", "update": "scale('x', 1)"}
+            ]
+        }))
+        .unwrap()
+    }
+
+    #[test]
+    fn test_scale_nodes_supported_only_when_copy_scales_enabled() {
+        let chart_spec = chart_with_scale_and_signal();
+        let scale_var = (Variable::new_scale("x"), Vec::new());
+
+        let mut no_scales = PlannerConfig::default();
+        no_scales.copy_scales_to_server = false;
+        let (graph_no_scales, index_no_scales) =
+            build_dependency_graph(&chart_spec, &no_scales).unwrap();
+        let (_, supported_no_scales) = graph_no_scales
+            .node_weight(*index_no_scales.get(&scale_var).unwrap())
+            .unwrap();
+        assert!(matches!(
+            supported_no_scales,
+            DependencyNodeSupported::Unsupported
+        ));
+
+        let mut with_scales = PlannerConfig::default();
+        with_scales.copy_scales_to_server = true;
+        let (graph_with_scales, index_with_scales) =
+            build_dependency_graph(&chart_spec, &with_scales).unwrap();
+        let (_, supported_with_scales) = graph_with_scales
+            .node_weight(*index_with_scales.get(&scale_var).unwrap())
+            .unwrap();
+        assert!(matches!(
+            supported_with_scales,
+            DependencyNodeSupported::Supported
+        ));
+    }
+
+    #[test]
+    fn test_signal_update_dependencies_include_scales() {
+        let chart_spec = chart_with_scale_and_signal();
+        let mut config = PlannerConfig::default();
+        config.copy_scales_to_server = true;
+
+        let (graph, node_indexes) = build_dependency_graph(&chart_spec, &config).unwrap();
+        let scale_node = *node_indexes
+            .get(&(Variable::new_scale("x"), Vec::new()))
+            .unwrap();
+        let signal_node = *node_indexes
+            .get(&(Variable::new_signal("s"), Vec::new()))
+            .unwrap();
+
+        assert!(graph.contains_edge(scale_node, signal_node));
+    }
+
+    #[test]
+    fn test_supported_vars_include_scales_when_copy_enabled() {
+        let chart_spec = chart_with_scale_and_signal();
+        let scale_var = (Variable::new_scale("x"), Vec::new());
+
+        let mut no_scales = PlannerConfig::default();
+        no_scales.copy_scales_to_server = false;
+        let supported_no_scales = get_supported_data_variables(&chart_spec, &no_scales).unwrap();
+        assert!(!supported_no_scales.contains_key(&scale_var));
+
+        let mut with_scales = PlannerConfig::default();
+        with_scales.copy_scales_to_server = true;
+        let supported_with_scales =
+            get_supported_data_variables(&chart_spec, &with_scales).unwrap();
+        assert!(matches!(
+            supported_with_scales.get(&scale_var),
+            Some(DependencyNodeSupported::Supported)
+        ));
     }
 }

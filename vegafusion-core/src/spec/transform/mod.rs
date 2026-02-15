@@ -22,6 +22,7 @@ use crate::spec::transform::{extent::ExtentTransformSpec, filter::FilterTransfor
 use crate::error::Result;
 use crate::expression::column_usage::{ColumnUsage, DatasetsColumnUsage, VlSelectionFields};
 use crate::planning::plan::PlannerConfig;
+use crate::proto::gen::tasks::VariableNamespace;
 use crate::spec::transform::aggregate::AggregateTransformSpec;
 use crate::spec::transform::bin::BinTransformSpec;
 use crate::spec::transform::collect::CollectTransformSpec;
@@ -179,6 +180,13 @@ pub trait TransformSpecTrait {
     ) -> bool {
         let input_vars = self.input_vars().unwrap_or_default();
         for input_var in &input_vars {
+            if matches!(input_var.var.ns(), VariableNamespace::Scale)
+                && !planner_config.copy_scales_to_server
+            {
+                // Scale expressions may only run on the server when scale definitions
+                // are copied to the server spec.
+                return false;
+            }
             if let Ok(resolved) = task_scope.resolve_scope(&input_var.var, scope) {
                 let scoped_var: ScopedVariable = (resolved.var, resolved.scope);
                 if planner_config.client_only_vars.contains(&scoped_var) {
@@ -231,4 +239,29 @@ pub enum TransformColumns {
 
     /// Transforms with unknown usage and/or production of columns
     Unknown,
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::planning::plan::PlannerConfig;
+    use crate::spec::transform::formula::FormulaTransformSpec;
+    use crate::spec::transform::TransformSpec;
+    use crate::task_graph::scope::TaskScope;
+
+    #[test]
+    fn test_scale_expression_transform_requires_copy_scales_flag() {
+        let tx = TransformSpec::Formula(FormulaTransformSpec {
+            expr: "scale('x', datum.value)".to_string(),
+            as_: "scaled".to_string(),
+            extra: Default::default(),
+        });
+
+        let mut no_scales = PlannerConfig::default();
+        no_scales.copy_scales_to_server = false;
+        assert!(!tx.supported_and_allowed(&no_scales, &TaskScope::default(), &[]));
+
+        let mut with_scales = PlannerConfig::default();
+        with_scales.copy_scales_to_server = true;
+        assert!(tx.supported_and_allowed(&with_scales, &TaskScope::default(), &[]));
+    }
 }

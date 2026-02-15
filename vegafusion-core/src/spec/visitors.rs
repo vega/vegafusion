@@ -25,7 +25,7 @@ use std::convert::TryFrom;
 use std::ops::Deref;
 use vegafusion_common::data::scalar::ScalarValueHelpers;
 use vegafusion_common::data::table::VegaFusionTable;
-use vegafusion_common::error::Result;
+use vegafusion_common::error::{Result, VegaFusionError};
 
 #[derive(Clone, Debug, Default)]
 pub struct MakeTaskScopeVisitor {
@@ -257,11 +257,15 @@ impl ChartVisitor for MakeTasksVisitor<'_> {
     }
 
     fn visit_scale(&mut self, _scale: &ScaleSpec, _scope: &[u32]) -> Result<()> {
-        unimplemented!("Scale tasks not yet supported")
+        Err(VegaFusionError::internal(
+            "Scale tasks are not yet supported. Set PlannerConfig.copy_scales_to_server=false for evaluation",
+        ))
     }
 
     fn visit_projection(&mut self, _projection: &ProjectionSpec, _scope: &[u32]) -> Result<()> {
-        unimplemented!("Projection tasks not yet supported")
+        Err(VegaFusionError::internal(
+            "Projection tasks are not yet supported",
+        ))
     }
 }
 

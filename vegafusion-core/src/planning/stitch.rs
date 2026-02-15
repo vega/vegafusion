@@ -49,6 +49,9 @@ pub fn stitch_specs(
         }
     }
 
+    // Scale variables are never communicated in this phase
+    server_to_client.retain(|var| !matches!(var.0.namespace(), VariableNamespace::Scale));
+
     let client_to_server: HashSet<_> = server_inputs
         .intersection(&client_updates)
         .cloned()
@@ -59,6 +62,10 @@ pub fn stitch_specs(
     let client_to_server: HashSet<_> = client_to_server
         .difference(&server_updates)
         .cloned()
+        .collect();
+    let client_to_server: HashSet<_> = client_to_server
+        .into_iter()
+        .filter(|var| !matches!(var.0.namespace(), VariableNamespace::Scale))
         .collect();
 
     // determine stub definitions that needs to be added to server and client specs
@@ -141,4 +148,81 @@ fn make_stub(
         }
     }
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::planning::stitch::stitch_specs;
+    use crate::proto::gen::tasks::Variable;
+    use crate::spec::chart::ChartSpec;
+    use serde_json::json;
+
+    #[test]
+    fn test_scale_namespace_excluded_from_comm_plan() {
+        let mut client_spec: ChartSpec = serde_json::from_value(json!({
+            "$schema": "https://vega.github.io/schema/vega/v5.json",
+            "signals": [
+                {"name": "client_signal", "update": "scale('x', 1)"}
+            ],
+            "scales": [
+                {"name": "x"}
+            ]
+        }))
+        .unwrap();
+
+        let mut server_spec: ChartSpec = serde_json::from_value(json!({
+            "$schema": "https://vega.github.io/schema/vega/v5.json",
+            "signals": [
+                {"name": "server_signal", "update": "scale('x', 2)"}
+            ],
+            "scales": [
+                {"name": "x"}
+            ]
+        }))
+        .unwrap();
+
+        let task_scope = client_spec.to_task_scope().unwrap();
+        let keep_variables = vec![(Variable::new_scale("x"), Vec::new())];
+        let comm_plan = stitch_specs(
+            &task_scope,
+            &mut server_spec,
+            &mut client_spec,
+            &keep_variables,
+        )
+        .unwrap();
+
+        assert!(comm_plan.server_to_client.iter().all(|var| !matches!(
+            var.0.namespace(),
+            crate::proto::gen::tasks::VariableNamespace::Scale
+        )));
+        assert!(comm_plan.client_to_server.iter().all(|var| !matches!(
+            var.0.namespace(),
+            crate::proto::gen::tasks::VariableNamespace::Scale
+        )));
+    }
+
+    #[test]
+    fn test_client_to_server_scale_dependency_filtered() {
+        let mut client_spec: ChartSpec = serde_json::from_value(json!({
+            "$schema": "https://vega.github.io/schema/vega/v5.json",
+            "scales": [
+                {"name": "x"}
+            ]
+        }))
+        .unwrap();
+
+        let mut server_spec: ChartSpec = serde_json::from_value(json!({
+            "$schema": "https://vega.github.io/schema/vega/v5.json",
+            "signals": [
+                {"name": "server_signal", "update": "scale('x', 2)"}
+            ]
+        }))
+        .unwrap();
+
+        let task_scope = client_spec.to_task_scope().unwrap();
+        let comm_plan = stitch_specs(&task_scope, &mut server_spec, &mut client_spec, &[]).unwrap();
+
+        assert!(comm_plan.server_to_client.is_empty());
+        assert!(comm_plan.client_to_server.is_empty());
+    }
 }

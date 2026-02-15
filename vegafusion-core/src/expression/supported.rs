@@ -35,7 +35,12 @@ lazy_static! {
     .into_iter()
     .collect();
 
-    pub static ref SUPPORTED_SCALE_FNS: HashSet<&'static str> = Default::default();
+    pub static ref SUPPORTED_SCALE_FNS: HashSet<&'static str> = vec![
+        "scale",
+        "invert",
+    ]
+    .into_iter()
+    .collect();
 
     pub static ref SUPPORTED_EXPRESSION_FNS: HashSet<&'static str> = vec![
         // Math
@@ -68,4 +73,16 @@ lazy_static! {
     ]
     .into_iter()
     .collect();
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::expression::supported::SUPPORTED_SCALE_FNS;
+
+    #[test]
+    fn test_supported_scale_functions_phase_one() {
+        assert!(SUPPORTED_SCALE_FNS.contains("scale"));
+        assert!(SUPPORTED_SCALE_FNS.contains("invert"));
+        assert!(!SUPPORTED_SCALE_FNS.contains("bandwidth"));
+    }
 }

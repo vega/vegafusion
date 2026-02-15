@@ -75,15 +75,21 @@ impl ChartState {
         let tasks = plan
             .server_spec
             .to_tasks(&opts.tz_config, &dataset_fingerprints)
-            .unwrap();
-        let task_graph = TaskGraph::new(tasks, &task_scope).unwrap();
+            .with_context(|| "Failed to build tasks for planned server spec".to_string())?;
+        let task_graph = TaskGraph::new(tasks, &task_scope)
+            .with_context(|| "Failed to build task graph for planned server spec".to_string())?;
         let task_graph_mapping = task_graph.build_mapping();
         let server_to_client_value_indices: Arc<HashSet<_>> = Arc::new(
             plan.comm_plan
                 .server_to_client
                 .iter()
-                .map(|scoped_var| *task_graph_mapping.get(scoped_var).unwrap())
-                .collect(),
+                .map(|scoped_var| {
+                    task_graph_mapping
+                        .get(scoped_var)
+                        .copied()
+                        .with_context(|| format!("No task graph mapping found for {scoped_var:?}"))
+                })
+                .collect::<Result<HashSet<_>>>()?,
         );
 
         // Gather values of server-to-client values using query_request
@@ -91,8 +97,13 @@ impl ChartState {
             .comm_plan
             .server_to_client
             .iter()
-            .map(|var| *task_graph_mapping.get(var).unwrap())
-            .collect();
+            .map(|var| {
+                task_graph_mapping
+                    .get(var)
+                    .copied()
+                    .with_context(|| format!("No task graph mapping found for {var:?}"))
+            })
+            .collect::<Result<Vec<_>>>()?;
 
         let response_task_values = runtime
             .query_request(Arc::new(task_graph.clone()), &indices, &inline_datasets)
@@ -106,7 +117,7 @@ impl ChartState {
             let value = response_value.value;
 
             init.push(ExportUpdateArrow {
-                namespace: ExportUpdateNamespace::try_from(variable.ns()).unwrap(),
+                namespace: ExportUpdateNamespace::try_from(variable.ns())?,
                 name: variable.name.clone(),
                 scope,
                 value,

@@ -1,5 +1,5 @@
 use vegafusion_core::planning::extract::extract_server_data;
-use vegafusion_core::proto::gen::tasks::{TaskGraph, TzConfig, Variable};
+use vegafusion_core::proto::gen::tasks::{TaskGraph, TzConfig, Variable, VariableNamespace};
 use vegafusion_core::spec::chart::ChartSpec;
 use vegafusion_runtime::task_graph::runtime::VegaFusionRuntime;
 
@@ -170,6 +170,60 @@ fn test_strip_encodings() {
     let mark_encoding = encode.encodings.get("update").unwrap();
     assert!(!mark_encoding.channels.contains_key("description"));
     assert!(!mark_encoding.channels.contains_key("ariaRoleDescription"));
+}
+
+#[test]
+fn test_copy_scales_to_server_copies_scale_definitions() {
+    let mut spec = spec1();
+    let original_scale_names: HashSet<String> =
+        spec.scales.iter().map(|s| s.name.clone()).collect();
+
+    let mut task_scope = spec.to_task_scope().unwrap();
+    let mut config = PlannerConfig::default();
+    config.copy_scales_to_server = true;
+
+    let server_spec = extract_server_data(&mut spec, &mut task_scope, &config).unwrap();
+    let server_scale_names: HashSet<String> =
+        server_spec.scales.iter().map(|s| s.name.clone()).collect();
+    let client_scale_names: HashSet<String> = spec.scales.iter().map(|s| s.name.clone()).collect();
+
+    assert_eq!(server_scale_names, original_scale_names);
+    assert_eq!(client_scale_names, original_scale_names);
+}
+
+#[test]
+fn test_copy_scales_to_server_comm_plan_excludes_scale_transport() {
+    let mut spec = spec1();
+    let mut task_scope = spec.to_task_scope().unwrap();
+
+    let mut config = PlannerConfig::default();
+    config.copy_scales_to_server = true;
+    let mut server_spec = extract_server_data(&mut spec, &mut task_scope, &config).unwrap();
+    let comm_plan = stitch_specs(&task_scope, &mut server_spec, &mut spec, &[]).unwrap();
+
+    let server_scale_defs: HashSet<_> = server_spec
+        .definition_vars()
+        .unwrap()
+        .into_iter()
+        .filter(|(var, _)| matches!(var.ns(), VariableNamespace::Scale))
+        .collect();
+    let client_scale_defs: HashSet<_> = spec
+        .definition_vars()
+        .unwrap()
+        .into_iter()
+        .filter(|(var, _)| matches!(var.ns(), VariableNamespace::Scale))
+        .collect();
+
+    assert!(!server_scale_defs.is_empty());
+    assert_eq!(server_scale_defs, client_scale_defs);
+    assert!(comm_plan
+        .server_to_client
+        .iter()
+        .all(|(var, _)| !matches!(var.ns(), VariableNamespace::Scale)));
+    assert!(comm_plan
+        .client_to_server
+        .iter()
+        .all(|(var, _)| !matches!(var.ns(), VariableNamespace::Scale)));
 }
 
 #[allow(dead_code)]

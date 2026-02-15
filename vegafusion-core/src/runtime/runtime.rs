@@ -73,12 +73,16 @@ pub trait VegaFusionRuntimeTrait: Send + Sync {
             local_tz: local_tz.to_string(),
             default_input_tz: default_input_tz.clone(),
         };
-        let task_scope = plan.server_spec.to_task_scope().unwrap();
+        let task_scope = plan
+            .server_spec
+            .to_task_scope()
+            .with_context(|| "Failed to build task scope for planned server spec".to_string())?;
         let tasks = plan
             .server_spec
             .to_tasks(&tz_config, &dataset_fingerprints)
-            .unwrap();
-        let task_graph = TaskGraph::new(tasks, &task_scope).unwrap();
+            .with_context(|| "Failed to build tasks for planned server spec".to_string())?;
+        let task_graph = TaskGraph::new(tasks, &task_scope)
+            .with_context(|| "Failed to build task graph for planned server spec".to_string())?;
         let task_graph_mapping = task_graph.build_mapping();
 
         // Gather values of server-to-client values
@@ -98,7 +102,7 @@ pub trait VegaFusionRuntimeTrait: Send + Sync {
 
         for (var, response_value) in plan.comm_plan.server_to_client.iter().zip(response_values) {
             init.push(ExportUpdateArrow {
-                namespace: ExportUpdateNamespace::try_from(var.0.namespace()).unwrap(),
+                namespace: ExportUpdateNamespace::try_from(var.0.namespace())?,
                 name: var.0.name.clone(),
                 scope: var.1.clone(),
                 value: response_value.value,
@@ -309,11 +313,15 @@ pub trait VegaFusionRuntimeTrait: Send + Sync {
             local_tz: options.local_tz.to_string(),
             default_input_tz: options.default_input_tz.clone(),
         };
-        let task_scope = plan.server_spec.to_task_scope().unwrap();
+        let task_scope = plan
+            .server_spec
+            .to_task_scope()
+            .with_context(|| "Failed to build task scope for planned server spec".to_string())?;
         let tasks = plan
             .server_spec
             .to_tasks(&tz_config, &dataset_fingerprints)?;
-        let task_graph = TaskGraph::new(tasks, &task_scope).unwrap();
+        let task_graph = TaskGraph::new(tasks, &task_scope)
+            .with_context(|| "Failed to build task graph for planned server spec".to_string())?;
         let task_graph_mapping = task_graph.build_mapping();
 
         let mut warnings: Vec<PreTransformValuesWarning> = Vec::new();

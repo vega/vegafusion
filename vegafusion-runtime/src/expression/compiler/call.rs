@@ -212,6 +212,21 @@ pub fn default_callables() -> HashMap<String, VegaFusionCallable> {
     let mut callables: HashMap<String, VegaFusionCallable> = HashMap::new();
     callables.insert("if".to_string(), VegaFusionCallable::Macro(Arc::new(if_fn)));
 
+    // Scale function support in planning is enabled before runtime implementations are ready.
+    // Keep runtime behavior explicit in this phase.
+    for name in ["scale", "invert"] {
+        let function_name = name.to_string();
+        let key = function_name.clone();
+        callables.insert(
+            key,
+            VegaFusionCallable::Macro(Arc::new(move |_args| {
+                Err(VegaFusionError::compilation(format!(
+                    "The {function_name} expression function is not yet supported by the VegaFusion runtime"
+                )))
+            })),
+        );
+    }
+
     // Numeric functions built into DataFusion with mapping to Vega names
     for (fun_name, udf) in [
         ("abs", abs()),
@@ -426,4 +441,35 @@ pub fn default_callables() -> HashMap<String, VegaFusionCallable> {
     );
 
     callables
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::expression::compiler::call::{default_callables, VegaFusionCallable};
+    use vegafusion_core::proto::gen::expression::Expression;
+
+    fn assert_scale_stub_error(name: &str) {
+        let callables = default_callables();
+        let callable = callables.get(name).unwrap();
+        let err = match callable {
+            VegaFusionCallable::Macro(callable) => {
+                let args: Vec<Expression> = Vec::new();
+                callable(&args).unwrap_err()
+            }
+            _ => panic!("Expected {name} to be a macro callable"),
+        };
+        assert!(format!("{err}").contains(&format!(
+            "The {name} expression function is not yet supported by the VegaFusion runtime"
+        )));
+    }
+
+    #[test]
+    fn test_scale_callable_stub_returns_explicit_error() {
+        assert_scale_stub_error("scale");
+    }
+
+    #[test]
+    fn test_invert_callable_stub_returns_explicit_error() {
+        assert_scale_stub_error("invert");
+    }
 }
