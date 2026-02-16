@@ -205,7 +205,14 @@ impl SpecPlan {
                     .extend(comm_plan.client_to_server.clone());
 
                 client_spec = input_client_spec;
+                task_scope = client_spec.to_task_scope()?;
                 server_spec = extract_server_data(&mut client_spec, &mut task_scope, &config)?;
+                extract_mark_encodings(
+                    &mut client_spec,
+                    &mut server_spec,
+                    &mut task_scope,
+                    &config,
+                )?;
                 comm_plan = stitch_specs(
                     &task_scope,
                     &mut server_spec,
@@ -245,7 +252,10 @@ impl SpecPlan {
 
 #[cfg(test)]
 mod tests {
-    use super::PlannerConfig;
+    use super::{PlannerConfig, SpecPlan};
+    use crate::spec::chart::ChartSpec;
+    use crate::spec::transform::TransformSpec;
+    use serde_json::json;
 
     #[test]
     fn test_copy_scales_to_server_default_false() {
@@ -269,5 +279,84 @@ mod tests {
     fn test_pre_transformed_spec_config_keeps_mark_encoding_precompute_disabled() {
         let config = PlannerConfig::pre_transformed_spec_config(false, vec![]);
         assert!(!config.precompute_mark_encodings);
+    }
+
+    #[test]
+    fn test_replan_without_client_to_server_reapplies_mark_encoding_extraction() {
+        let spec: ChartSpec = serde_json::from_value(json!({
+            "$schema": "https://vega.github.io/schema/vega/v5.json",
+            "signals": [
+                {
+                    "name": "brush_x",
+                    "value": 0,
+                    "bind": {"input": "range", "min": 0, "max": 10}
+                }
+            ],
+            "data": [
+                {
+                    "name": "source",
+                    "values": [{"v": 2, "m": 1}, {"v": 7, "m": 0}]
+                },
+                {
+                    "name": "filtered",
+                    "source": "source",
+                    "transform": [{"type": "filter", "expr": "datum.v > brush_x"}]
+                }
+            ],
+            "scales": [
+                {"name": "x", "type": "linear", "domain": [0, 10], "range": [0, 100]}
+            ],
+            "marks": [
+                {
+                    "type": "symbol",
+                    "from": {"data": "source"},
+                    "encode": {
+                        "update": {
+                            "x": {"field": "v", "scale": "x"},
+                            "opacity": [
+                                {"test": "datum.m > 0", "value": 1},
+                                {"value": 0.2}
+                            ]
+                        }
+                    }
+                }
+            ]
+        }))
+        .unwrap();
+
+        let mut with_client_to_server = PlannerConfig::default();
+        with_client_to_server.extract_inline_data = true;
+        with_client_to_server.copy_scales_to_server = true;
+        with_client_to_server.precompute_mark_encodings = true;
+        with_client_to_server.allow_client_to_server_comms = true;
+
+        let plan_with_client_to_server = SpecPlan::try_new(&spec, &with_client_to_server).unwrap();
+        assert!(!plan_with_client_to_server
+            .comm_plan
+            .client_to_server
+            .is_empty());
+
+        let mut without_client_to_server = with_client_to_server.clone();
+        without_client_to_server.allow_client_to_server_comms = false;
+        let plan_without_client_to_server =
+            SpecPlan::try_new(&spec, &without_client_to_server).unwrap();
+        assert!(plan_without_client_to_server
+            .comm_plan
+            .client_to_server
+            .is_empty());
+
+        let rewritten_source = plan_without_client_to_server.client_spec.marks[0]
+            .from
+            .as_ref()
+            .and_then(|from| from.data.as_deref())
+            .unwrap()
+            .to_string();
+        assert!(rewritten_source.starts_with("_vf_markenc_"));
+        assert!(plan_without_client_to_server
+            .server_spec
+            .data
+            .iter()
+            .any(|d| d.name == rewritten_source
+                && matches!(d.transform.first(), Some(TransformSpec::MarkEncoding(_)))));
     }
 }
