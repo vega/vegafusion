@@ -105,8 +105,8 @@ impl Default for PlannerConfig {
         Self {
             split_domain_data: true,
             split_url_data_nodes: true,
-            copy_scales_to_server: false,
-            precompute_mark_encodings: false,
+            copy_scales_to_server: true,
+            precompute_mark_encodings: true,
             stringify_local_datetimes: false,
             projection_pushdown: true,
             extract_inline_data: false,
@@ -129,6 +129,8 @@ impl PlannerConfig {
         keep_variables: Vec<ScopedVariable>,
     ) -> PlannerConfig {
         PlannerConfig {
+            copy_scales_to_server: false,
+            precompute_mark_encodings: false,
             stringify_local_datetimes: true,
             extract_inline_data: true,
             allow_client_to_server_comms: !preserve_interactivity,
@@ -258,15 +260,15 @@ mod tests {
     use serde_json::json;
 
     #[test]
-    fn test_copy_scales_to_server_default_false() {
+    fn test_copy_scales_to_server_default_true() {
         let config = PlannerConfig::default();
-        assert!(!config.copy_scales_to_server);
+        assert!(config.copy_scales_to_server);
     }
 
     #[test]
-    fn test_precompute_mark_encodings_default_false() {
+    fn test_precompute_mark_encodings_default_true() {
         let config = PlannerConfig::default();
-        assert!(!config.precompute_mark_encodings);
+        assert!(config.precompute_mark_encodings);
     }
 
     #[test]

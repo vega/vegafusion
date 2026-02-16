@@ -2,6 +2,7 @@
 extern crate lazy_static;
 
 mod util;
+use std::env;
 use std::sync::Once;
 
 use crate::util::vegajs_runtime::{vegajs_runtime, ExportImageFormat};
@@ -10,6 +11,7 @@ use rstest::rstest;
 use std::collections::HashMap;
 use std::convert::TryFrom;
 use std::fs;
+use std::path::PathBuf;
 use std::sync::Arc;
 use tokio::runtime::Runtime;
 use vegafusion_common::data::scalar::ScalarValueHelpers;
@@ -1433,6 +1435,26 @@ fn watch_plan_path(spec_name: &str, suffix: Option<&str>) -> String {
     }
 }
 
+fn comm_plan_eval_mode() -> bool {
+    env::var("VEGAFUSION_IMAGE_EVAL_MODE")
+        .ok()
+        .map(|v| {
+            let normalized = v.trim().to_ascii_lowercase();
+            matches!(normalized.as_str(), "1" | "true" | "yes" | "y" | "on")
+        })
+        .unwrap_or(false)
+}
+
+fn comm_mismatch_output_path(spec_name: &str, suffix: Option<&str>) -> PathBuf {
+    let mut path = PathBuf::from(format!("{}/tests/output/comm_plan_mismatches", crate_dir()));
+    if let Some(suffix) = suffix {
+        path.push(format!("{spec_name}.{suffix}.comm_plan.json"));
+    } else {
+        path.push(format!("{spec_name}.comm_plan.json"));
+    }
+    path
+}
+
 async fn check_spec_sequence_from_files(
     spec_name: &str,
     tolerance: f64,
@@ -1482,6 +1504,7 @@ async fn check_spec_sequence_with_planner_config_from_files(
         spec_name,
         tolerance,
         planner_config,
+        watch_plan_suffix,
         expect_markenc_dataset,
     )
     .await
@@ -1580,6 +1603,7 @@ async fn check_spec_sequence(
         tolerance,
         planner_config,
         None,
+        None,
     )
     .await
 }
@@ -1591,6 +1615,7 @@ async fn check_spec_sequence_with_planner_config(
     spec_name: &str,
     tolerance: f64,
     planner_config: PlannerConfig,
+    watch_plan_suffix: Option<&str>,
     expect_markenc_dataset: Option<bool>,
 ) {
     // Initialize runtime
@@ -1815,9 +1840,31 @@ async fn check_spec_sequence_with_planner_config(
 
     // Check for expected comm plan
     let actual_watch_plan = WatchPlan::from(spec_plan.comm_plan);
-    assert_eq!(
-        watch_plan, actual_watch_plan,
-        "comm-plan mismatch for {}",
-        spec_name
-    )
+    if watch_plan != actual_watch_plan {
+        let mismatch_path = comm_mismatch_output_path(spec_name, watch_plan_suffix);
+        if let Some(parent) = mismatch_path.parent() {
+            fs::create_dir_all(parent).unwrap();
+        }
+        fs::write(
+            &mismatch_path,
+            serde_json::to_string_pretty(&actual_watch_plan).unwrap(),
+        )
+        .unwrap();
+
+        if comm_plan_eval_mode() {
+            println!(
+                "comm-plan mismatch for {}. Wrote actual plan to {}",
+                spec_name,
+                mismatch_path.display()
+            );
+        } else {
+            assert_eq!(
+                watch_plan,
+                actual_watch_plan,
+                "comm-plan mismatch for {}. Actual plan written to {}",
+                spec_name,
+                mismatch_path.display()
+            );
+        }
+    }
 }
