@@ -18,6 +18,8 @@ use crate::expression::compiler::config::CompilationConfig;
 #[cfg(feature = "scales")]
 use crate::expression::compiler::utils::ExprHelpers;
 #[cfg(feature = "scales")]
+use crate::scale::vega_defaults::apply_vega_domain_defaults;
+#[cfg(feature = "scales")]
 use datafusion_common::ScalarValue;
 #[cfg(feature = "scales")]
 use std::collections::HashSet;
@@ -78,9 +80,19 @@ impl TaskCall for ScaleTask {
 #[cfg(feature = "scales")]
 fn resolve_scale_state(scale: &ScaleSpec, config: &CompilationConfig) -> Result<ScaleState> {
     let scale_type = scale.type_.clone().unwrap_or_default();
-    let domain = resolve_domain(scale, &scale_type, config)?;
-    let range = resolve_range(scale, config)?;
-    let options = resolve_options(scale, config)?;
+    let mut options = resolve_options(scale, config)?;
+
+    let domain_raw = resolve_domain_raw_option(&options)?;
+    let domain_from_raw = domain_raw.is_some();
+    let domain = match domain_raw {
+        Some(raw_domain) => raw_domain,
+        None => resolve_domain(scale, &scale_type, config)?,
+    };
+
+    let range = resolve_range(scale, &scale_type, domain.len(), &options, config)?;
+    let domain =
+        apply_vega_domain_defaults(&scale_type, domain, &range, &mut options, domain_from_raw)?;
+
     Ok(ScaleState {
         scale_type,
         domain,
@@ -158,7 +170,17 @@ fn resolve_domain(
 }
 
 #[cfg(feature = "scales")]
-fn resolve_range(scale: &ScaleSpec, config: &CompilationConfig) -> Result<ArrayRef> {
+fn resolve_range(
+    scale: &ScaleSpec,
+    scale_type: &ScaleTypeSpec,
+    domain_len: usize,
+    options: &HashMap<String, ScalarValue>,
+    config: &CompilationConfig,
+) -> Result<ArrayRef> {
+    if let Some(step) = resolve_range_step(scale, options, config)? {
+        return range_from_step(scale_type, domain_len, step, options);
+    }
+
     let range = scale.range.as_ref().ok_or_else(|| {
         VegaFusionError::internal(format!(
             "Scale {} is missing a range definition",
@@ -175,16 +197,127 @@ fn resolve_range(scale: &ScaleSpec, config: &CompilationConfig) -> Result<ArrayR
         ScaleRangeSpec::Value(value) => {
             if let Some(range_name) = value.as_str() {
                 if matches!(range_name, "width" | "height") {
-                    range_from_dimension(range_name, config)
+                    range_from_dimension(range_name, scale_type, config)
                 } else {
                     Err(VegaFusionError::internal(format!(
                         "Unsupported named range {range_name:?} in this phase"
                     )))
                 }
+            } else if value.as_object().and_then(|obj| obj.get("step")).is_some() {
+                Err(VegaFusionError::internal(format!(
+                    "Scale {} has range.step but it could not be resolved",
+                    scale.name
+                )))
+            } else if value.is_object() {
+                Err(VegaFusionError::internal(format!(
+                    "Unsupported range object in this phase for scale {}: {value:?}",
+                    scale.name
+                )))
             } else {
                 json_value_to_array(value)
             }
         }
+    }
+}
+
+#[cfg(feature = "scales")]
+fn resolve_range_step(
+    scale: &ScaleSpec,
+    options: &HashMap<String, ScalarValue>,
+    config: &CompilationConfig,
+) -> Result<Option<f64>> {
+    if let Some(step) = options.get("range_step").and_then(non_null_option_scalar) {
+        return Ok(Some(scalar_to_f64(step)?));
+    }
+
+    if let Some(ScaleRangeSpec::Value(value)) = scale.range.as_ref() {
+        if let Some(step_value) = value.as_object().and_then(|obj| obj.get("step")) {
+            let step_scalar = eval_json_or_signal_scalar(step_value, config)?;
+            if step_scalar.is_null() {
+                return Ok(None);
+            }
+            return Ok(Some(scalar_to_f64(&step_scalar)?));
+        }
+    }
+
+    Ok(None)
+}
+
+#[cfg(feature = "scales")]
+fn range_from_step(
+    scale_type: &ScaleTypeSpec,
+    domain_len: usize,
+    step: f64,
+    options: &HashMap<String, ScalarValue>,
+) -> Result<ArrayRef> {
+    if !matches!(scale_type, ScaleTypeSpec::Band | ScaleTypeSpec::Point) {
+        return Err(VegaFusionError::internal(
+            "Only band and point scales support rangeStep",
+        ));
+    }
+
+    let padding = option_f64(options, "padding", 0.0)?;
+    let padding_outer = option_f64(options, "padding_outer", padding)?;
+    let padding_inner = if matches!(scale_type, ScaleTypeSpec::Point) {
+        1.0
+    } else {
+        option_f64(options, "padding_inner", padding)?
+    };
+
+    let count = domain_len as f64;
+    let band_space = if count > 0.0 {
+        (count - padding_inner + padding_outer * 2.0).max(1.0)
+    } else {
+        0.0
+    };
+    let extent = step * band_space;
+
+    Ok(ScalarValue::iter_to_array(vec![
+        ScalarValue::from(0.0_f64),
+        ScalarValue::from(extent),
+    ])?)
+}
+
+#[cfg(feature = "scales")]
+fn resolve_domain_raw_option(options: &HashMap<String, ScalarValue>) -> Result<Option<ArrayRef>> {
+    let Some(domain_raw) = options.get("domain_raw").and_then(non_null_option_scalar) else {
+        return Ok(None);
+    };
+
+    Ok(Some(scalar_to_array_or_singleton(domain_raw)?))
+}
+
+#[cfg(feature = "scales")]
+fn non_null_option_scalar(scalar: &ScalarValue) -> Option<&ScalarValue> {
+    if scalar.is_null() {
+        None
+    } else {
+        Some(scalar)
+    }
+}
+
+#[cfg(feature = "scales")]
+fn option_f64(options: &HashMap<String, ScalarValue>, key: &str, default: f64) -> Result<f64> {
+    if let Some(value) = options.get(key).and_then(non_null_option_scalar) {
+        scalar_to_f64(value)
+    } else {
+        Ok(default)
+    }
+}
+
+#[cfg(feature = "scales")]
+fn eval_json_or_signal_scalar(
+    value: &serde_json::Value,
+    config: &CompilationConfig,
+) -> Result<ScalarValue> {
+    if let Some(signal_expr) = value
+        .as_object()
+        .and_then(|obj| obj.get("signal"))
+        .and_then(|v| v.as_str())
+    {
+        eval_signal_expr(signal_expr, config)
+    } else {
+        ScalarValue::from_json(value).map_err(VegaFusionError::from)
     }
 }
 
@@ -196,16 +329,7 @@ fn resolve_options(
     let mut options = HashMap::new();
 
     for (key, value) in &scale.extra {
-        let resolved = if let Some(signal_expr) = value
-            .as_object()
-            .and_then(|obj| obj.get("signal"))
-            .and_then(|v| v.as_str())
-        {
-            eval_signal_expr(signal_expr, config)?
-        } else {
-            ScalarValue::from_json(value)?
-        };
-
+        let resolved = eval_json_or_signal_scalar(value, config)?;
         options.insert(normalize_option_name(key), resolved);
     }
 
@@ -317,6 +441,14 @@ fn is_continuous_scale(scale_type: &ScaleTypeSpec) -> bool {
             | ScaleTypeSpec::Symlog
             | ScaleTypeSpec::Time
             | ScaleTypeSpec::Utc
+    )
+}
+
+#[cfg(feature = "scales")]
+fn is_discrete_scale(scale_type: &ScaleTypeSpec) -> bool {
+    matches!(
+        scale_type,
+        ScaleTypeSpec::Ordinal | ScaleTypeSpec::Band | ScaleTypeSpec::Point
     )
 }
 
@@ -445,7 +577,11 @@ fn json_value_to_array(value: &serde_json::Value) -> Result<ArrayRef> {
 }
 
 #[cfg(feature = "scales")]
-fn range_from_dimension(range_name: &str, config: &CompilationConfig) -> Result<ArrayRef> {
+fn range_from_dimension(
+    range_name: &str,
+    scale_type: &ScaleTypeSpec,
+    config: &CompilationConfig,
+) -> Result<ArrayRef> {
     let dim = config.signal_scope.get(range_name).ok_or_else(|| {
         VegaFusionError::internal(format!(
             "Range {range_name:?} requires a signal named {range_name:?} in scope"
@@ -455,7 +591,13 @@ fn range_from_dimension(range_name: &str, config: &CompilationConfig) -> Result<
     let dim = scalar_to_f64(dim)?;
     let values = match range_name {
         "width" => vec![ScalarValue::from(0.0_f64), ScalarValue::from(dim)],
-        "height" => vec![ScalarValue::from(dim), ScalarValue::from(0.0_f64)],
+        "height" => {
+            if is_discrete_scale(scale_type) {
+                vec![ScalarValue::from(0.0_f64), ScalarValue::from(dim)]
+            } else {
+                vec![ScalarValue::from(dim), ScalarValue::from(0.0_f64)]
+            }
+        }
         _ => {
             return Err(VegaFusionError::internal(format!(
                 "Unsupported range dimension {range_name:?}"
@@ -498,4 +640,207 @@ fn normalize_option_name(name: &str) -> String {
         }
     }
     normalized
+}
+
+#[cfg(all(test, feature = "scales"))]
+mod tests {
+    use super::*;
+    use datafusion_common::ScalarValue;
+    use serde_json::json;
+
+    fn config_with_dimensions(width: f64, height: f64) -> CompilationConfig {
+        let mut config = CompilationConfig::default();
+        config
+            .signal_scope
+            .insert("width".to_string(), ScalarValue::from(width));
+        config
+            .signal_scope
+            .insert("height".to_string(), ScalarValue::from(height));
+        config
+    }
+
+    fn scalar_domain_f64(value: &ScalarValue) -> f64 {
+        match value {
+            ScalarValue::Date32(Some(days)) => (*days as f64) * 86_400_000.0,
+            ScalarValue::Date64(Some(ms)) => *ms as f64,
+            ScalarValue::TimestampSecond(Some(v), _) => (*v as f64) * 1000.0,
+            ScalarValue::TimestampMillisecond(Some(v), _) => *v as f64,
+            ScalarValue::TimestampMicrosecond(Some(v), _) => (*v as f64) / 1000.0,
+            ScalarValue::TimestampNanosecond(Some(v), _) => (*v as f64) / 1_000_000.0,
+            _ => scalar_to_f64(value).unwrap(),
+        }
+    }
+
+    fn scalar_f64(values: &ArrayRef) -> (f64, f64) {
+        let lo = ScalarValue::try_from_array(values, 0).unwrap();
+        let hi = ScalarValue::try_from_array(values, 1).unwrap();
+        (scalar_domain_f64(&lo), scalar_domain_f64(&hi))
+    }
+
+    #[test]
+    fn test_default_zero_for_linear_pow_sqrt() {
+        for scale_type in ["linear", "pow", "sqrt"] {
+            let scale: ScaleSpec = serde_json::from_value(json!({
+                "name": "x",
+                "type": scale_type,
+                "domain": [2, 5],
+                "range": [0, 100]
+            }))
+            .unwrap();
+            let state = resolve_scale_state(&scale, &CompilationConfig::default()).unwrap();
+            let (lo, hi) = scalar_f64(&state.domain);
+            assert_eq!(lo, 0.0, "scale type {scale_type}");
+            assert_eq!(hi, 5.0, "scale type {scale_type}");
+            assert!(!state.options.contains_key("zero"));
+        }
+    }
+
+    #[test]
+    fn test_explicit_zero_false_overrides_default() {
+        let scale: ScaleSpec = serde_json::from_value(json!({
+            "name": "x",
+            "type": "linear",
+            "domain": [2, 5],
+            "range": [0, 100],
+            "zero": false
+        }))
+        .unwrap();
+        let state = resolve_scale_state(&scale, &CompilationConfig::default()).unwrap();
+        let (lo, hi) = scalar_f64(&state.domain);
+        assert_eq!(lo, 2.0);
+        assert_eq!(hi, 5.0);
+    }
+
+    #[test]
+    fn test_height_range_orientation_discrete_and_continuous() {
+        let config = config_with_dimensions(400.0, 200.0);
+
+        let discrete: ScaleSpec = serde_json::from_value(json!({
+            "name": "x",
+            "type": "band",
+            "domain": ["A", "B"],
+            "range": "height"
+        }))
+        .unwrap();
+        let continuous: ScaleSpec = serde_json::from_value(json!({
+            "name": "y",
+            "type": "linear",
+            "domain": [0, 1],
+            "range": "height"
+        }))
+        .unwrap();
+
+        let d_state = resolve_scale_state(&discrete, &config).unwrap();
+        let c_state = resolve_scale_state(&continuous, &config).unwrap();
+
+        assert_eq!(scalar_f64(&d_state.range), (0.0, 200.0));
+        assert_eq!(scalar_f64(&c_state.range), (200.0, 0.0));
+    }
+
+    #[test]
+    fn test_range_step_for_band_and_point() {
+        let band: ScaleSpec = serde_json::from_value(json!({
+            "name": "x",
+            "type": "band",
+            "domain": ["A", "B", "C"],
+            "range": {"step": 20},
+            "paddingInner": 0.1,
+            "paddingOuter": 0.2
+        }))
+        .unwrap();
+        let point: ScaleSpec = serde_json::from_value(json!({
+            "name": "x",
+            "type": "point",
+            "domain": ["A", "B", "C"],
+            "range": {"step": 20},
+            "padding": 0.5
+        }))
+        .unwrap();
+
+        let band_state = resolve_scale_state(&band, &CompilationConfig::default()).unwrap();
+        let point_state = resolve_scale_state(&point, &CompilationConfig::default()).unwrap();
+
+        assert_eq!(scalar_f64(&band_state.range), (0.0, 66.0));
+        assert_eq!(scalar_f64(&point_state.range), (0.0, 60.0));
+        assert!(!band_state.options.contains_key("range_step"));
+        assert!(!point_state.options.contains_key("range_step"));
+    }
+
+    #[test]
+    fn test_domain_raw_precedence_and_bypass() {
+        let scale: ScaleSpec = serde_json::from_value(json!({
+            "name": "x",
+            "type": "linear",
+            "range": [0, 100],
+            "domainRaw": [2, 5],
+            "zero": true,
+            "padding": 10,
+            "domainMin": 0,
+            "domainMax": 10
+        }))
+        .unwrap();
+
+        let state = resolve_scale_state(&scale, &CompilationConfig::default()).unwrap();
+        assert_eq!(scalar_f64(&state.domain), (2.0, 5.0));
+        assert!(!state.options.contains_key("domain_raw"));
+    }
+
+    #[test]
+    fn test_domain_min_max_override() {
+        let scale: ScaleSpec = serde_json::from_value(json!({
+            "name": "x",
+            "type": "linear",
+            "domain": [2, 5],
+            "range": [0, 100],
+            "domainMin": 1,
+            "domainMax": 10,
+            "zero": false
+        }))
+        .unwrap();
+
+        let state = resolve_scale_state(&scale, &CompilationConfig::default()).unwrap();
+        assert_eq!(scalar_f64(&state.domain), (1.0, 10.0));
+        assert!(!state.options.contains_key("domain_min"));
+        assert!(!state.options.contains_key("domain_max"));
+    }
+
+    #[test]
+    fn test_domain_mid_errors() {
+        let scale: ScaleSpec = serde_json::from_value(json!({
+            "name": "x",
+            "type": "linear",
+            "domain": [2, 5],
+            "range": [0, 100],
+            "domainMid": 3
+        }))
+        .unwrap();
+
+        let err = resolve_scale_state(&scale, &CompilationConfig::default()).unwrap_err();
+        assert!(err.to_string().contains(
+            "domainMid is not yet supported for server-evaluated piecewise continuous scales"
+        ));
+    }
+
+    #[test]
+    fn test_continuous_padding_changes_domain() {
+        let config = CompilationConfig::default();
+        for scale in [
+            json!({"name":"x","type":"linear","domain":[2,5],"range":[100,0],"padding":10}),
+            json!({"name":"x","type":"log","domain":[2,5],"range":[100,0],"padding":10}),
+            json!({"name":"x","type":"pow","domain":[2,5],"range":[100,0],"padding":10,"zero":false,"exponent":2}),
+            json!({"name":"x","type":"sqrt","domain":[2,5],"range":[100,0],"padding":10,"zero":false}),
+            json!({"name":"x","type":"symlog","domain":[2,5],"range":[100,0],"padding":10,"constant":1}),
+            json!({"name":"x","type":"time","domain":[0,1000],"range":[100,0],"padding":10}),
+            json!({"name":"x","type":"utc","domain":[0,1000],"range":[100,0],"padding":10}),
+        ] {
+            let spec: ScaleSpec = serde_json::from_value(scale).unwrap();
+            let state = resolve_scale_state(&spec, &config).unwrap();
+            let (lo, hi) = scalar_f64(&state.domain);
+            if matches!(spec.type_, Some(ScaleTypeSpec::Time | ScaleTypeSpec::Utc)) {
+                assert!(lo < 0.0 || hi > 1000.0);
+            } else {
+                assert!(lo < 2.0 || hi > 5.0);
+            }
+        }
+    }
 }

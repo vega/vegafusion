@@ -1325,7 +1325,6 @@ fn normalize_markenc_test_spec(spec_name: &str, full_spec: ChartSpec) -> ChartSp
             "value": "steelblue"
         });
         spec_json["scales"][0]["padding"] = serde_json::json!(0);
-        spec_json["scales"][1]["zero"] = serde_json::json!(true);
     }
 
     serde_json::from_value(spec_json).unwrap()
