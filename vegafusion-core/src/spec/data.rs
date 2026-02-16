@@ -181,8 +181,13 @@ impl DataSpec {
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Hash, Eq)]
 pub enum DependencyNodeSupported {
+    /// Fully executable on the server in this planning phase.
     Supported,
+    /// Data node can be partially executed on server (pipeline split).
     PartiallySupported,
+    /// Value is mirrored from client to server, not computed from server-side spec execution.
+    Mirrored,
+    /// Not available on the server for this planning pass.
     Unsupported,
 }
 

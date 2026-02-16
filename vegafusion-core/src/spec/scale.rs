@@ -1,8 +1,13 @@
+use crate::error::Result;
+use crate::expression::parser::parse;
+use crate::proto::gen::tasks::Variable;
 use crate::spec::transform::aggregate::AggregateOpSpec;
 use crate::spec::values::{SignalExpressionSpec, SortOrderSpec};
+use crate::task_graph::task::InputVariable;
+use itertools::Itertools;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ScaleSpec {
@@ -22,6 +27,145 @@ pub struct ScaleSpec {
 
     #[serde(flatten)]
     pub extra: HashMap<String, Value>,
+}
+
+impl ScaleSpec {
+    pub fn input_vars(&self) -> Result<Vec<InputVariable>> {
+        let mut vars: HashSet<InputVariable> = Default::default();
+
+        // domain
+        if let Some(domain) = &self.domain {
+            match domain {
+                ScaleDomainSpec::FieldReference(reference) => {
+                    vars.insert(InputVariable {
+                        var: Variable::new_data(&reference.data),
+                        propagate: true,
+                    });
+                }
+                ScaleDomainSpec::FieldsReference(fields_reference) => {
+                    if let Some(data) = &fields_reference.data {
+                        vars.insert(InputVariable {
+                            var: Variable::new_data(data),
+                            propagate: true,
+                        });
+                    }
+                }
+                ScaleDomainSpec::FieldsReferences(fields_references) => {
+                    for value in &fields_references.fields {
+                        match value {
+                            ScaleDataReferenceOrSignalSpec::Reference(reference) => {
+                                vars.insert(InputVariable {
+                                    var: Variable::new_data(&reference.data),
+                                    propagate: true,
+                                });
+                            }
+                            ScaleDataReferenceOrSignalSpec::Signal(signal_expr) => {
+                                add_signal_expr_deps(signal_expr.signal.as_str(), &mut vars)?;
+                            }
+                        }
+                    }
+                }
+                ScaleDomainSpec::FieldsSignals(fields_signals) => {
+                    for signal_expr in &fields_signals.fields {
+                        add_signal_expr_deps(signal_expr.signal.as_str(), &mut vars)?;
+                    }
+                }
+                ScaleDomainSpec::Signal(signal_expr) => {
+                    add_signal_expr_deps(signal_expr.signal.as_str(), &mut vars)?;
+                }
+                ScaleDomainSpec::Array(arr) => {
+                    for el in arr {
+                        if let ScaleArrayElementSpec::Signal(signal_expr) = el {
+                            add_signal_expr_deps(signal_expr.signal.as_str(), &mut vars)?;
+                        }
+                    }
+                }
+                _ => {}
+            }
+        }
+
+        // range
+        if let Some(range) = &self.range {
+            match range {
+                ScaleRangeSpec::Reference(reference) => {
+                    vars.insert(InputVariable {
+                        var: Variable::new_data(&reference.data),
+                        propagate: true,
+                    });
+                }
+                ScaleRangeSpec::Signal(signal_expr) => {
+                    add_signal_expr_deps(signal_expr.signal.as_str(), &mut vars)?;
+                }
+                ScaleRangeSpec::Array(arr) => {
+                    for el in arr {
+                        if let ScaleArrayElementSpec::Signal(signal_expr) = el {
+                            add_signal_expr_deps(signal_expr.signal.as_str(), &mut vars)?;
+                        }
+                    }
+                }
+                ScaleRangeSpec::Value(Value::String(s)) => {
+                    if matches!(s.as_str(), "width" | "height") {
+                        vars.insert(InputVariable {
+                            var: Variable::new_signal(s),
+                            propagate: true,
+                        });
+                    }
+                }
+                ScaleRangeSpec::Value(Value::Object(obj)) => {
+                    if let Some(signal_expr) = obj
+                        .get("step")
+                        .and_then(|step| step.as_object())
+                        .and_then(|step| step.get("signal"))
+                        .and_then(|v| v.as_str())
+                    {
+                        add_signal_expr_deps(signal_expr, &mut vars)?;
+                    }
+                }
+                _ => {}
+            }
+        }
+
+        // bins
+        if let Some(bins) = &self.bins {
+            match bins {
+                ScaleBinsSpec::Signal(signal_expr) => {
+                    add_signal_expr_deps(signal_expr.signal.as_str(), &mut vars)?;
+                }
+                ScaleBinsSpec::Array(arr) => {
+                    for el in arr {
+                        if let ScaleArrayElementSpec::Signal(signal_expr) = el {
+                            add_signal_expr_deps(signal_expr.signal.as_str(), &mut vars)?;
+                        }
+                    }
+                }
+                ScaleBinsSpec::Value(Value::Object(obj)) => {
+                    if let Some(signal_expr) = obj.get("signal").and_then(|v| v.as_str()) {
+                        add_signal_expr_deps(signal_expr, &mut vars)?;
+                    }
+                }
+                _ => {}
+            }
+        }
+
+        // option expressions in untyped extra properties (e.g. domainRaw)
+        for value in self.extra.values() {
+            if let Some(signal_expr) = value
+                .as_object()
+                .and_then(|obj| obj.get("signal"))
+                .and_then(|v| v.as_str())
+            {
+                add_signal_expr_deps(signal_expr, &mut vars)?;
+            }
+        }
+
+        Ok(vars.into_iter().sorted().collect())
+    }
+}
+
+fn add_signal_expr_deps(signal_expr: &str, vars: &mut HashSet<InputVariable>) -> Result<()> {
+    let expr = parse(signal_expr)?;
+    vars.extend(expr.input_vars());
+    Ok(())
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Hash, Eq)]

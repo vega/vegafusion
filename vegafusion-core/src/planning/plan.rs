@@ -13,7 +13,10 @@ use crate::planning::unsupported_data_warning::add_unsupported_data_warnings;
 use crate::proto::gen::pretransform::{
     pre_transform_spec_warning::WarningType, PlannerWarning, PreTransformSpecWarning,
 };
+use crate::proto::gen::tasks::Variable;
 use crate::spec::chart::ChartSpec;
+use crate::spec::signal::SignalSpec;
+use crate::spec::values::MissingNullOrValue;
 use crate::task_graph::graph::ScopedVariable;
 use serde::{Deserialize, Serialize};
 
@@ -223,6 +226,8 @@ impl SpecPlan {
                 )?;
             }
 
+            materialize_root_dimension_signals(full_spec, &mut server_spec)?;
+
             if config.fuse_datasets {
                 let mut do_not_fuse = config.keep_variables.clone();
                 do_not_fuse.extend(comm_plan.server_to_client.clone());
@@ -249,6 +254,50 @@ impl SpecPlan {
                 warnings,
             })
         }
+    }
+}
+
+fn materialize_root_dimension_signals(
+    full_spec: &ChartSpec,
+    server_spec: &mut ChartSpec,
+) -> Result<()> {
+    let task_scope = server_spec.to_task_scope()?;
+    let input_vars = server_spec.input_vars(&task_scope)?;
+
+    for name in ["width", "height"] {
+        let var = (Variable::new_signal(name), Vec::new());
+        if !input_vars.contains(&var) {
+            continue;
+        }
+
+        if server_spec.signals.iter().any(|signal| signal.name == name) {
+            continue;
+        }
+
+        let Some(value) = root_numeric_dimension_value(full_spec, name) else {
+            continue;
+        };
+
+        server_spec.signals.push(SignalSpec {
+            name: name.to_string(),
+            init: None,
+            update: None,
+            value: MissingNullOrValue::Value(value),
+            on: vec![],
+            bind: None,
+            extra: Default::default(),
+        });
+    }
+
+    Ok(())
+}
+
+fn root_numeric_dimension_value(chart_spec: &ChartSpec, name: &str) -> Option<serde_json::Value> {
+    let value = chart_spec.extra.get(name)?;
+    if value.is_number() {
+        Some(value.clone())
+    } else {
+        None
     }
 }
 
@@ -360,5 +409,31 @@ mod tests {
             .iter()
             .any(|d| d.name == rewritten_source
                 && matches!(d.transform.first(), Some(TransformSpec::MarkEncoding(_)))));
+    }
+
+    #[test]
+    fn test_materialize_root_width_signal_when_server_depends_on_width() {
+        let spec: ChartSpec = serde_json::from_value(json!({
+            "$schema": "https://vega.github.io/schema/vega/v5.json",
+            "width": 320,
+            "scales": [
+                {"name": "x", "type": "linear", "domain": [0, 10], "range": "width"}
+            ],
+            "signals": [
+                {"name": "scaled", "update": "scale('x', 1)"}
+            ]
+        }))
+        .unwrap();
+
+        let plan = SpecPlan::try_new(&spec, &PlannerConfig::default()).unwrap();
+
+        let width_signal = plan
+            .server_spec
+            .signals
+            .iter()
+            .find(|sig| sig.name == "width")
+            .unwrap();
+
+        assert_eq!(width_signal.value.as_option(), Some(json!(320)));
     }
 }

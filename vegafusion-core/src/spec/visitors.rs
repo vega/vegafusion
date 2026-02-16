@@ -9,12 +9,9 @@ use crate::spec::chart::{ChartSpec, ChartVisitor};
 use crate::spec::data::{DataFormatParseSpec, DataSpec};
 use crate::spec::mark::{MarkFacetSpec, MarkSpec};
 use crate::spec::projection::ProjectionSpec;
-use crate::spec::scale::{
-    ScaleArrayElementSpec, ScaleBinsSpec, ScaleDataReferenceOrSignalSpec, ScaleDomainSpec,
-    ScaleFieldReferenceSpec, ScaleRangeSpec, ScaleSpec,
-};
+use crate::spec::scale::ScaleSpec;
 use crate::spec::signal::{SignalOnEventSpec, SignalSpec};
-use crate::spec::values::{SignalExpressionSpec, StringOrSignalSpec};
+use crate::spec::values::StringOrSignalSpec;
 use crate::task_graph::graph::ScopedVariable;
 use crate::task_graph::scope::TaskScope;
 use crate::task_graph::task_value::TaskValue;
@@ -582,99 +579,9 @@ impl ChartVisitor for InputVarsChartVisitor<'_> {
     }
 
     fn visit_scale(&mut self, scale: &ScaleSpec, scope: &[u32]) -> Result<()> {
-        let mut references: Vec<ScaleFieldReferenceSpec> = Vec::new();
-        let mut signals: Vec<SignalExpressionSpec> = Vec::new();
-
-        // domain
-        if let Some(domain) = &scale.domain {
-            match domain {
-                ScaleDomainSpec::FieldReference(reference) => {
-                    references.push(reference.clone());
-                }
-                ScaleDomainSpec::FieldsReference(fields_reference) => {
-                    references.extend(fields_reference.to_field_references());
-                }
-                ScaleDomainSpec::FieldsReferences(field_references) => {
-                    for v in field_references.fields.clone() {
-                        match v {
-                            ScaleDataReferenceOrSignalSpec::Reference(field_ref) => {
-                                references.push(field_ref);
-                            }
-                            ScaleDataReferenceOrSignalSpec::Signal(signal) => {
-                                signals.push(signal);
-                            }
-                        }
-                    }
-                }
-                ScaleDomainSpec::FieldsSignals(fields_signals) => {
-                    signals.extend(fields_signals.fields.clone());
-                }
-                ScaleDomainSpec::Signal(signal_expr) => {
-                    signals.push(signal_expr.clone());
-                }
-                ScaleDomainSpec::Array(arr) => {
-                    for el in arr {
-                        if let ScaleArrayElementSpec::Signal(signal_expr) = el {
-                            signals.push(signal_expr.clone());
-                        }
-                    }
-                }
-                _ => {}
-            }
-        }
-
-        // range
-        if let Some(range) = &scale.range {
-            match range {
-                ScaleRangeSpec::Reference(reference) => {
-                    references.push(reference.clone());
-                }
-                ScaleRangeSpec::Signal(signal_expr) => {
-                    signals.push(signal_expr.clone());
-                }
-                ScaleRangeSpec::Array(arr) => {
-                    for el in arr {
-                        if let ScaleArrayElementSpec::Signal(signal_expr) = el {
-                            signals.push(signal_expr.clone());
-                        }
-                    }
-                }
-                _ => {}
-            }
-        }
-
-        // bins
-        if let Some(bins) = &scale.bins {
-            match bins {
-                ScaleBinsSpec::Signal(signal_expr) => {
-                    signals.push(signal_expr.clone());
-                }
-                ScaleBinsSpec::Array(arr) => {
-                    for el in arr {
-                        if let ScaleArrayElementSpec::Signal(signal_expr) = el {
-                            signals.push(signal_expr.clone());
-                        }
-                    }
-                }
-                _ => {}
-            }
-        }
-
-        // Process references
-        for reference in &references {
-            // Resolve referenced data
-            let reference_var = Variable::new_data(&reference.data);
-            let resolved = self.task_scope.resolve_scope(&reference_var, scope)?;
-            self.input_vars.insert((reference_var, resolved.scope));
-        }
-
-        // Process signals
-        for sig in &signals {
-            let expr = parse(&sig.signal)?;
-            for input_var in expr.input_vars() {
-                let resolved = self.task_scope.resolve_scope(&input_var.var, scope)?;
-                self.input_vars.insert((input_var.var, resolved.scope));
-            }
+        for input_var in scale.input_vars()? {
+            let resolved = self.task_scope.resolve_scope(&input_var.var, scope)?;
+            self.input_vars.insert((input_var.var, resolved.scope));
         }
 
         Ok(())

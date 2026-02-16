@@ -49,34 +49,22 @@ pub fn get_supported_data_variables(
 
         // Unsupported nodes not included
         if !matches!(node_supported, DependencyNodeSupported::Unsupported) {
-            // Check whether all parents are fully supported
-            let all_parents_supported = data_graph
-                .edges_directed(*node_index, Incoming)
-                .map(|edge| data_graph.node_weight(edge.source()).unwrap().0.clone())
-                .all(|parent_var| {
-                    matches!(
-                        all_supported_vars.get(&parent_var),
-                        Some(DependencyNodeSupported::Supported)
-                    )
-                });
+            if matches!(node_supported, DependencyNodeSupported::Mirrored) {
+                all_supported_vars.insert(scoped_var.clone(), node_supported.clone());
+                continue;
+            }
+
+            // Signal and scale variables require all parents to be available.
+            let all_parents_supported =
+                all_parents_available(&data_graph, *node_index, &all_supported_vars);
 
             if all_parents_supported {
                 all_supported_vars.insert(scoped_var.clone(), node_supported.clone());
-            } else {
+            } else if matches!(scoped_var.0.namespace(), VariableNamespace::Data) {
                 // Check if all input Datasets are supported. e.g. A data node with supported source
                 // but some unsupported transform dependencies
-                let all_dataset_inputs_supported = data_graph
-                    .edges_directed(*node_index, Incoming)
-                    .map(|edge| data_graph.node_weight(edge.source()).unwrap().0.clone())
-                    .all(|parent_var| match parent_var.0.namespace() {
-                        VariableNamespace::Data => {
-                            matches!(
-                                all_supported_vars.get(&parent_var),
-                                Some(DependencyNodeSupported::Supported)
-                            )
-                        }
-                        _ => true,
-                    });
+                let all_dataset_inputs_supported =
+                    all_data_parents_available(&data_graph, *node_index, &all_supported_vars);
 
                 if all_dataset_inputs_supported {
                     all_supported_vars.insert(
@@ -89,7 +77,7 @@ pub fn get_supported_data_variables(
     }
 
     // Traverse again, this time keep all data nodes, but only keep signals that are ancestors
-    // of supported data nodes. This is to avoid bringing over unnecessary signals.
+    // of supported data/scale nodes. This is to avoid bringing over unnecessary signals.
     // Keep supported scales when scale copying is enabled so expressions can depend on them.
     let mut supported_vars = HashMap::new();
     for node_index in &nodes {
@@ -102,20 +90,25 @@ pub fn get_supported_data_variables(
                 }
             }
             VariableNamespace::Signal => {
-                if all_supported_vars.contains_key(scoped_var) {
+                if let Some(signal_supported) = all_supported_vars.get(scoped_var) {
+                    if matches!(signal_supported, DependencyNodeSupported::Mirrored) {
+                        supported_vars.insert(scoped_var.clone(), signal_supported.clone());
+                        continue;
+                    }
+
                     // Check if any dependent nodes are supported data sets
                     let mut dfs = petgraph::visit::Dfs::new(&data_graph, *node_index);
                     'dfs: while let Some(dfs_node_index) = dfs.next(&data_graph) {
                         let (dfs_scoped_var, _) = data_graph.node_weight(dfs_node_index).unwrap();
-                        if matches!(dfs_scoped_var.0.namespace(), VariableNamespace::Data)
-                            && all_supported_vars.contains_key(dfs_scoped_var)
+                        if all_supported_vars.contains_key(dfs_scoped_var)
+                            && matches!(
+                                dfs_scoped_var.0.namespace(),
+                                VariableNamespace::Data | VariableNamespace::Scale
+                            )
                         {
-                            // Found supported child data node. Add signal as supported and bail
+                            // Found supported child data/scale node. Add signal as supported and bail
                             // out of DFS
-                            supported_vars.insert(
-                                scoped_var.clone(),
-                                all_supported_vars.get(dfs_scoped_var).unwrap().clone(),
-                            );
+                            supported_vars.insert(scoped_var.clone(), signal_supported.clone());
                             break 'dfs;
                         }
                     }
@@ -139,7 +132,7 @@ pub fn build_dependency_graph(
     let task_scope = chart_spec.to_task_scope()?;
 
     // Initialize graph with nodes
-    let mut nodes_visitor = AddDependencyNodesVisitor::new(config, &task_scope);
+    let mut nodes_visitor = AddDependencyNodesVisitor::new(config, &task_scope, chart_spec);
     chart_spec.walk(&mut nodes_visitor)?;
 
     // Add dependency edges
@@ -164,15 +157,26 @@ pub struct AddDependencyNodesVisitor<'a> {
 }
 
 impl<'a> AddDependencyNodesVisitor<'a> {
-    pub fn new(planner_config: &'a PlannerConfig, task_scope: &'a TaskScope) -> Self {
+    pub fn new(
+        planner_config: &'a PlannerConfig,
+        task_scope: &'a TaskScope,
+        chart_spec: &ChartSpec,
+    ) -> Self {
         let mut dependency_graph = DiGraph::new();
         let mut node_indexes = HashMap::new();
+        let width_available = root_dimension_is_numeric(chart_spec, "width");
+        let height_available = root_dimension_is_numeric(chart_spec, "height");
 
         // Initialize with nodes for all built-in signals (e.g. width, height, etc.)
         for sig in BUILT_IN_SIGNALS.iter() {
+            let supported =
+                if (*sig == "width" && width_available) || (*sig == "height" && height_available) {
+                    DependencyNodeSupported::Supported
+                } else {
+                    DependencyNodeSupported::Unsupported
+                };
             let scoped_var = (Variable::new_signal(sig), Vec::new());
-            let node_index = dependency_graph
-                .add_node((scoped_var.clone(), DependencyNodeSupported::Unsupported));
+            let node_index = dependency_graph.add_node((scoped_var.clone(), supported));
             node_indexes.insert(scoped_var, node_index);
         }
 
@@ -190,7 +194,11 @@ impl ChartVisitor for AddDependencyNodesVisitor<'_> {
     fn visit_data(&mut self, data: &DataSpec, scope: &[u32]) -> Result<()> {
         // Add scoped variable for dataset as node
         let scoped_var = (Variable::new_data(&data.name), Vec::from(scope));
-        let data_suported = data.supported(self.planner_config, self.task_scope, scope);
+        let data_suported = if data.on.is_some() || data.is_selection_store() {
+            DependencyNodeSupported::Mirrored
+        } else {
+            data.supported(self.planner_config, self.task_scope, scope)
+        };
         let node_index = self
             .dependency_graph
             .add_node((scoped_var.clone(), data_suported.clone()));
@@ -213,18 +221,38 @@ impl ChartVisitor for AddDependencyNodesVisitor<'_> {
     fn visit_signal(&mut self, signal: &SignalSpec, scope: &[u32]) -> Result<()> {
         // Add scoped variable for signal as node
         let scoped_var = (Variable::new_signal(&signal.name), Vec::from(scope));
-        let node_index = self.dependency_graph.add_node((
-            scoped_var.clone(),
-            signal.supported(self.planner_config, self.task_scope, scope),
-        ));
+        let supported = if signal.bind.is_some() || !signal.on.is_empty() {
+            DependencyNodeSupported::Mirrored
+        } else {
+            signal.supported(self.planner_config, self.task_scope, scope)
+        };
+        let node_index = self
+            .dependency_graph
+            .add_node((scoped_var.clone(), supported));
         self.node_indexes.insert(scoped_var, node_index);
         Ok(())
     }
 
     fn visit_scale(&mut self, scale: &ScaleSpec, scope: &[u32]) -> Result<()> {
         let scoped_var = (Variable::new_scale(&scale.name), Vec::from(scope));
-        let supported = if self.planner_config.copy_scales_to_server {
-            DependencyNodeSupported::Supported
+        let supported = if !self.planner_config.copy_scales_to_server {
+            DependencyNodeSupported::Unsupported
+        } else if let Ok(input_vars) = scale.input_vars() {
+            if input_vars.into_iter().any(|input_var| {
+                if let Ok(scoped_source_var) =
+                    scoped_var_for_input_var(&input_var, scope, self.task_scope)
+                {
+                    self.planner_config
+                        .client_only_vars
+                        .contains(&scoped_source_var)
+                } else {
+                    true
+                }
+            }) {
+                DependencyNodeSupported::Unsupported
+            } else {
+                DependencyNodeSupported::Supported
+            }
         } else {
             DependencyNodeSupported::Unsupported
         };
@@ -480,6 +508,72 @@ impl ChartVisitor for AddDependencyEdgesVisitor<'_> {
         }
         Ok(())
     }
+
+    fn visit_scale(&mut self, scale: &ScaleSpec, scope: &[u32]) -> Result<()> {
+        let scoped_var = (Variable::new_scale(&scale.name), Vec::from(scope));
+
+        let node_index = self
+            .node_indexes
+            .get(&scoped_var)
+            .with_context(|| format!("Missing scale node: {scoped_var:?}"))?;
+
+        for input_var in scale.input_vars()? {
+            let scoped_source_var = scoped_var_for_input_var(&input_var, scope, self.task_scope)?;
+            let source_node_index = self
+                .node_indexes
+                .get(&scoped_source_var)
+                .with_context(|| format!("Missing dependency node: {scoped_source_var:?}"))?;
+
+            self.dependency_graph
+                .add_edge(*source_node_index, *node_index, ());
+        }
+
+        Ok(())
+    }
+}
+
+fn root_dimension_is_numeric(chart_spec: &ChartSpec, name: &str) -> bool {
+    chart_spec
+        .extra
+        .get(name)
+        .and_then(|v| v.as_f64())
+        .is_some()
+}
+
+fn all_parents_available(
+    data_graph: &DependencyGraph,
+    node_index: NodeIndex,
+    all_supported_vars: &HashMap<ScopedVariable, DependencyNodeSupported>,
+) -> bool {
+    data_graph
+        .edges_directed(node_index, Incoming)
+        .map(|edge| data_graph.node_weight(edge.source()).unwrap().0.clone())
+        .all(|parent_var| {
+            matches!(
+                all_supported_vars.get(&parent_var),
+                Some(DependencyNodeSupported::Supported) | Some(DependencyNodeSupported::Mirrored)
+            )
+        })
+}
+
+fn all_data_parents_available(
+    data_graph: &DependencyGraph,
+    node_index: NodeIndex,
+    all_supported_vars: &HashMap<ScopedVariable, DependencyNodeSupported>,
+) -> bool {
+    data_graph
+        .edges_directed(node_index, Incoming)
+        .map(|edge| data_graph.node_weight(edge.source()).unwrap().0.clone())
+        .all(|parent_var| {
+            if !matches!(parent_var.0.namespace(), VariableNamespace::Data) {
+                return true;
+            }
+
+            matches!(
+                all_supported_vars.get(&parent_var),
+                Some(DependencyNodeSupported::Supported) | Some(DependencyNodeSupported::Mirrored)
+            )
+        })
 }
 
 pub fn scoped_var_for_input_var(
@@ -513,6 +607,26 @@ mod tests {
             ],
             "signals": [
                 {"name": "s", "update": "scale('x', 1)"}
+            ]
+        }))
+        .unwrap()
+    }
+
+    fn chart_with_scale_domain_raw_and_named_range() -> ChartSpec {
+        serde_json::from_value(json!({
+            "$schema": "https://vega.github.io/schema/vega/v5.json",
+            "width": 300,
+            "signals": [
+                {"name": "raw_domain", "value": [0, 1]}
+            ],
+            "scales": [
+                {
+                    "name": "x",
+                    "type": "linear",
+                    "domain": [0, 1],
+                    "domainRaw": {"signal": "raw_domain"},
+                    "range": "width"
+                }
             ]
         }))
         .unwrap()
@@ -583,5 +697,43 @@ mod tests {
             supported_with_scales.get(&scale_var),
             Some(DependencyNodeSupported::Supported)
         ));
+    }
+
+    #[test]
+    fn test_scale_edges_include_domain_raw_and_named_range_dependencies() {
+        let chart_spec = chart_with_scale_domain_raw_and_named_range();
+        let mut config = PlannerConfig::default();
+        config.copy_scales_to_server = true;
+
+        let (graph, node_indexes) = build_dependency_graph(&chart_spec, &config).unwrap();
+
+        let scale_node = *node_indexes
+            .get(&(Variable::new_scale("x"), Vec::new()))
+            .unwrap();
+        let domain_raw_node = *node_indexes
+            .get(&(Variable::new_signal("raw_domain"), Vec::new()))
+            .unwrap();
+        let width_node = *node_indexes
+            .get(&(Variable::new_signal("width"), Vec::new()))
+            .unwrap();
+
+        assert!(graph.contains_edge(domain_raw_node, scale_node));
+        assert!(graph.contains_edge(width_node, scale_node));
+    }
+
+    #[test]
+    fn test_scale_with_unavailable_root_width_not_supported() {
+        let chart_spec: ChartSpec = serde_json::from_value(json!({
+            "$schema": "https://vega.github.io/schema/vega/v5.json",
+            "scales": [
+                {"name": "x", "type": "linear", "domain": [0, 1], "range": "width"}
+            ]
+        }))
+        .unwrap();
+        let mut config = PlannerConfig::default();
+        config.copy_scales_to_server = true;
+
+        let supported_vars = get_supported_data_variables(&chart_spec, &config).unwrap();
+        assert!(!supported_vars.contains_key(&(Variable::new_scale("x"), Vec::new())));
     }
 }

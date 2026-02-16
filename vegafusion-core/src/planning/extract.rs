@@ -175,9 +175,13 @@ impl MutChartVisitor for ExtractServerDependenciesVisitor<'_> {
     fn visit_signal(&mut self, signal: &mut SignalSpec, scope: &[u32]) -> Result<()> {
         // check if signal is supported
         let scoped_signal_var = (Variable::new_signal(&signal.name), Vec::from(scope));
-        if self.supported_vars.contains_key(&scoped_signal_var) {
+        if matches!(
+            self.supported_vars.get(&scoped_signal_var),
+            Some(DependencyNodeSupported::Supported)
+        ) {
             // Move signal to server
             let mut server_signal = signal.clone();
+            server_signal.on = vec![];
             server_signal.bind = None;
             if scope.is_empty() {
                 self.server_spec.signals.push(server_signal)
@@ -195,7 +199,11 @@ impl MutChartVisitor for ExtractServerDependenciesVisitor<'_> {
     }
 
     fn visit_scale(&mut self, scale: &mut ScaleSpec, scope: &[u32]) -> Result<()> {
-        if self.planner_config.copy_scales_to_server {
+        let scoped_scale_var = (Variable::new_scale(&scale.name), Vec::from(scope));
+        if matches!(
+            self.supported_vars.get(&scoped_scale_var),
+            Some(DependencyNodeSupported::Supported)
+        ) {
             let server_scale = scale.clone();
             if scope.is_empty() {
                 self.server_spec.scales.push(server_scale);
@@ -298,5 +306,50 @@ mod tests {
         assert_eq!(client_spec.data[0].name, "source");
         assert!(client_spec.data[0].transform.is_empty());
         assert!(client_spec.data[0].values.is_none());
+    }
+
+    #[test]
+    fn test_mirrored_signals_not_copied_to_server_spec() {
+        let mut client_spec: ChartSpec = serde_json::from_value(json!({
+            "$schema": "https://vega.github.io/schema/vega/v5.json",
+            "signals": [
+                {"name": "compute_sig", "value": 2},
+                {
+                    "name": "interactive_sig",
+                    "value": 0,
+                    "on": [{"events": "pointermove", "update": "event.x"}]
+                },
+                {
+                    "name": "bound_sig",
+                    "value": 1,
+                    "bind": {"input": "range", "min": 0, "max": 10}
+                }
+            ],
+            "data": [
+                {
+                    "name": "source",
+                    "values": [{"v": 1}],
+                    "transform": [
+                        {"type": "formula", "expr": "datum.v + compute_sig", "as": "out"}
+                    ]
+                }
+            ]
+        }))
+        .unwrap();
+        let mut task_scope = client_spec.to_task_scope().unwrap();
+
+        let mut config = PlannerConfig::default();
+        config.extract_inline_data = true;
+
+        let server_spec = extract_server_data(&mut client_spec, &mut task_scope, &config).unwrap();
+        let server_signal_names: Vec<_> = server_spec
+            .signals
+            .iter()
+            .map(|s| s.name.as_str())
+            .collect();
+
+        assert!(server_signal_names.contains(&"compute_sig"));
+        assert!(!server_signal_names.contains(&"interactive_sig"));
+        assert!(!server_signal_names.contains(&"bound_sig"));
     }
 }

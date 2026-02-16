@@ -27,7 +27,9 @@ async fn test_extract_server_data() {
     let mut task_scope = spec.to_task_scope().unwrap();
     // println!("{:#?}", task_scope);
 
-    let server_spec = extract_server_data(&mut spec, &mut task_scope, &Default::default()).unwrap();
+    let mut server_spec =
+        extract_server_data(&mut spec, &mut task_scope, &Default::default()).unwrap();
+    let _comm_plan = stitch_specs(&task_scope, &mut server_spec, &mut spec, &[]).unwrap();
     // println!("{}", serde_json::to_string_pretty(&server_spec).unwrap());
 
     let client_defs: HashSet<_> = spec.definition_vars().unwrap().into_iter().collect();

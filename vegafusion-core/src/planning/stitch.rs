@@ -124,9 +124,9 @@ fn make_stub(
                 .ok();
             let stub_values: Option<Value> = stub_spec.and_then(|s| {
                 if s.transform.is_empty() {
-                    None
-                } else {
                     s.values.clone()
+                } else {
+                    None
                 }
             });
 
@@ -224,5 +224,61 @@ mod tests {
 
         assert!(comm_plan.server_to_client.is_empty());
         assert!(comm_plan.client_to_server.is_empty());
+    }
+
+    #[test]
+    fn test_data_stub_preserves_inline_values_without_transforms() {
+        let mut client_spec: ChartSpec = serde_json::from_value(json!({
+            "$schema": "https://vega.github.io/schema/vega/v5.json",
+            "data": [
+                {"name": "source", "values": [{"v": 1}]}
+            ]
+        }))
+        .unwrap();
+
+        let mut server_spec: ChartSpec = serde_json::from_value(json!({
+            "$schema": "https://vega.github.io/schema/vega/v5.json",
+            "data": [
+                {"name": "derived", "source": "source"}
+            ]
+        }))
+        .unwrap();
+
+        let task_scope = client_spec.to_task_scope().unwrap();
+        let _ = stitch_specs(&task_scope, &mut server_spec, &mut client_spec, &[]).unwrap();
+
+        let source = server_spec.get_nested_data(&[], "source").unwrap();
+        assert!(source.transform.is_empty());
+        assert!(source.values.is_some());
+    }
+
+    #[test]
+    fn test_data_stub_drops_inline_values_with_transforms() {
+        let mut client_spec: ChartSpec = serde_json::from_value(json!({
+            "$schema": "https://vega.github.io/schema/vega/v5.json",
+            "data": [
+                {
+                    "name": "source",
+                    "values": [{"v": 1}],
+                    "transform": [{"type": "formula", "expr": "datum.v + 1", "as": "v2"}]
+                }
+            ]
+        }))
+        .unwrap();
+
+        let mut server_spec: ChartSpec = serde_json::from_value(json!({
+            "$schema": "https://vega.github.io/schema/vega/v5.json",
+            "data": [
+                {"name": "derived", "source": "source"}
+            ]
+        }))
+        .unwrap();
+
+        let task_scope = client_spec.to_task_scope().unwrap();
+        let _ = stitch_specs(&task_scope, &mut server_spec, &mut client_spec, &[]).unwrap();
+
+        let source = server_spec.get_nested_data(&[], "source").unwrap();
+        assert!(source.transform.is_empty());
+        assert!(source.values.is_none());
     }
 }
