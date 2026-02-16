@@ -2,7 +2,7 @@ use crate::error::{Result, VegaFusionError};
 use arrow::array::{Array, ArrayRef, ListArray};
 use datafusion_common::DataFusionError;
 
-use arrow::datatypes::DataType;
+use arrow::datatypes::{DataType, Fields};
 pub use datafusion_common::ScalarValue;
 
 #[cfg(feature = "json")]
@@ -16,6 +16,26 @@ use {
 
 // Prefix for special values JSON encoded as strings
 pub const DATETIME_PREFIX: &str = "__$datetime:";
+pub const EMPTY_OBJECT_SENTINEL_FIELD: &str = "__dummy";
+
+pub fn empty_object_sentinel_scalar() -> ScalarValue {
+    ScalarValue::from(vec![(
+        EMPTY_OBJECT_SENTINEL_FIELD,
+        ScalarValue::Float64(Some(0.0)),
+    )])
+}
+
+pub fn is_empty_object_sentinel_fields(fields: &Fields) -> bool {
+    fields.len() == 1 && fields[0].name() == EMPTY_OBJECT_SENTINEL_FIELD
+}
+
+pub fn is_empty_object_sentinel_scalar(value: &ScalarValue) -> bool {
+    if let ScalarValue::Struct(sa) = value {
+        is_empty_object_sentinel_fields(sa.fields())
+    } else {
+        false
+    }
+}
 
 pub trait ScalarValueHelpers {
     #[cfg(feature = "json")]
@@ -59,10 +79,7 @@ impl ScalarValueHelpers for ScalarValue {
                 values.sort_by_key(|el| el.0);
 
                 if values.is_empty() {
-                    ScalarValue::from(vec![(
-                        "__dummy",
-                        ScalarValue::try_from(&DataType::Float64).unwrap(),
-                    )])
+                    empty_object_sentinel_scalar()
                 } else {
                     ScalarValue::from(values)
                 }
@@ -154,6 +171,9 @@ impl ScalarValueHelpers for ScalarValue {
                 Value::Array(values)
             }
             ScalarValue::Struct(sa) => {
+                if is_empty_object_sentinel_fields(sa.fields()) {
+                    return Ok(Value::Object(Default::default()));
+                }
                 let mut pairs: Map<String, Value> = Default::default();
                 for (col_ind, field) in sa.fields().deref().iter().enumerate() {
                     let column = sa.column(col_ind);
@@ -300,5 +320,24 @@ impl ArrayRefHelpers for ArrayRef {
                 "list_el_len called on non-List type".to_string(),
             ))?;
         Ok(a.value(0).data_type().clone())
+    }
+}
+
+#[cfg(all(test, feature = "json"))]
+mod tests {
+    use super::*;
+    use serde_json::json;
+
+    #[test]
+    fn test_empty_object_roundtrip_json() {
+        let scalar = ScalarValue::from_json(&json!({})).unwrap();
+        assert!(is_empty_object_sentinel_scalar(&scalar));
+        assert_eq!(scalar.to_json().unwrap(), json!({}));
+    }
+
+    #[test]
+    fn test_empty_object_sentinel_serializes_as_empty_object() {
+        let scalar = empty_object_sentinel_scalar();
+        assert_eq!(scalar.to_json().unwrap(), json!({}));
     }
 }

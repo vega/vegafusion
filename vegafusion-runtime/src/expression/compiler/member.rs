@@ -11,6 +11,7 @@ use vegafusion_common::arrow::array::Int64Array;
 use vegafusion_common::arrow::compute::cast;
 use vegafusion_common::arrow::datatypes::DataType;
 use vegafusion_common::column::flat_col;
+use vegafusion_common::data::scalar::is_empty_object_sentinel_fields;
 use vegafusion_common::datafusion_common::{DFSchema, ScalarValue};
 use vegafusion_common::datatypes::{data_type, is_numeric_datatype};
 use vegafusion_core::error::{Result, ResultWithContext, VegaFusionError};
@@ -72,7 +73,10 @@ pub fn compile_member(
 
     let expr = match dtype {
         DataType::Struct(ref fields) => {
-            if fields.iter().any(|f| f.name() == &property_string) {
+            if is_empty_object_sentinel_fields(fields) {
+                // Internal sentinel representation of `{}` has no visible properties.
+                return Ok(lit(ScalarValue::try_from(&DataType::Float64).unwrap()));
+            } else if fields.iter().any(|f| f.name() == &property_string) {
                 get_field(compiled_object, property_string)
             } else {
                 // Property does not exist, return null

@@ -36,9 +36,10 @@ use arrow::datatypes::{
 #[cfg(feature = "json")]
 use {
     crate::data::json_writer::record_batches_to_json_rows,
+    crate::data::scalar::{empty_object_sentinel_scalar, EMPTY_OBJECT_SENTINEL_FIELD},
     arrow::json,
     serde_json::{json, Value},
-    std::{borrow::Cow, convert::TryFrom},
+    std::borrow::Cow,
 };
 
 #[cfg(feature = "py")]
@@ -264,7 +265,10 @@ impl VegaFusionTable {
                     // Handle odd special case where vega will interpret
                     // [{}, {}] as [{"datum": {}}, {"datum": {}}]
                     if props.is_empty() {
-                        values = Cow::Owned(vec![json!({"datum": {"__dummy": 0}}); values.len()])
+                        values = Cow::Owned(vec![
+                            json!({"datum": {(EMPTY_OBJECT_SENTINEL_FIELD): 0}});
+                            values.len()
+                        ])
                     }
                 } else {
                     // Array of scalars, need to wrap elements objects with "data" field
@@ -284,10 +288,7 @@ impl VegaFusionTable {
             match schema_result {
                 Err(_) => {
                     // This happens when array elements are objects with no fields
-                    let empty_scalar = ScalarValue::from(vec![(
-                        "__dummy",
-                        ScalarValue::try_from(&DataType::Float64).unwrap(),
-                    )]);
+                    let empty_scalar = empty_object_sentinel_scalar();
                     let array = empty_scalar.to_array_of_size(values.len())?;
                     let struct_array = array.as_any().downcast_ref::<StructArray>().unwrap();
                     let record_batch = RecordBatch::from(struct_array);

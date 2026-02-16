@@ -75,6 +75,7 @@ mod test_compile {
     use std::sync::Arc;
     use vegafusion_common::arrow::datatypes::{DataType, Field, Schema};
     use vegafusion_common::column::flat_col;
+    use vegafusion_common::data::scalar::ScalarValueHelpers;
     use vegafusion_core::arrow::array::{Array, Float64Array};
     use vegafusion_core::arrow::datatypes::Fields;
 
@@ -504,6 +505,29 @@ mod test_compile {
         // ScalarValue::from(...) creates a Field with nullable=false. We always use nullable=true,
         // so compare string repr (which doesn't include nullable info) instead of value
         assert_eq!(format!("{result_value:?}"), format!("{expected_value:?}"));
+    }
+
+    #[test]
+    fn test_compile_empty_object() {
+        let expr = parse("{}").unwrap();
+        let result_expr = compile(&expr, &Default::default(), None).unwrap();
+        assert_ne!(result_expr.to_string(), "named_struct()");
+
+        let result_value = result_expr.eval_to_scalar().unwrap();
+        assert_eq!(result_value.to_json().unwrap(), serde_json::json!({}));
+    }
+
+    #[test]
+    fn test_eval_object_logical_fallbacks() {
+        let expr = parse("({a: 10} || {}).a").unwrap();
+        let result_expr = compile(&expr, &Default::default(), None).unwrap();
+        let result_value = result_expr.eval_to_scalar().unwrap();
+        assert_eq!(result_value, ScalarValue::Float64(Some(10.0)));
+
+        let expr = parse("(null || {a: 10}).a").unwrap();
+        let result_expr = compile(&expr, &Default::default(), None).unwrap();
+        let result_value = result_expr.eval_to_scalar().unwrap();
+        assert_eq!(result_value, ScalarValue::Float64(Some(10.0)));
     }
 
     #[test]

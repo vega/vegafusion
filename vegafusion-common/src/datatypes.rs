@@ -90,6 +90,9 @@ pub fn to_boolean(value: Expr, schema: &DFSchema) -> Result<Expr> {
     let dtype = data_type(&value, schema)?;
     let boolean_value = if matches!(dtype, DataType::Boolean) {
         when(value.clone().is_null(), lit(false)).otherwise(value)?
+    } else if matches!(dtype, DataType::Struct(_)) {
+        // Match JavaScript semantics where any non-null object is truthy.
+        when(value.clone().is_null(), lit(false)).otherwise(lit(true))?
     } else if matches!(
         dtype,
         DataType::Int8 | DataType::Int16 | DataType::Int32 | DataType::Int64

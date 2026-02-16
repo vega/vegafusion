@@ -255,13 +255,19 @@ mod test_object_expression {
     use crate::*;
 
     #[rstest(
-    expr,
-    // case("{}"),  // todo: How should we support empty objects?
-    case("{a: 10}"),
-    case("{a: hello}"),
-    case("{'a': 10, b: 23,}"),
-    case("{11: 'b', 22: 'a'}"),
-    case("{17: 9, a: 10, 'b': 11}")
+        expr,
+        case("{}"),
+        case("{a: 10}"),
+        case("({a: 10} || {}).a"),
+        case("(null || {a: 10}).a"),
+        case("(null || {}).foo"),
+        case("({} && 5)"),
+        case("({} && {a: 10}).a"),
+        case("(data('dataA')[0] || {}).colA"),
+        case("{a: hello}"),
+        case("{'a': 10, b: 23,}"),
+        case("{11: 'b', 22: 'a'}"),
+        case("{17: 9, a: 10, 'b': 11}")
     )]
     fn test(expr: &str) {
         check_scalar_evaluation(expr, &config_a())
