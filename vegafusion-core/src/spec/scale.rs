@@ -160,12 +160,60 @@ impl ScaleSpec {
 
         Ok(vars.into_iter().sorted().collect())
     }
+
+    /// Returns true if this scale uses a domain sort form we intentionally keep client-side.
+    ///
+    /// Vega accepts object-valued sort definitions that specify a `field` without an aggregate
+    /// `op`. For non-`key`/`count` fields this behaves like a no-op in Vega, but can be fragile
+    /// in server execution because ordering semantics depend on upstream tuple order. Keep these
+    /// scales client-side to avoid extracting potentially mismatched behavior.
+    pub fn has_client_only_domain_sort(&self) -> bool {
+        match &self.domain {
+            Some(ScaleDomainSpec::FieldReference(reference)) => reference
+                .sort
+                .as_ref()
+                .is_some_and(sort_requires_client_execution),
+            Some(ScaleDomainSpec::FieldsReference(fields_reference)) => fields_reference
+                .sort
+                .as_ref()
+                .is_some_and(sort_requires_client_execution),
+            Some(ScaleDomainSpec::FieldsReferences(fields_references)) => {
+                fields_references
+                    .sort
+                    .as_ref()
+                    .is_some_and(sort_requires_client_execution)
+                    || fields_references.fields.iter().any(|reference_or_signal| {
+                        matches!(
+                            reference_or_signal,
+                            ScaleDataReferenceOrSignalSpec::Reference(ScaleFieldReferenceSpec {
+                                sort: Some(sort),
+                                ..
+                            }) if sort_requires_client_execution(sort)
+                        )
+                    })
+            }
+            _ => false,
+        }
+    }
 }
 
 fn add_signal_expr_deps(signal_expr: &str, vars: &mut HashSet<InputVariable>) -> Result<()> {
     let expr = parse(signal_expr)?;
     vars.extend(expr.input_vars());
     Ok(())
+}
+
+fn sort_requires_client_execution(sort: &ScaleDataReferenceSort) -> bool {
+    match sort {
+        ScaleDataReferenceSort::Bool(_) => false,
+        ScaleDataReferenceSort::Parameters(params) => {
+            params.op.is_none()
+                && params
+                    .field
+                    .as_deref()
+                    .is_some_and(|field| field != "key" && field != "count")
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Hash, Eq)]

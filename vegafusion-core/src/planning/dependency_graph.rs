@@ -237,6 +237,8 @@ impl ChartVisitor for AddDependencyNodesVisitor<'_> {
         let scoped_var = (Variable::new_scale(&scale.name), Vec::from(scope));
         let supported = if !self.planner_config.copy_scales_to_server {
             DependencyNodeSupported::Unsupported
+        } else if scale.has_client_only_domain_sort() {
+            DependencyNodeSupported::Unsupported
         } else if let Ok(input_vars) = scale.input_vars() {
             if input_vars.into_iter().any(|input_var| {
                 if let Ok(scoped_source_var) =
@@ -632,6 +634,44 @@ mod tests {
         .unwrap()
     }
 
+    fn chart_with_client_only_scale_sort() -> ChartSpec {
+        serde_json::from_value(json!({
+            "$schema": "https://vega.github.io/schema/vega/v5.json",
+            "data": [
+                {
+                    "name": "domain_source",
+                    "values": [
+                        {"k": "b", "other": 2},
+                        {"k": "a", "other": 1}
+                    ]
+                },
+                {
+                    "name": "source",
+                    "values": [
+                        {"v": 1},
+                        {"v": 2}
+                    ],
+                    "transform": [
+                        {"type": "formula", "expr": "scale('x', datum.v)", "as": "scaled"}
+                    ]
+                }
+            ],
+            "scales": [
+                {
+                    "name": "x",
+                    "type": "band",
+                    "domain": {
+                        "data": "domain_source",
+                        "field": "k",
+                        "sort": {"field": "other", "order": "descending"}
+                    },
+                    "range": [0, 100]
+                }
+            ]
+        }))
+        .unwrap()
+    }
+
     #[test]
     fn test_scale_nodes_supported_only_when_copy_scales_enabled() {
         let chart_spec = chart_with_scale_and_signal();
@@ -735,5 +775,22 @@ mod tests {
 
         let supported_vars = get_supported_data_variables(&chart_spec, &config).unwrap();
         assert!(!supported_vars.contains_key(&(Variable::new_scale("x"), Vec::new())));
+    }
+
+    #[test]
+    fn test_scale_with_non_aggregated_sort_field_without_op_is_client_only() {
+        let chart_spec = chart_with_client_only_scale_sort();
+        let mut config = PlannerConfig::default();
+        config.copy_scales_to_server = true;
+
+        let scale_var = (Variable::new_scale("x"), Vec::new());
+        let (graph, node_indexes) = build_dependency_graph(&chart_spec, &config).unwrap();
+        let (_, supported) = graph
+            .node_weight(*node_indexes.get(&scale_var).unwrap())
+            .unwrap();
+        assert!(matches!(supported, DependencyNodeSupported::Unsupported));
+
+        let supported_vars = get_supported_data_variables(&chart_spec, &config).unwrap();
+        assert!(!supported_vars.contains_key(&scale_var));
     }
 }

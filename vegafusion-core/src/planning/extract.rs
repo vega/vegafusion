@@ -270,6 +270,34 @@ mod tests {
         .unwrap()
     }
 
+    fn chart_with_client_only_scale_sort_formula_data() -> ChartSpec {
+        serde_json::from_value(json!({
+            "$schema": "https://vega.github.io/schema/vega/v5.json",
+            "data": [
+                {
+                    "name": "domain_source",
+                    "values": [{"k": "b", "other": 2}, {"k": "a", "other": 1}]
+                },
+                {
+                    "name": "source",
+                    "values": [{"value": 1}, {"value": 2}],
+                    "transform": [
+                        {"type": "formula", "expr": "scale('x', datum.value)", "as": "scaled"}
+                    ]
+                }
+            ],
+            "scales": [
+                {
+                    "name": "x",
+                    "type": "band",
+                    "domain": {"data": "domain_source", "field": "k", "sort": {"field": "other", "order": "descending"}},
+                    "range": [0, 100]
+                }
+            ]
+        }))
+        .unwrap()
+    }
+
     #[test]
     fn test_scale_dependent_pipeline_stays_client_when_scale_copy_disabled() {
         let mut client_spec = chart_with_scale_formula_data();
@@ -306,6 +334,33 @@ mod tests {
         assert_eq!(client_spec.data[0].name, "source");
         assert!(client_spec.data[0].transform.is_empty());
         assert!(client_spec.data[0].values.is_none());
+    }
+
+    #[test]
+    fn test_scale_with_non_aggregated_sort_field_without_op_stays_client() {
+        let mut client_spec = chart_with_client_only_scale_sort_formula_data();
+        let mut task_scope = client_spec.to_task_scope().unwrap();
+
+        let mut config = PlannerConfig::default();
+        config.extract_inline_data = true;
+        config.copy_scales_to_server = true;
+
+        let server_spec = extract_server_data(&mut client_spec, &mut task_scope, &config).unwrap();
+
+        assert!(server_spec.scales.is_empty());
+        assert!(server_spec.data.iter().any(|d| d.name == "domain_source"));
+        let server_source = server_spec
+            .data
+            .iter()
+            .find(|d| d.name == "_server_source")
+            .expect("expected partially extracted server source");
+        assert!(server_source.transform.is_empty());
+        let source = client_spec
+            .data
+            .iter()
+            .find(|d| d.name == "source")
+            .expect("expected source dataset");
+        assert_eq!(source.transform.len(), 1);
     }
 
     #[test]

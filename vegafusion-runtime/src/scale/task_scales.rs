@@ -18,17 +18,23 @@ use crate::scale::vega_schemes::{
     decode_continuous_scheme, default_named_range, lookup_scheme, NamedRange, SchemePalette,
 };
 use datafusion_common::ScalarValue;
+use std::cmp::Ordering;
 use std::collections::HashSet;
 use std::ops::RangeInclusive;
-use vegafusion_common::arrow::array::{new_empty_array, Array, ArrayRef, FixedSizeListArray};
+use vegafusion_common::arrow::array::{
+    new_empty_array, new_null_array, Array, ArrayRef, FixedSizeListArray,
+};
 use vegafusion_common::arrow::datatypes::DataType;
 use vegafusion_common::data::scalar::ScalarValueHelpers;
 use vegafusion_common::escape::unescape_field;
 use vegafusion_core::expression::parser::parse;
 use vegafusion_core::spec::scale::{
-    ScaleArrayElementSpec, ScaleBinsSpec, ScaleDataReferenceOrSignalSpec, ScaleDomainSpec,
-    ScaleRangeSpec, ScaleSpec, ScaleTypeSpec,
+    ScaleArrayElementSpec, ScaleBinsSpec, ScaleDataReferenceOrSignalSpec, ScaleDataReferenceSort,
+    ScaleDataReferenceSortParameters, ScaleDomainSpec, ScaleFieldReferenceSpec, ScaleRangeSpec,
+    ScaleSpec, ScaleTypeSpec,
 };
+use vegafusion_core::spec::transform::aggregate::AggregateOpSpec;
+use vegafusion_core::spec::values::SortOrderSpec;
 use vegafusion_core::task_graph::task::TaskDependencies;
 use vegafusion_core::task_graph::{scale_state::ScaleState, task::InputVariable};
 
@@ -90,11 +96,9 @@ fn resolve_domain(
         ScaleDomainSpec::Array(values) => scale_array_elements_to_array(values, config),
         ScaleDomainSpec::Signal(signal_expr) => signal_expr_to_array(&signal_expr.signal, config),
         ScaleDomainSpec::Value(value) => json_value_to_array(value),
-        ScaleDomainSpec::FieldReference(reference) => domain_from_data_fields(
-            scale_type,
-            &[(reference.data.as_str(), reference.field.as_str())],
-            config,
-        ),
+        ScaleDomainSpec::FieldReference(reference) => {
+            domain_from_field_reference(scale_type, reference, config)
+        }
         ScaleDomainSpec::FieldsReference(fields_reference) => {
             let data_name = fields_reference.data.as_ref().ok_or_else(|| {
                 VegaFusionError::internal(format!(
@@ -102,30 +106,25 @@ fn resolve_domain(
                     scale.name
                 ))
             })?;
-            let fields = fields_reference
+            let references = fields_reference
                 .fields
                 .iter()
-                .map(|f| (data_name.as_str(), f.as_str()))
+                .map(|f| ScaleFieldReferenceSpec {
+                    data: data_name.clone(),
+                    field: f.clone(),
+                    sort: None,
+                    extra: Default::default(),
+                })
                 .collect::<Vec<_>>();
-            domain_from_data_fields(scale_type, fields.as_slice(), config)
+            domain_from_field_references(
+                scale_type,
+                references.as_slice(),
+                fields_reference.sort.as_ref(),
+                config,
+            )
         }
         ScaleDomainSpec::FieldsReferences(fields_references) => {
-            let mut arrays = Vec::new();
-            for reference_or_signal in &fields_references.fields {
-                match reference_or_signal {
-                    ScaleDataReferenceOrSignalSpec::Reference(reference) => {
-                        arrays.push(lookup_data_column(
-                            config,
-                            reference.data.as_str(),
-                            reference.field.as_str(),
-                        )?)
-                    }
-                    ScaleDataReferenceOrSignalSpec::Signal(signal_expr) => {
-                        arrays.push(signal_expr_to_array(&signal_expr.signal, config)?)
-                    }
-                }
-            }
-            merge_domain_arrays(scale_type, arrays)
+            domain_from_fields_references(scale_type, fields_references, config)
         }
         ScaleDomainSpec::FieldsSignals(fields_signals) => {
             let arrays = fields_signals
@@ -319,16 +318,617 @@ fn resolve_options(
     Ok(options)
 }
 
-fn domain_from_data_fields(
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum DomainSortOrder {
+    Ascending,
+    Descending,
+}
+
+#[derive(Clone, Debug)]
+enum DomainSortMode {
+    None,
+    Key {
+        order: DomainSortOrder,
+    },
+    Count {
+        order: DomainSortOrder,
+    },
+    Aggregate {
+        op: AggregateOpSpec,
+        field: String,
+        order: DomainSortOrder,
+    },
+}
+
+#[derive(Clone)]
+struct DomainEntry {
+    key: ScalarValue,
+    first_seen: usize,
+    count: usize,
+    metric: ScalarValue,
+}
+
+#[derive(Clone)]
+struct DiscreteDomainSource {
+    key_array: ArrayRef,
+    sort_array: Option<ArrayRef>,
+}
+
+fn parse_domain_sort(
+    sort: Option<&ScaleDataReferenceSort>,
+    multidomain: bool,
+) -> Result<DomainSortMode> {
+    let Some(sort) = sort else {
+        return Ok(DomainSortMode::None);
+    };
+
+    match sort {
+        ScaleDataReferenceSort::Bool(false) => Ok(DomainSortMode::None),
+        ScaleDataReferenceSort::Bool(true) => Ok(DomainSortMode::Key {
+            order: DomainSortOrder::Ascending,
+        }),
+        ScaleDataReferenceSort::Parameters(params) => {
+            parse_domain_sort_parameters(params, multidomain)
+        }
+    }
+}
+
+fn parse_domain_sort_parameters(
+    params: &ScaleDataReferenceSortParameters,
+    multidomain: bool,
+) -> Result<DomainSortMode> {
+    let order = sort_order_or_default(params.order.as_ref());
+    let op = params.op.clone();
+    let field = params.field.clone();
+
+    if op.is_none() && field.is_none() {
+        return Ok(DomainSortMode::Key { order });
+    }
+
+    if field.is_none() {
+        if op != Some(AggregateOpSpec::Count) {
+            return Err(VegaFusionError::internal(format!(
+                "No field provided for sort aggregate op: {}",
+                op.map(|o| o.name())
+                    .unwrap_or_else(|| "unknown".to_string())
+            )));
+        }
+        return Ok(DomainSortMode::Count { order });
+    }
+
+    let field = field.unwrap();
+
+    if multidomain
+        && op.as_ref().is_some_and(|op| {
+            !matches!(
+                op,
+                AggregateOpSpec::Min | AggregateOpSpec::Max | AggregateOpSpec::Count
+            )
+        })
+    {
+        return Err(VegaFusionError::internal(format!(
+            "Multiple domain scales can not be sorted using {}",
+            op.map(|o| o.name())
+                .unwrap_or_else(|| "unknown".to_string())
+        )));
+    }
+
+    match op {
+        Some(op) => Ok(DomainSortMode::Aggregate { op, field, order }),
+        None if field == "key" => Ok(DomainSortMode::Key { order }),
+        None if field == "count" => Ok(DomainSortMode::Count { order }),
+        // Match Vega parser/runtime behavior:
+        // non-key/non-count sort fields without an aggregate op are accepted
+        // but do not produce a meaningful sort metric, which falls back to
+        // stable first-seen ordering.
+        None => Ok(DomainSortMode::None),
+    }
+}
+
+fn sort_order_or_default(order: Option<&SortOrderSpec>) -> DomainSortOrder {
+    match order {
+        Some(SortOrderSpec::Descending) => DomainSortOrder::Descending,
+        _ => DomainSortOrder::Ascending,
+    }
+}
+
+fn domain_from_field_reference(
     scale_type: &ScaleTypeSpec,
-    fields: &[(&str, &str)],
+    reference: &ScaleFieldReferenceSpec,
     config: &CompilationConfig,
 ) -> Result<ArrayRef> {
-    let arrays = fields
+    let key_array = lookup_data_column(config, reference.data.as_str(), reference.field.as_str())?;
+    if !is_discrete_scale(scale_type) {
+        return merge_domain_arrays(scale_type, vec![key_array]);
+    }
+
+    let sort_mode = parse_domain_sort(reference.sort.as_ref(), false)?;
+    let sort_array = match &sort_mode {
+        DomainSortMode::Aggregate {
+            op: AggregateOpSpec::Count,
+            ..
+        } => None,
+        DomainSortMode::Aggregate { field, .. } => Some(lookup_data_column(
+            config,
+            reference.data.as_str(),
+            field.as_str(),
+        )?),
+        _ => None,
+    };
+
+    build_discrete_domain_single(key_array, sort_array, &sort_mode)
+}
+
+fn domain_from_field_references(
+    scale_type: &ScaleTypeSpec,
+    references: &[ScaleFieldReferenceSpec],
+    sort: Option<&ScaleDataReferenceSort>,
+    config: &CompilationConfig,
+) -> Result<ArrayRef> {
+    let key_arrays = references
         .iter()
-        .map(|(data_name, field_name)| lookup_data_column(config, data_name, field_name))
+        .map(|r| lookup_data_column(config, r.data.as_str(), r.field.as_str()))
         .collect::<Result<Vec<_>>>()?;
-    merge_domain_arrays(scale_type, arrays)
+
+    if !is_discrete_scale(scale_type) {
+        return merge_domain_arrays(scale_type, key_arrays);
+    }
+
+    let sort_mode = parse_domain_sort(sort, true)?;
+    let mut sources = Vec::with_capacity(references.len());
+    for (reference, key_array) in references.iter().zip(key_arrays) {
+        let sort_array = match &sort_mode {
+            DomainSortMode::Aggregate {
+                op: AggregateOpSpec::Count,
+                ..
+            } => None,
+            DomainSortMode::Aggregate { field, .. } => Some(lookup_data_column(
+                config,
+                reference.data.as_str(),
+                field.as_str(),
+            )?),
+            _ => None,
+        };
+        sources.push(DiscreteDomainSource {
+            key_array,
+            sort_array,
+        });
+    }
+
+    build_discrete_domain_multi(sources.as_slice(), &sort_mode)
+}
+
+fn domain_from_fields_references(
+    scale_type: &ScaleTypeSpec,
+    fields_references: &vegafusion_core::spec::scale::ScaleFieldsReferencesSpec,
+    config: &CompilationConfig,
+) -> Result<ArrayRef> {
+    if !is_discrete_scale(scale_type) {
+        let mut arrays = Vec::new();
+        for reference_or_signal in &fields_references.fields {
+            match reference_or_signal {
+                ScaleDataReferenceOrSignalSpec::Reference(reference) => arrays.push(
+                    lookup_data_column(config, reference.data.as_str(), reference.field.as_str())?,
+                ),
+                ScaleDataReferenceOrSignalSpec::Signal(signal_expr) => {
+                    arrays.push(signal_expr_to_array(&signal_expr.signal, config)?)
+                }
+            }
+        }
+        return merge_domain_arrays(scale_type, arrays);
+    }
+
+    let sort_mode = parse_domain_sort(fields_references.sort.as_ref(), true)?;
+    let mut sources = Vec::with_capacity(fields_references.fields.len());
+    for reference_or_signal in &fields_references.fields {
+        match reference_or_signal {
+            ScaleDataReferenceOrSignalSpec::Reference(reference) => {
+                let key_array =
+                    lookup_data_column(config, reference.data.as_str(), reference.field.as_str())?;
+                let sort_array = match &sort_mode {
+                    DomainSortMode::Aggregate {
+                        op: AggregateOpSpec::Count,
+                        ..
+                    } => None,
+                    DomainSortMode::Aggregate { field, .. } => Some(lookup_data_column(
+                        config,
+                        reference.data.as_str(),
+                        field.as_str(),
+                    )?),
+                    _ => None,
+                };
+                sources.push(DiscreteDomainSource {
+                    key_array,
+                    sort_array,
+                });
+            }
+            ScaleDataReferenceOrSignalSpec::Signal(signal_expr) => {
+                let key_array = signal_expr_to_array(&signal_expr.signal, config)?;
+                let sort_array = match &sort_mode {
+                    DomainSortMode::Aggregate {
+                        op: AggregateOpSpec::Count,
+                        ..
+                    } => None,
+                    DomainSortMode::Aggregate { field, .. } if field == "data" => {
+                        Some(key_array.clone())
+                    }
+                    DomainSortMode::Aggregate { .. } => {
+                        Some(new_null_array(&DataType::Null, key_array.len()))
+                    }
+                    _ => None,
+                };
+                sources.push(DiscreteDomainSource {
+                    key_array,
+                    sort_array,
+                });
+            }
+        }
+    }
+
+    build_discrete_domain_multi(sources.as_slice(), &sort_mode)
+}
+
+fn build_discrete_domain_single(
+    key_array: ArrayRef,
+    sort_array: Option<ArrayRef>,
+    sort_mode: &DomainSortMode,
+) -> Result<ArrayRef> {
+    let mut entries = collect_domain_entries(&key_array)?;
+
+    match sort_mode {
+        DomainSortMode::None | DomainSortMode::Key { .. } | DomainSortMode::Count { .. } => {}
+        DomainSortMode::Aggregate {
+            op: AggregateOpSpec::Count,
+            ..
+        } => {
+            for entry in &mut entries {
+                entry.metric = ScalarValue::Float64(Some(entry.count as f64));
+            }
+        }
+        DomainSortMode::Aggregate { op, .. } => {
+            let sort_array = sort_array.ok_or_else(|| {
+                VegaFusionError::internal("Missing aggregate sort field array for scale domain")
+            })?;
+            let mut grouped: HashMap<ScalarValue, Vec<ScalarValue>> = HashMap::new();
+            for i in 0..key_array.len() {
+                if key_array.is_null(i) {
+                    continue;
+                }
+                let key = ScalarValue::try_from_array(key_array.as_ref(), i)?;
+                let sort_value = ScalarValue::try_from_array(sort_array.as_ref(), i)?;
+                grouped.entry(key).or_default().push(sort_value);
+            }
+
+            for entry in &mut entries {
+                let values = grouped.get(&entry.key).cloned().unwrap_or_default();
+                entry.metric = aggregate_sort_metric(op, values.as_slice())?;
+            }
+        }
+    }
+
+    sort_domain_entries(entries.as_mut_slice(), sort_mode);
+    domain_entries_to_array(entries)
+}
+
+fn build_discrete_domain_multi(
+    sources: &[DiscreteDomainSource],
+    sort_mode: &DomainSortMode,
+) -> Result<ArrayRef> {
+    let mut entries = collect_domain_entries_multi(sources)?;
+    match sort_mode {
+        DomainSortMode::None | DomainSortMode::Key { .. } | DomainSortMode::Count { .. } => {}
+        DomainSortMode::Aggregate {
+            op: AggregateOpSpec::Count,
+            ..
+        } => {
+            for entry in &mut entries {
+                entry.metric = ScalarValue::Float64(Some(entry.count as f64));
+            }
+        }
+        DomainSortMode::Aggregate { op, .. }
+            if !matches!(op, AggregateOpSpec::Min | AggregateOpSpec::Max) =>
+        {
+            return Err(VegaFusionError::internal(format!(
+                "Multiple domain scale sorting does not support aggregate op {} in this phase",
+                op.name()
+            )));
+        }
+        DomainSortMode::Aggregate { op, .. } => {
+            let combine_min = matches!(op, AggregateOpSpec::Min);
+            let mut combined_metrics: HashMap<ScalarValue, ScalarValue> = HashMap::new();
+
+            for source in sources {
+                let sort_array = source.sort_array.as_ref().ok_or_else(|| {
+                    VegaFusionError::internal(
+                        "Missing aggregate sort field array for multi-domain scale",
+                    )
+                })?;
+                let mut grouped: HashMap<ScalarValue, Vec<ScalarValue>> = HashMap::new();
+                for i in 0..source.key_array.len() {
+                    if source.key_array.is_null(i) {
+                        continue;
+                    }
+                    let key = ScalarValue::try_from_array(source.key_array.as_ref(), i)?;
+                    let sort_value = ScalarValue::try_from_array(sort_array.as_ref(), i)?;
+                    grouped.entry(key).or_default().push(sort_value);
+                }
+
+                for (key, values) in grouped {
+                    let metric = aggregate_sort_metric(op, values.as_slice())?;
+                    combined_metrics
+                        .entry(key)
+                        .and_modify(|existing| {
+                            let ord = vega_ascending_scalar(metric.clone(), existing.clone());
+                            if (combine_min && ord == Ordering::Less)
+                                || (!combine_min && ord == Ordering::Greater)
+                            {
+                                *existing = metric.clone();
+                            }
+                        })
+                        .or_insert(metric);
+                }
+            }
+
+            for entry in &mut entries {
+                if let Some(metric) = combined_metrics.get(&entry.key) {
+                    entry.metric = metric.clone();
+                }
+            }
+        }
+    }
+
+    sort_domain_entries(entries.as_mut_slice(), sort_mode);
+    domain_entries_to_array(entries)
+}
+
+fn collect_domain_entries(key_array: &ArrayRef) -> Result<Vec<DomainEntry>> {
+    let mut entries = Vec::<DomainEntry>::new();
+    let mut entry_indices = HashMap::<ScalarValue, usize>::new();
+    for i in 0..key_array.len() {
+        if key_array.is_null(i) {
+            continue;
+        }
+        let key = ScalarValue::try_from_array(key_array.as_ref(), i)?;
+        let idx = *entry_indices.entry(key.clone()).or_insert_with(|| {
+            let idx = entries.len();
+            entries.push(DomainEntry {
+                key,
+                first_seen: i,
+                count: 0,
+                metric: ScalarValue::Null,
+            });
+            idx
+        });
+        entries[idx].count += 1;
+    }
+    Ok(entries)
+}
+
+fn collect_domain_entries_multi(sources: &[DiscreteDomainSource]) -> Result<Vec<DomainEntry>> {
+    let mut entries = Vec::<DomainEntry>::new();
+    let mut entry_indices = HashMap::<ScalarValue, usize>::new();
+    let mut seen_index = 0usize;
+    for source in sources {
+        for i in 0..source.key_array.len() {
+            if source.key_array.is_null(i) {
+                continue;
+            }
+            let key = ScalarValue::try_from_array(source.key_array.as_ref(), i)?;
+            let idx = *entry_indices.entry(key.clone()).or_insert_with(|| {
+                let idx = entries.len();
+                entries.push(DomainEntry {
+                    key,
+                    first_seen: seen_index,
+                    count: 0,
+                    metric: ScalarValue::Null,
+                });
+                seen_index += 1;
+                idx
+            });
+            entries[idx].count += 1;
+        }
+    }
+    Ok(entries)
+}
+
+fn sort_domain_entries(entries: &mut [DomainEntry], sort_mode: &DomainSortMode) {
+    entries.sort_by(|a, b| {
+        let cmp = match sort_mode {
+            DomainSortMode::None => Ordering::Equal,
+            DomainSortMode::Key { order } => {
+                apply_sort_order(vega_ascending_scalar(a.key.clone(), b.key.clone()), *order)
+            }
+            DomainSortMode::Count { order } => {
+                apply_sort_order((a.count as f64).total_cmp(&(b.count as f64)), *order)
+            }
+            DomainSortMode::Aggregate { order, .. } => apply_sort_order(
+                vega_ascending_scalar(a.metric.clone(), b.metric.clone()),
+                *order,
+            ),
+        };
+        if cmp == Ordering::Equal {
+            a.first_seen.cmp(&b.first_seen)
+        } else {
+            cmp
+        }
+    });
+}
+
+fn apply_sort_order(ordering: Ordering, order: DomainSortOrder) -> Ordering {
+    match order {
+        DomainSortOrder::Ascending => ordering,
+        DomainSortOrder::Descending => ordering.reverse(),
+    }
+}
+
+fn domain_entries_to_array(entries: Vec<DomainEntry>) -> Result<ArrayRef> {
+    if entries.is_empty() {
+        Ok(new_empty_array(&DataType::Utf8))
+    } else {
+        Ok(ScalarValue::iter_to_array(
+            entries.into_iter().map(|e| e.key).collect::<Vec<_>>(),
+        )?)
+    }
+}
+
+fn vega_ascending_scalar(a: ScalarValue, b: ScalarValue) -> Ordering {
+    if a.is_null() && !b.is_null() {
+        return Ordering::Less;
+    }
+    if !a.is_null() && b.is_null() {
+        return Ordering::Greater;
+    }
+    if a.is_null() && b.is_null() {
+        return Ordering::Equal;
+    }
+
+    if let (Some(af), Some(bf)) = (scalar_as_f64(&a), scalar_as_f64(&b)) {
+        return if af.is_nan() && !bf.is_nan() {
+            Ordering::Less
+        } else if !af.is_nan() && bf.is_nan() {
+            Ordering::Greater
+        } else {
+            af.total_cmp(&bf)
+        };
+    }
+
+    match a.partial_cmp(&b) {
+        Some(ord) => ord,
+        None => a.to_string().cmp(&b.to_string()),
+    }
+}
+
+fn scalar_as_f64(value: &ScalarValue) -> Option<f64> {
+    match value {
+        ScalarValue::Float64(Some(v)) => Some(*v),
+        ScalarValue::Float32(Some(v)) => Some(*v as f64),
+        ScalarValue::Int8(Some(v)) => Some(*v as f64),
+        ScalarValue::Int16(Some(v)) => Some(*v as f64),
+        ScalarValue::Int32(Some(v)) => Some(*v as f64),
+        ScalarValue::Int64(Some(v)) => Some(*v as f64),
+        ScalarValue::UInt8(Some(v)) => Some(*v as f64),
+        ScalarValue::UInt16(Some(v)) => Some(*v as f64),
+        ScalarValue::UInt32(Some(v)) => Some(*v as f64),
+        ScalarValue::UInt64(Some(v)) => Some(*v as f64),
+        _ => None,
+    }
+}
+
+fn aggregate_sort_metric(op: &AggregateOpSpec, values: &[ScalarValue]) -> Result<ScalarValue> {
+    use AggregateOpSpec::*;
+
+    let non_null = values
+        .iter()
+        .filter(|v| !v.is_null())
+        .cloned()
+        .collect::<Vec<_>>();
+
+    match op {
+        Count => Ok(ScalarValue::Float64(Some(values.len() as f64))),
+        Valid => Ok(ScalarValue::Float64(Some(non_null.len() as f64))),
+        Missing => Ok(ScalarValue::Float64(Some(
+            (values.len() - non_null.len()) as f64,
+        ))),
+        Distinct => Ok(ScalarValue::Float64(Some(
+            non_null.into_iter().collect::<HashSet<_>>().len() as f64,
+        ))),
+        Min => Ok(non_null
+            .into_iter()
+            .min_by(|a, b| vega_ascending_scalar(a.clone(), b.clone()))
+            .unwrap_or(ScalarValue::Null)),
+        Max => Ok(non_null
+            .into_iter()
+            .max_by(|a, b| vega_ascending_scalar(a.clone(), b.clone()))
+            .unwrap_or(ScalarValue::Null)),
+        Sum => {
+            let nums = numeric_values(values);
+            Ok(ScalarValue::Float64(Some(nums.into_iter().sum())))
+        }
+        Product => {
+            let nums = numeric_values(values);
+            Ok(ScalarValue::Float64(Some(nums.into_iter().product())))
+        }
+        Mean | Average => {
+            let nums = numeric_values(values);
+            if nums.is_empty() {
+                Ok(ScalarValue::Null)
+            } else {
+                let sum: f64 = nums.iter().sum();
+                Ok(ScalarValue::Float64(Some(sum / (nums.len() as f64))))
+            }
+        }
+        Variance | Variancep | Stdev | Stdevp | Stderr => {
+            let nums = numeric_values(values);
+            if nums.is_empty() {
+                return Ok(ScalarValue::Null);
+            }
+
+            let n = nums.len() as f64;
+            let mean = nums.iter().sum::<f64>() / n;
+            let sum_sq = nums.iter().map(|v| (v - mean) * (v - mean)).sum::<f64>();
+            let variance = match op {
+                Variance | Stdev | Stderr => {
+                    if nums.len() <= 1 {
+                        return Ok(ScalarValue::Null);
+                    }
+                    sum_sq / (n - 1.0)
+                }
+                Variancep | Stdevp => sum_sq / n,
+                _ => unreachable!(),
+            };
+
+            let value = match op {
+                Variance | Variancep => variance,
+                Stdev | Stdevp => variance.sqrt(),
+                Stderr => variance.sqrt() / n.sqrt(),
+                _ => unreachable!(),
+            };
+            Ok(ScalarValue::Float64(Some(value)))
+        }
+        Median | Q1 | Q3 => {
+            let mut nums = numeric_values(values);
+            nums.sort_by(|a, b| a.total_cmp(b));
+            if nums.is_empty() {
+                return Ok(ScalarValue::Null);
+            }
+            let q = match op {
+                Median => 0.5,
+                Q1 => 0.25,
+                Q3 => 0.75,
+                _ => unreachable!(),
+            };
+            Ok(ScalarValue::Float64(quantile(&nums, q)))
+        }
+        unsupported => Err(VegaFusionError::internal(format!(
+            "Unsupported domain sort aggregate op in this phase: {}",
+            unsupported.name()
+        ))),
+    }
+}
+
+fn numeric_values(values: &[ScalarValue]) -> Vec<f64> {
+    values
+        .iter()
+        .filter_map(|v| if v.is_null() { None } else { scalar_as_f64(v) })
+        .collect()
+}
+
+fn quantile(values: &[f64], q: f64) -> Option<f64> {
+    if values.is_empty() {
+        return None;
+    }
+    if values.len() == 1 {
+        return Some(values[0]);
+    }
+    let p = q.clamp(0.0, 1.0) * ((values.len() - 1) as f64);
+    let lo = p.floor() as usize;
+    let hi = p.ceil() as usize;
+    if lo == hi {
+        Some(values[lo])
+    } else {
+        let w = p - (lo as f64);
+        Some(values[lo] + (values[hi] - values[lo]) * w)
+    }
 }
 
 fn merge_domain_arrays(scale_type: &ScaleTypeSpec, arrays: Vec<ArrayRef>) -> Result<ArrayRef> {
@@ -944,6 +1544,7 @@ mod tests {
     use super::*;
     use datafusion_common::ScalarValue;
     use serde_json::json;
+    use vegafusion_common::data::table::VegaFusionTable;
 
     fn config_with_dimensions(width: f64, height: f64) -> CompilationConfig {
         let mut config = CompilationConfig::default();
@@ -954,6 +1555,21 @@ mod tests {
             .signal_scope
             .insert("height".to_string(), ScalarValue::from(height));
         config
+    }
+
+    fn config_with_data(name: &str, values: serde_json::Value) -> CompilationConfig {
+        let mut config = CompilationConfig::default();
+        config.data_scope.insert(
+            name.to_string(),
+            VegaFusionTable::from_json(&values).unwrap(),
+        );
+        config
+    }
+
+    fn scalar_strings(values: &ArrayRef) -> Vec<String> {
+        (0..values.len())
+            .map(|i| scalar_string(values, i))
+            .collect()
     }
 
     fn scalar_domain_f64(value: &ScalarValue) -> f64 {
@@ -1042,6 +1658,163 @@ mod tests {
 
         assert_eq!(scalar_f64(&d_state.range), (0.0, 200.0));
         assert_eq!(scalar_f64(&c_state.range), (200.0, 0.0));
+    }
+
+    #[test]
+    fn test_discrete_domain_sort_true_orders_keys_ascending() {
+        let scale: ScaleSpec = serde_json::from_value(json!({
+            "name": "x",
+            "type": "band",
+            "domain": {"data": "t", "field": "k", "sort": true},
+            "range": [0, 100]
+        }))
+        .unwrap();
+        let config = config_with_data(
+            "t",
+            json!([
+                {"k": "b"},
+                {"k": "a"},
+                {"k": "c"},
+                {"k": "a"}
+            ]),
+        );
+
+        let state = resolve_scale_state(&scale, &config).unwrap();
+        assert_eq!(scalar_strings(&state.domain), vec!["a", "b", "c"]);
+    }
+
+    #[test]
+    fn test_discrete_domain_sort_false_preserves_first_seen_order() {
+        let scale: ScaleSpec = serde_json::from_value(json!({
+            "name": "x",
+            "type": "band",
+            "domain": {"data": "t", "field": "k", "sort": false},
+            "range": [0, 100]
+        }))
+        .unwrap();
+        let config = config_with_data(
+            "t",
+            json!([
+                {"k": "b"},
+                {"k": "a"},
+                {"k": "c"},
+                {"k": "a"}
+            ]),
+        );
+
+        let state = resolve_scale_state(&scale, &config).unwrap();
+        assert_eq!(scalar_strings(&state.domain), vec!["b", "a", "c"]);
+    }
+
+    #[test]
+    fn test_discrete_domain_sort_aggregate_min_descending() {
+        let scale: ScaleSpec = serde_json::from_value(json!({
+            "name": "x",
+            "type": "band",
+            "domain": {
+                "data": "t",
+                "field": "k",
+                "sort": {"op": "min", "field": "sort_index", "order": "descending"}
+            },
+            "range": [0, 100]
+        }))
+        .unwrap();
+        let config = config_with_data(
+            "t",
+            json!([
+                {"k": "A", "sort_index": 10},
+                {"k": "A", "sort_index":  5},
+                {"k": "B", "sort_index": 20},
+                {"k": "C", "sort_index": 15}
+            ]),
+        );
+
+        let state = resolve_scale_state(&scale, &config).unwrap();
+        assert_eq!(scalar_strings(&state.domain), vec!["B", "C", "A"]);
+    }
+
+    #[test]
+    fn test_discrete_domain_sort_field_without_op_is_noop_like_vega() {
+        let scale: ScaleSpec = serde_json::from_value(json!({
+            "name": "x",
+            "type": "band",
+            "domain": {
+                "data": "t",
+                "field": "k",
+                "sort": {"field": "other", "order": "descending"}
+            },
+            "range": [0, 100]
+        }))
+        .unwrap();
+        let config = config_with_data(
+            "t",
+            json!([
+                {"k": "b", "other": 2},
+                {"k": "a", "other": 1},
+                {"k": "c", "other": 3}
+            ]),
+        );
+
+        let state = resolve_scale_state(&scale, &config).unwrap();
+        assert_eq!(scalar_strings(&state.domain), vec!["b", "a", "c"]);
+    }
+
+    #[test]
+    fn test_discrete_domain_sort_field_key_descending() {
+        let scale: ScaleSpec = serde_json::from_value(json!({
+            "name": "x",
+            "type": "band",
+            "domain": {
+                "data": "t",
+                "field": "k",
+                "sort": {"field": "key", "order": "descending"}
+            },
+            "range": [0, 100]
+        }))
+        .unwrap();
+        let config = config_with_data(
+            "t",
+            json!([
+                {"k": "b"},
+                {"k": "a"},
+                {"k": "c"}
+            ]),
+        );
+
+        let state = resolve_scale_state(&scale, &config).unwrap();
+        assert_eq!(scalar_strings(&state.domain), vec!["c", "b", "a"]);
+    }
+
+    #[test]
+    fn test_multidomain_sort_field_without_op_is_noop_like_vega() {
+        let scale: ScaleSpec = serde_json::from_value(json!({
+            "name": "x",
+            "type": "ordinal",
+            "domain": {
+                "fields": [
+                    {"data": "t", "field": "a"},
+                    {"data": "t", "field": "b"}
+                ],
+                "sort": {"field": "other", "order": "descending"}
+            },
+            "range": [0, 100]
+        }))
+        .unwrap();
+        let config = config_with_data(
+            "t",
+            json!([
+                {"a": "b", "b": "y", "other": 2},
+                {"a": "a", "b": "x", "other": 1},
+                {"a": "c", "b": "x", "other": 3},
+                {"a": "a", "b": "z", "other": 4}
+            ]),
+        );
+
+        let state = resolve_scale_state(&scale, &config).unwrap();
+        assert_eq!(
+            scalar_strings(&state.domain),
+            vec!["b", "a", "c", "y", "x", "z"]
+        );
     }
 
     #[test]

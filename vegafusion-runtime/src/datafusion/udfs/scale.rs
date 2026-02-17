@@ -4,7 +4,7 @@ use std::any::Any;
 use std::hash::{Hash, Hasher};
 use std::sync::Arc;
 use vegafusion_common::arrow::array::{
-    new_empty_array, Array, ArrayRef, AsArray, FixedSizeListArray,
+    new_empty_array, Array, ArrayRef, AsArray, FixedSizeListArray, StringArray,
 };
 use vegafusion_common::arrow::compute::cast;
 use vegafusion_common::arrow::datatypes::{DataType, Field};
@@ -76,12 +76,13 @@ impl ScaleExprUDF {
                 })
             }
         } else {
-            self.configured_scale.scale(values).map_err(|err| {
+            let scaled = self.configured_scale.scale(values).map_err(|err| {
                 DataFusionError::Execution(format!(
                     "Failed to evaluate scale('{}', ...): {err}",
                     self.scale_name
                 ))
-            })
+            })?;
+            color_array_to_css_strings_if_needed(scaled)
         }
     }
 
@@ -150,9 +151,106 @@ fn infer_output_scalar_type(configured_scale: &ConfiguredScale, invert: bool) ->
     } else {
         configured_scale.scale(&sample_input)
     };
-    output
+    let output_type = output
         .map(|arr| arr.data_type().clone())
-        .unwrap_or(fallback)
+        .unwrap_or(fallback);
+    if !invert && looks_like_color_output_type(&output_type) {
+        DataType::Utf8
+    } else {
+        output_type
+    }
+}
+
+fn color_array_to_css_strings_if_needed(values: ArrayRef) -> DFResult<ArrayRef> {
+    if !looks_like_color_output_type(values.data_type()) {
+        return Ok(values);
+    }
+
+    let mut css_values: Vec<Option<String>> = Vec::with_capacity(values.len());
+    for row in 0..values.len() {
+        if values.is_null(row) {
+            css_values.push(None);
+            continue;
+        }
+
+        let scalar = ScalarValue::try_from_array(values.as_ref(), row)?;
+        let rgba = scalar_to_rgba(&scalar)?;
+        css_values.push(Some(rgba_to_hex(rgba)));
+    }
+    Ok(Arc::new(StringArray::from(css_values)))
+}
+
+fn looks_like_color_output_type(dtype: &DataType) -> bool {
+    match dtype {
+        DataType::FixedSizeList(field, n) => *n == 4 && is_color_component_type(field.data_type()),
+        DataType::List(field) | DataType::LargeList(field) => {
+            is_color_component_type(field.data_type())
+        }
+        _ => false,
+    }
+}
+
+fn is_color_component_type(dtype: &DataType) -> bool {
+    matches!(
+        dtype,
+        DataType::Float16 | DataType::Float32 | DataType::Float64
+    )
+}
+
+fn scalar_to_rgba(value: &ScalarValue) -> DFResult<[f64; 4]> {
+    let values = scalar_list_values(value)?.ok_or_else(|| {
+        DataFusionError::Execution(format!(
+            "Expected list-like color output from scale(), received {value:?}"
+        ))
+    })?;
+
+    if values.len() < 3 {
+        return Err(DataFusionError::Execution(format!(
+            "Expected color output with at least RGB components, received length {}",
+            values.len()
+        )));
+    }
+
+    let r = scalar_to_f64(&ScalarValue::try_from_array(values.as_ref(), 0)?)?;
+    let g = scalar_to_f64(&ScalarValue::try_from_array(values.as_ref(), 1)?)?;
+    let b = scalar_to_f64(&ScalarValue::try_from_array(values.as_ref(), 2)?)?;
+    let a = if values.len() >= 4 {
+        scalar_to_f64(&ScalarValue::try_from_array(values.as_ref(), 3)?)?
+    } else {
+        1.0
+    };
+    Ok([r, g, b, a])
+}
+
+fn scalar_to_f64(value: &ScalarValue) -> DFResult<f64> {
+    match value {
+        ScalarValue::Float64(Some(v)) => Ok(*v),
+        ScalarValue::Float32(Some(v)) => Ok(*v as f64),
+        ScalarValue::Float16(Some(v)) => Ok(f64::from(*v)),
+        ScalarValue::Int8(Some(v)) => Ok(*v as f64),
+        ScalarValue::Int16(Some(v)) => Ok(*v as f64),
+        ScalarValue::Int32(Some(v)) => Ok(*v as f64),
+        ScalarValue::Int64(Some(v)) => Ok(*v as f64),
+        ScalarValue::UInt8(Some(v)) => Ok(*v as f64),
+        ScalarValue::UInt16(Some(v)) => Ok(*v as f64),
+        ScalarValue::UInt32(Some(v)) => Ok(*v as f64),
+        ScalarValue::UInt64(Some(v)) => Ok(*v as f64),
+        _ => Err(DataFusionError::Execution(format!(
+            "Expected numeric color component, received {value:?}"
+        ))),
+    }
+}
+
+fn rgba_to_hex([r, g, b, a]: [f64; 4]) -> String {
+    let r = (r.clamp(0.0, 1.0) * 255.0).round() as u8;
+    let g = (g.clamp(0.0, 1.0) * 255.0).round() as u8;
+    let b = (b.clamp(0.0, 1.0) * 255.0).round() as u8;
+    let a = (a.clamp(0.0, 1.0) * 255.0).round() as u8;
+    if a == u8::MAX {
+        format!("#{r:02x}{g:02x}{b:02x}")
+    } else {
+        format!("#{r:02x}{g:02x}{b:02x}{a:02x}")
+    }
 }
 
 impl PartialEq for ScaleExprUDF {

@@ -697,7 +697,7 @@ mod test_scale_calls {
     use serde_json::{json, Value};
     use std::collections::HashMap;
     use std::sync::Arc;
-    use vegafusion_common::arrow::array::Float64Array;
+    use vegafusion_common::arrow::array::{Float64Array, StringArray};
     use vegafusion_common::data::scalar::ScalarValueHelpers;
     use vegafusion_core::expression::parser::parse;
     use vegafusion_core::planning::watch::{Watch, WatchNamespace};
@@ -727,6 +727,18 @@ mod test_scale_calls {
             ])
             .unwrap(),
             range: Arc::new(Float64Array::from(vec![0.0, 300.0])),
+            options: HashMap::new(),
+        }
+    }
+
+    fn color_scale_state() -> ScaleState {
+        ScaleState {
+            scale_type: ScaleTypeSpec::Linear,
+            domain: Arc::new(Float64Array::from(vec![76.0, 158.0])),
+            range: Arc::new(StringArray::from(vec![
+                "#eff9bd", "#dbf1b4", "#bde5b5", "#94d5b9", "#69c5be", "#45b4c2", "#2c9ec0",
+                "#2182b8", "#2163aa", "#23479c", "#1c3185",
+            ])),
             options: HashMap::new(),
         }
     }
@@ -831,5 +843,24 @@ mod test_scale_calls {
             "paddingOuter": 0
         })];
         check_scale_scalar_evaluation("scale('b', 'B')", scales, &config);
+    }
+
+    #[test]
+    fn test_scale_color_returns_css_string() {
+        let mut config = config_with_scale("color", color_scale_state());
+        let local_tz_str = vegajs_runtime().nodejs_runtime.local_timezone().unwrap();
+        config.tz_config = Some(RuntimeTzConfig::try_new(&local_tz_str, &None).unwrap());
+
+        let parsed = parse("scale('color', 100)").unwrap();
+        let compiled = compile(&parsed, &config, None).unwrap();
+        let result = compiled.eval_to_scalar().unwrap();
+        let value = match result {
+            ScalarValue::Utf8(Some(v))
+            | ScalarValue::LargeUtf8(Some(v))
+            | ScalarValue::Utf8View(Some(v)) => v,
+            _ => panic!("Expected string color output from scale(), got {result:?}"),
+        };
+        assert!(value.starts_with('#'));
+        assert!(matches!(value.len(), 7 | 9));
     }
 }
