@@ -3,6 +3,7 @@ use crate::expression::column_usage::{
     ColumnUsage, DatasetsColumnUsage, GetDatasetsColumnUsage, VlSelectionFields,
 };
 use crate::expression::parser::parse;
+use crate::expression::visitors::ExpressionVisitor;
 use crate::proto::gen::tasks::Variable;
 use crate::spec::mark::{EncodingOffset, MarkEncodingField, MarkEncodingOrList, MarkEncodingSpec};
 use crate::spec::transform::{TransformColumns, TransformSpecTrait};
@@ -141,7 +142,7 @@ fn mark_encoding_rule_supported(rule: &MarkEncodingSpec) -> bool {
         let Ok(parsed) = parse(signal) else {
             return false;
         };
-        if !parsed.is_supported() {
+        if !parsed.is_supported() || expr_contains_format_call(&parsed) {
             return false;
         }
     }
@@ -150,7 +151,7 @@ fn mark_encoding_rule_supported(rule: &MarkEncodingSpec) -> bool {
         let Ok(parsed) = parse(test) else {
             return false;
         };
-        if !parsed.is_supported() {
+        if !parsed.is_supported() || expr_contains_format_call(&parsed) {
             return false;
         }
     }
@@ -183,7 +184,7 @@ fn mark_encoding_rule_supported(rule: &MarkEncodingSpec) -> bool {
             let Ok(parsed) = parse(signal) else {
                 return false;
             };
-            if !parsed.is_supported() {
+            if !parsed.is_supported() || expr_contains_format_call(&parsed) {
                 return false;
             }
         }
@@ -201,7 +202,7 @@ fn mark_encoding_rule_supported(rule: &MarkEncodingSpec) -> bool {
             let Ok(parsed) = parse(signal) else {
                 return false;
             };
-            if !parsed.is_supported() {
+            if !parsed.is_supported() || expr_contains_format_call(&parsed) {
                 return false;
             }
         }
@@ -226,7 +227,7 @@ fn mark_encoding_rule_supported(rule: &MarkEncodingSpec) -> bool {
                     let Ok(parsed) = parse(signal) else {
                         return false;
                     };
-                    if !parsed.is_supported() {
+                    if !parsed.is_supported() || expr_contains_format_call(&parsed) {
                         return false;
                     }
                 }
@@ -303,6 +304,28 @@ fn is_signal_object(value: &Value) -> bool {
         .unwrap_or(false)
 }
 
+fn expr_contains_format_call(expr: &crate::proto::gen::expression::Expression) -> bool {
+    struct ContainsFormatCall {
+        found: bool,
+    }
+
+    impl ExpressionVisitor for ContainsFormatCall {
+        fn visit_called_identifier(
+            &mut self,
+            node: &crate::proto::gen::expression::Identifier,
+            _args: &[crate::proto::gen::expression::Expression],
+        ) {
+            if node.name == "format" {
+                self.found = true;
+            }
+        }
+    }
+
+    let mut visitor = ContainsFormatCall { found: false };
+    expr.walk(&mut visitor);
+    visitor.found
+}
+
 #[cfg(test)]
 mod tests {
     use super::{
@@ -330,6 +353,14 @@ mod tests {
         }))
         .unwrap();
         assert!(!mark_encoding_channel_spec_supported(&unsupported));
+
+        let unsupported_format: MarkEncodingChannelSpec = serde_json::from_value(json!({
+            "channel": "text",
+            "as": "text_val",
+            "encoding": {"signal": "format(datum.v, '')"}
+        }))
+        .unwrap();
+        assert!(!mark_encoding_channel_spec_supported(&unsupported_format));
     }
 
     #[test]

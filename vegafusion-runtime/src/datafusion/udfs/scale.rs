@@ -130,6 +130,28 @@ impl ScaleExprUDF {
                     self.scale_name
                 ))
             })?;
+            if std::env::var_os("VF_DEBUG_SCALE_NULL").is_some() && scaled.null_count() > 0 {
+                eprintln!(
+                    "scale('{}') produced {} nulls for {} rows. domain={:?} range={:?} input_dtype={:?} output_dtype={:?}",
+                    self.scale_name,
+                    scaled.null_count(),
+                    scaled.len(),
+                    self.configured_scale.domain().data_type(),
+                    self.configured_scale.range().data_type(),
+                    scale_values.data_type(),
+                    scaled.data_type()
+                );
+                if self.configured_scale.domain().len() >= 2 {
+                    let d0 = ScalarValue::try_from_array(self.configured_scale.domain(), 0).ok();
+                    let d1 = ScalarValue::try_from_array(
+                        self.configured_scale.domain(),
+                        self.configured_scale.domain().len() - 1,
+                    )
+                    .ok();
+                    eprintln!("domain endpoints: {:?} {:?}", d0, d1);
+                }
+            }
+            let scaled = self.fill_singular_domain_nulls(&scale_values, scaled)?;
             color_array_to_css_strings_if_needed(scaled)
         }
     }
@@ -163,7 +185,12 @@ impl ScaleExprUDF {
             return Ok(values.clone());
         }
 
-        if !matches!(
+        let target_dtype = self.configured_scale.domain().data_type();
+        if values.data_type() == target_dtype {
+            return Ok(values.clone());
+        }
+
+        let can_cast_to_temporal_domain = matches!(
             values.data_type(),
             DataType::Int8
                 | DataType::Int16
@@ -175,15 +202,20 @@ impl ScaleExprUDF {
                 | DataType::UInt64
                 | DataType::Float32
                 | DataType::Float64
-        ) {
+                | DataType::Date32
+                | DataType::Date64
+                | DataType::Timestamp(_, _)
+        );
+
+        if !can_cast_to_temporal_domain {
             return Ok(values.clone());
         }
 
-        cast(values.as_ref(), self.configured_scale.domain().data_type()).map_err(|err| {
+        cast(values.as_ref(), target_dtype).map_err(|err| {
             DataFusionError::Execution(format!(
                 "Failed to coerce scale('{}', ...) temporal input to {:?}: {err}",
                 self.scale_name,
-                self.configured_scale.domain().data_type()
+                target_dtype
             ))
         })
     }
@@ -218,6 +250,94 @@ impl ScaleExprUDF {
         ScalarValue::try_from(&self.output_scalar_type)
     }
 
+    fn fill_singular_domain_nulls(
+        &self,
+        input_values: &ArrayRef,
+        scaled_values: ArrayRef,
+    ) -> DFResult<ArrayRef> {
+        let Some(midpoint) = self.singular_domain_midpoint_scalar(scaled_values.data_type())?
+        else {
+            return Ok(scaled_values);
+        };
+
+        let mut changed = false;
+        let mut repaired = Vec::with_capacity(scaled_values.len());
+        for row in 0..scaled_values.len() {
+            let scaled_scalar = ScalarValue::try_from_array(scaled_values.as_ref(), row)?;
+            let needs_repair =
+                !input_values.is_null(row) && (scaled_scalar.is_null() || scalar_is_nan(&scaled_scalar));
+            if needs_repair {
+                repaired.push(midpoint.clone());
+                changed = true;
+            } else {
+                repaired.push(scaled_scalar);
+            }
+        }
+
+        if !changed {
+            return Ok(scaled_values);
+        }
+        ScalarValue::iter_to_array(repaired)
+    }
+
+    fn singular_domain_midpoint_scalar(&self, output_dtype: &DataType) -> DFResult<Option<ScalarValue>> {
+        if !matches!(
+            output_dtype,
+            DataType::Float16
+                | DataType::Float32
+                | DataType::Float64
+                | DataType::Int8
+                | DataType::Int16
+                | DataType::Int32
+                | DataType::Int64
+                | DataType::UInt8
+                | DataType::UInt16
+                | DataType::UInt32
+                | DataType::UInt64
+        ) {
+            return Ok(None);
+        }
+
+        let domain = self.configured_scale.domain();
+        if domain.len() < 2 {
+            return Ok(None);
+        }
+
+        let d0 = ScalarValue::try_from_array(domain, 0)?;
+        let d1 = ScalarValue::try_from_array(domain, domain.len() - 1)?;
+        let Some(d0) = scalar_to_numeric_or_temporal_f64(&d0) else {
+            return Ok(None);
+        };
+        let Some(d1) = scalar_to_numeric_or_temporal_f64(&d1) else {
+            return Ok(None);
+        };
+        if (d0 - d1).abs() > 0.0 {
+            return Ok(None);
+        }
+
+        let range = self.configured_scale.range();
+        if range.len() < 2 {
+            return Ok(None);
+        }
+        let r0 = ScalarValue::try_from_array(range, 0)?;
+        let r1 = ScalarValue::try_from_array(range, range.len() - 1)?;
+        let Some(r0) = scalar_to_numeric_or_temporal_f64(&r0) else {
+            return Ok(None);
+        };
+        let Some(r1) = scalar_to_numeric_or_temporal_f64(&r1) else {
+            return Ok(None);
+        };
+        let midpoint = (r0 + r1) / 2.0;
+        let midpoint_scalar = ScalarValue::Float64(Some(midpoint));
+        let midpoint_scalar = midpoint_scalar.cast_to(output_dtype).map_err(|err| {
+            DataFusionError::Execution(format!(
+                "Failed casting midpoint for singular scale('{}') output to {:?}: {err}",
+                self.scale_name, output_dtype
+            ))
+        })?;
+        Ok(Some(midpoint_scalar))
+    }
+
     fn output_type_for_input(&self, input_type: &DataType) -> DataType {
         let item_field = Arc::new(Field::new("item", self.output_scalar_type.clone(), true));
         match input_type {
@@ -226,6 +346,42 @@ impl ScaleExprUDF {
             }
             _ => self.output_scalar_type.clone(),
         }
+    }
+}
+
+fn scalar_is_nan(value: &ScalarValue) -> bool {
+    match value {
+        ScalarValue::Float16(Some(v)) => {
+            #[allow(clippy::float_cmp)]
+            {
+                v.is_nan()
+            }
+        }
+        ScalarValue::Float32(Some(v)) => v.is_nan(),
+        ScalarValue::Float64(Some(v)) => v.is_nan(),
+        _ => false,
+    }
+}
+
+fn scalar_to_numeric_or_temporal_f64(value: &ScalarValue) -> Option<f64> {
+    match value {
+        ScalarValue::Float64(Some(v)) => Some(*v),
+        ScalarValue::Float32(Some(v)) => Some(*v as f64),
+        ScalarValue::Int8(Some(v)) => Some(*v as f64),
+        ScalarValue::Int16(Some(v)) => Some(*v as f64),
+        ScalarValue::Int32(Some(v)) => Some(*v as f64),
+        ScalarValue::Int64(Some(v)) => Some(*v as f64),
+        ScalarValue::UInt8(Some(v)) => Some(*v as f64),
+        ScalarValue::UInt16(Some(v)) => Some(*v as f64),
+        ScalarValue::UInt32(Some(v)) => Some(*v as f64),
+        ScalarValue::UInt64(Some(v)) => Some(*v as f64),
+        ScalarValue::Date32(Some(v)) => Some(*v as f64),
+        ScalarValue::Date64(Some(v)) => Some(*v as f64),
+        ScalarValue::TimestampSecond(Some(v), _) => Some(*v as f64),
+        ScalarValue::TimestampMillisecond(Some(v), _) => Some(*v as f64),
+        ScalarValue::TimestampMicrosecond(Some(v), _) => Some(*v as f64),
+        ScalarValue::TimestampNanosecond(Some(v), _) => Some(*v as f64),
+        _ => None,
     }
 }
 

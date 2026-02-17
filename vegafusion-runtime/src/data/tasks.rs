@@ -710,11 +710,13 @@ async fn build_csv_schema(
     uri: impl Into<String>,
     ctx: &SessionContext,
 ) -> Result<Schema> {
+    let use_inferred_types = matches!(parse, Some(Parse::String(_)));
+
     // Get HashMap of provided columns formats
     let format_specs = if let Some(parse) = parse {
         match parse {
             Parse::String(_) => {
-                // auto, use inferred schema
+                // parse: "auto" uses inferred schema
                 HashMap::new()
             }
             Parse::Object(field_specs) => field_specs
@@ -755,11 +757,18 @@ async fn build_csv_schema(
         .fields()
         .iter()
         .map(|field| {
-            // Use provided field type, but fall back to string for unprovided columns
-            let dtype = field_types
-                .get(field.name())
-                .cloned()
-                .unwrap_or(DataType::Utf8);
+            // Vega default CSV parse behavior is string-first:
+            // - no parse => all fields as strings
+            // - parse object => listed fields parsed, others remain strings
+            // - parse: "auto" => inferred typing
+            let dtype = if use_inferred_types {
+                field.data_type().clone()
+            } else {
+                field_types
+                    .get(field.name())
+                    .cloned()
+                    .unwrap_or(DataType::Utf8)
+            };
             Field::new(field.name(), dtype, true)
         })
         .collect();

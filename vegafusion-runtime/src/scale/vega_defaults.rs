@@ -10,6 +10,7 @@ pub(crate) fn apply_vega_domain_defaults(
     range: &ArrayRef,
     options: &mut HashMap<String, ScalarValue>,
     domain_from_raw: bool,
+    implicit_zero_allowed: bool,
 ) -> Result<ArrayRef> {
     if is_continuous_scale(scale_type) && option_present_non_null(options, "domain_mid") {
         return Err(VegaFusionError::internal(
@@ -26,7 +27,8 @@ pub(crate) fn apply_vega_domain_defaults(
             if let Some(zero_option) = option_scalar(options, "zero").and_then(non_null_scalar) {
                 scalar_to_bool(zero_option)?
             } else {
-                matches!(
+                implicit_zero_allowed
+                    && matches!(
                     scale_type,
                     ScaleTypeSpec::Linear | ScaleTypeSpec::Pow | ScaleTypeSpec::Sqrt
                 )
@@ -326,12 +328,38 @@ mod tests {
         let mut options = HashMap::new();
         let domain = f64_domain(&[2.0, 5.0]);
         let range = f64_domain(&[100.0, 0.0]);
-        let resolved =
-            apply_vega_domain_defaults(&ScaleTypeSpec::Linear, domain, &range, &mut options, false)
-                .unwrap();
+        let resolved = apply_vega_domain_defaults(
+            &ScaleTypeSpec::Linear,
+            domain,
+            &range,
+            &mut options,
+            false,
+            true,
+        )
+        .unwrap();
         let lo = ScalarValue::try_from_array(&resolved, 0).unwrap();
         let hi = ScalarValue::try_from_array(&resolved, 1).unwrap();
         assert_eq!(scalar_to_numeric_f64(&lo).unwrap(), 0.0);
+        assert_eq!(scalar_to_numeric_f64(&hi).unwrap(), 5.0);
+    }
+
+    #[test]
+    fn test_linear_default_zero_not_applied_when_not_allowed() {
+        let mut options = HashMap::new();
+        let domain = f64_domain(&[2.0, 5.0]);
+        let range = f64_domain(&[100.0, 0.0]);
+        let resolved = apply_vega_domain_defaults(
+            &ScaleTypeSpec::Linear,
+            domain,
+            &range,
+            &mut options,
+            false,
+            false,
+        )
+        .unwrap();
+        let lo = ScalarValue::try_from_array(&resolved, 0).unwrap();
+        let hi = ScalarValue::try_from_array(&resolved, 1).unwrap();
+        assert_eq!(scalar_to_numeric_f64(&lo).unwrap(), 2.0);
         assert_eq!(scalar_to_numeric_f64(&hi).unwrap(), 5.0);
     }
 
@@ -340,9 +368,15 @@ mod tests {
         let mut options = HashMap::from([("zero".to_string(), ScalarValue::from(false))]);
         let domain = f64_domain(&[2.0, 5.0]);
         let range = f64_domain(&[100.0, 0.0]);
-        let resolved =
-            apply_vega_domain_defaults(&ScaleTypeSpec::Linear, domain, &range, &mut options, false)
-                .unwrap();
+        let resolved = apply_vega_domain_defaults(
+            &ScaleTypeSpec::Linear,
+            domain,
+            &range,
+            &mut options,
+            false,
+            true,
+        )
+        .unwrap();
         let lo = ScalarValue::try_from_array(&resolved, 0).unwrap();
         let hi = ScalarValue::try_from_array(&resolved, 1).unwrap();
         assert_eq!(scalar_to_numeric_f64(&lo).unwrap(), 2.0);
@@ -358,9 +392,15 @@ mod tests {
         ]);
         let domain = f64_domain(&[2.0, 5.0]);
         let range = f64_domain(&[100.0, 0.0]);
-        let resolved =
-            apply_vega_domain_defaults(&ScaleTypeSpec::Linear, domain, &range, &mut options, true)
-                .unwrap();
+        let resolved = apply_vega_domain_defaults(
+            &ScaleTypeSpec::Linear,
+            domain,
+            &range,
+            &mut options,
+            true,
+            true,
+        )
+        .unwrap();
         let lo = ScalarValue::try_from_array(&resolved, 0).unwrap();
         let hi = ScalarValue::try_from_array(&resolved, 1).unwrap();
         assert_eq!(scalar_to_numeric_f64(&lo).unwrap(), 2.0);
@@ -372,9 +412,15 @@ mod tests {
         let mut options = HashMap::from([("domain_mid".to_string(), ScalarValue::from(3.0))]);
         let domain = f64_domain(&[2.0, 5.0]);
         let range = f64_domain(&[100.0, 0.0]);
-        let err =
-            apply_vega_domain_defaults(&ScaleTypeSpec::Linear, domain, &range, &mut options, false)
-                .unwrap_err();
+        let err = apply_vega_domain_defaults(
+            &ScaleTypeSpec::Linear,
+            domain,
+            &range,
+            &mut options,
+            false,
+            true,
+        )
+        .unwrap_err();
         assert!(err.to_string().contains(
             "domainMid is not yet supported for server-evaluated piecewise continuous scales"
         ));

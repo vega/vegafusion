@@ -152,7 +152,9 @@ async function exportSequence(spec, file, format, init, updates, watches) {
             }
         }
 
-        await view.runAsync();
+        // Scoped data/signal initialization can change layout bounds after group
+        // subcontexts are materialized, so force a resize pass before export.
+        await view.resize().runAsync();
     }
 
     // Collect initial watch values

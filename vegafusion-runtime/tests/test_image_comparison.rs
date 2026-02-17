@@ -1628,6 +1628,29 @@ async fn check_spec_sequence_with_planner_config(
 
     let spec_plan = SpecPlan::try_new(&full_spec, &planner_config).unwrap();
 
+    if let Ok(dump_spec_name) = env::var("VEGAFUSION_DUMP_SPEC_PLAN") {
+        if dump_spec_name == spec_name {
+            let dump_root = PathBuf::from(format!("{}/tests/output/spec_plan_dumps", crate_dir()));
+            fs::create_dir_all(&dump_root).unwrap();
+            let base_name = spec_name.replace('/', "-");
+            fs::write(
+                dump_root.join(format!("{base_name}_full.vg.json")),
+                serde_json::to_string_pretty(&full_spec).unwrap(),
+            )
+            .unwrap();
+            fs::write(
+                dump_root.join(format!("{base_name}_client.vg.json")),
+                serde_json::to_string_pretty(&spec_plan.client_spec).unwrap(),
+            )
+            .unwrap();
+            fs::write(
+                dump_root.join(format!("{base_name}_server.vg.json")),
+                serde_json::to_string_pretty(&spec_plan.server_spec).unwrap(),
+            )
+            .unwrap();
+        }
+    }
+
     if let Some(expect_markenc_dataset) = expect_markenc_dataset {
         assert!(spec_plan
             .comm_plan
@@ -1704,6 +1727,19 @@ async fn check_spec_sequence_with_planner_config(
         });
     }
 
+    if let Ok(dump_spec_name) = env::var("VEGAFUSION_DUMP_SPEC_PLAN") {
+        if dump_spec_name == spec_name {
+            let dump_root = PathBuf::from(format!("{}/tests/output/spec_plan_dumps", crate_dir()));
+            fs::create_dir_all(&dump_root).unwrap();
+            let base_name = spec_name.replace('/', "-");
+            fs::write(
+                dump_root.join(format!("{base_name}_init_updates.json")),
+                serde_json::to_string_pretty(&init).unwrap(),
+            )
+            .unwrap();
+        }
+    }
+
     // println!("init: {:#?}", init);
 
     // Build watches for all of the variables that should be sent from the client to the
@@ -1724,7 +1760,7 @@ async fn check_spec_sequence_with_planner_config(
             full_updates.clone(),
             watches,
         )
-        .unwrap();
+        .unwrap_or_else(|err| panic!("Failed exporting full spec sequence for {spec_name}: {err}"));
 
     // Save exported PNGs
     let png_name = spec_name.replace('/', "-");
@@ -1803,6 +1839,8 @@ async fn check_spec_sequence_with_planner_config(
         })
         .collect();
 
+
+
     // Export the planned client spec with updates from task graph
 
     // Compare exported images
@@ -1814,7 +1852,9 @@ async fn check_spec_sequence_with_planner_config(
             planned_spec_updates,
             Default::default(),
         )
-        .unwrap()
+        .unwrap_or_else(|err| panic!(
+            "Failed exporting planned spec sequence for {spec_name}: {err}"
+        ))
         .into_iter()
         .map(|(img, _)| img)
         .enumerate()

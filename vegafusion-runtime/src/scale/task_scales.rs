@@ -60,6 +60,7 @@ impl TaskCall for ScaleTask {
 fn resolve_scale_state(scale: &ScaleSpec, config: &CompilationConfig) -> Result<ScaleState> {
     let scale_type = scale.type_.clone().unwrap_or_default();
     let mut options = resolve_options(scale, config)?;
+    let implicit_zero_allowed = domain_allows_implicit_zero(scale);
 
     let domain_raw = resolve_domain_raw_option(&options)?;
     let domain_from_raw = domain_raw.is_some();
@@ -73,8 +74,37 @@ fn resolve_scale_state(scale: &ScaleSpec, config: &CompilationConfig) -> Result<
     let mut range = resolve_range(scale, &scale_type, domain.len(), &options, config)?;
     range = apply_reverse_option(range, &mut options)?;
     consume_range_construction_options(&mut options);
-    let domain =
-        apply_vega_domain_defaults(&scale_type, domain, &range, &mut options, domain_from_raw)?;
+    let domain = apply_vega_domain_defaults(
+        &scale_type,
+        domain,
+        &range,
+        &mut options,
+        domain_from_raw,
+        implicit_zero_allowed,
+    )?;
+
+    if std::env::var_os("VF_DEBUG_SCALE_STATE").is_some() && scale.name == "x" {
+        let d0 = if !domain.is_empty() {
+            Some(ScalarValue::try_from_array(&domain, 0)?)
+        } else {
+            None
+        };
+        let d1 = if domain.len() > 1 {
+            Some(ScalarValue::try_from_array(&domain, domain.len() - 1)?)
+        } else {
+            None
+        };
+        eprintln!(
+            "scale_state {} type={:?} domain_dtype={:?} range_dtype={:?} domain_len={} endpoints={:?} {:?}",
+            scale.name,
+            scale_type,
+            domain.data_type(),
+            range.data_type(),
+            domain.len(),
+            d0,
+            d1
+        );
+    }
 
     Ok(ScaleState {
         scale_type,
@@ -82,6 +112,17 @@ fn resolve_scale_state(scale: &ScaleSpec, config: &CompilationConfig) -> Result<
         range,
         options,
     })
+}
+
+fn domain_allows_implicit_zero(scale: &ScaleSpec) -> bool {
+    matches!(
+        scale.domain.as_ref(),
+        Some(
+            ScaleDomainSpec::FieldReference(_)
+                | ScaleDomainSpec::FieldsReference(_)
+                | ScaleDomainSpec::FieldsReferences(_)
+        )
+    )
 }
 
 fn normalize_discrete_domain_for_avenger(
@@ -183,7 +224,7 @@ fn resolve_domain(
                 .iter()
                 .map(|signal_expr| signal_expr_to_array(&signal_expr.signal, config))
                 .collect::<Result<Vec<_>>>()?;
-            merge_domain_arrays(scale_type, arrays)
+            merge_domain_arrays(scale_type, arrays, config)
         }
         unsupported => Err(VegaFusionError::internal(format!(
             "Unsupported scale domain form in this phase: {unsupported:?}"
@@ -490,7 +531,7 @@ fn domain_from_field_reference(
 ) -> Result<ArrayRef> {
     let key_array = lookup_data_column(config, reference.data.as_str(), reference.field.as_str())?;
     if !is_discrete_scale(scale_type) {
-        return merge_domain_arrays(scale_type, vec![key_array]);
+        return merge_domain_arrays(scale_type, vec![key_array], config);
     }
 
     let sort_mode = parse_domain_sort(reference.sort.as_ref(), false)?;
@@ -522,7 +563,7 @@ fn domain_from_field_references(
         .collect::<Result<Vec<_>>>()?;
 
     if !is_discrete_scale(scale_type) {
-        return merge_domain_arrays(scale_type, key_arrays);
+        return merge_domain_arrays(scale_type, key_arrays, config);
     }
 
     let sort_mode = parse_domain_sort(sort, true)?;
@@ -566,7 +607,7 @@ fn domain_from_fields_references(
                 }
             }
         }
-        return merge_domain_arrays(scale_type, arrays);
+        return merge_domain_arrays(scale_type, arrays, config);
     }
 
     let sort_mode = parse_domain_sort(fields_references.sort.as_ref(), true)?;
@@ -970,7 +1011,11 @@ fn quantile(values: &[f64], q: f64) -> Option<f64> {
     }
 }
 
-fn merge_domain_arrays(scale_type: &ScaleTypeSpec, arrays: Vec<ArrayRef>) -> Result<ArrayRef> {
+fn merge_domain_arrays(
+    scale_type: &ScaleTypeSpec,
+    arrays: Vec<ArrayRef>,
+    _config: &CompilationConfig,
+) -> Result<ArrayRef> {
     if arrays.is_empty() {
         return Err(VegaFusionError::internal(
             "Scale domain references resolved to an empty set of arrays",
@@ -978,6 +1023,40 @@ fn merge_domain_arrays(scale_type: &ScaleTypeSpec, arrays: Vec<ArrayRef>) -> Res
     }
 
     if is_continuous_scale(scale_type) {
+        if !matches!(scale_type, ScaleTypeSpec::Time | ScaleTypeSpec::Utc) {
+            let mut min_num: Option<f64> = None;
+            let mut max_num: Option<f64> = None;
+
+            for arr in arrays {
+                for i in 0..arr.len() {
+                    if arr.is_null(i) {
+                        continue;
+                    }
+                    let value = ScalarValue::try_from_array(arr.as_ref(), i)?;
+                    let Ok(num) = scalar_to_f64(&value) else {
+                        continue;
+                    };
+                    if !num.is_finite() {
+                        continue;
+                    }
+                    if min_num.map(|m| num < m).unwrap_or(true) {
+                        min_num = Some(num);
+                    }
+                    if max_num.map(|m| num > m).unwrap_or(true) {
+                        max_num = Some(num);
+                    }
+                }
+            }
+
+            return match (min_num, max_num) {
+                (Some(min_num), Some(max_num)) => Ok(ScalarValue::iter_to_array(vec![
+                    ScalarValue::Float64(Some(min_num)),
+                    ScalarValue::Float64(Some(max_num)),
+                ])?),
+                _ => Ok(new_empty_array(&DataType::Float64)),
+            };
+        }
+
         let mut min_val: Option<ScalarValue> = None;
         let mut max_val: Option<ScalarValue> = None;
 
@@ -1665,7 +1744,7 @@ mod tests {
     }
 
     #[test]
-    fn test_default_zero_for_linear_pow_sqrt() {
+    fn test_explicit_domain_does_not_apply_default_zero_for_linear_pow_sqrt() {
         for scale_type in ["linear", "pow", "sqrt"] {
             let scale: ScaleSpec = serde_json::from_value(json!({
                 "name": "x",
@@ -1676,10 +1755,56 @@ mod tests {
             .unwrap();
             let state = resolve_scale_state(&scale, &CompilationConfig::default()).unwrap();
             let (lo, hi) = scalar_f64(&state.domain);
+            assert_eq!(lo, 2.0, "scale type {scale_type}");
+            assert_eq!(hi, 5.0, "scale type {scale_type}");
+            assert!(!state.options.contains_key("zero"));
+        }
+    }
+
+    #[test]
+    fn test_data_domain_applies_default_zero_for_linear_pow_sqrt() {
+        let config = config_with_data("tbl", json!([{"v": 2.0}, {"v": 5.0}]));
+        for scale_type in ["linear", "pow", "sqrt"] {
+            let scale: ScaleSpec = serde_json::from_value(json!({
+                "name": "x",
+                "type": scale_type,
+                "domain": {"data": "tbl", "field": "v"},
+                "range": [0, 100]
+            }))
+            .unwrap();
+            let state = resolve_scale_state(&scale, &config).unwrap();
+            let (lo, hi) = scalar_f64(&state.domain);
             assert_eq!(lo, 0.0, "scale type {scale_type}");
             assert_eq!(hi, 5.0, "scale type {scale_type}");
             assert!(!state.options.contains_key("zero"));
         }
+    }
+
+    #[test]
+    fn test_numeric_continuous_domain_coerces_string_values() {
+        let config = config_with_data(
+            "tbl",
+            json!([
+                {"v": "12.8"},
+                {"v": "10.6"},
+                {"v": "8.9"},
+                {"v": "39.0"}
+            ]),
+        );
+
+        let scale: ScaleSpec = serde_json::from_value(json!({
+            "name": "y",
+            "type": "linear",
+            "domain": {"data": "tbl", "field": "v"},
+            "range": [300, 0],
+            "zero": false
+        }))
+        .unwrap();
+
+        let state = resolve_scale_state(&scale, &config).unwrap();
+        let (lo, hi) = scalar_f64(&state.domain);
+        assert_eq!(lo, 8.9);
+        assert_eq!(hi, 39.0);
     }
 
     #[test]

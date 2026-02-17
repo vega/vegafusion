@@ -31,6 +31,15 @@ impl TransformTrait for MarkEncoding {
     ) -> Result<(DataFrame, Vec<TaskValue>)> {
         let schema = dataframe.schema();
 
+        if std::env::var_os("VF_DEBUG_MARKENC_SCALES").is_some() {
+            eprintln!(
+                "mark_encoding encode_set={} channels={} scale_scope={:?}",
+                self.encode_set,
+                self.channels.len(),
+                config.scale_scope.keys().collect::<Vec<_>>()
+            );
+        }
+
         let mut computed_cols: Vec<(String, Expr)> = Vec::new();
         for channel in &self.channels {
             let expr = compile_channel_expr(channel, config, schema).with_context(|| {
@@ -212,6 +221,17 @@ fn compile_simple_field_expr(field: &str, schema: &DFSchema) -> Result<Expr> {
     if schema.field_with_unqualified_name(&unescaped).is_ok() {
         Ok(unescaped_col(field))
     } else {
+        if std::env::var_os("VF_DEBUG_MARKENC_FIELDS").is_some() {
+            let fields = schema
+                .fields()
+                .iter()
+                .map(|f| f.name().to_string())
+                .collect::<Vec<_>>();
+            eprintln!(
+                "mark_encoding missing field {:?} (unescaped {:?}); schema fields={:?}",
+                field, unescaped, fields
+            );
+        }
         // Match Vega's undefined-ish behavior as SQL null when a field is missing.
         Ok(lit(ScalarValue::Null))
     }

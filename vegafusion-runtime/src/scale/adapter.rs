@@ -216,7 +216,7 @@ fn map_option_name<'a>(scale_type: &ScaleTypeSpec, key: &'a str) -> Result<Optio
 mod tests {
     use super::*;
     use std::sync::Arc;
-    use vegafusion_common::arrow::array::Float64Array;
+    use vegafusion_common::arrow::array::{ArrayRef, Float64Array, TimestampMillisecondArray};
     use vegafusion_core::task_graph::scale_state::ScaleState;
 
     fn numeric_interval(values: [f64; 2]) -> vegafusion_common::arrow::array::ArrayRef {
@@ -260,5 +260,33 @@ mod tests {
 
         let err = to_configured_scale(&scale_state, &None).unwrap_err();
         assert!(format!("{err}").contains("Unsupported scale option for server-side"));
+    }
+
+    #[test]
+    fn test_time_scale_maps_timestamp_inputs_to_range() {
+        let domain: ArrayRef = Arc::new(
+            TimestampMillisecondArray::from(vec![1317441600000_i64, 1451624400000_i64]),
+        );
+        let range: ArrayRef = Arc::new(Float64Array::from(vec![0.0_f64, 200.0_f64]));
+
+        let state = ScaleState {
+            scale_type: ScaleTypeSpec::Time,
+            domain,
+            range,
+            options: HashMap::new(),
+        };
+        let configured = to_configured_scale(&state, &None).unwrap();
+
+        let input: ArrayRef = Arc::new(TimestampMillisecondArray::from(vec![1325394000000_i64]));
+        let output = configured.scale(&input).unwrap();
+
+        let output_scalar = ScalarValue::try_from_array(output.as_ref(), 0).unwrap();
+        let x = match output_scalar {
+            ScalarValue::Float32(Some(v)) => v,
+            ScalarValue::Float64(Some(v)) => v as f32,
+            other => panic!("Unexpected time-scale output scalar: {other:?}"),
+        };
+
+        assert!((x - 11.853_f32).abs() < 0.5, "unexpected scaled x value: {x}");
     }
 }

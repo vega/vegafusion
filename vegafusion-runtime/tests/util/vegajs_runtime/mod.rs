@@ -424,7 +424,11 @@ impl VegaJsRuntime {
             .with_context(|| format!("Failed to read {result_tmppath}"))?;
 
         let result_img: Vec<(ExportImage, Vec<WatchValue>)> =
-            serde_json::from_str(&result_str).unwrap();
+            serde_json::from_str(&result_str).with_context(|| {
+                format!(
+                    "Failed to parse exportSequence result JSON from {result_tmppath}. Node output: {_res_out}"
+                )
+            })?;
         Ok(result_img)
     }
 }
