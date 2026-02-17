@@ -47,8 +47,9 @@ pub fn to_configured_scale(
             }
             let d0 = scale_state.domain.slice(0, 1);
             let d1 = scale_state.domain.slice(1, 1);
-            let range = array_interval_to_f32(&scale_state.range)?;
-            TimeScale::configured((d0, d1), range)
+            // Time scales can be used for either numeric position output or color output.
+            // Use a placeholder numeric interval and then apply the resolved range array below.
+            TimeScale::configured((d0, d1), (0.0, 1.0))
                 .with_domain(scale_state.domain.clone())
                 .with_range(scale_state.range.clone())
         }
@@ -81,36 +82,6 @@ pub fn to_configured_scale(
     }
 
     Ok(configured)
-}
-
-fn array_interval_to_f32(values: &vegafusion_common::arrow::array::ArrayRef) -> Result<(f32, f32)> {
-    if values.len() < 2 {
-        return Err(VegaFusionError::internal(format!(
-            "Range interval must have at least two entries, received {}",
-            values.len()
-        )));
-    }
-    let lo = ScalarValue::try_from_array(values, 0)?;
-    let hi = ScalarValue::try_from_array(values, 1)?;
-    Ok((scalar_to_f32(&lo)?, scalar_to_f32(&hi)?))
-}
-
-fn scalar_to_f32(value: &ScalarValue) -> Result<f32> {
-    match value {
-        ScalarValue::Float32(Some(v)) => Ok(*v),
-        ScalarValue::Float64(Some(v)) => Ok(*v as f32),
-        ScalarValue::Int8(Some(v)) => Ok(*v as f32),
-        ScalarValue::Int16(Some(v)) => Ok(*v as f32),
-        ScalarValue::Int32(Some(v)) => Ok(*v as f32),
-        ScalarValue::Int64(Some(v)) => Ok(*v as f32),
-        ScalarValue::UInt8(Some(v)) => Ok(*v as f32),
-        ScalarValue::UInt16(Some(v)) => Ok(*v as f32),
-        ScalarValue::UInt32(Some(v)) => Ok(*v as f32),
-        ScalarValue::UInt64(Some(v)) => Ok(*v as f32),
-        _ => Err(VegaFusionError::internal(format!(
-            "Expected numeric scalar value for range/domain option, received {value:?}"
-        ))),
-    }
 }
 
 pub fn scalar_value_to_avenger_scalar(value: &ScalarValue) -> Result<AvengerScalar> {

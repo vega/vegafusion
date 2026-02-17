@@ -241,6 +241,9 @@ impl ChartVisitor for MakeTasksVisitor<'_> {
         let task = if let Some(value) = &signal.value.as_option() {
             let value = TaskValue::Scalar(ScalarValue::from_json(value)?);
             Task::new_value(signal_var, scope, value)
+        } else if let Some(init) = &signal.init {
+            let expression = parse(init)?;
+            Task::new_signal(signal_var, scope, expression, &self.tz_config)
         } else if let Some(update) = &signal.update {
             let expression = parse(update)?;
             Task::new_signal(signal_var, scope, expression, &self.tz_config)

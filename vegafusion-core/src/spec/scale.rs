@@ -80,6 +80,9 @@ impl ScaleSpec {
                         }
                     }
                 }
+                ScaleDomainSpec::Value(Value::Object(obj)) => {
+                    add_domain_object_deps(obj, &mut vars)?;
+                }
                 _ => {}
             }
         }
@@ -219,6 +222,18 @@ impl ScaleSpec {
         )
     }
 
+    /// Returns true when this scale does not rely on runtime semantics that are intentionally
+    /// unsupported for server-side scale evaluation in this phase.
+    pub fn server_runtime_semantics_supported(&self) -> bool {
+        let domain_mid = self
+            .extra
+            .get("domainMid")
+            .or_else(|| self.extra.get("domain_mid"));
+
+        !domain_mid.is_some_and(|value| !value.is_null())
+            && self.server_time_range_semantics_supported()
+    }
+
     fn signal_expressions(&self) -> Vec<&str> {
         let mut signal_exprs = Vec::new();
 
@@ -313,11 +328,68 @@ impl ScaleSpec {
 
         signal_exprs
     }
+
+    fn server_time_range_semantics_supported(&self) -> bool {
+        let scale_type = self.type_.clone().unwrap_or_default();
+        if !matches!(scale_type, ScaleTypeSpec::Time | ScaleTypeSpec::Utc) {
+            return true;
+        }
+
+        let Some(range) = &self.range else {
+            return false;
+        };
+
+        match range {
+            ScaleRangeSpec::Array(values) => values.iter().all(|value| match value {
+                ScaleArrayElementSpec::Signal(_) => true,
+                ScaleArrayElementSpec::Value(value) => value.is_number(),
+            }),
+            ScaleRangeSpec::Signal(_) => true,
+            ScaleRangeSpec::Value(Value::String(name)) => matches!(name.as_str(), "width" | "height"),
+            _ => false,
+        }
+    }
 }
 
 fn add_signal_expr_deps(signal_expr: &str, vars: &mut HashSet<InputVariable>) -> Result<()> {
     let expr = parse(signal_expr)?;
     vars.extend(expr.input_vars());
+    Ok(())
+}
+
+fn add_domain_value_deps(value: &Value, vars: &mut HashSet<InputVariable>) -> Result<()> {
+    match value {
+        Value::Array(values) => {
+            for value in values {
+                add_domain_value_deps(value, vars)?;
+            }
+        }
+        Value::Object(obj) => add_domain_object_deps(obj, vars)?,
+        _ => {}
+    }
+
+    Ok(())
+}
+
+fn add_domain_object_deps(
+    obj: &serde_json::Map<String, Value>,
+    vars: &mut HashSet<InputVariable>,
+) -> Result<()> {
+    if let Some(data) = obj.get("data").and_then(|v| v.as_str()) {
+        vars.insert(InputVariable {
+            var: Variable::new_data(data),
+            propagate: true,
+        });
+    }
+
+    if let Some(signal_expr) = obj.get("signal").and_then(|v| v.as_str()) {
+        add_signal_expr_deps(signal_expr, vars)?;
+    }
+
+    for value in obj.values() {
+        add_domain_value_deps(value, vars)?;
+    }
+
     Ok(())
 }
 
@@ -514,4 +586,34 @@ pub enum ScaleRangeSpec {
     Reference(ScaleFieldReferenceSpec),
     Signal(SignalExpressionSpec),
     Value(Value),
+}
+
+#[cfg(test)]
+mod tests {
+    use super::ScaleSpec;
+    use crate::proto::gen::tasks::Variable;
+    use serde_json::json;
+
+    #[test]
+    fn test_input_vars_include_data_refs_in_mixed_fields_domain_value() {
+        let scale: ScaleSpec = serde_json::from_value(json!({
+            "name": "y",
+            "type": "linear",
+            "domain": {
+                "fields": [
+                    {"data": "data_0", "field": "mean_Acceleration"},
+                    [10]
+                ]
+            },
+            "range": [0, 100]
+        }))
+        .unwrap();
+
+        let input_vars = scale.input_vars().unwrap();
+        assert!(
+            input_vars
+                .iter()
+                .any(|input_var| input_var.var == Variable::new_data("data_0"))
+        );
+    }
 }

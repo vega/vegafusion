@@ -202,6 +202,7 @@ mod test_call {
         case("sqrt(16)"),
         case("round(1.2) + round(1.8)"),
         case("isNaN(16) + isNaN(NaN)"),
+        case("!isNaN(datetime(87, 3, 10, 7, 35, 10, 87))"),
         case("min(3, 1, 2)")
     )]
     fn test(expr: &str) {

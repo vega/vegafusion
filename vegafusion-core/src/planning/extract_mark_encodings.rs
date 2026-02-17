@@ -6,7 +6,7 @@ use crate::spec::data::DataSpec;
 use crate::spec::mark::{MarkEncodingField, MarkEncodingOrList, MarkEncodingSpec, MarkSpec};
 use crate::spec::scale::{ScaleSpec, ScaleTypeSpec};
 use crate::spec::transform::mark_encoding::{
-    mark_encoding_input_vars, mark_encoding_supported, MarkEncodingChannelSpec,
+    mark_encoding_channel_spec_supported, mark_encoding_input_vars, MarkEncodingChannelSpec,
     MarkEncodingTransformSpec,
 };
 use crate::spec::transform::TransformSpec;
@@ -48,12 +48,14 @@ impl RootNumericDimensions {
                 .extra
                 .get("width")
                 .map(|v| v.is_number())
-                .unwrap_or(false),
+                .unwrap_or(false)
+                && !root_dimension_is_dynamic(chart, "width"),
             has_height: chart
                 .extra
                 .get("height")
                 .map(|v| v.is_number())
-                .unwrap_or(false),
+                .unwrap_or(false)
+                && !root_dimension_is_dynamic(chart, "height"),
         }
     }
 
@@ -63,6 +65,25 @@ impl RootNumericDimensions {
             "height" => self.has_height,
             _ => false,
         }
+    }
+}
+
+fn root_dimension_is_dynamic(chart: &ChartSpec, name: &str) -> bool {
+    let autosize = chart.extra.get("autosize");
+    let autosize_type = match autosize {
+        Some(serde_json::Value::String(kind)) => kind.as_str(),
+        Some(serde_json::Value::Object(obj)) => obj
+            .get("type")
+            .and_then(|value| value.as_str())
+            .unwrap_or("pad"),
+        _ => "pad",
+    };
+
+    match autosize_type {
+        "fit" => true,
+        "fit-x" => name == "width",
+        "fit-y" => name == "height",
+        _ => false,
     }
 }
 
@@ -164,7 +185,14 @@ fn process_non_group_mark(
         let Some(channel_encoding) = update_encodings.channels.get(channel_name) else {
             continue;
         };
-        if !mark_encoding_supported(channel_encoding) {
+
+        let channel_spec = MarkEncodingChannelSpec {
+            channel: channel_name.clone(),
+            as_: String::new(),
+            encoding: channel_encoding.clone(),
+            extra: Default::default(),
+        };
+        if !mark_encoding_channel_spec_supported(&channel_spec) {
             continue;
         }
         if !channel_inputs_supported_and_available(
@@ -295,6 +323,9 @@ fn channel_inputs_supported_and_available(
                     return false;
                 }
                 if !scale.server_domain_shape_supported() {
+                    return false;
+                }
+                if !scale.server_runtime_semantics_supported() {
                     return false;
                 }
 
@@ -641,6 +672,164 @@ mod tests {
     }
 
     #[test]
+    fn test_extract_mark_encodings_skip_channels_using_unsupported_scale_semantics() {
+        let mut client_spec: ChartSpec = serde_json::from_value(json!({
+            "$schema": "https://vega.github.io/schema/vega/v5.json",
+            "data": [
+                {
+                    "name": "source",
+                    "values": [{"v": 2, "m": 1}, {"v": 7, "m": 0}],
+                    "transform": [
+                        {"type": "formula", "expr": "datum.v * 2", "as": "v2"}
+                    ]
+                }
+            ],
+            "scales": [
+                {
+                    "name": "x",
+                    "type": "linear",
+                    "domain": [0, 10],
+                    "domainMid": 5,
+                    "range": [0, 100]
+                }
+            ],
+            "marks": [
+                {
+                    "type": "symbol",
+                    "name": "pt",
+                    "from": {"data": "source"},
+                    "encode": {
+                        "update": {
+                            "x": {"field": "v", "scale": "x", "offset": 2},
+                            "opacity": [
+                                {"test": "datum.m > 0", "value": 1},
+                                {"value": 0.2}
+                            ]
+                        }
+                    }
+                }
+            ]
+        }))
+        .unwrap();
+        let mut task_scope = client_spec.to_task_scope().unwrap();
+
+        let mut config = PlannerConfig::default();
+        config.extract_inline_data = true;
+        config.copy_scales_to_server = true;
+        config.precompute_mark_encodings = true;
+
+        let mut server_spec =
+            extract_server_data(&mut client_spec, &mut task_scope, &config).unwrap();
+        extract_mark_encodings(&mut client_spec, &mut server_spec, &mut task_scope, &config)
+            .unwrap();
+
+        let mark = &client_spec.marks[0];
+        let source = mark.from.as_ref().and_then(|f| f.data.clone()).unwrap();
+        assert!(source.starts_with("_vf_markenc_"));
+        let update = mark
+            .encode
+            .as_ref()
+            .unwrap()
+            .encodings
+            .get("update")
+            .unwrap();
+
+        let x = update.channels.get("x").unwrap().to_vec();
+        assert_eq!(x[0].scale.as_deref(), Some("x"));
+
+        let opacity = update.channels.get("opacity").unwrap().to_vec();
+        assert!(matches!(
+            opacity[0].field,
+            Some(MarkEncodingField::Field(_))
+        ));
+        assert!(opacity[0].scale.is_none());
+
+        let markenc_data = server_spec.data.iter().find(|d| d.name == source).unwrap();
+        let TransformSpec::MarkEncoding(markenc) = markenc_data.transform.first().unwrap() else {
+            panic!("expected mark_encoding transform");
+        };
+        assert_eq!(markenc.channels.len(), 1);
+        assert_eq!(markenc.channels[0].channel, "opacity");
+    }
+
+    #[test]
+    fn test_extract_mark_encodings_skip_channels_using_time_color_scales() {
+        let mut client_spec: ChartSpec = serde_json::from_value(json!({
+            "$schema": "https://vega.github.io/schema/vega/v5.json",
+            "data": [
+                {
+                    "name": "source",
+                    "values": [
+                        {"t": "2020-01-01T00:00:00.000Z", "v": 1},
+                        {"t": "2020-02-01T00:00:00.000Z", "v": 2}
+                    ]
+                }
+            ],
+            "scales": [
+                {
+                    "name": "color",
+                    "type": "time",
+                    "domain": {"data": "source", "field": "t"},
+                    "range": "ramp"
+                }
+            ],
+            "marks": [
+                {
+                    "type": "symbol",
+                    "name": "pt",
+                    "from": {"data": "source"},
+                    "encode": {
+                        "update": {
+                            "stroke": {"field": "t", "scale": "color"},
+                            "opacity": {"value": 0.6}
+                        }
+                    }
+                }
+            ]
+        }))
+        .unwrap();
+        let mut task_scope = client_spec.to_task_scope().unwrap();
+
+        let mut config = PlannerConfig::default();
+        config.extract_inline_data = true;
+        config.copy_scales_to_server = true;
+        config.precompute_mark_encodings = true;
+
+        let mut server_spec =
+            extract_server_data(&mut client_spec, &mut task_scope, &config).unwrap();
+        extract_mark_encodings(&mut client_spec, &mut server_spec, &mut task_scope, &config)
+            .unwrap();
+
+        let mark = &client_spec.marks[0];
+        let source = mark.from.as_ref().and_then(|f| f.data.clone()).unwrap();
+        assert!(source.starts_with("_vf_markenc_"));
+        let update = mark
+            .encode
+            .as_ref()
+            .unwrap()
+            .encodings
+            .get("update")
+            .unwrap();
+
+        let stroke = update.channels.get("stroke").unwrap().to_vec();
+        assert_eq!(stroke[0].scale.as_deref(), Some("color"));
+
+        let opacity = update.channels.get("opacity").unwrap().to_vec();
+        assert!(matches!(
+            opacity[0].field,
+            Some(MarkEncodingField::Field(_))
+        ));
+        assert!(opacity[0].scale.is_none());
+
+        let markenc_data = server_spec.data.iter().find(|d| d.name == source).unwrap();
+        let TransformSpec::MarkEncoding(markenc) = markenc_data.transform.first().unwrap() else {
+            panic!("expected mark_encoding transform");
+        };
+        assert_eq!(markenc.channels.len(), 1);
+        assert_eq!(markenc.channels[0].channel, "opacity");
+    }
+
+    #[test]
     fn test_extract_mark_encodings_skips_channels_with_unavailable_signal_dependencies() {
         let mut client_spec: ChartSpec = serde_json::from_value(json!({
             "$schema": "https://vega.github.io/schema/vega/v5.json",
@@ -687,6 +876,71 @@ mod tests {
 
         let x = update.channels.get("x").unwrap().to_vec();
         assert_eq!(x[0].signal.as_deref(), Some("concat_1_width"));
+
+        let opacity = update.channels.get("opacity").unwrap().to_vec();
+        assert!(matches!(
+            opacity[0].field,
+            Some(MarkEncodingField::Field(_))
+        ));
+        assert!(opacity[0].scale.is_none());
+
+        let markenc_data = server_spec.data.iter().find(|d| d.name == source).unwrap();
+        let TransformSpec::MarkEncoding(markenc) = markenc_data.transform.first().unwrap() else {
+            panic!("expected mark_encoding transform");
+        };
+        assert_eq!(markenc.channels.len(), 1);
+        assert_eq!(markenc.channels[0].channel, "opacity");
+    }
+
+    #[test]
+    fn test_extract_mark_encodings_skips_width_signal_when_autosize_fit_x() {
+        let mut client_spec: ChartSpec = serde_json::from_value(json!({
+            "$schema": "https://vega.github.io/schema/vega/v5.json",
+            "width": 200,
+            "autosize": {"type": "fit-x", "contains": "padding"},
+            "data": [
+                {"name": "source", "values": [{"v": 2}, {"v": 7}]}
+            ],
+            "marks": [
+                {
+                    "type": "symbol",
+                    "name": "pt",
+                    "from": {"data": "source"},
+                    "encode": {
+                        "update": {
+                            "x": {"signal": "width"},
+                            "opacity": {"value": 0.3}
+                        }
+                    }
+                }
+            ]
+        }))
+        .unwrap();
+        let mut task_scope = client_spec.to_task_scope().unwrap();
+
+        let mut config = PlannerConfig::default();
+        config.extract_inline_data = true;
+        config.copy_scales_to_server = true;
+        config.precompute_mark_encodings = true;
+
+        let mut server_spec =
+            extract_server_data(&mut client_spec, &mut task_scope, &config).unwrap();
+        extract_mark_encodings(&mut client_spec, &mut server_spec, &mut task_scope, &config)
+            .unwrap();
+
+        let mark = &client_spec.marks[0];
+        let source = mark.from.as_ref().and_then(|f| f.data.clone()).unwrap();
+        assert!(source.starts_with("_vf_markenc_"));
+        let update = mark
+            .encode
+            .as_ref()
+            .unwrap()
+            .encodings
+            .get("update")
+            .unwrap();
+
+        let x = update.channels.get("x").unwrap().to_vec();
+        assert_eq!(x[0].signal.as_deref(), Some("width"));
 
         let opacity = update.channels.get("opacity").unwrap().to_vec();
         assert!(matches!(

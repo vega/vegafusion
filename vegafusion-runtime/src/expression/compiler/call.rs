@@ -25,6 +25,7 @@ use crate::expression::compiler::builtin_functions::date_time::time::time_fn;
 use crate::expression::compiler::builtin_functions::date_time::time_offset::time_offset_fn;
 use crate::expression::compiler::builtin_functions::format::format_transform;
 use crate::expression::compiler::builtin_functions::math::isfinite::is_finite_fn;
+use crate::expression::compiler::builtin_functions::math::isnan::is_nan_fn;
 use crate::expression::compiler::builtin_functions::type_checking::isdate::is_date_fn;
 use crate::expression::compiler::builtin_functions::type_checking::isvalid::is_valid_fn;
 use crate::expression::compiler::builtin_functions::type_coercion::to_boolean::to_boolean_transform;
@@ -36,7 +37,6 @@ use crate::task_graph::timezone::RuntimeTzConfig;
 use datafusion_expr::lit;
 use datafusion_expr::{expr, Expr, ScalarUDF};
 use datafusion_functions::core::least;
-use datafusion_functions::expr_fn::isnan;
 use datafusion_functions::math::{
     abs, acos, asin, atan, ceil, cos, exp, floor, ln, power, round, sin, sqrt, tan,
 };
@@ -336,7 +336,7 @@ pub fn default_callables() -> HashMap<String, VegaFusionCallable> {
 
     callables.insert(
         "isNaN".to_string(),
-        VegaFusionCallable::UnaryTransform(Arc::new(isnan)),
+        VegaFusionCallable::Transform(Arc::new(is_nan_fn)),
     );
 
     callables.insert(

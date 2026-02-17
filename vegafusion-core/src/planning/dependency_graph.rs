@@ -241,6 +241,8 @@ impl ChartVisitor for AddDependencyNodesVisitor<'_> {
             DependencyNodeSupported::Unsupported
         } else if !scale.server_domain_shape_supported() {
             DependencyNodeSupported::Unsupported
+        } else if !scale.server_runtime_semantics_supported() {
+            DependencyNodeSupported::Unsupported
         } else if scale.has_client_only_domain_sort() {
             DependencyNodeSupported::Unsupported
         } else if let Ok(input_vars) = scale.input_vars() {
@@ -555,6 +557,26 @@ fn root_dimension_is_numeric(chart_spec: &ChartSpec, name: &str) -> bool {
         .get(name)
         .and_then(|v| v.as_f64())
         .is_some()
+        && !root_dimension_is_dynamic(chart_spec, name)
+}
+
+fn root_dimension_is_dynamic(chart_spec: &ChartSpec, name: &str) -> bool {
+    let autosize = chart_spec.extra.get("autosize");
+    let autosize_type = match autosize {
+        Some(serde_json::Value::String(kind)) => kind.as_str(),
+        Some(serde_json::Value::Object(obj)) => obj
+            .get("type")
+            .and_then(|value| value.as_str())
+            .unwrap_or("pad"),
+        _ => "pad",
+    };
+
+    match autosize_type {
+        "fit" => true,
+        "fit-x" => name == "width",
+        "fit-y" => name == "height",
+        _ => false,
+    }
 }
 
 fn all_parents_available(
@@ -738,6 +760,57 @@ mod tests {
         .unwrap()
     }
 
+    fn chart_with_unsupported_scale_runtime_semantics() -> ChartSpec {
+        serde_json::from_value(json!({
+            "$schema": "https://vega.github.io/schema/vega/v5.json",
+            "data": [
+                {
+                    "name": "source",
+                    "values": [{"v": 1}],
+                    "transform": [
+                        {"type": "formula", "expr": "scale('x', datum.v)", "as": "scaled"}
+                    ]
+                }
+            ],
+            "scales": [
+                {
+                    "name": "x",
+                    "type": "linear",
+                    "domain": [0, 1],
+                    "domainMid": 0.5,
+                    "range": [0, 100]
+                }
+            ]
+        }))
+        .unwrap()
+    }
+
+    fn chart_with_unsupported_time_scale_range_semantics() -> ChartSpec {
+        serde_json::from_value(json!({
+            "$schema": "https://vega.github.io/schema/vega/v5.json",
+            "data": [
+                {
+                    "name": "source",
+                    "values": [
+                        {"t": "2020-01-01T00:00:00.000Z"}
+                    ]
+                }
+            ],
+            "signals": [
+                {"name": "s", "update": "scale('color', now())"}
+            ],
+            "scales": [
+                {
+                    "name": "color",
+                    "type": "time",
+                    "domain": {"data": "source", "field": "t"},
+                    "range": "ramp"
+                }
+            ]
+        }))
+        .unwrap()
+    }
+
     #[test]
     fn test_scale_nodes_supported_only_when_copy_scales_enabled() {
         let chart_spec = chart_with_scale_and_signal();
@@ -844,6 +917,24 @@ mod tests {
     }
 
     #[test]
+    fn test_scale_with_autosize_fit_x_root_width_not_supported() {
+        let chart_spec: ChartSpec = serde_json::from_value(json!({
+            "$schema": "https://vega.github.io/schema/vega/v5.json",
+            "width": 200,
+            "autosize": {"type": "fit-x", "contains": "padding"},
+            "scales": [
+                {"name": "x", "type": "linear", "domain": [0, 1], "range": "width"}
+            ]
+        }))
+        .unwrap();
+        let mut config = PlannerConfig::default();
+        config.copy_scales_to_server = true;
+
+        let supported_vars = get_supported_data_variables(&chart_spec, &config).unwrap();
+        assert!(!supported_vars.contains_key(&(Variable::new_scale("x"), Vec::new())));
+    }
+
+    #[test]
     fn test_scale_with_non_aggregated_sort_field_without_op_is_client_only() {
         let chart_spec = chart_with_client_only_scale_sort();
         let mut config = PlannerConfig::default();
@@ -884,6 +975,40 @@ mod tests {
         config.copy_scales_to_server = true;
 
         let scale_var = (Variable::new_scale("x"), Vec::new());
+        let (graph, node_indexes) = build_dependency_graph(&chart_spec, &config).unwrap();
+        let (_, supported) = graph
+            .node_weight(*node_indexes.get(&scale_var).unwrap())
+            .unwrap();
+        assert!(matches!(supported, DependencyNodeSupported::Unsupported));
+
+        let supported_vars = get_supported_data_variables(&chart_spec, &config).unwrap();
+        assert!(!supported_vars.contains_key(&scale_var));
+    }
+
+    #[test]
+    fn test_scale_with_unsupported_runtime_semantics_is_client_only() {
+        let chart_spec = chart_with_unsupported_scale_runtime_semantics();
+        let mut config = PlannerConfig::default();
+        config.copy_scales_to_server = true;
+
+        let scale_var = (Variable::new_scale("x"), Vec::new());
+        let (graph, node_indexes) = build_dependency_graph(&chart_spec, &config).unwrap();
+        let (_, supported) = graph
+            .node_weight(*node_indexes.get(&scale_var).unwrap())
+            .unwrap();
+        assert!(matches!(supported, DependencyNodeSupported::Unsupported));
+
+        let supported_vars = get_supported_data_variables(&chart_spec, &config).unwrap();
+        assert!(!supported_vars.contains_key(&scale_var));
+    }
+
+    #[test]
+    fn test_time_scale_with_non_numeric_range_is_client_only() {
+        let chart_spec = chart_with_unsupported_time_scale_range_semantics();
+        let mut config = PlannerConfig::default();
+        config.copy_scales_to_server = true;
+
+        let scale_var = (Variable::new_scale("color"), Vec::new());
         let (graph, node_indexes) = build_dependency_graph(&chart_spec, &config).unwrap();
         let (_, supported) = graph
             .node_weight(*node_indexes.get(&scale_var).unwrap())

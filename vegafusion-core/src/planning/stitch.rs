@@ -1,4 +1,5 @@
 use crate::error::{Result, VegaFusionError};
+use crate::expression::parser::parse;
 use crate::proto::gen::tasks::VariableNamespace;
 use crate::spec::chart::ChartSpec;
 use crate::spec::data::DataSpec;
@@ -98,17 +99,28 @@ fn make_stub(
     let stub_path = stub_var.1;
     match stub_var.0.namespace() {
         VariableNamespace::Signal => {
+            let source_signal = from_spec.get_nested_signal(&stub_path, &stub_name).ok();
+
             // Get initial value from client spec, if any
-            let stub_value = from_spec
-                .get_nested_signal(&stub_path, &stub_name)
-                .ok()
-                .and_then(|s| s.value.as_option());
+            let stub_value = source_signal.as_ref().and_then(|s| s.value.as_option());
+            let stub_init = if stub_value.is_none() {
+                source_signal
+                    .as_ref()
+                    .and_then(|s| s.update.as_ref())
+                    .filter(|update| seed_stub_from_update_expression(update))
+                    .cloned()
+            } else {
+                None
+            };
 
             let new_signal_spec = SignalSpec {
                 name: stub_name,
-                init: None,
+                init: stub_init,
                 update: None,
-                value: MissingNullOrValue::from(stub_value),
+                value: match stub_value {
+                    Some(value) => MissingNullOrValue::Value(value),
+                    None => MissingNullOrValue::Missing,
+                },
                 on: vec![],
                 bind: None,
                 extra: Default::default(),
@@ -148,6 +160,14 @@ fn make_stub(
         }
     }
     Ok(())
+}
+
+fn seed_stub_from_update_expression(update: &str) -> bool {
+    let Ok(parsed) = parse(update) else {
+        return false;
+    };
+
+    parsed.is_supported() && parsed.input_vars().is_empty()
 }
 
 #[cfg(test)]
@@ -280,5 +300,99 @@ mod tests {
         let source = server_spec.get_nested_data(&[], "source").unwrap();
         assert!(source.transform.is_empty());
         assert!(source.values.is_none());
+    }
+
+    #[test]
+    fn test_signal_stub_seeds_init_from_pure_update_expression() {
+        let mut client_spec: ChartSpec = serde_json::from_value(json!({
+            "$schema": "https://vega.github.io/schema/vega/v5.json",
+            "data": [
+                {"name": "source", "values": [{"v": 1}]}
+            ],
+            "signals": [
+                {
+                    "name": "indexDate",
+                    "update": "time('Jan 1 2005')",
+                    "on": [{"events": "mousemove", "update": "event.x"}]
+                }
+            ]
+        }))
+        .unwrap();
+
+        let mut server_spec: ChartSpec = serde_json::from_value(json!({
+            "$schema": "https://vega.github.io/schema/vega/v5.json",
+            "signals": [],
+            "data": [
+                {
+                    "name": "derived",
+                    "source": "source",
+                    "transform": [{"type": "filter", "expr": "datum.v >= indexDate"}]
+                }
+            ]
+        }))
+        .unwrap();
+
+        let task_scope = client_spec.to_task_scope().unwrap();
+        let keep_variables = vec![(Variable::new_signal("indexDate"), Vec::new())];
+        let comm_plan = stitch_specs(
+            &task_scope,
+            &mut server_spec,
+            &mut client_spec,
+            &keep_variables,
+        )
+        .unwrap();
+
+        assert!(comm_plan
+            .client_to_server
+            .contains(&(Variable::new_signal("indexDate"), Vec::new())));
+        let stub = server_spec.get_nested_signal(&[], "indexDate").unwrap();
+        assert_eq!(stub.init.as_deref(), Some("time('Jan 1 2005')"));
+        assert!(stub.update.is_none());
+    }
+
+    #[test]
+    fn test_signal_stub_does_not_seed_init_from_non_constant_update_expression() {
+        let mut client_spec: ChartSpec = serde_json::from_value(json!({
+            "$schema": "https://vega.github.io/schema/vega/v5.json",
+            "data": [
+                {"name": "source", "values": [{"v": 1}]}
+            ],
+            "signals": [
+                {
+                    "name": "activeDate",
+                    "update": "otherSignal + 1",
+                    "on": [{"events": "mousemove", "update": "event.x"}]
+                },
+                {"name": "otherSignal", "value": 1}
+            ]
+        }))
+        .unwrap();
+
+        let mut server_spec: ChartSpec = serde_json::from_value(json!({
+            "$schema": "https://vega.github.io/schema/vega/v5.json",
+            "signals": [],
+            "data": [
+                {
+                    "name": "derived",
+                    "source": "source",
+                    "transform": [{"type": "filter", "expr": "datum.v >= activeDate"}]
+                }
+            ]
+        }))
+        .unwrap();
+
+        let task_scope = client_spec.to_task_scope().unwrap();
+        let keep_variables = vec![(Variable::new_signal("activeDate"), Vec::new())];
+        let _ = stitch_specs(
+            &task_scope,
+            &mut server_spec,
+            &mut client_spec,
+            &keep_variables,
+        )
+        .unwrap();
+
+        let stub = server_spec.get_nested_signal(&[], "activeDate").unwrap();
+        assert!(stub.init.is_none());
+        assert!(stub.update.is_none());
     }
 }

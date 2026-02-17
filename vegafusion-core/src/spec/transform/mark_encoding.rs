@@ -102,7 +102,14 @@ impl TransformSpecTrait for MarkEncodingTransformSpec {
 }
 
 pub fn mark_encoding_channel_spec_supported(channel: &MarkEncodingChannelSpec) -> bool {
-    channel.extra.is_empty() && mark_encoding_supported(&channel.encoding)
+    channel.extra.is_empty()
+        // Fail closed for text channels in this phase. Vega text rendering applies additional
+        // formatting/coercion behavior that isn't fully mirrored yet by server-side precompute.
+        && !channel.channel.eq_ignore_ascii_case("text")
+        // Tooltips are non-visual for static rendering and can rely on full-datum semantics
+        // (for example `signal: "datum"`) that this phase of mark_encoding does not mirror.
+        && !channel.channel.eq_ignore_ascii_case("tooltip")
+        && mark_encoding_supported(&channel.encoding)
 }
 
 pub fn mark_encoding_supported(encoding: &MarkEncodingOrList) -> bool {
@@ -361,6 +368,22 @@ mod tests {
         }))
         .unwrap();
         assert!(!mark_encoding_channel_spec_supported(&unsupported_format));
+
+        let unsupported_text_channel: MarkEncodingChannelSpec = serde_json::from_value(json!({
+            "channel": "text",
+            "as": "text_val",
+            "encoding": {"signal": "datum.v"}
+        }))
+        .unwrap();
+        assert!(!mark_encoding_channel_spec_supported(&unsupported_text_channel));
+
+        let unsupported_tooltip_channel: MarkEncodingChannelSpec = serde_json::from_value(json!({
+            "channel": "tooltip",
+            "as": "tooltip_val",
+            "encoding": {"signal": "datum"}
+        }))
+        .unwrap();
+        assert!(!mark_encoding_channel_spec_supported(&unsupported_tooltip_channel));
     }
 
     #[test]

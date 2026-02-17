@@ -31,6 +31,14 @@ pub fn make_scale_udf(
     } else {
         None
     };
+    let coerce_discrete_inputs_to_utf8 = !invert
+        && matches!(
+            scale_state.scale_type,
+            vegafusion_core::spec::scale::ScaleTypeSpec::Ordinal
+                | vegafusion_core::spec::scale::ScaleTypeSpec::Band
+                | vegafusion_core::spec::scale::ScaleTypeSpec::Point
+        )
+        && matches!(configured_scale.domain().data_type(), DataType::Utf8);
     let coerce_numeric_to_temporal_domain = !invert
         && matches!(
             scale_state.scale_type,
@@ -42,6 +50,7 @@ pub fn make_scale_udf(
         invert,
         configured_scale,
         null_sentinel,
+        coerce_discrete_inputs_to_utf8,
         coerce_numeric_to_temporal_domain,
     );
     Ok(Arc::new(ScalarUDF::from(udf)))
@@ -73,6 +82,7 @@ struct ScaleExprUDF {
     configured_scale: Arc<ConfiguredScale>,
     output_scalar_type: DataType,
     null_sentinel: Option<String>,
+    coerce_discrete_inputs_to_utf8: bool,
     coerce_numeric_to_temporal_domain: bool,
 }
 
@@ -82,6 +92,7 @@ impl ScaleExprUDF {
         invert: bool,
         configured_scale: Arc<ConfiguredScale>,
         null_sentinel: Option<String>,
+        coerce_discrete_inputs_to_utf8: bool,
         coerce_numeric_to_temporal_domain: bool,
     ) -> Self {
         let output_scalar_type = infer_output_scalar_type(&configured_scale, invert);
@@ -93,6 +104,7 @@ impl ScaleExprUDF {
             configured_scale,
             output_scalar_type,
             null_sentinel,
+            coerce_discrete_inputs_to_utf8,
             coerce_numeric_to_temporal_domain,
         }
     }
@@ -123,6 +135,7 @@ impl ScaleExprUDF {
             }
         } else {
             let scale_values = self.normalize_discrete_null_inputs(values)?;
+            let scale_values = self.normalize_discrete_inputs_to_utf8(&scale_values)?;
             let scale_values = self.normalize_temporal_numeric_inputs(&scale_values)?;
             let scaled = self.configured_scale.scale(&scale_values).map_err(|err| {
                 DataFusionError::Execution(format!(
@@ -216,6 +229,19 @@ impl ScaleExprUDF {
                 "Failed to coerce scale('{}', ...) temporal input to {:?}: {err}",
                 self.scale_name,
                 target_dtype
+            ))
+        })
+    }
+
+    fn normalize_discrete_inputs_to_utf8(&self, values: &ArrayRef) -> DFResult<ArrayRef> {
+        if !self.coerce_discrete_inputs_to_utf8 || matches!(values.data_type(), DataType::Utf8) {
+            return Ok(values.clone());
+        }
+
+        cast(values.as_ref(), &DataType::Utf8).map_err(|err| {
+            DataFusionError::Execution(format!(
+                "Failed to cast scale('{}', ...) discrete input to Utf8: {err}",
+                self.scale_name
             ))
         })
     }
@@ -517,6 +543,7 @@ impl PartialEq for ScaleExprUDF {
             && self.invert == other.invert
             && Arc::ptr_eq(&self.configured_scale, &other.configured_scale)
             && self.null_sentinel == other.null_sentinel
+            && self.coerce_discrete_inputs_to_utf8 == other.coerce_discrete_inputs_to_utf8
             && self.coerce_numeric_to_temporal_domain == other.coerce_numeric_to_temporal_domain
     }
 }
@@ -529,6 +556,7 @@ impl Hash for ScaleExprUDF {
         self.invert.hash(state);
         Arc::as_ptr(&self.configured_scale).hash(state);
         self.null_sentinel.hash(state);
+        self.coerce_discrete_inputs_to_utf8.hash(state);
         self.coerce_numeric_to_temporal_domain.hash(state);
     }
 }

@@ -27,6 +27,24 @@ const TABLEAU10: &[&str] = &[
     "#9d755d", "#bab0ac",
 ];
 
+const CATEGORY20: &[&str] = &[
+    "#1f77b4", "#aec7e8", "#ff7f0e", "#ffbb78", "#2ca02c", "#98df8a", "#d62728", "#ff9896",
+    "#9467bd", "#c5b0d5", "#8c564b", "#c49c94", "#e377c2", "#f7b6d2", "#7f7f7f", "#c7c7c7",
+    "#bcbd22", "#dbdb8d", "#17becf", "#9edae5",
+];
+
+const CATEGORY20B: &[&str] = &[
+    "#393b79", "#5254a3", "#6b6ecf", "#9c9ede", "#637939", "#8ca252", "#b5cf6b", "#cedb9c",
+    "#8c6d31", "#bd9e39", "#e7ba52", "#e7cb94", "#843c39", "#ad494a", "#d6616b", "#e7969c",
+    "#7b4173", "#a55194", "#ce6dbd", "#de9ed6",
+];
+
+const CATEGORY20C: &[&str] = &[
+    "#3182bd", "#6baed6", "#9ecae1", "#c6dbef", "#e6550d", "#fd8d3c", "#fdae6b", "#fdd0a2",
+    "#31a354", "#74c476", "#a1d99b", "#c7e9c0", "#756bb1", "#9e9ac8", "#bcbddc", "#dadaeb",
+    "#636363", "#969696", "#bdbdbd", "#d9d9d9",
+];
+
 const INFERNO: &str = concat!(
     "0000040403130c0826170c3b240c4f330a5f420a68500d6c5d126e6b176e781c6d86",
     "216b932667a12b62ae305cbb3755c73e4cd24644dd513ae65c30ed6925f3771af8850f",
@@ -96,6 +114,9 @@ pub(crate) fn lookup_scheme(name: &str) -> Option<SchemePalette> {
     let lowered = name.to_ascii_lowercase();
     match lowered.as_str() {
         "tableau10" => Some(SchemePalette::Discrete(TABLEAU10)),
+        "category20" => Some(SchemePalette::Discrete(CATEGORY20)),
+        "category20b" => Some(SchemePalette::Discrete(CATEGORY20B)),
+        "category20c" => Some(SchemePalette::Discrete(CATEGORY20C)),
         "blues" => Some(SchemePalette::Continuous(BLUES)),
         "blueorange" => Some(SchemePalette::Continuous(BLUEORANGE)),
         "yellowgreenblue" => Some(SchemePalette::Continuous(YELLOWGREENBLUE)),

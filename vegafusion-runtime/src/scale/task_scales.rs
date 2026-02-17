@@ -32,8 +32,8 @@ use vegafusion_common::escape::unescape_field;
 use vegafusion_core::expression::parser::parse;
 use vegafusion_core::spec::scale::{
     ScaleArrayElementSpec, ScaleBinsSpec, ScaleDataReferenceOrSignalSpec, ScaleDataReferenceSort,
-    ScaleDataReferenceSortParameters, ScaleDomainSpec, ScaleFieldReferenceSpec, ScaleRangeSpec,
-    ScaleSpec, ScaleTypeSpec,
+    ScaleDataReferenceSortParameters, ScaleDomainSpec, ScaleFieldReferenceSpec, ScaleRangeSpec, ScaleSpec,
+    ScaleTypeSpec, ScaleVecStringsSpec,
 };
 use vegafusion_core::spec::transform::aggregate::AggregateOpSpec;
 use vegafusion_core::spec::values::SortOrderSpec;
@@ -137,15 +137,34 @@ fn normalize_discrete_domain_for_avenger(
         domain.data_type(),
         DataType::Date32 | DataType::Date64 | DataType::Timestamp(_, _)
     );
+    let needs_unsigned_key_normalization = matches!(
+        domain.data_type(),
+        DataType::UInt8 | DataType::UInt16 | DataType::UInt32 | DataType::UInt64
+    );
+    let needs_boolean_key_normalization = matches!(domain.data_type(), DataType::Boolean);
 
-    if !needs_temporal_key_normalization {
+    if !needs_temporal_key_normalization
+        && !needs_unsigned_key_normalization
+        && !needs_boolean_key_normalization
+    {
         return Ok(domain);
     }
 
-    cast(domain.as_ref(), &DataType::Int64).map_err(|err| {
-        VegaFusionError::internal(format!(
-            "Failed to normalize discrete temporal domain to Int64 keys: {err}"
-        ))
+    if needs_boolean_key_normalization {
+        return cast(domain.as_ref(), &DataType::Utf8).map_err(|err| {
+            VegaFusionError::internal(format!(
+                "Failed to normalize boolean discrete domain to Utf8: {err}"
+            ))
+        });
+    }
+
+    cast(domain.as_ref(), &DataType::Int64).or_else(|err| {
+        // Fall back to Utf8 if Int64 coercion fails (for example due to UInt64 overflow).
+        cast(domain.as_ref(), &DataType::Utf8).map_err(|fallback_err| {
+            VegaFusionError::internal(format!(
+                "Failed to normalize discrete domain to Int64 ({err}); fallback Utf8 cast also failed: {fallback_err}"
+            ))
+        })
     })
 }
 
@@ -188,6 +207,9 @@ fn resolve_domain(
         ScaleDomainSpec::Array(values) => scale_array_elements_to_array(values, config),
         ScaleDomainSpec::Signal(signal_expr) => signal_expr_to_array(&signal_expr.signal, config),
         ScaleDomainSpec::Value(value) => json_value_to_array(value),
+        ScaleDomainSpec::FieldsVecStrings(vec_strings) => {
+            domain_from_vec_strings(vec_strings)
+        }
         ScaleDomainSpec::FieldReference(reference) => {
             domain_from_field_reference(scale_type, reference, config)
         }
@@ -226,10 +248,20 @@ fn resolve_domain(
                 .collect::<Result<Vec<_>>>()?;
             merge_domain_arrays(scale_type, arrays, config)
         }
-        unsupported => Err(VegaFusionError::internal(format!(
-            "Unsupported scale domain form in this phase: {unsupported:?}"
-        ))),
     }
+}
+
+fn domain_from_vec_strings(vec_strings: &ScaleVecStringsSpec) -> Result<ArrayRef> {
+    let values = vec_strings
+        .fields
+        .iter()
+        .map(|parts| match parts.len() {
+            0 => ScalarValue::Null,
+            1 => ScalarValue::from(parts[0].clone()),
+            _ => ScalarValue::from(parts.join(".")),
+        })
+        .collect::<Vec<_>>();
+    Ok(ScalarValue::iter_to_array(values)?)
 }
 
 fn resolve_range(
@@ -1443,7 +1475,12 @@ fn range_from_values(
                 None
             }
         });
-        sample_colors(values.as_slice(), sampled_count, extent)?
+        sample_colors(
+            values.as_slice(),
+            sampled_count,
+            extent,
+            continuous_source && is_discrete_scale(scale_type),
+        )?
     } else {
         values
     };
@@ -1459,6 +1496,7 @@ fn sample_colors(
     values: &[String],
     count: Option<usize>,
     extent: Option<(f64, f64)>,
+    quantize_interior: bool,
 ) -> Result<Vec<String>> {
     let mut lo = extent.map(|e| e.0).unwrap_or(0.0);
     let mut hi = extent.map(|e| e.1).unwrap_or(1.0);
@@ -1483,6 +1521,8 @@ fn sample_colors(
     for i in 0..target {
         let frac = if target <= 1 {
             0.0
+        } else if quantize_interior {
+            (i as f64 + 1.0) / (target as f64 + 1.0)
         } else {
             (i as f64) / ((target - 1) as f64)
         };
@@ -1667,7 +1707,7 @@ mod tests {
     use super::*;
     use datafusion_common::ScalarValue;
     use serde_json::json;
-    use vegafusion_common::arrow::array::TimestampNanosecondArray;
+    use vegafusion_common::arrow::array::{BooleanArray, TimestampNanosecondArray, UInt64Array};
     use vegafusion_common::arrow::datatypes::Int64Type;
     use vegafusion_common::data::table::VegaFusionTable;
 
@@ -2108,6 +2148,30 @@ mod tests {
     }
 
     #[test]
+    fn test_discrete_unsigned_domain_normalizes_for_avenger() {
+        let domain = Arc::new(UInt64Array::from(vec![1_u64, 2_u64, 3_u64])) as ArrayRef;
+        let normalized = normalize_discrete_domain_for_avenger(&ScaleTypeSpec::Ordinal, domain)
+            .expect("normalize unsigned domain");
+        assert_eq!(normalized.data_type(), &DataType::Int64);
+        assert_eq!(
+            scalar_texts(&normalized),
+            vec!["1".to_string(), "2".to_string(), "3".to_string()]
+        );
+    }
+
+    #[test]
+    fn test_discrete_boolean_domain_normalizes_for_avenger() {
+        let domain = Arc::new(BooleanArray::from(vec![false, true])) as ArrayRef;
+        let normalized = normalize_discrete_domain_for_avenger(&ScaleTypeSpec::Ordinal, domain)
+            .expect("normalize boolean domain");
+        assert_eq!(normalized.data_type(), &DataType::Utf8);
+        assert_eq!(
+            scalar_texts(&normalized),
+            vec!["false".to_string(), "true".to_string()]
+        );
+    }
+
+    #[test]
     fn test_named_ranges_category_and_heatmap() {
         let category: ScaleSpec = serde_json::from_value(json!({
             "name": "fill",
@@ -2135,6 +2199,30 @@ mod tests {
     }
 
     #[test]
+    fn test_named_ordinal_range_uses_vega_quantize_sampling() {
+        let ordinal: ScaleSpec = serde_json::from_value(json!({
+            "name": "stroke",
+            "type": "ordinal",
+            "domain": [3, 4, 5, 6, 8],
+            "range": "ordinal"
+        }))
+        .unwrap();
+
+        let state = resolve_scale_state(&ordinal, &CompilationConfig::default()).unwrap();
+        assert_eq!(state.range.len(), 5);
+        assert_eq!(
+            scalar_texts(&state.range),
+            vec![
+                "#afd1e7".to_string(),
+                "#86bcdc".to_string(),
+                "#5ba3cf".to_string(),
+                "#3887c0".to_string(),
+                "#1b69ad".to_string()
+            ]
+        );
+    }
+
+    #[test]
     fn test_range_scheme_object_supported() {
         let scheme: ScaleSpec = serde_json::from_value(json!({
             "name": "fill",
@@ -2150,6 +2238,42 @@ mod tests {
         assert_eq!(
             scalar_string(&state.range, state.range.len() - 1),
             "#fcffa4"
+        );
+    }
+
+    #[test]
+    fn test_range_scheme_category20_supported() {
+        let scheme: ScaleSpec = serde_json::from_value(json!({
+            "name": "fill",
+            "type": "ordinal",
+            "domain": ["a", "b", "c"],
+            "range": {"scheme": "category20"}
+        }))
+        .unwrap();
+
+        let state = resolve_scale_state(&scheme, &CompilationConfig::default()).unwrap();
+        assert_eq!(state.range.len(), 20);
+        assert_eq!(scalar_string(&state.range, 0), "#1f77b4");
+        assert_eq!(
+            scalar_string(&state.range, state.range.len() - 1),
+            "#9edae5"
+        );
+    }
+
+    #[test]
+    fn test_domain_fields_vec_strings_supported() {
+        let scale: ScaleSpec = serde_json::from_value(json!({
+            "name": "xOffset",
+            "type": "band",
+            "domain": {"fields": [["Worldwide Gross"], ["US Gross"]]},
+            "range": {"step": 20}
+        }))
+        .unwrap();
+
+        let state = resolve_scale_state(&scale, &CompilationConfig::default()).unwrap();
+        assert_eq!(
+            scalar_texts(&state.domain),
+            vec!["Worldwide Gross".to_string(), "US Gross".to_string()]
         );
     }
 
