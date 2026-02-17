@@ -150,8 +150,12 @@ fn map_options(
 }
 
 fn map_option_name<'a>(scale_type: &ScaleTypeSpec, key: &'a str) -> Result<Option<&'a str>> {
-    // Ignored in this phase: bins metadata is not needed for supported server scale() / invert().
-    if key == "bins" {
+    // Ignored in this phase: these options are consumed by range/domain construction or
+    // not currently modeled by avenger's runtime scale options.
+    if matches!(
+        key,
+        "bins" | "interpolate" | "interpolate_gamma" | "domain_implicit"
+    ) {
         return Ok(None);
     }
 
