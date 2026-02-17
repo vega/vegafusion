@@ -1,5 +1,6 @@
 use crate::task_graph::timezone::RuntimeTzConfig;
 use datafusion_common::ScalarValue;
+use std::collections::HashMap;
 use vegafusion_common::error::{Result, VegaFusionError};
 use vegafusion_core::spec::scale::ScaleTypeSpec;
 use vegafusion_core::task_graph::scale_state::ScaleState;
@@ -58,8 +59,9 @@ pub fn to_configured_scale(
         }
     };
 
-    for (key, value) in &scale_state.options {
-        configured = configured.with_option(key.clone(), scalar_value_to_avenger_scalar(value)?);
+    let mapped_options = map_options(&scale_state.scale_type, &scale_state.options)?;
+    for (key, value) in mapped_options {
+        configured = configured.with_option(key, scalar_value_to_avenger_scalar(&value)?);
     }
 
     // Vega sqrt scales are pow scales with exponent 0.5.
@@ -130,5 +132,129 @@ pub fn scalar_value_to_avenger_scalar(value: &ScalarValue) -> Result<AvengerScal
         _ => Err(VegaFusionError::internal(format!(
             "Unsupported scale option scalar type: {value:?}"
         ))),
+    }
+}
+
+fn map_options(
+    scale_type: &ScaleTypeSpec,
+    options: &HashMap<String, ScalarValue>,
+) -> Result<HashMap<String, ScalarValue>> {
+    let mut mapped: HashMap<String, ScalarValue> = HashMap::new();
+    for (key, value) in options {
+        let Some(mapped_key) = map_option_name(scale_type, key)? else {
+            continue;
+        };
+        mapped.insert(mapped_key.to_string(), value.clone());
+    }
+    Ok(mapped)
+}
+
+fn map_option_name<'a>(scale_type: &ScaleTypeSpec, key: &'a str) -> Result<Option<&'a str>> {
+    // Ignored in this phase: bins metadata is not needed for supported server scale() / invert().
+    if key == "bins" {
+        return Ok(None);
+    }
+
+    let mapped = match scale_type {
+        ScaleTypeSpec::Linear => match key {
+            "clamp" | "range_offset" | "round" | "nice" | "default" | "clip_padding_lower"
+            | "clip_padding_upper" => Some(key),
+            _ => None,
+        },
+        ScaleTypeSpec::Log => match key {
+            "base" | "clamp" | "range_offset" | "round" | "nice" | "default"
+            | "clip_padding_lower" | "clip_padding_upper" => Some(key),
+            _ => None,
+        },
+        ScaleTypeSpec::Pow | ScaleTypeSpec::Sqrt => match key {
+            "exponent" | "clamp" | "range_offset" | "round" | "nice" | "default"
+            | "clip_padding_lower" | "clip_padding_upper" => Some(key),
+            _ => None,
+        },
+        ScaleTypeSpec::Symlog => match key {
+            "constant" | "clamp" | "range_offset" | "round" | "nice" | "default"
+            | "clip_padding_lower" | "clip_padding_upper" => Some(key),
+            _ => None,
+        },
+        ScaleTypeSpec::Time | ScaleTypeSpec::Utc => match key {
+            "timezone" | "nice" | "interval" | "week_start" | "locale" | "default" => Some(key),
+            _ => None,
+        },
+        ScaleTypeSpec::Band => match key {
+            "align" | "band" | "padding" | "padding_inner" | "padding_inner_px"
+            | "padding_outer" | "padding_outer_px" | "round" | "range_offset"
+            | "clip_padding_lower" | "clip_padding_upper" | "band_n" => Some(key),
+            _ => None,
+        },
+        ScaleTypeSpec::Point => match key {
+            "align" | "padding" | "round" | "range_offset" | "clip_padding_lower"
+            | "clip_padding_upper" => Some(key),
+            _ => None,
+        },
+        ScaleTypeSpec::Ordinal => match key {
+            "default" => Some(key),
+            _ => None,
+        },
+        // Unsupported scales in this phase are rejected earlier.
+        _ => None,
+    };
+
+    if let Some(mapped) = mapped {
+        Ok(Some(mapped))
+    } else {
+        Err(VegaFusionError::internal(format!(
+            "Unsupported scale option for server-side {scale_type:?} scale: {key}"
+        )))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::sync::Arc;
+    use vegafusion_common::arrow::array::Float64Array;
+    use vegafusion_core::task_graph::scale_state::ScaleState;
+
+    fn numeric_interval(values: [f64; 2]) -> vegafusion_common::arrow::array::ArrayRef {
+        Arc::new(Float64Array::from(values.to_vec()))
+    }
+
+    #[test]
+    fn test_bins_option_is_ignored_for_linear_scale() {
+        let mut options = HashMap::new();
+        options.insert(
+            "bins".to_string(),
+            ScalarValue::from(vec![
+                ("start", ScalarValue::from(0.0)),
+                ("step", ScalarValue::from(10.0)),
+                ("stop", ScalarValue::from(100.0)),
+            ]),
+        );
+
+        let scale_state = ScaleState {
+            scale_type: ScaleTypeSpec::Linear,
+            domain: numeric_interval([0.0, 100.0]),
+            range: numeric_interval([0.0, 200.0]),
+            options,
+        };
+
+        let configured = to_configured_scale(&scale_state, &None);
+        assert!(configured.is_ok());
+    }
+
+    #[test]
+    fn test_unknown_option_errors_explicitly() {
+        let mut options = HashMap::new();
+        options.insert("foo".to_string(), ScalarValue::from(1.0));
+
+        let scale_state = ScaleState {
+            scale_type: ScaleTypeSpec::Linear,
+            domain: numeric_interval([0.0, 100.0]),
+            range: numeric_interval([0.0, 200.0]),
+            options,
+        };
+
+        let err = to_configured_scale(&scale_state, &None).unwrap_err();
+        assert!(format!("{err}").contains("Unsupported scale option for server-side"));
     }
 }

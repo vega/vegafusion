@@ -112,9 +112,12 @@ async function exportSequence(spec, file, format, init, updates, watches) {
     // Normalize watches
     watches = watches || [];
 
-    // Apply initial updates
-    // These updates must be applied before the first run command
-    for (const update of init) {
+    // Apply root-scope initial updates before first run
+    // Group subcontexts are materialized by running the view once.
+    const root_init = init.filter(update => !update.scope || update.scope.length === 0);
+    const scoped_init = init.filter(update => update.scope && update.scope.length > 0);
+
+    for (const update of root_init) {
         let {namespace, name, scope, value} = update;
         if (namespace === "signal") {
             let signalOp = lookupSignalOp(view, name, scope);
@@ -129,8 +132,28 @@ async function exportSequence(spec, file, format, init, updates, watches) {
         }
     }
 
-    // For initial updates, run is not applied until after all init updates are applied
+    // First run materializes scoped group subcontexts.
     await view.runAsync();
+
+    // Apply scoped initial updates after subcontexts exist.
+    if (scoped_init.length) {
+        for (const update of scoped_init) {
+            let {namespace, name, scope, value} = update;
+            if (namespace === "signal") {
+                let signalOp = lookupSignalOp(view, name, scope);
+                view.update(signalOp, value);
+            } else if (namespace === "data") {
+                let dataset = lookupDataOp(view, name, scope);
+                let changeset = view.changeset().remove(truthy).insert(value)
+                dataset.modified = true;
+                view.pulse(dataset.input, changeset);
+            } else {
+                throw `Invalid update namespace: ${namespace}`
+            }
+        }
+
+        await view.runAsync();
+    }
 
     // Collect initial watch values
     let result = [
