@@ -201,7 +201,8 @@ mod test_call {
         expr,
         case("sqrt(16)"),
         case("round(1.2) + round(1.8)"),
-        case("isNaN(16) + isNaN(NaN)")
+        case("isNaN(16) + isNaN(NaN)"),
+        case("min(3, 1, 2)")
     )]
     fn test(expr: &str) {
         check_scalar_evaluation(expr, &config_a())
@@ -706,6 +707,7 @@ mod test_scale_calls {
     use vegafusion_runtime::expression::compiler::compile;
     use vegafusion_runtime::expression::compiler::config::CompilationConfig;
     use vegafusion_runtime::expression::compiler::utils::ExprHelpers;
+    use vegafusion_runtime::scale::DISCRETE_NULL_SENTINEL;
     use vegafusion_runtime::task_graph::timezone::RuntimeTzConfig;
 
     fn linear_scale_state() -> ScaleState {
@@ -843,6 +845,30 @@ mod test_scale_calls {
             "paddingOuter": 0
         })];
         check_scale_scalar_evaluation("scale('b', 'B')", scales, &config);
+    }
+
+    #[test]
+    fn test_scale_band_null_category_matches_vega() {
+        let scale_state = ScaleState {
+            scale_type: ScaleTypeSpec::Band,
+            domain: Arc::new(StringArray::from(vec![
+                DISCRETE_NULL_SENTINEL,
+                "A",
+                "B",
+            ])),
+            range: Arc::new(Float64Array::from(vec![0.0, 300.0])),
+            options: HashMap::new(),
+        };
+        let config = config_with_scale("b", scale_state);
+        let scales = vec![json!({
+            "name": "b",
+            "type": "band",
+            "domain": [null, "A", "B"],
+            "range": [0, 300],
+            "paddingInner": 0,
+            "paddingOuter": 0
+        })];
+        check_scale_scalar_evaluation("scale('b', null)", scales, &config);
     }
 
     #[test]

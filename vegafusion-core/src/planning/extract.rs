@@ -298,6 +298,31 @@ mod tests {
         .unwrap()
     }
 
+    fn chart_with_unsupported_scale_signal_expression() -> ChartSpec {
+        serde_json::from_value(json!({
+            "$schema": "https://vega.github.io/schema/vega/v5.json",
+            "width": 200,
+            "data": [
+                {
+                    "name": "source",
+                    "values": [{"value": 1}],
+                    "transform": [
+                        {"type": "formula", "expr": "scale('x', datum.value)", "as": "scaled"}
+                    ]
+                }
+            ],
+            "scales": [
+                {
+                    "name": "x",
+                    "type": "linear",
+                    "domain": [0, 1],
+                    "range": [0, {"signal": "foo(width)"}]
+                }
+            ]
+        }))
+        .unwrap()
+    }
+
     #[test]
     fn test_scale_dependent_pipeline_stays_client_when_scale_copy_disabled() {
         let mut client_spec = chart_with_scale_formula_data();
@@ -355,6 +380,26 @@ mod tests {
             .find(|d| d.name == "_server_source")
             .expect("expected partially extracted server source");
         assert!(server_source.transform.is_empty());
+        let source = client_spec
+            .data
+            .iter()
+            .find(|d| d.name == "source")
+            .expect("expected source dataset");
+        assert_eq!(source.transform.len(), 1);
+    }
+
+    #[test]
+    fn test_scale_with_unsupported_signal_expression_stays_client() {
+        let mut client_spec = chart_with_unsupported_scale_signal_expression();
+        let mut task_scope = client_spec.to_task_scope().unwrap();
+
+        let mut config = PlannerConfig::default();
+        config.extract_inline_data = true;
+        config.copy_scales_to_server = true;
+
+        let server_spec = extract_server_data(&mut client_spec, &mut task_scope, &config).unwrap();
+        assert!(server_spec.scales.is_empty());
+
         let source = client_spec
             .data
             .iter()

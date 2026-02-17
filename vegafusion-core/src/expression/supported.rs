@@ -45,7 +45,7 @@ lazy_static! {
     pub static ref SUPPORTED_EXPRESSION_FNS: HashSet<&'static str> = vec![
         // Math
         "abs", "acos", "asin", "atan", "ceil", "cos", "exp", "floor", "round", "sin", "sqrt", "tan",
-        "log", "pow",
+        "log", "pow", "min",
 
         // Type checking
         "isNaN", "isFinite", "isValid", "isDate",

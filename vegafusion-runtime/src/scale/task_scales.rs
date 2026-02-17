@@ -13,6 +13,7 @@ use crate::data::tasks::build_compilation_config;
 use crate::expression::compiler::compile;
 use crate::expression::compiler::config::CompilationConfig;
 use crate::expression::compiler::utils::ExprHelpers;
+use crate::scale::DISCRETE_NULL_SENTINEL;
 use crate::scale::vega_defaults::apply_vega_domain_defaults;
 use crate::scale::vega_schemes::{
     decode_continuous_scheme, default_named_range, lookup_scheme, NamedRange, SchemePalette,
@@ -22,8 +23,9 @@ use std::cmp::Ordering;
 use std::collections::HashSet;
 use std::ops::RangeInclusive;
 use vegafusion_common::arrow::array::{
-    new_empty_array, new_null_array, Array, ArrayRef, FixedSizeListArray,
+    new_empty_array, new_null_array, Array, ArrayRef, AsArray, FixedSizeListArray, StringArray,
 };
+use vegafusion_common::arrow::compute::cast;
 use vegafusion_common::arrow::datatypes::DataType;
 use vegafusion_common::data::scalar::ScalarValueHelpers;
 use vegafusion_common::escape::unescape_field;
@@ -65,6 +67,7 @@ fn resolve_scale_state(scale: &ScaleSpec, config: &CompilationConfig) -> Result<
         Some(raw_domain) => raw_domain,
         None => resolve_domain(scale, &scale_type, config)?,
     };
+    let domain = encode_discrete_null_domain(&scale_type, domain)?;
 
     let mut range = resolve_range(scale, &scale_type, domain.len(), &options, config)?;
     range = apply_reverse_option(range, &mut options)?;
@@ -78,6 +81,29 @@ fn resolve_scale_state(scale: &ScaleSpec, config: &CompilationConfig) -> Result<
         range,
         options,
     })
+}
+
+fn encode_discrete_null_domain(scale_type: &ScaleTypeSpec, domain: ArrayRef) -> Result<ArrayRef> {
+    if !is_discrete_scale(scale_type) || domain.null_count() == 0 {
+        return Ok(domain);
+    }
+
+    let casted = cast(domain.as_ref(), &DataType::Utf8).map_err(|err| {
+        VegaFusionError::internal(format!(
+            "Failed to cast discrete domain with null values to Utf8: {err}"
+        ))
+    })?;
+    let strings = casted.as_string::<i32>();
+    let encoded = (0..strings.len())
+        .map(|i| {
+            if strings.is_null(i) {
+                Some(DISCRETE_NULL_SENTINEL.to_string())
+            } else {
+                Some(strings.value(i).to_string())
+            }
+        })
+        .collect::<Vec<_>>();
+    Ok(Arc::new(StringArray::from(encoded)))
 }
 
 fn resolve_domain(
@@ -591,9 +617,6 @@ fn build_discrete_domain_single(
             })?;
             let mut grouped: HashMap<ScalarValue, Vec<ScalarValue>> = HashMap::new();
             for i in 0..key_array.len() {
-                if key_array.is_null(i) {
-                    continue;
-                }
                 let key = ScalarValue::try_from_array(key_array.as_ref(), i)?;
                 let sort_value = ScalarValue::try_from_array(sort_array.as_ref(), i)?;
                 grouped.entry(key).or_default().push(sort_value);
@@ -645,9 +668,6 @@ fn build_discrete_domain_multi(
                 })?;
                 let mut grouped: HashMap<ScalarValue, Vec<ScalarValue>> = HashMap::new();
                 for i in 0..source.key_array.len() {
-                    if source.key_array.is_null(i) {
-                        continue;
-                    }
                     let key = ScalarValue::try_from_array(source.key_array.as_ref(), i)?;
                     let sort_value = ScalarValue::try_from_array(sort_array.as_ref(), i)?;
                     grouped.entry(key).or_default().push(sort_value);
@@ -685,9 +705,6 @@ fn collect_domain_entries(key_array: &ArrayRef) -> Result<Vec<DomainEntry>> {
     let mut entries = Vec::<DomainEntry>::new();
     let mut entry_indices = HashMap::<ScalarValue, usize>::new();
     for i in 0..key_array.len() {
-        if key_array.is_null(i) {
-            continue;
-        }
         let key = ScalarValue::try_from_array(key_array.as_ref(), i)?;
         let idx = *entry_indices.entry(key.clone()).or_insert_with(|| {
             let idx = entries.len();
@@ -710,9 +727,6 @@ fn collect_domain_entries_multi(sources: &[DiscreteDomainSource]) -> Result<Vec<
     let mut seen_index = 0usize;
     for source in sources {
         for i in 0..source.key_array.len() {
-            if source.key_array.is_null(i) {
-                continue;
-            }
             let key = ScalarValue::try_from_array(source.key_array.as_ref(), i)?;
             let idx = *entry_indices.entry(key.clone()).or_insert_with(|| {
                 let idx = entries.len();
@@ -976,9 +990,6 @@ fn merge_domain_arrays(scale_type: &ScaleTypeSpec, arrays: Vec<ArrayRef>) -> Res
         let mut values = Vec::new();
         for arr in arrays {
             for i in 0..arr.len() {
-                if arr.is_null(i) {
-                    continue;
-                }
                 let value = ScalarValue::try_from_array(arr.as_ref(), i)?;
                 if seen.insert(value.clone()) {
                     values.push(value);
@@ -1572,6 +1583,24 @@ mod tests {
             .collect()
     }
 
+    fn scalar_text(values: &ArrayRef, index: usize) -> String {
+        let value = ScalarValue::try_from_array(values, index).unwrap();
+        match value {
+            ScalarValue::Null => "null".to_string(),
+            ScalarValue::Utf8(Some(v)) => v,
+            ScalarValue::LargeUtf8(Some(v)) => v,
+            ScalarValue::Utf8View(Some(v)) => v,
+            ScalarValue::Int64(Some(v)) => v.to_string(),
+            ScalarValue::Int32(Some(v)) => v.to_string(),
+            ScalarValue::Float64(Some(v)) => v.to_string(),
+            other => format!("{other:?}"),
+        }
+    }
+
+    fn scalar_texts(values: &ArrayRef) -> Vec<String> {
+        (0..values.len()).map(|i| scalar_text(values, i)).collect()
+    }
+
     fn scalar_domain_f64(value: &ScalarValue) -> f64 {
         match value {
             ScalarValue::Date32(Some(days)) => (*days as f64) * 86_400_000.0,
@@ -1814,6 +1843,56 @@ mod tests {
         assert_eq!(
             scalar_strings(&state.domain),
             vec!["b", "a", "c", "y", "x", "z"]
+        );
+    }
+
+    #[test]
+    fn test_discrete_domain_sort_true_keeps_null_category() {
+        let scale: ScaleSpec = serde_json::from_value(json!({
+            "name": "x",
+            "type": "band",
+            "domain": {"data": "t", "field": "k", "sort": true},
+            "range": [0, 100]
+        }))
+        .unwrap();
+        let config = config_with_data(
+            "t",
+            json!([
+                {"k": "b"},
+                {"k": null},
+                {"k": "a"}
+            ]),
+        );
+
+        let state = resolve_scale_state(&scale, &config).unwrap();
+        assert_eq!(
+            scalar_texts(&state.domain),
+            vec![DISCRETE_NULL_SENTINEL.to_string(), "a".to_string(), "b".to_string()]
+        );
+    }
+
+    #[test]
+    fn test_discrete_domain_sort_false_keeps_null_category() {
+        let scale: ScaleSpec = serde_json::from_value(json!({
+            "name": "x",
+            "type": "band",
+            "domain": {"data": "t", "field": "k", "sort": false},
+            "range": [0, 100]
+        }))
+        .unwrap();
+        let config = config_with_data(
+            "t",
+            json!([
+                {"k": "b"},
+                {"k": null},
+                {"k": "a"}
+            ]),
+        );
+
+        let state = resolve_scale_state(&scale, &config).unwrap();
+        assert_eq!(
+            scalar_texts(&state.domain),
+            vec!["b".to_string(), DISCRETE_NULL_SENTINEL.to_string(), "a".to_string()]
         );
     }
 

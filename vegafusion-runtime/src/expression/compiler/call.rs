@@ -33,9 +33,9 @@ use crate::expression::compiler::builtin_functions::type_coercion::to_string::to
 use crate::expression::compiler::compile;
 use crate::expression::compiler::config::CompilationConfig;
 use crate::task_graph::timezone::RuntimeTzConfig;
-#[cfg(feature = "scales")]
 use datafusion_expr::lit;
 use datafusion_expr::{expr, Expr, ScalarUDF};
+use datafusion_functions::core::least;
 use datafusion_functions::expr_fn::isnan;
 use datafusion_functions::math::{
     abs, acos, asin, atan, ceil, cos, exp, floor, ln, power, round, sin, sqrt, tan,
@@ -46,7 +46,6 @@ use std::sync::Arc;
 use vegafusion_common::arrow::datatypes::DataType;
 use vegafusion_common::data::table::VegaFusionTable;
 use vegafusion_common::datafusion_common::DFSchema;
-#[cfg(feature = "scales")]
 use vegafusion_common::datafusion_common::ScalarValue;
 use vegafusion_common::datatypes::cast_to;
 use vegafusion_common::error::{Result, ResultWithContext, VegaFusionError};
@@ -275,6 +274,22 @@ fn compile_scale_call(
     }
 }
 
+fn min_fn(args: &[Expr], schema: &DFSchema) -> Result<Expr> {
+    // Vega min delegates to JavaScript Math.min, which returns +Infinity for zero arguments.
+    if args.is_empty() {
+        return Ok(lit(ScalarValue::Float64(Some(f64::INFINITY))));
+    }
+
+    let cast_args = args
+        .iter()
+        .map(|arg| cast_to(arg.clone(), &DataType::Float64, schema))
+        .collect::<Result<Vec<_>>>()?;
+    Ok(Expr::ScalarFunction(expr::ScalarFunction {
+        func: least(),
+        args: cast_args,
+    }))
+}
+
 pub fn default_callables() -> HashMap<String, VegaFusionCallable> {
     let mut callables: HashMap<String, VegaFusionCallable> = HashMap::new();
     callables.insert("if".to_string(), VegaFusionCallable::Macro(Arc::new(if_fn)));
@@ -313,6 +328,11 @@ pub fn default_callables() -> HashMap<String, VegaFusionCallable> {
             },
         );
     }
+
+    callables.insert(
+        "min".to_string(),
+        VegaFusionCallable::Transform(Arc::new(min_fn)),
+    );
 
     callables.insert(
         "isNaN".to_string(),

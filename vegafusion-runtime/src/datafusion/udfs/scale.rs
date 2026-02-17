@@ -1,4 +1,5 @@
 use crate::scale::adapter::to_configured_scale;
+use crate::scale::DISCRETE_NULL_SENTINEL;
 use crate::task_graph::timezone::RuntimeTzConfig;
 use std::any::Any;
 use std::hash::{Hash, Hasher};
@@ -25,8 +26,31 @@ pub fn make_scale_udf(
     tz_config: &Option<RuntimeTzConfig>,
 ) -> Result<Arc<ScalarUDF>> {
     let configured_scale = Arc::new(to_configured_scale(scale_state, tz_config)?);
-    let udf = ScaleExprUDF::new(scale_name, invert, configured_scale);
+    let null_sentinel = if !invert && uses_discrete_null_sentinel(scale_state) {
+        Some(DISCRETE_NULL_SENTINEL.to_string())
+    } else {
+        None
+    };
+    let udf = ScaleExprUDF::new(scale_name, invert, configured_scale, null_sentinel);
     Ok(Arc::new(ScalarUDF::from(udf)))
+}
+
+fn uses_discrete_null_sentinel(scale_state: &ScaleState) -> bool {
+    if !matches!(
+        scale_state.scale_type,
+        vegafusion_core::spec::scale::ScaleTypeSpec::Ordinal
+            | vegafusion_core::spec::scale::ScaleTypeSpec::Band
+            | vegafusion_core::spec::scale::ScaleTypeSpec::Point
+    ) {
+        return false;
+    }
+
+    if !matches!(scale_state.domain.data_type(), DataType::Utf8) {
+        return false;
+    }
+
+    let strings = scale_state.domain.as_string::<i32>();
+    (0..strings.len()).any(|i| !strings.is_null(i) && strings.value(i) == DISCRETE_NULL_SENTINEL)
 }
 
 #[derive(Debug, Clone)]
@@ -36,10 +60,16 @@ struct ScaleExprUDF {
     invert: bool,
     configured_scale: Arc<ConfiguredScale>,
     output_scalar_type: DataType,
+    null_sentinel: Option<String>,
 }
 
 impl ScaleExprUDF {
-    fn new(scale_name: &str, invert: bool, configured_scale: Arc<ConfiguredScale>) -> Self {
+    fn new(
+        scale_name: &str,
+        invert: bool,
+        configured_scale: Arc<ConfiguredScale>,
+        null_sentinel: Option<String>,
+    ) -> Self {
         let output_scalar_type = infer_output_scalar_type(&configured_scale, invert);
 
         Self {
@@ -48,6 +78,7 @@ impl ScaleExprUDF {
             invert,
             configured_scale,
             output_scalar_type,
+            null_sentinel,
         }
     }
 
@@ -76,7 +107,8 @@ impl ScaleExprUDF {
                 })
             }
         } else {
-            let scaled = self.configured_scale.scale(values).map_err(|err| {
+            let scale_values = self.normalize_discrete_null_inputs(values)?;
+            let scaled = self.configured_scale.scale(&scale_values).map_err(|err| {
                 DataFusionError::Execution(format!(
                     "Failed to evaluate scale('{}', ...): {err}",
                     self.scale_name
@@ -84,6 +116,30 @@ impl ScaleExprUDF {
             })?;
             color_array_to_css_strings_if_needed(scaled)
         }
+    }
+
+    fn normalize_discrete_null_inputs(&self, values: &ArrayRef) -> DFResult<ArrayRef> {
+        let Some(null_sentinel) = &self.null_sentinel else {
+            return Ok(values.clone());
+        };
+
+        let casted = cast(values.as_ref(), &DataType::Utf8).map_err(|err| {
+            DataFusionError::Execution(format!(
+                "Failed to cast scale('{}', ...) input to Utf8 for null-category handling: {err}",
+                self.scale_name
+            ))
+        })?;
+        let strings = casted.as_string::<i32>();
+        let normalized = (0..strings.len())
+            .map(|i| {
+                if strings.is_null(i) {
+                    Some(null_sentinel.clone())
+                } else {
+                    Some(strings.value(i).to_string())
+                }
+            })
+            .collect::<Vec<_>>();
+        Ok(Arc::new(StringArray::from(normalized)))
     }
 
     fn apply_invert_interval(&self, values: &ArrayRef) -> DFResult<ArrayRef> {
@@ -258,6 +314,7 @@ impl PartialEq for ScaleExprUDF {
         self.scale_name == other.scale_name
             && self.invert == other.invert
             && Arc::ptr_eq(&self.configured_scale, &other.configured_scale)
+            && self.null_sentinel == other.null_sentinel
     }
 }
 
@@ -268,6 +325,7 @@ impl Hash for ScaleExprUDF {
         self.scale_name.hash(state);
         self.invert.hash(state);
         Arc::as_ptr(&self.configured_scale).hash(state);
+        self.null_sentinel.hash(state);
     }
 }
 
@@ -329,7 +387,7 @@ impl ScalarUDFImpl for ScaleExprUDF {
                 Ok(ColumnarValue::Array(scaled))
             }
             ColumnarValue::Scalar(value) => {
-                if value.is_null() {
+                if value.is_null() && self.null_sentinel.is_none() {
                     return self.make_null_scalar().map(ColumnarValue::Scalar);
                 }
 
