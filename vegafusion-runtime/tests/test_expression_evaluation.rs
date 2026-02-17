@@ -851,11 +851,7 @@ mod test_scale_calls {
     fn test_scale_band_null_category_matches_vega() {
         let scale_state = ScaleState {
             scale_type: ScaleTypeSpec::Band,
-            domain: Arc::new(StringArray::from(vec![
-                DISCRETE_NULL_SENTINEL,
-                "A",
-                "B",
-            ])),
+            domain: Arc::new(StringArray::from(vec![DISCRETE_NULL_SENTINEL, "A", "B"])),
             range: Arc::new(Float64Array::from(vec![0.0, 300.0])),
             options: HashMap::new(),
         };

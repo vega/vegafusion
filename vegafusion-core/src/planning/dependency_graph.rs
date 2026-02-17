@@ -375,8 +375,11 @@ impl ChartVisitor for AddDependencyEdgesVisitor<'_> {
             );
 
             for input_var in tx.input_vars()? {
-                let scoped_source_var =
-                    scoped_var_for_input_var(&input_var, scope, self.task_scope)?;
+                let Ok(scoped_source_var) =
+                    scoped_var_for_input_var(&input_var, scope, self.task_scope)
+                else {
+                    continue;
+                };
                 // Add edge if dependency is not a signal produced by an earlier transform in the same
                 // pipeline
                 if !output_signals.contains(&scoped_source_var) {
@@ -500,7 +503,11 @@ impl ChartVisitor for AddDependencyEdgesVisitor<'_> {
         }
 
         for input_var in input_vars {
-            let scoped_source_var = scoped_var_for_input_var(&input_var, scope, self.task_scope)?;
+            let Ok(scoped_source_var) =
+                scoped_var_for_input_var(&input_var, scope, self.task_scope)
+            else {
+                continue;
+            };
             let source_node_index = self
                 .node_indexes
                 .get(&scoped_source_var)
@@ -522,7 +529,11 @@ impl ChartVisitor for AddDependencyEdgesVisitor<'_> {
             .with_context(|| format!("Missing scale node: {scoped_var:?}"))?;
 
         for input_var in scale.input_vars()? {
-            let scoped_source_var = scoped_var_for_input_var(&input_var, scope, self.task_scope)?;
+            let Ok(scoped_source_var) =
+                scoped_var_for_input_var(&input_var, scope, self.task_scope)
+            else {
+                continue;
+            };
             let source_node_index = self
                 .node_indexes
                 .get(&scoped_source_var)

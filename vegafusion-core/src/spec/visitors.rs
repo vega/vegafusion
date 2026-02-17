@@ -516,9 +516,10 @@ impl ChartVisitor for InputVarsChartVisitor<'_> {
         if let Some(title) = &mark.title {
             if let Some(text) = &title.text {
                 for input_var in text.input_vars()? {
-                    let resolved = self.task_scope.resolve_scope(&input_var.var, &[])?;
-                    let var = resolved.output_var.unwrap_or(resolved.var);
-                    self.input_vars.insert((var, resolved.scope));
+                    if let Ok(resolved) = self.task_scope.resolve_scope(&input_var.var, &[]) {
+                        let var = resolved.output_var.unwrap_or(resolved.var);
+                        self.input_vars.insert((var, resolved.scope));
+                    }
                 }
             }
         }
@@ -530,8 +531,9 @@ impl ChartVisitor for InputVarsChartVisitor<'_> {
         // Look for input vars in transforms
         for transform in &data.transform {
             for input_var in transform.deref().input_vars()?.into_iter().map(|iv| iv.var) {
-                let resolved = self.task_scope.resolve_scope(&input_var, scope)?;
-                self.input_vars.insert((input_var, resolved.scope));
+                if let Ok(resolved) = self.task_scope.resolve_scope(&input_var, scope) {
+                    self.input_vars.insert((input_var, resolved.scope));
+                }
             }
         }
 
@@ -570,8 +572,9 @@ impl ChartVisitor for InputVarsChartVisitor<'_> {
         for expr_str in &expr_strs {
             let expr = parse(expr_str)?;
             for var in expr.input_vars() {
-                let resolved = self.task_scope.resolve_scope(&var.var, scope)?;
-                self.input_vars.insert((var.var, resolved.scope));
+                if let Ok(resolved) = self.task_scope.resolve_scope(&var.var, scope) {
+                    self.input_vars.insert((var.var, resolved.scope));
+                }
             }
         }
 
@@ -580,8 +583,9 @@ impl ChartVisitor for InputVarsChartVisitor<'_> {
 
     fn visit_scale(&mut self, scale: &ScaleSpec, scope: &[u32]) -> Result<()> {
         for input_var in scale.input_vars()? {
-            let resolved = self.task_scope.resolve_scope(&input_var.var, scope)?;
-            self.input_vars.insert((input_var.var, resolved.scope));
+            if let Ok(resolved) = self.task_scope.resolve_scope(&input_var.var, scope) {
+                self.input_vars.insert((input_var.var, resolved.scope));
+            }
         }
 
         Ok(())

@@ -13,11 +13,11 @@ use crate::data::tasks::build_compilation_config;
 use crate::expression::compiler::compile;
 use crate::expression::compiler::config::CompilationConfig;
 use crate::expression::compiler::utils::ExprHelpers;
-use crate::scale::DISCRETE_NULL_SENTINEL;
 use crate::scale::vega_defaults::apply_vega_domain_defaults;
 use crate::scale::vega_schemes::{
     decode_continuous_scheme, default_named_range, lookup_scheme, NamedRange, SchemePalette,
 };
+use crate::scale::DISCRETE_NULL_SENTINEL;
 use datafusion_common::ScalarValue;
 use std::cmp::Ordering;
 use std::collections::HashSet;
@@ -67,6 +67,7 @@ fn resolve_scale_state(scale: &ScaleSpec, config: &CompilationConfig) -> Result<
         Some(raw_domain) => raw_domain,
         None => resolve_domain(scale, &scale_type, config)?,
     };
+    let domain = normalize_discrete_domain_for_avenger(&scale_type, domain)?;
     let domain = encode_discrete_null_domain(&scale_type, domain)?;
 
     let mut range = resolve_range(scale, &scale_type, domain.len(), &options, config)?;
@@ -80,6 +81,30 @@ fn resolve_scale_state(scale: &ScaleSpec, config: &CompilationConfig) -> Result<
         domain,
         range,
         options,
+    })
+}
+
+fn normalize_discrete_domain_for_avenger(
+    scale_type: &ScaleTypeSpec,
+    domain: ArrayRef,
+) -> Result<ArrayRef> {
+    if !is_discrete_scale(scale_type) || domain.null_count() > 0 {
+        return Ok(domain);
+    }
+
+    let needs_temporal_key_normalization = matches!(
+        domain.data_type(),
+        DataType::Date32 | DataType::Date64 | DataType::Timestamp(_, _)
+    );
+
+    if !needs_temporal_key_normalization {
+        return Ok(domain);
+    }
+
+    cast(domain.as_ref(), &DataType::Int64).map_err(|err| {
+        VegaFusionError::internal(format!(
+            "Failed to normalize discrete temporal domain to Int64 keys: {err}"
+        ))
     })
 }
 
@@ -1521,6 +1546,7 @@ fn scalar_to_f64(value: &ScalarValue) -> Result<f64> {
     match value {
         ScalarValue::Float64(Some(v)) => Ok(*v),
         ScalarValue::Float32(Some(v)) => Ok(*v as f64),
+        ScalarValue::Boolean(Some(v)) => Ok(if *v { 1.0 } else { 0.0 }),
         ScalarValue::Int8(Some(v)) => Ok(*v as f64),
         ScalarValue::Int16(Some(v)) => Ok(*v as f64),
         ScalarValue::Int32(Some(v)) => Ok(*v as f64),
@@ -1529,6 +1555,13 @@ fn scalar_to_f64(value: &ScalarValue) -> Result<f64> {
         ScalarValue::UInt16(Some(v)) => Ok(*v as f64),
         ScalarValue::UInt32(Some(v)) => Ok(*v as f64),
         ScalarValue::UInt64(Some(v)) => Ok(*v as f64),
+        ScalarValue::Utf8(Some(v))
+        | ScalarValue::LargeUtf8(Some(v))
+        | ScalarValue::Utf8View(Some(v)) => v.parse::<f64>().map_err(|err| {
+            VegaFusionError::internal(format!(
+                "Expected numeric scalar value, received {value:?} (failed to parse string: {err})"
+            ))
+        }),
         _ => Err(VegaFusionError::internal(format!(
             "Expected numeric scalar value, received {value:?}"
         ))),
@@ -1555,6 +1588,8 @@ mod tests {
     use super::*;
     use datafusion_common::ScalarValue;
     use serde_json::json;
+    use vegafusion_common::arrow::array::TimestampNanosecondArray;
+    use vegafusion_common::arrow::datatypes::Int64Type;
     use vegafusion_common::data::table::VegaFusionTable;
 
     fn config_with_dimensions(width: f64, height: f64) -> CompilationConfig {
@@ -1867,7 +1902,11 @@ mod tests {
         let state = resolve_scale_state(&scale, &config).unwrap();
         assert_eq!(
             scalar_texts(&state.domain),
-            vec![DISCRETE_NULL_SENTINEL.to_string(), "a".to_string(), "b".to_string()]
+            vec![
+                DISCRETE_NULL_SENTINEL.to_string(),
+                "a".to_string(),
+                "b".to_string()
+            ]
         );
     }
 
@@ -1892,8 +1931,55 @@ mod tests {
         let state = resolve_scale_state(&scale, &config).unwrap();
         assert_eq!(
             scalar_texts(&state.domain),
-            vec!["b".to_string(), DISCRETE_NULL_SENTINEL.to_string(), "a".to_string()]
+            vec![
+                "b".to_string(),
+                DISCRETE_NULL_SENTINEL.to_string(),
+                "a".to_string()
+            ]
         );
+    }
+
+    #[test]
+    fn test_discrete_temporal_domain_normalizes_to_int64() {
+        let domain = Arc::new(
+            TimestampNanosecondArray::from(vec![Some(1_000_000_000_i64), Some(2_000_000_000_i64)])
+                .with_timezone("UTC"),
+        ) as ArrayRef;
+
+        let normalized = normalize_discrete_domain_for_avenger(&ScaleTypeSpec::Ordinal, domain)
+            .expect("normalize temporal domain");
+        assert_eq!(normalized.data_type(), &DataType::Int64);
+        let values = normalized.as_primitive::<Int64Type>();
+        assert_eq!(values.value(0), 1_000_000_000_i64);
+        assert_eq!(values.value(1), 2_000_000_000_i64);
+    }
+
+    #[test]
+    fn test_discrete_temporal_domain_with_null_uses_sentinel_path() {
+        let domain = Arc::new(
+            TimestampNanosecondArray::from(vec![
+                Some(1_000_000_000_i64),
+                None,
+                Some(2_000_000_000_i64),
+            ])
+            .with_timezone("UTC"),
+        ) as ArrayRef;
+
+        let normalized = normalize_discrete_domain_for_avenger(&ScaleTypeSpec::Band, domain)
+            .expect("normalize temporal domain");
+        assert!(matches!(
+            normalized.data_type(),
+            DataType::Timestamp(_, Some(_))
+        ));
+
+        let encoded =
+            encode_discrete_null_domain(&ScaleTypeSpec::Band, normalized).expect("encode nulls");
+        assert_eq!(encoded.data_type(), &DataType::Utf8);
+        let texts = scalar_texts(&encoded);
+        assert_eq!(texts.len(), 3);
+        assert_eq!(texts[1], DISCRETE_NULL_SENTINEL);
+        assert_ne!(texts[0], DISCRETE_NULL_SENTINEL);
+        assert_ne!(texts[2], DISCRETE_NULL_SENTINEL);
     }
 
     #[test]

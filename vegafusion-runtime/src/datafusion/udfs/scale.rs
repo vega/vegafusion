@@ -31,7 +31,19 @@ pub fn make_scale_udf(
     } else {
         None
     };
-    let udf = ScaleExprUDF::new(scale_name, invert, configured_scale, null_sentinel);
+    let coerce_numeric_to_temporal_domain = !invert
+        && matches!(
+            scale_state.scale_type,
+            vegafusion_core::spec::scale::ScaleTypeSpec::Time
+                | vegafusion_core::spec::scale::ScaleTypeSpec::Utc
+        );
+    let udf = ScaleExprUDF::new(
+        scale_name,
+        invert,
+        configured_scale,
+        null_sentinel,
+        coerce_numeric_to_temporal_domain,
+    );
     Ok(Arc::new(ScalarUDF::from(udf)))
 }
 
@@ -61,6 +73,7 @@ struct ScaleExprUDF {
     configured_scale: Arc<ConfiguredScale>,
     output_scalar_type: DataType,
     null_sentinel: Option<String>,
+    coerce_numeric_to_temporal_domain: bool,
 }
 
 impl ScaleExprUDF {
@@ -69,6 +82,7 @@ impl ScaleExprUDF {
         invert: bool,
         configured_scale: Arc<ConfiguredScale>,
         null_sentinel: Option<String>,
+        coerce_numeric_to_temporal_domain: bool,
     ) -> Self {
         let output_scalar_type = infer_output_scalar_type(&configured_scale, invert);
 
@@ -79,6 +93,7 @@ impl ScaleExprUDF {
             configured_scale,
             output_scalar_type,
             null_sentinel,
+            coerce_numeric_to_temporal_domain,
         }
     }
 
@@ -108,6 +123,7 @@ impl ScaleExprUDF {
             }
         } else {
             let scale_values = self.normalize_discrete_null_inputs(values)?;
+            let scale_values = self.normalize_temporal_numeric_inputs(&scale_values)?;
             let scaled = self.configured_scale.scale(&scale_values).map_err(|err| {
                 DataFusionError::Execution(format!(
                     "Failed to evaluate scale('{}', ...): {err}",
@@ -140,6 +156,36 @@ impl ScaleExprUDF {
             })
             .collect::<Vec<_>>();
         Ok(Arc::new(StringArray::from(normalized)))
+    }
+
+    fn normalize_temporal_numeric_inputs(&self, values: &ArrayRef) -> DFResult<ArrayRef> {
+        if !self.coerce_numeric_to_temporal_domain {
+            return Ok(values.clone());
+        }
+
+        if !matches!(
+            values.data_type(),
+            DataType::Int8
+                | DataType::Int16
+                | DataType::Int32
+                | DataType::Int64
+                | DataType::UInt8
+                | DataType::UInt16
+                | DataType::UInt32
+                | DataType::UInt64
+                | DataType::Float32
+                | DataType::Float64
+        ) {
+            return Ok(values.clone());
+        }
+
+        cast(values.as_ref(), self.configured_scale.domain().data_type()).map_err(|err| {
+            DataFusionError::Execution(format!(
+                "Failed to coerce scale('{}', ...) temporal input to {:?}: {err}",
+                self.scale_name,
+                self.configured_scale.domain().data_type()
+            ))
+        })
     }
 
     fn apply_invert_interval(&self, values: &ArrayRef) -> DFResult<ArrayRef> {
@@ -315,6 +361,7 @@ impl PartialEq for ScaleExprUDF {
             && self.invert == other.invert
             && Arc::ptr_eq(&self.configured_scale, &other.configured_scale)
             && self.null_sentinel == other.null_sentinel
+            && self.coerce_numeric_to_temporal_domain == other.coerce_numeric_to_temporal_domain
     }
 }
 
@@ -326,6 +373,7 @@ impl Hash for ScaleExprUDF {
         self.invert.hash(state);
         Arc::as_ptr(&self.configured_scale).hash(state);
         self.null_sentinel.hash(state);
+        self.coerce_numeric_to_temporal_domain.hash(state);
     }
 }
 

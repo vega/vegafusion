@@ -139,6 +139,7 @@ fn scalar_to_numeric_f64(value: &ScalarValue) -> Result<f64> {
     match value {
         ScalarValue::Float64(Some(v)) => Ok(*v),
         ScalarValue::Float32(Some(v)) => Ok(*v as f64),
+        ScalarValue::Boolean(Some(v)) => Ok(if *v { 1.0 } else { 0.0 }),
         ScalarValue::Int8(Some(v)) => Ok(*v as f64),
         ScalarValue::Int16(Some(v)) => Ok(*v as f64),
         ScalarValue::Int32(Some(v)) => Ok(*v as f64),
@@ -147,6 +148,13 @@ fn scalar_to_numeric_f64(value: &ScalarValue) -> Result<f64> {
         ScalarValue::UInt16(Some(v)) => Ok(*v as f64),
         ScalarValue::UInt32(Some(v)) => Ok(*v as f64),
         ScalarValue::UInt64(Some(v)) => Ok(*v as f64),
+        ScalarValue::Utf8(Some(v))
+        | ScalarValue::LargeUtf8(Some(v))
+        | ScalarValue::Utf8View(Some(v)) => v.parse::<f64>().map_err(|err| {
+            VegaFusionError::internal(format!(
+                "Expected numeric scalar value, received {value:?} (failed to parse string: {err})"
+            ))
+        }),
         _ => Err(VegaFusionError::internal(format!(
             "Expected numeric scalar value, received {value:?}"
         ))),

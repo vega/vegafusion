@@ -23,6 +23,8 @@ pub fn extract_mark_encodings(
         return Ok(());
     }
 
+    let root_dimensions = RootNumericDimensions::from_chart(client_spec);
+
     process_marks(
         &mut client_spec.marks,
         &[],
@@ -30,7 +32,38 @@ pub fn extract_mark_encodings(
         server_spec,
         task_scope,
         config,
+        &root_dimensions,
     )
+}
+
+struct RootNumericDimensions {
+    has_width: bool,
+    has_height: bool,
+}
+
+impl RootNumericDimensions {
+    fn from_chart(chart: &ChartSpec) -> Self {
+        Self {
+            has_width: chart
+                .extra
+                .get("width")
+                .map(|v| v.is_number())
+                .unwrap_or(false),
+            has_height: chart
+                .extra
+                .get("height")
+                .map(|v| v.is_number())
+                .unwrap_or(false),
+        }
+    }
+
+    fn has_dimension_signal(&self, name: &str) -> bool {
+        match name {
+            "width" => self.has_width,
+            "height" => self.has_height,
+            _ => false,
+        }
+    }
 }
 
 fn process_marks(
@@ -40,6 +73,7 @@ fn process_marks(
     server_spec: &mut ChartSpec,
     task_scope: &mut TaskScope,
     config: &PlannerConfig,
+    root_dimensions: &RootNumericDimensions,
 ) -> Result<()> {
     let mut group_index = 0usize;
     let mut non_group_index = 0usize;
@@ -59,6 +93,7 @@ fn process_marks(
                 server_spec,
                 task_scope,
                 config,
+                root_dimensions,
             )?;
             group_index += 1;
         } else {
@@ -70,6 +105,7 @@ fn process_marks(
                 server_spec,
                 task_scope,
                 config,
+                root_dimensions,
             )?;
             non_group_index += 1;
         }
@@ -85,6 +121,7 @@ fn process_non_group_mark(
     server_spec: &mut ChartSpec,
     task_scope: &mut TaskScope,
     config: &PlannerConfig,
+    root_dimensions: &RootNumericDimensions,
 ) -> Result<()> {
     if in_facet_group {
         return Ok(());
@@ -136,6 +173,7 @@ fn process_non_group_mark(
             server_spec,
             task_scope,
             config,
+            root_dimensions,
         ) {
             continue;
         }
@@ -205,6 +243,7 @@ fn channel_scales_supported_and_available(
     server_spec: &ChartSpec,
     task_scope: &TaskScope,
     config: &PlannerConfig,
+    root_dimensions: &RootNumericDimensions,
 ) -> bool {
     let Ok(input_vars) = mark_encoding_input_vars(encoding) else {
         return false;
@@ -231,6 +270,68 @@ fn channel_scales_supported_and_available(
         let scale_type = scale.type_.clone().unwrap_or_default();
         if !server_mark_encoding_scale_type_supported(&scale_type) {
             return false;
+        }
+
+        if !scale_dependencies_available(
+            scale,
+            &resolved_scale.scope,
+            server_spec,
+            task_scope,
+            root_dimensions,
+        ) {
+            return false;
+        }
+    }
+
+    true
+}
+
+fn scale_dependencies_available(
+    scale: &ScaleSpec,
+    scale_scope: &[u32],
+    server_spec: &ChartSpec,
+    task_scope: &TaskScope,
+    root_dimensions: &RootNumericDimensions,
+) -> bool {
+    let Ok(input_vars) = scale.input_vars() else {
+        return false;
+    };
+
+    for input_var in input_vars {
+        let Ok(resolved) = task_scope.resolve_scope(&input_var.var, scale_scope) else {
+            return false;
+        };
+
+        match resolved.var.ns() {
+            VariableNamespace::Data => {
+                if server_spec
+                    .get_nested_data(&resolved.scope, &resolved.var.name)
+                    .is_err()
+                {
+                    return false;
+                }
+            }
+            VariableNamespace::Signal => {
+                if server_spec
+                    .get_nested_signal(&resolved.scope, &resolved.var.name)
+                    .is_ok()
+                {
+                    continue;
+                }
+
+                if resolved.scope.is_empty()
+                    && root_dimensions.has_dimension_signal(resolved.var.name.as_str())
+                {
+                    continue;
+                }
+
+                return false;
+            }
+            VariableNamespace::Scale => {
+                if get_nested_scale(server_spec, &resolved.scope, &resolved.var.name).is_none() {
+                    return false;
+                }
+            }
         }
     }
 
