@@ -167,7 +167,7 @@ fn process_non_group_mark(
         if !mark_encoding_supported(channel_encoding) {
             continue;
         }
-        if !channel_scales_supported_and_available(
+        if !channel_inputs_supported_and_available(
             channel_encoding,
             scope,
             server_spec,
@@ -237,7 +237,7 @@ fn process_non_group_mark(
     Ok(())
 }
 
-fn channel_scales_supported_and_available(
+fn channel_inputs_supported_and_available(
     encoding: &MarkEncodingOrList,
     usage_scope: &[u32],
     server_spec: &ChartSpec,
@@ -250,36 +250,61 @@ fn channel_scales_supported_and_available(
     };
 
     for input_var in input_vars {
-        if !matches!(input_var.var.ns(), VariableNamespace::Scale) {
-            continue;
-        }
-
-        if !config.copy_scales_to_server {
-            return false;
-        }
-
-        let Ok(resolved_scale) = task_scope.resolve_scope(&input_var.var, usage_scope) else {
-            return false;
-        };
-        let Some(scale) =
-            get_nested_scale(server_spec, &resolved_scale.scope, &resolved_scale.var.name)
-        else {
+        let Ok(resolved_var) = task_scope.resolve_scope(&input_var.var, usage_scope) else {
             return false;
         };
 
-        let scale_type = scale.type_.clone().unwrap_or_default();
-        if !server_mark_encoding_scale_type_supported(&scale_type) {
-            return false;
-        }
+        match resolved_var.var.ns() {
+            VariableNamespace::Data => {
+                if server_spec
+                    .get_nested_data(&resolved_var.scope, &resolved_var.var.name)
+                    .is_err()
+                {
+                    return false;
+                }
+            }
+            VariableNamespace::Signal => {
+                if server_spec
+                    .get_nested_signal(&resolved_var.scope, &resolved_var.var.name)
+                    .is_ok()
+                {
+                    continue;
+                }
 
-        if !scale_dependencies_available(
-            scale,
-            &resolved_scale.scope,
-            server_spec,
-            task_scope,
-            root_dimensions,
-        ) {
-            return false;
+                if resolved_var.scope.is_empty()
+                    && root_dimensions.has_dimension_signal(resolved_var.var.name.as_str())
+                {
+                    continue;
+                }
+
+                return false;
+            }
+            VariableNamespace::Scale => {
+                if !config.copy_scales_to_server {
+                    return false;
+                }
+
+                let Some(scale) =
+                    get_nested_scale(server_spec, &resolved_var.scope, &resolved_var.var.name)
+                else {
+                    return false;
+                };
+
+                let scale_type = scale.type_.clone().unwrap_or_default();
+                if !server_mark_encoding_scale_type_supported(&scale_type) {
+                    return false;
+                }
+
+                if !scale_dependencies_available(
+                    scale,
+                    &resolved_var.scope,
+                    server_spec,
+                    task_scope,
+                    root_dimensions,
+                ) {
+                    return false;
+                }
+            }
         }
     }
 
@@ -596,6 +621,69 @@ mod tests {
 
         let x = update.channels.get("x").unwrap().to_vec();
         assert_eq!(x[0].scale.as_deref(), Some("x"));
+
+        let opacity = update.channels.get("opacity").unwrap().to_vec();
+        assert!(matches!(
+            opacity[0].field,
+            Some(MarkEncodingField::Field(_))
+        ));
+        assert!(opacity[0].scale.is_none());
+
+        let markenc_data = server_spec.data.iter().find(|d| d.name == source).unwrap();
+        let TransformSpec::MarkEncoding(markenc) = markenc_data.transform.first().unwrap() else {
+            panic!("expected mark_encoding transform");
+        };
+        assert_eq!(markenc.channels.len(), 1);
+        assert_eq!(markenc.channels[0].channel, "opacity");
+    }
+
+    #[test]
+    fn test_extract_mark_encodings_skips_channels_with_unavailable_signal_dependencies() {
+        let mut client_spec: ChartSpec = serde_json::from_value(json!({
+            "$schema": "https://vega.github.io/schema/vega/v5.json",
+            "data": [
+                {"name": "source", "values": [{"v": 2}, {"v": 7}]}
+            ],
+            "marks": [
+                {
+                    "type": "symbol",
+                    "name": "pt",
+                    "from": {"data": "source"},
+                    "encode": {
+                        "update": {
+                            "x": {"signal": "concat_1_width"},
+                            "opacity": {"value": 0.3}
+                        }
+                    }
+                }
+            ]
+        }))
+        .unwrap();
+        let mut task_scope = client_spec.to_task_scope().unwrap();
+
+        let mut config = PlannerConfig::default();
+        config.extract_inline_data = true;
+        config.copy_scales_to_server = true;
+        config.precompute_mark_encodings = true;
+
+        let mut server_spec =
+            extract_server_data(&mut client_spec, &mut task_scope, &config).unwrap();
+        extract_mark_encodings(&mut client_spec, &mut server_spec, &mut task_scope, &config)
+            .unwrap();
+
+        let mark = &client_spec.marks[0];
+        let source = mark.from.as_ref().and_then(|f| f.data.clone()).unwrap();
+        assert!(source.starts_with("_vf_markenc_"));
+        let update = mark
+            .encode
+            .as_ref()
+            .unwrap()
+            .encodings
+            .get("update")
+            .unwrap();
+
+        let x = update.channels.get("x").unwrap().to_vec();
+        assert_eq!(x[0].signal.as_deref(), Some("concat_1_width"));
 
         let opacity = update.channels.get("opacity").unwrap().to_vec();
         assert!(matches!(
