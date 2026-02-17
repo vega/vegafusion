@@ -294,6 +294,9 @@ fn channel_inputs_supported_and_available(
                 if !server_mark_encoding_scale_type_supported(&scale_type) {
                     return false;
                 }
+                if !scale.server_domain_shape_supported() {
+                    return false;
+                }
 
                 if !scale_dependencies_available(
                     scale,

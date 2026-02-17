@@ -206,6 +206,19 @@ impl ScaleSpec {
         })
     }
 
+    /// Returns true if this scale's domain shape is currently supported by server evaluation.
+    ///
+    /// We fail closed on untyped object-valued domain forms that deserialize into
+    /// `ScaleDomainSpec::Value(Object)` (for example heterogeneous `fields` arrays mixing
+    /// references, signals, and expression-value arrays). These remain client-side until the
+    /// runtime domain resolver supports them.
+    pub fn server_domain_shape_supported(&self) -> bool {
+        !matches!(
+            self.domain.as_ref(),
+            Some(ScaleDomainSpec::Value(Value::Object(_)))
+        )
+    }
+
     fn signal_expressions(&self) -> Vec<&str> {
         let mut signal_exprs = Vec::new();
 

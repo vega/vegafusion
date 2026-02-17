@@ -1,6 +1,7 @@
 use crate::planning::dependency_graph::{build_dependency_graph, toposort_dependency_graph};
 use crate::proto::gen::tasks::VariableNamespace;
 use crate::spec::chart::ChartSpec;
+use crate::spec::transform::TransformSpec;
 use crate::spec::values::StringOrSignalSpec;
 use crate::spec::visitors::extract_inline_dataset;
 use crate::task_graph::graph::ScopedVariable;
@@ -76,6 +77,17 @@ pub fn fuse_datasets(server_spec: &mut ChartSpec, do_not_fuse: &[ScopedVariable]
             else {
                 continue 'outer;
             };
+
+            // Fusing into mark_encoding datasets can create scale/data cycles by moving
+            // upstream signal-producing transforms into a dataset that also depends on scales.
+            if child_dataset
+                .transform
+                .iter()
+                .any(|tx| matches!(tx, TransformSpec::MarkEncoding(_)))
+            {
+                continue 'outer;
+            }
+
             if child_dataset.source.as_ref() != Some(&parent_dataset.name) {
                 continue 'outer;
             }
@@ -110,6 +122,7 @@ mod tests {
     use crate::planning::fuse::fuse_datasets;
     use crate::proto::gen::tasks::Variable;
     use crate::spec::chart::ChartSpec;
+    use crate::spec::transform::TransformSpec;
     use serde_json::json;
 
     #[test]
@@ -430,5 +443,58 @@ mod tests {
   ]
 }"#
         );
+    }
+
+    #[test]
+    fn test_do_not_fuse_into_mark_encoding_child() {
+        let chart: ChartSpec = serde_json::from_value(json!(
+            {
+                "data": [
+                    {
+                        "name": "data_0",
+                        "values": [{"v": 1}, {"v": 2}],
+                        "transform": [
+                            {"type": "extent", "field": "v", "signal": "v_extent"}
+                        ]
+                    },
+                    {
+                        "name": "markenc_data",
+                        "source": "data_0",
+                        "transform": [
+                            {
+                                "type": "mark_encoding",
+                                "channels": [
+                                    {"channel": "x", "as": "x", "encoding": {"value": 1}}
+                                ]
+                            }
+                        ]
+                    }
+                ]
+            }
+        ))
+        .unwrap();
+
+        let mut new_chart = chart.clone();
+        fuse_datasets(&mut new_chart, &[]).unwrap();
+
+        // Parent pipeline should remain intact; no fusion into mark_encoding child.
+        let data_0 = new_chart
+            .data
+            .iter()
+            .find(|d| d.name == "data_0")
+            .expect("missing data_0");
+        assert_eq!(data_0.transform.len(), 1);
+
+        let markenc_data = new_chart
+            .data
+            .iter()
+            .find(|d| d.name == "markenc_data")
+            .expect("missing markenc_data");
+        assert_eq!(markenc_data.source.as_deref(), Some("data_0"));
+        assert_eq!(markenc_data.transform.len(), 1);
+        assert!(matches!(
+            markenc_data.transform[0],
+            TransformSpec::MarkEncoding(_)
+        ));
     }
 }

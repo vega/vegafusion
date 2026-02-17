@@ -239,6 +239,8 @@ impl ChartVisitor for AddDependencyNodesVisitor<'_> {
             DependencyNodeSupported::Unsupported
         } else if !scale.signal_expressions_supported() {
             DependencyNodeSupported::Unsupported
+        } else if !scale.server_domain_shape_supported() {
+            DependencyNodeSupported::Unsupported
         } else if scale.has_client_only_domain_sort() {
             DependencyNodeSupported::Unsupported
         } else if let Ok(input_vars) = scale.input_vars() {
@@ -710,6 +712,32 @@ mod tests {
         .unwrap()
     }
 
+    fn chart_with_unsupported_scale_domain_shape() -> ChartSpec {
+        serde_json::from_value(json!({
+            "$schema": "https://vega.github.io/schema/vega/v5.json",
+            "data": [
+                {
+                    "name": "source",
+                    "values": [{"a": 1}]
+                }
+            ],
+            "scales": [
+                {
+                    "name": "x",
+                    "type": "linear",
+                    "domain": {
+                        "fields": [
+                            {"data": "source", "field": "a"},
+                            [{"expr": "1"}]
+                        ]
+                    },
+                    "range": [0, 100]
+                }
+            ]
+        }))
+        .unwrap()
+    }
+
     #[test]
     fn test_scale_nodes_supported_only_when_copy_scales_enabled() {
         let chart_spec = chart_with_scale_and_signal();
@@ -835,6 +863,23 @@ mod tests {
     #[test]
     fn test_scale_with_unsupported_signal_expression_is_client_only() {
         let chart_spec = chart_with_unsupported_scale_signal_expression();
+        let mut config = PlannerConfig::default();
+        config.copy_scales_to_server = true;
+
+        let scale_var = (Variable::new_scale("x"), Vec::new());
+        let (graph, node_indexes) = build_dependency_graph(&chart_spec, &config).unwrap();
+        let (_, supported) = graph
+            .node_weight(*node_indexes.get(&scale_var).unwrap())
+            .unwrap();
+        assert!(matches!(supported, DependencyNodeSupported::Unsupported));
+
+        let supported_vars = get_supported_data_variables(&chart_spec, &config).unwrap();
+        assert!(!supported_vars.contains_key(&scale_var));
+    }
+
+    #[test]
+    fn test_scale_with_unsupported_domain_shape_is_client_only() {
+        let chart_spec = chart_with_unsupported_scale_domain_shape();
         let mut config = PlannerConfig::default();
         config.copy_scales_to_server = true;
 

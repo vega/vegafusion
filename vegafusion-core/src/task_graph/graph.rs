@@ -3,7 +3,7 @@ use crate::proto::gen::tasks::{
     IncomingEdge, NodeValueIndex, OutgoingEdge, Task, TaskGraph, TaskNode, Variable,
 };
 use crate::task_graph::scope::TaskScope;
-use petgraph::algo::toposort;
+use petgraph::algo::{tarjan_scc, toposort};
 use petgraph::graph::NodeIndex;
 use petgraph::prelude::EdgeRef;
 use petgraph::Direction;
@@ -70,8 +70,21 @@ impl TaskGraph {
         // Create mapping from toposorted node_index to the final linear node index
         let toposorted: Vec<NodeIndex> = match toposort(&graph, None) {
             Err(err) => {
+                let cycle_node = err.node_id();
+                let cycle_component = tarjan_scc(&graph)
+                    .into_iter()
+                    .find(|component| component.contains(&cycle_node))
+                    .unwrap_or_else(|| vec![cycle_node]);
+
+                let cycle_vars = cycle_component
+                    .iter()
+                    .filter_map(|node_index| graph.node_weight(*node_index))
+                    .map(|scoped_var| format!("{scoped_var:?}"))
+                    .collect::<Vec<_>>()
+                    .join(" | ");
+
                 return Err(VegaFusionError::internal(format!(
-                    "failed to sort dependency graph topologically: {err:?}"
+                    "failed to sort dependency graph topologically: {err:?}. cycle_vars: [{cycle_vars}]"
                 )))
             }
             Ok(toposorted) => toposorted,
