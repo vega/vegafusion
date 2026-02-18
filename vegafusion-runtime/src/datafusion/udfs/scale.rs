@@ -5,7 +5,7 @@ use std::any::Any;
 use std::hash::{Hash, Hasher};
 use std::sync::Arc;
 use vegafusion_common::arrow::array::{
-    new_empty_array, Array, ArrayRef, AsArray, FixedSizeListArray, StringArray,
+    new_empty_array, new_null_array, Array, ArrayRef, AsArray, FixedSizeListArray, StringArray,
 };
 use vegafusion_common::arrow::compute::cast;
 use vegafusion_common::arrow::datatypes::{DataType, Field};
@@ -15,9 +15,23 @@ use vegafusion_common::datafusion_expr::{
     TypeSignature, Volatility,
 };
 use vegafusion_core::error::Result;
+use vegafusion_core::spec::scale::ScaleTypeSpec;
 use vegafusion_core::task_graph::scale_state::ScaleState;
 
 use avenger_scales::scales::ConfiguredScale;
+
+mod piecewise;
+
+use piecewise::{
+    apply_discretizing_invert, apply_discretizing_invert_interval, apply_piecewise_invert,
+    apply_piecewise_scale, try_make_piecewise_scale, PiecewiseScale,
+};
+
+#[derive(Debug, Clone)]
+enum ScaleExecution {
+    Direct(Arc<ConfiguredScale>),
+    Piecewise(PiecewiseScale),
+}
 
 pub fn make_scale_udf(
     scale_name: &str,
@@ -25,11 +39,19 @@ pub fn make_scale_udf(
     scale_state: &ScaleState,
     tz_config: &Option<RuntimeTzConfig>,
 ) -> Result<Arc<ScalarUDF>> {
-    let configured_scale = Arc::new(to_configured_scale(scale_state, tz_config)?);
+    let execution = if let Some(piecewise) = try_make_piecewise_scale(scale_state)? {
+        ScaleExecution::Piecewise(piecewise)
+    } else {
+        ScaleExecution::Direct(Arc::new(to_configured_scale(scale_state, tz_config)?))
+    };
     let null_sentinel = if !invert && uses_discrete_null_sentinel(scale_state) {
         Some(DISCRETE_NULL_SENTINEL.to_string())
     } else {
         None
+    };
+    let domain_dtype = match &execution {
+        ScaleExecution::Direct(configured_scale) => configured_scale.domain().data_type().clone(),
+        ScaleExecution::Piecewise(_) => scale_state.domain.data_type().clone(),
     };
     let coerce_discrete_inputs_to_utf8 = !invert
         && matches!(
@@ -38,17 +60,20 @@ pub fn make_scale_udf(
                 | vegafusion_core::spec::scale::ScaleTypeSpec::Band
                 | vegafusion_core::spec::scale::ScaleTypeSpec::Point
         )
-        && matches!(configured_scale.domain().data_type(), DataType::Utf8);
+        && matches!(domain_dtype, DataType::Utf8);
     let coerce_numeric_to_temporal_domain = !invert
         && matches!(
             scale_state.scale_type,
             vegafusion_core::spec::scale::ScaleTypeSpec::Time
                 | vegafusion_core::spec::scale::ScaleTypeSpec::Utc
         );
+    let output_scalar_type = infer_output_scalar_type(&execution, invert, scale_state);
     let udf = ScaleExprUDF::new(
         scale_name,
         invert,
-        configured_scale,
+        scale_state.scale_type.clone(),
+        execution,
+        output_scalar_type,
         null_sentinel,
         coerce_discrete_inputs_to_utf8,
         coerce_numeric_to_temporal_domain,
@@ -79,7 +104,8 @@ struct ScaleExprUDF {
     signature: Signature,
     scale_name: String,
     invert: bool,
-    configured_scale: Arc<ConfiguredScale>,
+    scale_type: ScaleTypeSpec,
+    execution: ScaleExecution,
     output_scalar_type: DataType,
     null_sentinel: Option<String>,
     coerce_discrete_inputs_to_utf8: bool,
@@ -90,18 +116,19 @@ impl ScaleExprUDF {
     fn new(
         scale_name: &str,
         invert: bool,
-        configured_scale: Arc<ConfiguredScale>,
+        scale_type: ScaleTypeSpec,
+        execution: ScaleExecution,
+        output_scalar_type: DataType,
         null_sentinel: Option<String>,
         coerce_discrete_inputs_to_utf8: bool,
         coerce_numeric_to_temporal_domain: bool,
     ) -> Self {
-        let output_scalar_type = infer_output_scalar_type(&configured_scale, invert);
-
         Self {
             signature: Signature::new(TypeSignature::Any(1), Volatility::Immutable),
             scale_name: scale_name.to_string(),
             invert,
-            configured_scale,
+            scale_type,
+            execution,
             output_scalar_type,
             null_sentinel,
             coerce_discrete_inputs_to_utf8,
@@ -123,10 +150,22 @@ impl ScaleExprUDF {
         is_interval_list_input: bool,
     ) -> DFResult<ArrayRef> {
         if self.invert {
-            if is_interval_list_input {
+            if self.invert_returns_null() {
+                return Ok(new_null_array(&self.output_scalar_type, values.len()));
+            }
+
+            if self.is_discretizing_invert() {
+                if is_interval_list_input {
+                    self.apply_discretizing_invert_interval(values)
+                } else {
+                    self.apply_discretizing_invert(values)
+                }
+            } else if is_interval_list_input {
                 self.apply_invert_interval(values)
+            } else if let ScaleExecution::Piecewise(piecewise) = &self.execution {
+                self.apply_piecewise_invert(values, piecewise)
             } else {
-                self.configured_scale.invert(values).map_err(|err| {
+                self.configured_scale()?.invert(values).map_err(|err| {
                     DataFusionError::Execution(format!(
                         "Failed to evaluate invert('{}', ...): {err}",
                         self.scale_name
@@ -137,34 +176,44 @@ impl ScaleExprUDF {
             let scale_values = self.normalize_discrete_null_inputs(values)?;
             let scale_values = self.normalize_discrete_inputs_to_utf8(&scale_values)?;
             let scale_values = self.normalize_temporal_numeric_inputs(&scale_values)?;
-            let scaled = self.configured_scale.scale(&scale_values).map_err(|err| {
-                DataFusionError::Execution(format!(
-                    "Failed to evaluate scale('{}', ...): {err}",
-                    self.scale_name
-                ))
-            })?;
+            let scale_values = self.normalize_discretizing_numeric_inputs(&scale_values)?;
+            let scaled = match &self.execution {
+                ScaleExecution::Direct(configured_scale) => {
+                    configured_scale.scale(&scale_values).map_err(|err| {
+                        DataFusionError::Execution(format!(
+                            "Failed to evaluate scale('{}', ...): {err}",
+                            self.scale_name
+                        ))
+                    })?
+                }
+                ScaleExecution::Piecewise(piecewise) => {
+                    self.apply_piecewise_scale(&scale_values, piecewise)?
+                }
+            };
+            let scaled = decode_dictionary_output_if_needed(scaled)?;
             if std::env::var_os("VF_DEBUG_SCALE_NULL").is_some() && scaled.null_count() > 0 {
                 eprintln!(
                     "scale('{}') produced {} nulls for {} rows. domain={:?} range={:?} input_dtype={:?} output_dtype={:?}",
                     self.scale_name,
                     scaled.null_count(),
                     scaled.len(),
-                    self.configured_scale.domain().data_type(),
-                    self.configured_scale.range().data_type(),
+                    self.domain_dtype(),
+                    self.range_dtype()?,
                     scale_values.data_type(),
                     scaled.data_type()
                 );
-                if self.configured_scale.domain().len() >= 2 {
-                    let d0 = ScalarValue::try_from_array(self.configured_scale.domain(), 0).ok();
-                    let d1 = ScalarValue::try_from_array(
-                        self.configured_scale.domain(),
-                        self.configured_scale.domain().len() - 1,
-                    )
-                    .ok();
+                if self.domain_len()? >= 2 {
+                    let domain = self.domain_array()?;
+                    let d0 = ScalarValue::try_from_array(domain, 0).ok();
+                    let d1 = ScalarValue::try_from_array(domain, domain.len() - 1).ok();
                     eprintln!("domain endpoints: {:?} {:?}", d0, d1);
                 }
             }
-            let scaled = self.fill_singular_domain_nulls(&scale_values, scaled)?;
+            let scaled = if matches!(self.execution, ScaleExecution::Direct(_)) {
+                self.fill_singular_domain_nulls(&scale_values, scaled)?
+            } else {
+                scaled
+            };
             color_array_to_css_strings_if_needed(scaled)
         }
     }
@@ -198,7 +247,7 @@ impl ScaleExprUDF {
             return Ok(values.clone());
         }
 
-        let target_dtype = self.configured_scale.domain().data_type();
+        let target_dtype = self.domain_dtype();
         if values.data_type() == target_dtype {
             return Ok(values.clone());
         }
@@ -245,7 +294,23 @@ impl ScaleExprUDF {
         })
     }
 
+    fn normalize_discretizing_numeric_inputs(&self, values: &ArrayRef) -> DFResult<ArrayRef> {
+        if !matches!(self.scale_type, ScaleTypeSpec::Quantize) {
+            return Ok(values.clone());
+        }
+        if matches!(values.data_type(), DataType::Float32) {
+            return Ok(values.clone());
+        }
+        cast(values.as_ref(), &DataType::Float32).map_err(|err| {
+            DataFusionError::Execution(format!(
+                "Failed to cast scale('{}', ...) quantize input to Float32: {err}",
+                self.scale_name
+            ))
+        })
+    }
+
     fn apply_invert_interval(&self, values: &ArrayRef) -> DFResult<ArrayRef> {
+        let configured_scale = self.configured_scale()?;
         if values.len() == 2 && !values.is_null(0) && !values.is_null(1) {
             let cast_values = cast(values, &DataType::Float32).map_err(|err| {
                 DataFusionError::Execution(format!(
@@ -258,17 +323,92 @@ impl ScaleExprUDF {
             let lo = primitive.value(0);
             let hi = primitive.value(1);
 
-            if let Ok(interval_result) = self.configured_scale.invert_range_interval((lo, hi)) {
+            if let Ok(interval_result) = configured_scale.invert_range_interval((lo, hi)) {
                 return Ok(interval_result);
             }
         }
 
-        self.configured_scale.invert(values).map_err(|err| {
+        configured_scale.invert(values).map_err(|err| {
             DataFusionError::Execution(format!(
                 "Failed to evaluate invert('{}', ...): {err}",
                 self.scale_name
             ))
         })
+    }
+
+    fn apply_piecewise_scale(
+        &self,
+        values: &ArrayRef,
+        piecewise: &PiecewiseScale,
+    ) -> DFResult<ArrayRef> {
+        apply_piecewise_scale(&self.scale_name, values, piecewise)
+    }
+
+    fn apply_piecewise_invert(
+        &self,
+        values: &ArrayRef,
+        piecewise: &PiecewiseScale,
+    ) -> DFResult<ArrayRef> {
+        apply_piecewise_invert(&self.scale_name, values, piecewise)
+    }
+
+    fn apply_discretizing_invert(&self, values: &ArrayRef) -> DFResult<ArrayRef> {
+        let configured = self.configured_scale()?;
+        apply_discretizing_invert(&self.scale_type, configured, values)
+    }
+
+    fn apply_discretizing_invert_interval(&self, values: &ArrayRef) -> DFResult<ArrayRef> {
+        let configured = self.configured_scale()?;
+        apply_discretizing_invert_interval(&self.scale_type, configured, values)
+    }
+
+    fn configured_scale(&self) -> DFResult<&ConfiguredScale> {
+        match &self.execution {
+            ScaleExecution::Direct(configured) => Ok(configured),
+            ScaleExecution::Piecewise(_) => Err(DataFusionError::Execution(format!(
+                "Scale '{}' is piecewise and does not have a single direct configured scale",
+                self.scale_name
+            ))),
+        }
+    }
+
+    fn domain_array(&self) -> DFResult<&ArrayRef> {
+        match &self.execution {
+            ScaleExecution::Direct(configured) => Ok(configured.domain()),
+            ScaleExecution::Piecewise(piecewise) => Ok(piecewise.domain_array()),
+        }
+    }
+
+    fn domain_dtype(&self) -> &DataType {
+        match &self.execution {
+            ScaleExecution::Direct(configured) => configured.domain().data_type(),
+            ScaleExecution::Piecewise(piecewise) => piecewise.domain_dtype(),
+        }
+    }
+
+    fn range_dtype(&self) -> DFResult<&DataType> {
+        match &self.execution {
+            ScaleExecution::Direct(configured) => Ok(configured.range().data_type()),
+            ScaleExecution::Piecewise(piecewise) => Ok(piecewise.range_scale.range().data_type()),
+        }
+    }
+
+    fn domain_len(&self) -> DFResult<usize> {
+        Ok(self.domain_array()?.len())
+    }
+
+    fn invert_returns_null(&self) -> bool {
+        if matches!(self.scale_type, ScaleTypeSpec::Sequential) {
+            return true;
+        }
+        matches!(&self.execution, ScaleExecution::Piecewise(piecewise) if piecewise.color_output)
+    }
+
+    fn is_discretizing_invert(&self) -> bool {
+        matches!(
+            self.scale_type,
+            ScaleTypeSpec::Quantize | ScaleTypeSpec::Threshold
+        )
     }
 
     fn make_null_scalar(&self) -> DFResult<ScalarValue> {
@@ -309,6 +449,9 @@ impl ScaleExprUDF {
         &self,
         output_dtype: &DataType,
     ) -> DFResult<Option<ScalarValue>> {
+        let Ok(configured_scale) = self.configured_scale() else {
+            return Ok(None);
+        };
         if !matches!(
             output_dtype,
             DataType::Float16
@@ -326,7 +469,7 @@ impl ScaleExprUDF {
             return Ok(None);
         }
 
-        let domain = self.configured_scale.domain();
+        let domain = configured_scale.domain();
         if domain.len() < 2 {
             return Ok(None);
         }
@@ -343,7 +486,7 @@ impl ScaleExprUDF {
             return Ok(None);
         }
 
-        let range = self.configured_scale.range();
+        let range = configured_scale.range();
         if range.len() < 2 {
             return Ok(None);
         }
@@ -367,10 +510,15 @@ impl ScaleExprUDF {
     }
 
     fn output_type_for_input(&self, input_type: &DataType) -> DataType {
-        let item_field = Arc::new(Field::new("item", self.output_scalar_type.clone(), true));
         match input_type {
             DataType::List(_) | DataType::LargeList(_) | DataType::FixedSizeList(_, _) => {
-                DataType::List(item_field)
+                if self.invert && self.is_discretizing_invert() {
+                    self.output_scalar_type.clone()
+                } else {
+                    let item_field =
+                        Arc::new(Field::new("item", self.output_scalar_type.clone(), true));
+                    DataType::List(item_field)
+                }
             }
             _ => self.output_scalar_type.clone(),
         }
@@ -403,47 +551,108 @@ fn scalar_to_numeric_or_temporal_f64(value: &ScalarValue) -> Option<f64> {
         ScalarValue::UInt16(Some(v)) => Some(*v as f64),
         ScalarValue::UInt32(Some(v)) => Some(*v as f64),
         ScalarValue::UInt64(Some(v)) => Some(*v as f64),
-        ScalarValue::Date32(Some(v)) => Some(*v as f64),
+        ScalarValue::Date32(Some(v)) => Some((*v as f64) * 86_400_000.0),
         ScalarValue::Date64(Some(v)) => Some(*v as f64),
-        ScalarValue::TimestampSecond(Some(v), _) => Some(*v as f64),
+        ScalarValue::TimestampSecond(Some(v), _) => Some((*v as f64) * 1000.0),
         ScalarValue::TimestampMillisecond(Some(v), _) => Some(*v as f64),
-        ScalarValue::TimestampMicrosecond(Some(v), _) => Some(*v as f64),
-        ScalarValue::TimestampNanosecond(Some(v), _) => Some(*v as f64),
+        ScalarValue::TimestampMicrosecond(Some(v), _) => Some((*v as f64) / 1000.0),
+        ScalarValue::TimestampNanosecond(Some(v), _) => Some((*v as f64) / 1_000_000.0),
         _ => None,
     }
 }
 
-fn infer_output_scalar_type(configured_scale: &ConfiguredScale, invert: bool) -> DataType {
-    let fallback = if invert {
-        configured_scale.domain().data_type().clone()
-    } else {
-        configured_scale.range().data_type().clone()
-    };
-
-    let sample_input = if invert {
-        if configured_scale.range().is_empty() {
-            new_empty_array(configured_scale.range().data_type())
-        } else {
-            configured_scale.range().slice(0, 1)
+fn infer_output_scalar_type(
+    execution: &ScaleExecution,
+    invert: bool,
+    scale_state: &ScaleState,
+) -> DataType {
+    if invert {
+        if matches!(
+            scale_state.scale_type,
+            ScaleTypeSpec::Quantize | ScaleTypeSpec::Threshold
+        ) {
+            return DataType::List(Arc::new(Field::new("item", DataType::Float64, true)));
         }
-    } else if configured_scale.domain().is_empty() {
-        new_empty_array(configured_scale.domain().data_type())
-    } else {
-        configured_scale.domain().slice(0, 1)
-    };
+        if matches!(scale_state.scale_type, ScaleTypeSpec::Sequential) {
+            return scale_state.domain.data_type().clone();
+        }
+    }
+    if !invert
+        && matches!(
+            scale_state.scale_type,
+            ScaleTypeSpec::Quantize | ScaleTypeSpec::Threshold
+        )
+    {
+        return match execution {
+            ScaleExecution::Direct(configured_scale) => {
+                configured_scale.range().data_type().clone()
+            }
+            ScaleExecution::Piecewise(piecewise) => {
+                piecewise.range_scale.range().data_type().clone()
+            }
+        };
+    }
 
-    let output = if invert {
-        configured_scale.invert(&sample_input)
-    } else {
-        configured_scale.scale(&sample_input)
-    };
-    let output_type = output
-        .map(|arr| arr.data_type().clone())
-        .unwrap_or(fallback);
-    if !invert && looks_like_color_output_type(&output_type) {
-        DataType::Utf8
-    } else {
-        output_type
+    match execution {
+        ScaleExecution::Direct(configured_scale) => {
+            let fallback = if invert {
+                configured_scale.domain().data_type().clone()
+            } else {
+                configured_scale.range().data_type().clone()
+            };
+
+            let sample_input = if invert {
+                if configured_scale.range().is_empty() {
+                    new_empty_array(configured_scale.range().data_type())
+                } else {
+                    configured_scale.range().slice(0, 1)
+                }
+            } else if configured_scale.domain().is_empty() {
+                new_empty_array(configured_scale.domain().data_type())
+            } else {
+                configured_scale.domain().slice(0, 1)
+            };
+
+            let output = if invert {
+                configured_scale.invert(&sample_input)
+            } else {
+                configured_scale.scale(&sample_input)
+            };
+            let output_type = output
+                .map(|arr| arr.data_type().clone())
+                .unwrap_or(fallback);
+            let output_type = match output_type {
+                DataType::Dictionary(_, value_type) => value_type.as_ref().clone(),
+                other => other,
+            };
+            if !invert && looks_like_color_output_type(&output_type) {
+                DataType::Utf8
+            } else {
+                output_type
+            }
+        }
+        ScaleExecution::Piecewise(piecewise) => {
+            if invert {
+                piecewise.domain_dtype().clone()
+            } else if piecewise.color_output {
+                DataType::Utf8
+            } else {
+                piecewise.range_scale.range().data_type().clone()
+            }
+        }
+    }
+}
+
+fn decode_dictionary_output_if_needed(values: ArrayRef) -> DFResult<ArrayRef> {
+    match values.data_type() {
+        DataType::Dictionary(_, value_type) => {
+            cast(values.as_ref(), value_type.as_ref()).map_err(|err| {
+                DataFusionError::Execution(format!(
+                    "Failed to decode dictionary-encoded scale output: {err}"
+                ))
+            })
+        }
+        _ => Ok(values),
     }
 }
 
@@ -541,9 +750,23 @@ fn rgba_to_hex([r, g, b, a]: [f64; 4]) -> String {
 
 impl PartialEq for ScaleExprUDF {
     fn eq(&self, other: &Self) -> bool {
+        let execution_eq = match (&self.execution, &other.execution) {
+            (ScaleExecution::Direct(left), ScaleExecution::Direct(right)) => {
+                Arc::ptr_eq(left, right)
+            }
+            (ScaleExecution::Piecewise(left), ScaleExecution::Piecewise(right)) => {
+                Arc::ptr_eq(&left.range_scale, &right.range_scale)
+                    && left.d0.to_bits() == right.d0.to_bits()
+                    && left.d1.to_bits() == right.d1.to_bits()
+                    && left.d2.to_bits() == right.d2.to_bits()
+            }
+            _ => false,
+        };
         self.scale_name == other.scale_name
             && self.invert == other.invert
-            && Arc::ptr_eq(&self.configured_scale, &other.configured_scale)
+            && self.scale_type == other.scale_type
+            && execution_eq
+            && self.output_scalar_type == other.output_scalar_type
             && self.null_sentinel == other.null_sentinel
             && self.coerce_discrete_inputs_to_utf8 == other.coerce_discrete_inputs_to_utf8
             && self.coerce_numeric_to_temporal_domain == other.coerce_numeric_to_temporal_domain
@@ -556,7 +779,21 @@ impl Hash for ScaleExprUDF {
     fn hash<H: Hasher>(&self, state: &mut H) {
         self.scale_name.hash(state);
         self.invert.hash(state);
-        Arc::as_ptr(&self.configured_scale).hash(state);
+        self.scale_type.hash(state);
+        match &self.execution {
+            ScaleExecution::Direct(configured) => {
+                0_u8.hash(state);
+                Arc::as_ptr(configured).hash(state);
+            }
+            ScaleExecution::Piecewise(piecewise) => {
+                1_u8.hash(state);
+                Arc::as_ptr(&piecewise.range_scale).hash(state);
+                piecewise.d0.to_bits().hash(state);
+                piecewise.d1.to_bits().hash(state);
+                piecewise.d2.to_bits().hash(state);
+            }
+        }
+        self.output_scalar_type.hash(state);
         self.null_sentinel.hash(state);
         self.coerce_discrete_inputs_to_utf8.hash(state);
         self.coerce_numeric_to_temporal_domain.hash(state);
@@ -626,6 +863,9 @@ impl ScalarUDFImpl for ScaleExprUDF {
                 }
 
                 if let Some(list_values) = scalar_list_values(value)? {
+                    if self.invert_returns_null() {
+                        return Ok(ColumnarValue::Scalar(ScalarValue::Null));
+                    }
                     let scaled = self.apply_to_array(&list_values, self.invert)?;
                     let wrapped = ScalarValue::List(Arc::new(
                         datafusion_common::utils::SingleRowListArrayBuilder::new(scaled)

@@ -18,10 +18,10 @@ use crate::scale::vega_schemes::{
     decode_continuous_scheme, default_named_range, lookup_scheme, NamedRange, SchemePalette,
 };
 use crate::scale::DISCRETE_NULL_SENTINEL;
+use csscolorparser::parse as parse_css_color;
 use datafusion_common::ScalarValue;
 use std::cmp::Ordering;
 use std::collections::HashSet;
-use std::ops::RangeInclusive;
 use vegafusion_common::arrow::array::{
     new_empty_array, new_null_array, Array, ArrayRef, AsArray, FixedSizeListArray, StringArray,
 };
@@ -1149,6 +1149,9 @@ fn is_continuous_scale(scale_type: &ScaleTypeSpec) -> bool {
             | ScaleTypeSpec::Symlog
             | ScaleTypeSpec::Time
             | ScaleTypeSpec::Utc
+            | ScaleTypeSpec::Sequential
+            | ScaleTypeSpec::Quantize
+            | ScaleTypeSpec::Threshold
     )
 }
 
@@ -1502,17 +1505,17 @@ fn sample_colors(
     hi = hi.clamp(0.0, 1.0);
 
     let target = count.unwrap_or(values.len().max(2));
-    let rgbs = values
+    let colors = values
         .iter()
-        .map(|v| parse_hex_color(v))
+        .map(|v| parse_css_rgba(v))
         .collect::<Result<Vec<_>>>()?;
-    if rgbs.len() == 1 {
-        return Ok(vec![rgb_to_hex(rgbs[0]); target]);
+    if colors.len() == 1 {
+        return Ok(vec![rgba_to_hex(colors[0]); target]);
     }
 
     if target == 1 {
         let t = (lo + hi) / 2.0;
-        return Ok(vec![interpolate_color(rgbs.as_slice(), t)]);
+        return Ok(vec![interpolate_color(colors.as_slice(), t)]);
     }
 
     let mut out = Vec::with_capacity(target);
@@ -1525,41 +1528,31 @@ fn sample_colors(
             (i as f64) / ((target - 1) as f64)
         };
         let t = lo + (hi - lo) * frac;
-        out.push(interpolate_color(rgbs.as_slice(), t));
+        out.push(interpolate_color(colors.as_slice(), t));
     }
 
     Ok(out)
 }
 
-fn parse_hex_color(value: &str) -> Result<[f64; 3]> {
-    let hex = value.trim_start_matches('#');
-    if hex.len() != 6 || !hex.chars().all(|c| c.is_ascii_hexdigit()) {
-        return Err(VegaFusionError::internal(format!(
-            "Only 6-digit hex colors are supported for scheme sampling, received {value:?}"
-        )));
-    }
-
-    let parse_channel = |range: RangeInclusive<usize>| -> Result<f64> {
-        let slice = &hex[range];
-        let parsed = u8::from_str_radix(slice, 16).map_err(|err| {
-            VegaFusionError::internal(format!(
-                "Failed to parse hex color component {slice:?}: {err}"
-            ))
-        })?;
-        Ok((parsed as f64) / 255.0)
-    };
-
+fn parse_css_rgba(value: &str) -> Result<[f64; 4]> {
+    let color = parse_css_color(value).map_err(|err| {
+        VegaFusionError::internal(format!(
+            "Failed to parse CSS color for scheme sampling {value:?}: {err}"
+        ))
+    })?;
+    let rgba = color.to_array();
     Ok([
-        parse_channel(0..=1)?,
-        parse_channel(2..=3)?,
-        parse_channel(4..=5)?,
+        rgba[0] as f64,
+        rgba[1] as f64,
+        rgba[2] as f64,
+        rgba[3] as f64,
     ])
 }
 
-fn interpolate_color(colors: &[[f64; 3]], t: f64) -> String {
+fn interpolate_color(colors: &[[f64; 4]], t: f64) -> String {
     let n = colors.len();
     if n == 1 {
-        return rgb_to_hex(colors[0]);
+        return rgba_to_hex(colors[0]);
     }
 
     let clamped = t.clamp(0.0, 1.0);
@@ -1567,27 +1560,31 @@ fn interpolate_color(colors: &[[f64; 3]], t: f64) -> String {
     let lo = scaled.floor() as usize;
     let hi = scaled.ceil() as usize;
     if lo == hi {
-        return rgb_to_hex(colors[lo]);
+        return rgba_to_hex(colors[lo]);
     }
 
     let f = scaled - (lo as f64);
     let c0 = colors[lo];
     let c1 = colors[hi];
-    let rgb = [
+    let rgba = [
         c0[0] + (c1[0] - c0[0]) * f,
         c0[1] + (c1[1] - c0[1]) * f,
         c0[2] + (c1[2] - c0[2]) * f,
+        c0[3] + (c1[3] - c0[3]) * f,
     ];
-    rgb_to_hex(rgb)
+    rgba_to_hex(rgba)
 }
 
-fn rgb_to_hex(rgb: [f64; 3]) -> String {
-    format!(
-        "#{:02x}{:02x}{:02x}",
-        (rgb[0].clamp(0.0, 1.0) * 255.0).round() as u8,
-        (rgb[1].clamp(0.0, 1.0) * 255.0).round() as u8,
-        (rgb[2].clamp(0.0, 1.0) * 255.0).round() as u8
-    )
+fn rgba_to_hex(rgba: [f64; 4]) -> String {
+    let r = (rgba[0].clamp(0.0, 1.0) * 255.0).round() as u8;
+    let g = (rgba[1].clamp(0.0, 1.0) * 255.0).round() as u8;
+    let b = (rgba[2].clamp(0.0, 1.0) * 255.0).round() as u8;
+    let a = (rgba[3].clamp(0.0, 1.0) * 255.0).round() as u8;
+    if a == u8::MAX {
+        format!("#{r:02x}{g:02x}{b:02x}")
+    } else {
+        format!("#{r:02x}{g:02x}{b:02x}{a:02x}")
+    }
 }
 
 fn values_to_string_array(values: &[&str]) -> Result<ArrayRef> {
@@ -1843,6 +1840,31 @@ mod tests {
         let (lo, hi) = scalar_f64(&state.domain);
         assert_eq!(lo, 8.9);
         assert_eq!(hi, 39.0);
+    }
+
+    #[test]
+    fn test_quantize_domain_from_data_uses_numeric_extent() {
+        let config = config_with_data(
+            "tbl",
+            json!([
+                {"v": 5.0},
+                {"v": 1.0},
+                {"v": 3.0}
+            ]),
+        );
+
+        let scale: ScaleSpec = serde_json::from_value(json!({
+            "name": "q",
+            "type": "quantize",
+            "domain": {"data": "tbl", "field": "v"},
+            "range": ["a", "b", "c"]
+        }))
+        .unwrap();
+
+        let state = resolve_scale_state(&scale, &config).unwrap();
+        let (lo, hi) = scalar_f64(&state.domain);
+        assert_eq!(lo, 1.0);
+        assert_eq!(hi, 5.0);
     }
 
     #[test]
@@ -2259,6 +2281,21 @@ mod tests {
     }
 
     #[test]
+    fn test_scheme_sampling_supports_css_colors_and_alpha() {
+        let sampled = sample_colors(
+            &["red".to_string(), "rgba(0, 0, 255, 0.5)".to_string()],
+            Some(3),
+            None,
+            false,
+        )
+        .unwrap();
+
+        assert_eq!(sampled[0], "#ff0000");
+        assert_eq!(sampled[2], "#0000ff80");
+        assert_eq!(sampled.len(), 3);
+    }
+
+    #[test]
     fn test_domain_fields_vec_strings_supported() {
         let scale: ScaleSpec = serde_json::from_value(json!({
             "name": "xOffset",
@@ -2343,7 +2380,7 @@ mod tests {
     }
 
     #[test]
-    fn test_domain_mid_errors() {
+    fn test_domain_mid_inserts_piecewise_domain() {
         let scale: ScaleSpec = serde_json::from_value(json!({
             "name": "x",
             "type": "linear",
@@ -2353,10 +2390,14 @@ mod tests {
         }))
         .unwrap();
 
-        let err = resolve_scale_state(&scale, &CompilationConfig::default()).unwrap_err();
-        assert!(err.to_string().contains(
-            "domainMid is not yet supported for server-evaluated piecewise continuous scales"
-        ));
+        let state = resolve_scale_state(&scale, &CompilationConfig::default()).unwrap();
+        assert_eq!(state.domain.len(), 3);
+        let first = ScalarValue::try_from_array(&state.domain, 0).unwrap();
+        let mid = ScalarValue::try_from_array(&state.domain, 1).unwrap();
+        let last = ScalarValue::try_from_array(&state.domain, 2).unwrap();
+        assert_eq!(scalar_domain_f64(&first), 2.0);
+        assert_eq!(scalar_domain_f64(&mid), 3.0);
+        assert_eq!(scalar_domain_f64(&last), 5.0);
     }
 
     #[test]

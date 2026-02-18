@@ -411,6 +411,7 @@ fn server_mark_encoding_scale_type_supported(scale_type: &ScaleTypeSpec) -> bool
     matches!(
         scale_type,
         ScaleTypeSpec::Linear
+            | ScaleTypeSpec::Sequential
             | ScaleTypeSpec::Log
             | ScaleTypeSpec::Pow
             | ScaleTypeSpec::Sqrt
@@ -420,6 +421,8 @@ fn server_mark_encoding_scale_type_supported(scale_type: &ScaleTypeSpec) -> bool
             | ScaleTypeSpec::Band
             | ScaleTypeSpec::Point
             | ScaleTypeSpec::Ordinal
+            | ScaleTypeSpec::Quantize
+            | ScaleTypeSpec::Threshold
     )
 }
 
@@ -610,7 +613,7 @@ mod tests {
                 }
             ],
             "scales": [
-                {"name": "x", "type": "sequential", "domain": [0, 10], "range": [0, 100]}
+                {"name": "x", "type": "quantile", "domain": [0, 10], "range": [0, 100]}
             ],
             "marks": [
                 {

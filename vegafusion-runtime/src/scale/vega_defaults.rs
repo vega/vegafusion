@@ -12,16 +12,19 @@ pub(crate) fn apply_vega_domain_defaults(
     domain_from_raw: bool,
     implicit_zero_allowed: bool,
 ) -> Result<ArrayRef> {
-    if is_continuous_scale(scale_type) && option_present_non_null(options, "domain_mid") {
-        return Err(VegaFusionError::internal(
-            "domainMid is not yet supported for server-evaluated piecewise continuous scales",
-        ));
-    }
-
     let resolved_domain = if domain_from_raw {
         domain
     } else if is_continuous_scale(scale_type) {
-        let (mut d0, mut d1) = domain_bounds_for_scale(scale_type, &domain)?;
+        let mut domain_values = domain_to_vec_f64(scale_type, &domain)?;
+        if domain_values.len() < 2 {
+            return Err(VegaFusionError::internal(format!(
+                "Continuous scale domain must include at least two values, received {}",
+                domain_values.len()
+            )));
+        }
+        let n = domain_values.len() - 1;
+        let mut d0 = domain_values[0];
+        let mut d1 = domain_values[n];
 
         let zero_enabled =
             if let Some(zero_option) = option_scalar(options, "zero").and_then(non_null_scalar) {
@@ -49,23 +52,49 @@ pub(crate) fn apply_vega_domain_defaults(
         if let Some(domain_max) = option_scalar(options, "domain_max").and_then(non_null_scalar) {
             d1 = scalar_to_domain_f64(scale_type, domain_max)?;
         }
+        domain_values[0] = d0;
+        domain_values[n] = d1;
 
-        if let Some(padding) = option_scalar(options, "padding").and_then(non_null_scalar) {
-            let padding = scalar_to_numeric_f64(padding)?;
-            if padding != 0.0 && d0 != d1 {
-                let (r0, r1) = range_bounds(range)?;
-                let span = (r1 - r0).abs();
-                let denom = span - 2.0 * padding;
-                if denom != 0.0 {
-                    let frac = span / denom;
-                    if frac.is_finite() {
-                        (d0, d1) = zoom_domain(scale_type, d0, d1, frac, options)?;
+        if let Some(domain_mid) = option_scalar(options, "domain_mid").and_then(non_null_scalar) {
+            let mid = scalar_to_domain_f64(scale_type, domain_mid)?;
+            let insert_index = if mid > domain_values[n] {
+                n + 1
+            } else if mid < domain_values[0] {
+                0
+            } else {
+                n
+            };
+            domain_values.insert(insert_index, mid);
+        }
+
+        if include_pad(scale_type) {
+            if let Some(padding) = option_scalar(options, "padding").and_then(non_null_scalar) {
+                let padding = scalar_to_numeric_f64(padding)?;
+                if padding != 0.0 && domain_values[0] != domain_values[domain_values.len() - 1] {
+                    let (r0, r1) = range_bounds(range)?;
+                    let span = (r1 - r0).abs();
+                    let denom = span - 2.0 * padding;
+                    if denom != 0.0 {
+                        let frac = span / denom;
+                        if frac.is_finite() {
+                            let (d0, d1) = zoom_domain(
+                                scale_type,
+                                domain_values[0],
+                                domain_values[domain_values.len() - 1],
+                                frac,
+                                options,
+                            )?;
+                            domain_values[0] = d0;
+                            if let Some(last) = domain_values.last_mut() {
+                                *last = d1;
+                            }
+                        }
                     }
                 }
             }
         }
 
-        bounds_to_domain_array(scale_type, d0, d1)?
+        vec_f64_to_domain_array(scale_type, domain_values.as_slice())?
     } else {
         domain
     };
@@ -104,7 +133,12 @@ fn is_continuous_scale(scale_type: &ScaleTypeSpec) -> bool {
             | ScaleTypeSpec::Symlog
             | ScaleTypeSpec::Time
             | ScaleTypeSpec::Utc
+            | ScaleTypeSpec::Sequential
     )
+}
+
+fn include_pad(scale_type: &ScaleTypeSpec) -> bool {
+    is_continuous_scale(scale_type) && !matches!(scale_type, ScaleTypeSpec::Sequential)
 }
 
 fn option_scalar<'a>(
@@ -120,12 +154,6 @@ fn non_null_scalar(scalar: &ScalarValue) -> Option<&ScalarValue> {
     } else {
         Some(scalar)
     }
-}
-
-fn option_present_non_null(options: &HashMap<String, ScalarValue>, key: &str) -> bool {
-    option_scalar(options, key)
-        .and_then(non_null_scalar)
-        .is_some()
 }
 
 fn scalar_to_bool(value: &ScalarValue) -> Result<bool> {
@@ -183,20 +211,13 @@ fn scalar_to_domain_f64(scale_type: &ScaleTypeSpec, value: &ScalarValue) -> Resu
     }
 }
 
-fn domain_bounds_for_scale(scale_type: &ScaleTypeSpec, domain: &ArrayRef) -> Result<(f64, f64)> {
-    if domain.len() < 2 {
-        return Err(VegaFusionError::internal(format!(
-            "Continuous scale domain must include at least two values, received {}",
-            domain.len()
-        )));
-    }
-
-    let lo = ScalarValue::try_from_array(domain, 0)?;
-    let hi = ScalarValue::try_from_array(domain, domain.len() - 1)?;
-    Ok((
-        scalar_to_domain_f64(scale_type, &lo)?,
-        scalar_to_domain_f64(scale_type, &hi)?,
-    ))
+fn domain_to_vec_f64(scale_type: &ScaleTypeSpec, domain: &ArrayRef) -> Result<Vec<f64>> {
+    (0..domain.len())
+        .map(|idx| {
+            let v = ScalarValue::try_from_array(domain, idx)?;
+            scalar_to_domain_f64(scale_type, &v)
+        })
+        .collect()
 }
 
 fn range_bounds(range: &ArrayRef) -> Result<(f64, f64)> {
@@ -211,17 +232,22 @@ fn range_bounds(range: &ArrayRef) -> Result<(f64, f64)> {
     Ok((scalar_to_numeric_f64(&lo)?, scalar_to_numeric_f64(&hi)?))
 }
 
-fn bounds_to_domain_array(scale_type: &ScaleTypeSpec, d0: f64, d1: f64) -> Result<ArrayRef> {
+fn vec_f64_to_domain_array(scale_type: &ScaleTypeSpec, values: &[f64]) -> Result<ArrayRef> {
     if matches!(scale_type, ScaleTypeSpec::Time | ScaleTypeSpec::Utc) {
-        Ok(ScalarValue::iter_to_array(vec![
-            ScalarValue::TimestampMillisecond(Some(d0.round() as i64), None),
-            ScalarValue::TimestampMillisecond(Some(d1.round() as i64), None),
-        ])?)
+        Ok(ScalarValue::iter_to_array(
+            values
+                .iter()
+                .map(|v| ScalarValue::TimestampMillisecond(Some(v.round() as i64), None))
+                .collect::<Vec<_>>(),
+        )?)
     } else {
-        Ok(ScalarValue::iter_to_array(vec![
-            ScalarValue::from(d0),
-            ScalarValue::from(d1),
-        ])?)
+        Ok(ScalarValue::iter_to_array(
+            values
+                .iter()
+                .copied()
+                .map(ScalarValue::from)
+                .collect::<Vec<_>>(),
+        )?)
     }
 }
 
@@ -374,7 +400,7 @@ mod tests {
             &range,
             &mut options,
             false,
-            true,
+            false,
         )
         .unwrap();
         let lo = ScalarValue::try_from_array(&resolved, 0).unwrap();
@@ -408,21 +434,23 @@ mod tests {
     }
 
     #[test]
-    fn test_domain_mid_errors() {
+    fn test_domain_mid_inserts_between_domain_bounds() {
         let mut options = HashMap::from([("domain_mid".to_string(), ScalarValue::from(3.0))]);
         let domain = f64_domain(&[2.0, 5.0]);
         let range = f64_domain(&[100.0, 0.0]);
-        let err = apply_vega_domain_defaults(
+        let resolved = apply_vega_domain_defaults(
             &ScaleTypeSpec::Linear,
             domain,
             &range,
             &mut options,
             false,
-            true,
+            false,
         )
-        .unwrap_err();
-        assert!(err.to_string().contains(
-            "domainMid is not yet supported for server-evaluated piecewise continuous scales"
-        ));
+        .unwrap();
+        let values = (0..resolved.len())
+            .map(|idx| ScalarValue::try_from_array(&resolved, idx).unwrap())
+            .map(|v| scalar_to_numeric_f64(&v).unwrap())
+            .collect::<Vec<_>>();
+        assert_eq!(values, vec![2.0, 3.0, 5.0]);
     }
 }

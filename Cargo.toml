@@ -193,3 +193,6 @@ version = "0.2.19"
 
 [workspace.dependencies.getrandom]
 version = "0.3"
+
+[workspace.dependencies.csscolorparser]
+version = "0.8.2"

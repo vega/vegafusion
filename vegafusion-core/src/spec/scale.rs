@@ -225,12 +225,8 @@ impl ScaleSpec {
     /// Returns true when this scale does not rely on runtime semantics that are intentionally
     /// unsupported for server-side scale evaluation in this phase.
     pub fn server_runtime_semantics_supported(&self) -> bool {
-        let domain_mid = self
-            .extra
-            .get("domainMid")
-            .or_else(|| self.extra.get("domain_mid"));
-
-        !domain_mid.is_some_and(|value| !value.is_null())
+        self.server_scale_type_supported()
+            && self.server_domain_mid_semantics_supported()
             && self.server_time_range_semantics_supported()
     }
 
@@ -350,6 +346,73 @@ impl ScaleSpec {
             }
             _ => false,
         }
+    }
+
+    fn server_domain_mid_semantics_supported(&self) -> bool {
+        let Some(domain_mid) = self
+            .extra
+            .get("domainMid")
+            .or_else(|| self.extra.get("domain_mid"))
+        else {
+            return true;
+        };
+        if domain_mid.is_null() {
+            return true;
+        }
+
+        let scale_type = self.type_.clone().unwrap_or_default();
+        if !matches!(
+            scale_type,
+            ScaleTypeSpec::Linear
+                | ScaleTypeSpec::Sequential
+                | ScaleTypeSpec::Log
+                | ScaleTypeSpec::Pow
+                | ScaleTypeSpec::Sqrt
+                | ScaleTypeSpec::Symlog
+                | ScaleTypeSpec::Time
+                | ScaleTypeSpec::Utc
+        ) {
+            return false;
+        }
+
+        self.range
+            .as_ref()
+            .is_some_and(Self::range_supports_server_domain_mid)
+    }
+
+    fn range_supports_server_domain_mid(range: &ScaleRangeSpec) -> bool {
+        match range {
+            ScaleRangeSpec::Array(values) => values.iter().all(|value| match value {
+                ScaleArrayElementSpec::Signal(_) => false,
+                ScaleArrayElementSpec::Value(value) => value.is_string(),
+            }),
+            ScaleRangeSpec::Value(Value::Object(obj)) => obj.get("scheme").is_some(),
+            ScaleRangeSpec::Value(Value::String(name)) => matches!(
+                name.as_str(),
+                "category" | "ordinal" | "heatmap" | "ramp" | "diverging"
+            ),
+            _ => false,
+        }
+    }
+
+    fn server_scale_type_supported(&self) -> bool {
+        let scale_type = self.type_.clone().unwrap_or_default();
+        matches!(
+            scale_type,
+            ScaleTypeSpec::Linear
+                | ScaleTypeSpec::Sequential
+                | ScaleTypeSpec::Log
+                | ScaleTypeSpec::Pow
+                | ScaleTypeSpec::Sqrt
+                | ScaleTypeSpec::Symlog
+                | ScaleTypeSpec::Time
+                | ScaleTypeSpec::Utc
+                | ScaleTypeSpec::Band
+                | ScaleTypeSpec::Point
+                | ScaleTypeSpec::Ordinal
+                | ScaleTypeSpec::Quantize
+                | ScaleTypeSpec::Threshold
+        )
     }
 }
 

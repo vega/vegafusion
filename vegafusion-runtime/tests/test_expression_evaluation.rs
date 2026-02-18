@@ -721,6 +721,7 @@ mod test_string_type_equality {
 mod test_scale_calls {
     use crate::util::equality::{assert_scalars_almost_equals, normalize_scalar};
     use crate::util::vegajs_runtime::vegajs_runtime;
+    use csscolorparser::parse as parse_css_color;
     use datafusion_common::ScalarValue;
     use serde_json::{json, Value};
     use std::collections::HashMap;
@@ -768,6 +769,33 @@ mod test_scale_calls {
                 "#eff9bd", "#dbf1b4", "#bde5b5", "#94d5b9", "#69c5be", "#45b4c2", "#2c9ec0",
                 "#2182b8", "#2163aa", "#23479c", "#1c3185",
             ])),
+            options: HashMap::new(),
+        }
+    }
+
+    fn sequential_scale_state() -> ScaleState {
+        ScaleState {
+            scale_type: ScaleTypeSpec::Sequential,
+            domain: Arc::new(Float64Array::from(vec![0.0, 10.0])),
+            range: Arc::new(StringArray::from(vec!["#ff0000", "#0000ff"])),
+            options: HashMap::new(),
+        }
+    }
+
+    fn quantize_scale_state() -> ScaleState {
+        ScaleState {
+            scale_type: ScaleTypeSpec::Quantize,
+            domain: Arc::new(Float64Array::from(vec![0.0, 10.0])),
+            range: Arc::new(StringArray::from(vec!["low", "mid", "high"])),
+            options: HashMap::new(),
+        }
+    }
+
+    fn threshold_scale_state() -> ScaleState {
+        ScaleState {
+            scale_type: ScaleTypeSpec::Threshold,
+            domain: Arc::new(Float64Array::from(vec![3.0, 7.0])),
+            range: Arc::new(StringArray::from(vec!["low", "mid", "high"])),
             options: HashMap::new(),
         }
     }
@@ -822,6 +850,39 @@ mod test_scale_calls {
         let result = normalize_scalar(&result);
 
         assert_scalars_almost_equals(&result, &expected, 1e-6, "scalar", 0, false);
+    }
+
+    fn check_scale_color_evaluation(
+        expr_str: &str,
+        scales: Vec<Value>,
+        config: &CompilationConfig,
+    ) {
+        let vegajs_runtime = vegajs_runtime();
+        let spec = json!({
+            "signals": [{"name": "_sig", "init": expr_str}],
+            "scales": scales,
+        });
+        let watches = vec![Watch {
+            namespace: WatchNamespace::Signal,
+            name: "_sig".to_string(),
+            scope: vec![],
+        }];
+        let watch_values = vegajs_runtime.eval_spec(&spec, &watches).unwrap();
+        let expected = watch_values[0].value.as_str().unwrap();
+        let expected = parse_css_color(expected).unwrap().to_rgba8();
+
+        let local_tz_str = vegajs_runtime.nodejs_runtime.local_timezone().unwrap();
+        let config = CompilationConfig {
+            tz_config: Some(RuntimeTzConfig::try_new(&local_tz_str, &None).unwrap()),
+            ..config.clone()
+        };
+        let parsed = parse(expr_str).unwrap();
+        let compiled = compile(&parsed, &config, None).unwrap();
+        let result = compiled.eval_to_scalar().unwrap();
+        let result = result.to_scalar_string().unwrap();
+        let result = parse_css_color(&result).unwrap().to_rgba8();
+
+        assert_eq!(result, expected);
     }
 
     #[test]
@@ -949,5 +1010,101 @@ mod test_scale_calls {
         };
         assert!(value.starts_with('#'));
         assert!(matches!(value.len(), 7 | 9));
+    }
+
+    #[test]
+    fn test_scale_sequential_matches_vega() {
+        let config = config_with_scale("s", sequential_scale_state());
+        let scales = vec![json!({
+            "name": "s",
+            "type": "sequential",
+            "domain": [0, 10],
+            "range": ["#ff0000", "#0000ff"]
+        })];
+        check_scale_color_evaluation("scale('s', 5)", scales, &config);
+    }
+
+    #[test]
+    fn test_invert_sequential_returns_null_like_vega() {
+        let config = config_with_scale("s", sequential_scale_state());
+        let scales = vec![json!({
+            "name": "s",
+            "type": "sequential",
+            "domain": [0, 10],
+            "range": ["#ff0000", "#0000ff"]
+        })];
+        check_scale_scalar_evaluation("invert('s', 0.5)", scales, &config);
+    }
+
+    #[test]
+    fn test_scale_quantize_matches_vega() {
+        let config = config_with_scale("q", quantize_scale_state());
+        let scales = vec![json!({
+            "name": "q",
+            "type": "quantize",
+            "domain": [0, 10],
+            "range": ["low", "mid", "high"]
+        })];
+        check_scale_scalar_evaluation("scale('q', 4.5)", scales, &config);
+    }
+
+    #[test]
+    fn test_invert_quantize_scalar_returns_extent() {
+        let config = config_with_scale("q", quantize_scale_state());
+        let scales = vec![json!({
+            "name": "q",
+            "type": "quantize",
+            "domain": [0, 10],
+            "range": ["low", "mid", "high"]
+        })];
+        check_scale_scalar_evaluation("invert('q', 'mid')", scales, &config);
+    }
+
+    #[test]
+    fn test_invert_quantize_interval_returns_extent() {
+        let config = config_with_scale("q", quantize_scale_state());
+        let scales = vec![json!({
+            "name": "q",
+            "type": "quantize",
+            "domain": [0, 10],
+            "range": ["low", "mid", "high"]
+        })];
+        check_scale_scalar_evaluation("invert('q', ['low', 'high'])", scales, &config);
+    }
+
+    #[test]
+    fn test_scale_threshold_matches_vega() {
+        let config = config_with_scale("th", threshold_scale_state());
+        let scales = vec![json!({
+            "name": "th",
+            "type": "threshold",
+            "domain": [3, 7],
+            "range": ["low", "mid", "high"]
+        })];
+        check_scale_scalar_evaluation("scale('th', 5.5)", scales, &config);
+    }
+
+    #[test]
+    fn test_invert_threshold_scalar_returns_extent() {
+        let config = config_with_scale("th", threshold_scale_state());
+        let scales = vec![json!({
+            "name": "th",
+            "type": "threshold",
+            "domain": [3, 7],
+            "range": ["low", "mid", "high"]
+        })];
+        check_scale_scalar_evaluation("invert('th', 'low')", scales, &config);
+    }
+
+    #[test]
+    fn test_invert_threshold_interval_returns_extent() {
+        let config = config_with_scale("th", threshold_scale_state());
+        let scales = vec![json!({
+            "name": "th",
+            "type": "threshold",
+            "domain": [3, 7],
+            "range": ["low", "mid", "high"]
+        })];
+        check_scale_scalar_evaluation("invert('th', ['low', 'high'])", scales, &config);
     }
 }

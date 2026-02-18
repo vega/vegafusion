@@ -7,7 +7,8 @@ use vegafusion_core::task_graph::scale_state::ScaleState;
 
 use avenger_scales::scales::{
     band::BandScale, linear::LinearScale, log::LogScale, ordinal::OrdinalScale, point::PointScale,
-    pow::PowScale, symlog::SymlogScale, time::TimeScale, ConfiguredScale,
+    pow::PowScale, quantize::QuantizeScale, symlog::SymlogScale, threshold::ThresholdScale,
+    time::TimeScale, ConfiguredScale,
 };
 
 use avenger_scales::scalar::Scalar as AvengerScalar;
@@ -18,6 +19,9 @@ pub fn to_configured_scale(
 ) -> Result<ConfiguredScale> {
     let mut configured = match &scale_state.scale_type {
         ScaleTypeSpec::Linear => LinearScale::configured((0.0, 1.0), (0.0, 1.0))
+            .with_domain(scale_state.domain.clone())
+            .with_range(scale_state.range.clone()),
+        ScaleTypeSpec::Sequential => LinearScale::configured((0.0, 1.0), (0.0, 1.0))
             .with_domain(scale_state.domain.clone())
             .with_range(scale_state.range.clone()),
         ScaleTypeSpec::Log => LogScale::configured((1.0, 10.0), (0.0, 1.0))
@@ -38,6 +42,14 @@ pub fn to_configured_scale(
             .with_range(scale_state.range.clone()),
         ScaleTypeSpec::Ordinal => OrdinalScale::configured(scale_state.domain.clone())
             .with_range(scale_state.range.clone()),
+        ScaleTypeSpec::Quantize => QuantizeScale::configured((0.0, 1.0), scale_state.range.clone())
+            .with_domain(scale_state.domain.clone())
+            .with_range(scale_state.range.clone()),
+        ScaleTypeSpec::Threshold => {
+            ThresholdScale::configured(vec![0.5], scale_state.range.clone())
+                .with_domain(scale_state.domain.clone())
+                .with_range(scale_state.range.clone())
+        }
         ScaleTypeSpec::Time | ScaleTypeSpec::Utc => {
             if scale_state.domain.len() < 2 {
                 return Err(VegaFusionError::internal(format!(
@@ -155,6 +167,11 @@ fn map_option_name<'a>(scale_type: &ScaleTypeSpec, key: &'a str) -> Result<Optio
             | "clip_padding_upper" => Some(key),
             _ => None,
         },
+        ScaleTypeSpec::Sequential => match key {
+            "clamp" | "range_offset" | "round" | "default" | "clip_padding_lower"
+            | "clip_padding_upper" => Some(key),
+            _ => None,
+        },
         ScaleTypeSpec::Log => match key {
             "base" | "clamp" | "range_offset" | "round" | "nice" | "default"
             | "clip_padding_lower" | "clip_padding_upper" => Some(key),
@@ -186,6 +203,14 @@ fn map_option_name<'a>(scale_type: &ScaleTypeSpec, key: &'a str) -> Result<Optio
             _ => None,
         },
         ScaleTypeSpec::Ordinal => match key {
+            "default" => Some(key),
+            _ => None,
+        },
+        ScaleTypeSpec::Quantize => match key {
+            "nice" | "zero" | "default" => Some(key),
+            _ => None,
+        },
+        ScaleTypeSpec::Threshold => match key {
             "default" => Some(key),
             _ => None,
         },
@@ -303,5 +328,43 @@ mod tests {
             (bandwidth - 90.0).abs() < 1e-6,
             "unexpected bandwidth {bandwidth}"
         );
+    }
+
+    #[test]
+    fn test_sequential_scale_maps_like_linear() {
+        let state = ScaleState {
+            scale_type: ScaleTypeSpec::Sequential,
+            domain: numeric_interval([0.0, 10.0]),
+            range: numeric_interval([0.0, 100.0]),
+            options: HashMap::new(),
+        };
+        let configured = to_configured_scale(&state, &None).unwrap();
+        let input: ArrayRef = Arc::new(Float64Array::from(vec![5.0_f64]));
+        let output = configured.scale(&input).unwrap();
+        let scalar = ScalarValue::try_from_array(output.as_ref(), 0).unwrap();
+        match scalar {
+            ScalarValue::Float32(Some(v)) => assert!((v - 50.0).abs() < 1e-3),
+            ScalarValue::Float64(Some(v)) => assert!((v - 50.0).abs() < 1e-3),
+            other => panic!("unexpected sequential output scalar: {other:?}"),
+        }
+    }
+
+    #[test]
+    fn test_quantize_and_threshold_scales_build() {
+        let quantize = ScaleState {
+            scale_type: ScaleTypeSpec::Quantize,
+            domain: numeric_interval([0.0, 10.0]),
+            range: Arc::new(StringArray::from(vec!["a", "b", "c"])),
+            options: HashMap::new(),
+        };
+        let threshold = ScaleState {
+            scale_type: ScaleTypeSpec::Threshold,
+            domain: Arc::new(Float64Array::from(vec![2.0_f64, 5.0_f64])),
+            range: Arc::new(StringArray::from(vec!["low", "mid", "high"])),
+            options: HashMap::new(),
+        };
+
+        assert!(to_configured_scale(&quantize, &None).is_ok());
+        assert!(to_configured_scale(&threshold, &None).is_ok());
     }
 }

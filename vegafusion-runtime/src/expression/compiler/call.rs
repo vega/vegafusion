@@ -938,7 +938,7 @@ mod tests {
         config.scale_scope.insert(
             "x".to_string(),
             ScaleState {
-                scale_type: ScaleTypeSpec::Threshold,
+                scale_type: ScaleTypeSpec::Quantile,
                 domain: Arc::new(Float64Array::from(vec![0.0, 1.0])),
                 range: Arc::new(Float64Array::from(vec![0.0, 100.0])),
                 options: HashMap::new(),
