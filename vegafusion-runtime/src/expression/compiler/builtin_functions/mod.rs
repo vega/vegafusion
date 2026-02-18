@@ -4,5 +4,6 @@ pub mod data;
 pub mod date_time;
 pub mod format;
 pub mod math;
+pub mod scale_interaction;
 pub mod type_checking;
 pub mod type_coercion;

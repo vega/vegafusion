@@ -269,4 +269,21 @@ mod tests {
         with_scales.copy_scales_to_server = true;
         assert!(tx.supported_and_allowed(&with_scales, &TaskScope::default(), &[]));
     }
+
+    #[test]
+    fn test_bandwidth_expression_transform_requires_copy_scales_flag() {
+        let tx = TransformSpec::Formula(FormulaTransformSpec {
+            expr: "bandwidth('x')".to_string(),
+            as_: "bw".to_string(),
+            extra: Default::default(),
+        });
+
+        let mut no_scales = PlannerConfig::default();
+        no_scales.copy_scales_to_server = false;
+        assert!(!tx.supported_and_allowed(&no_scales, &TaskScope::default(), &[]));
+
+        let mut with_scales = PlannerConfig::default();
+        with_scales.copy_scales_to_server = true;
+        assert!(tx.supported_and_allowed(&with_scales, &TaskScope::default(), &[]));
+    }
 }

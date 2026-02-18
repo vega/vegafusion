@@ -182,4 +182,27 @@ mod tests {
             DependencyNodeSupported::Supported
         ));
     }
+
+    #[test]
+    fn test_signal_domain_expression_requires_copy_scales_flag() {
+        let signal: SignalSpec = serde_json::from_value(json!({
+            "name": "domain_signal",
+            "update": "domain('x')"
+        }))
+        .unwrap();
+
+        let mut no_scales = PlannerConfig::default();
+        no_scales.copy_scales_to_server = false;
+        assert!(matches!(
+            signal.supported(&no_scales, &TaskScope::default(), &[]),
+            DependencyNodeSupported::Unsupported
+        ));
+
+        let mut with_scales = PlannerConfig::default();
+        with_scales.copy_scales_to_server = true;
+        assert!(matches!(
+            signal.supported(&with_scales, &TaskScope::default(), &[]),
+            DependencyNodeSupported::Supported
+        ));
+    }
 }

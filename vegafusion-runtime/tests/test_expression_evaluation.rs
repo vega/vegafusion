@@ -592,6 +592,32 @@ mod test_span {
     fn test_marker() {} // Help IDE detect test module
 }
 
+mod test_scale_interaction_functions {
+    use crate::*;
+
+    #[rstest(
+        expr,
+        case("bandspace(4, 0.1, 0.05)"),
+        case("bandspace(0, 0.1, 0.05)"),
+        case("panLinear([0, 10], 0.5)"),
+        case("zoomLinear([0, 10], null, 2)"),
+        case("panLog([1, 100], 0.25)"),
+        case("zoomLog([1, 100], 10, 0.5)[0]"),
+        case("zoomLog([1, 100], 10, 0.5)[1]"),
+        case("panPow([0, 100], 0.25, 2)"),
+        case("zoomPow([0, 100], 50, 0.5, 2)"),
+        case("panSymlog([-100, 100], 0.25, 1)[0]"),
+        case("panSymlog([-100, 100], 0.25, 1)[1]"),
+        case("zoomSymlog([-100, 100], 0, 0.5, 1)")
+    )]
+    fn test(expr: &str) {
+        check_scalar_evaluation(expr, &config_a())
+    }
+
+    #[test]
+    fn test_marker() {} // Help IDE detect test module
+}
+
 /// Test that strict equality (===) works correctly between different Arrow string types
 /// (Utf8, LargeUtf8, Utf8View). This is important because polars may use Utf8View while
 /// string literals compile to Utf8.
@@ -866,6 +892,44 @@ mod test_scale_calls {
             "paddingOuter": 0
         })];
         check_scale_scalar_evaluation("scale('b', null)", scales, &config);
+    }
+
+    #[test]
+    fn test_domain_lookup_matches_vega() {
+        let config = config_with_scale("x", linear_scale_state());
+        let scales = vec![json!({
+            "name": "x",
+            "type": "linear",
+            "domain": [0, 10],
+            "range": [0, 100]
+        })];
+        check_scale_scalar_evaluation("domain('x')", scales, &config);
+    }
+
+    #[test]
+    fn test_range_lookup_matches_vega() {
+        let config = config_with_scale("x", linear_scale_state());
+        let scales = vec![json!({
+            "name": "x",
+            "type": "linear",
+            "domain": [0, 10],
+            "range": [0, 100]
+        })];
+        check_scale_scalar_evaluation("range('x')", scales, &config);
+    }
+
+    #[test]
+    fn test_bandwidth_lookup_matches_vega() {
+        let config = config_with_scale("b", band_scale_state());
+        let scales = vec![json!({
+            "name": "b",
+            "type": "band",
+            "domain": ["A", "B", "C"],
+            "range": [0, 300],
+            "paddingInner": 0,
+            "paddingOuter": 0
+        })];
+        check_scale_scalar_evaluation("bandwidth('b')", scales, &config);
     }
 
     #[test]

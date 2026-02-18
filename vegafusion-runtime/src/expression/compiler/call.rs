@@ -2,6 +2,11 @@ use crate::expression::compiler::builtin_functions::control_flow::if_fn::if_fn;
 use crate::expression::compiler::builtin_functions::date_time::datetime::{
     datetime_transform_fn, make_datetime_components_fn, to_date_transform,
 };
+use crate::expression::compiler::builtin_functions::scale_interaction::{
+    bandspace_transform, pan_linear_transform, pan_log_transform, pan_pow_transform,
+    pan_symlog_transform, zoom_linear_transform, zoom_log_transform, zoom_pow_transform,
+    zoom_symlog_transform,
+};
 
 #[cfg(feature = "scales")]
 use crate::datafusion::udfs::scale::make_scale_udf;
@@ -33,7 +38,13 @@ use crate::expression::compiler::builtin_functions::type_coercion::to_number::to
 use crate::expression::compiler::builtin_functions::type_coercion::to_string::to_string_transform;
 use crate::expression::compiler::compile;
 use crate::expression::compiler::config::CompilationConfig;
+#[cfg(feature = "scales")]
+use crate::scale::adapter::scale_bandwidth;
+#[cfg(feature = "scales")]
+use crate::scale::DISCRETE_NULL_SENTINEL;
 use crate::task_graph::timezone::RuntimeTzConfig;
+#[cfg(feature = "scales")]
+use datafusion_common::utils::SingleRowListArrayBuilder;
 use datafusion_expr::lit;
 use datafusion_expr::{expr, Expr, ScalarUDF};
 use datafusion_functions::core::least;
@@ -43,6 +54,10 @@ use datafusion_functions::math::{
 use std::collections::HashMap;
 use std::ops::Deref;
 use std::sync::Arc;
+#[cfg(feature = "scales")]
+use vegafusion_common::arrow::array::{new_empty_array, Array, AsArray, StringArray};
+#[cfg(feature = "scales")]
+use vegafusion_common::arrow::compute::cast;
 use vegafusion_common::arrow::datatypes::DataType;
 use vegafusion_common::data::table::VegaFusionTable;
 use vegafusion_common::datafusion_common::DFSchema;
@@ -63,6 +78,8 @@ pub type DataFn = Arc<
         + Send
         + Sync,
 >;
+pub type ScaleFn =
+    Arc<dyn Fn(&CallExpression, &CompilationConfig, &DFSchema) -> Result<Expr> + Send + Sync>;
 
 #[derive(Clone)]
 pub enum VegaFusionCallable {
@@ -95,8 +112,8 @@ pub enum VegaFusionCallable {
     /// e.g. `data('brush')` or  `vlSelectionTest('brush', datum, true)`
     Data(DataFn),
 
-    /// A custom runtime function that operates on a scale dataset
-    Scale { invert: bool },
+    /// A custom function for scale expression functions (e.g. scale/invert/domain/range).
+    Scale(ScaleFn),
 }
 
 pub fn compile_scalar_arguments(
@@ -205,7 +222,7 @@ pub fn compile_call(
             };
             callable(&tz_config, &args, schema)
         }
-        VegaFusionCallable::Scale { invert } => compile_scale_call(node, config, schema, *invert),
+        VegaFusionCallable::Scale(callee) => callee(node, config, schema),
     }
 }
 
@@ -274,6 +291,216 @@ fn compile_scale_call(
     }
 }
 
+fn compile_domain_call(node: &CallExpression, config: &CompilationConfig) -> Result<Expr> {
+    #[cfg(feature = "scales")]
+    {
+        compile_scale_lookup_call(node, config, "domain", |scale_state, tz_config| {
+            let _ = tz_config;
+            scale_array_to_list_scalar(&scale_state.domain, true)
+        })
+    }
+
+    #[cfg(not(feature = "scales"))]
+    {
+        compile_scale_lookup_call(node, config, "domain", |_scale_state, _tz_config| {
+            Ok(ScalarValue::Null)
+        })
+    }
+}
+
+fn compile_range_call(node: &CallExpression, config: &CompilationConfig) -> Result<Expr> {
+    #[cfg(feature = "scales")]
+    {
+        compile_scale_lookup_call(node, config, "range", |scale_state, tz_config| {
+            let _ = tz_config;
+            scale_array_to_list_scalar(&scale_state.range, false)
+        })
+    }
+
+    #[cfg(not(feature = "scales"))]
+    {
+        compile_scale_lookup_call(node, config, "range", |_scale_state, _tz_config| {
+            Ok(ScalarValue::Null)
+        })
+    }
+}
+
+fn compile_bandwidth_call(node: &CallExpression, config: &CompilationConfig) -> Result<Expr> {
+    #[cfg(feature = "scales")]
+    {
+        compile_scale_lookup_call(node, config, "bandwidth", |scale_state, tz_config| {
+            Ok(ScalarValue::from(scale_bandwidth(scale_state, tz_config)?))
+        })
+    }
+
+    #[cfg(not(feature = "scales"))]
+    {
+        compile_scale_lookup_call(node, config, "bandwidth", |_scale_state, _tz_config| {
+            Ok(ScalarValue::from(0.0_f64))
+        })
+    }
+}
+
+fn compile_scale_lookup_call<F>(
+    node: &CallExpression,
+    config: &CompilationConfig,
+    fn_name: &str,
+    value_fn: F,
+) -> Result<Expr>
+where
+    F: Fn(
+        &vegafusion_core::task_graph::scale_state::ScaleState,
+        &Option<RuntimeTzConfig>,
+    ) -> Result<ScalarValue>,
+{
+    if node.arguments.len() == 2 {
+        return Err(VegaFusionError::compilation(format!(
+            "The optional group argument to {fn_name} is not yet supported by the VegaFusion runtime"
+        )));
+    }
+
+    if node.arguments.len() != 1 {
+        return Err(VegaFusionError::compilation(format!(
+            "The {fn_name} function requires exactly 1 argument in this phase. Received {}",
+            node.arguments.len()
+        )));
+    }
+
+    let scale_name = scale_name_arg(node, fn_name)?;
+
+    #[cfg(not(feature = "scales"))]
+    {
+        let _ = config;
+        let _ = scale_name;
+        let _ = value_fn;
+        return Err(VegaFusionError::compilation(format!(
+            "The {fn_name} function requires the vegafusion-runtime `scales` feature"
+        )));
+    }
+
+    #[cfg(feature = "scales")]
+    {
+        let Some(scale_state) = config.scale_scope.get(&scale_name) else {
+            let default = match fn_name {
+                "bandwidth" => ScalarValue::from(0.0_f64),
+                _ => empty_list_scalar(),
+            };
+            return Ok(lit(default));
+        };
+
+        let value = value_fn(scale_state, &config.tz_config)?;
+        Ok(lit(value))
+    }
+}
+
+fn compile_scale_fn(
+    node: &CallExpression,
+    config: &CompilationConfig,
+    schema: &DFSchema,
+) -> Result<Expr> {
+    compile_scale_call(node, config, schema, false)
+}
+
+fn compile_invert_fn(
+    node: &CallExpression,
+    config: &CompilationConfig,
+    schema: &DFSchema,
+) -> Result<Expr> {
+    compile_scale_call(node, config, schema, true)
+}
+
+fn compile_domain_fn(
+    node: &CallExpression,
+    config: &CompilationConfig,
+    _schema: &DFSchema,
+) -> Result<Expr> {
+    compile_domain_call(node, config)
+}
+
+fn compile_range_fn(
+    node: &CallExpression,
+    config: &CompilationConfig,
+    _schema: &DFSchema,
+) -> Result<Expr> {
+    compile_range_call(node, config)
+}
+
+fn compile_bandwidth_fn(
+    node: &CallExpression,
+    config: &CompilationConfig,
+    _schema: &DFSchema,
+) -> Result<Expr> {
+    compile_bandwidth_call(node, config)
+}
+
+#[cfg(feature = "scales")]
+fn empty_list_scalar() -> ScalarValue {
+    ScalarValue::List(Arc::new(
+        SingleRowListArrayBuilder::new(new_empty_array(&DataType::Float64))
+            .with_nullable(true)
+            .build_list_array(),
+    ))
+}
+
+#[cfg(feature = "scales")]
+fn decode_discrete_null_scalar(value: ScalarValue) -> ScalarValue {
+    match value {
+        ScalarValue::Utf8(Some(v)) if v == DISCRETE_NULL_SENTINEL => ScalarValue::Null,
+        ScalarValue::LargeUtf8(Some(v)) if v == DISCRETE_NULL_SENTINEL => ScalarValue::Null,
+        ScalarValue::Utf8View(Some(v)) if v == DISCRETE_NULL_SENTINEL => ScalarValue::Null,
+        _ => value,
+    }
+}
+
+#[cfg(feature = "scales")]
+fn scale_array_to_list_scalar(
+    values: &Arc<dyn Array>,
+    decode_discrete_null: bool,
+) -> Result<ScalarValue> {
+    let normalized_values = if decode_discrete_null
+        && matches!(
+            values.data_type(),
+            DataType::Utf8 | DataType::LargeUtf8 | DataType::Utf8View
+        ) {
+        let casted = cast(values.as_ref(), &DataType::Utf8).map_err(|err| {
+            VegaFusionError::internal(format!(
+                "Failed to cast scale domain values to Utf8 for null-sentinel decoding: {err}"
+            ))
+        })?;
+        let strings = casted.as_string::<i32>();
+        let decoded = (0..strings.len())
+            .map(|i| {
+                if strings.is_null(i) || strings.value(i) == DISCRETE_NULL_SENTINEL {
+                    None
+                } else {
+                    Some(strings.value(i).to_string())
+                }
+            })
+            .collect::<Vec<_>>();
+        Arc::new(StringArray::from(decoded))
+    } else if decode_discrete_null {
+        let elements = (0..values.len())
+            .map(|i| -> Result<_> {
+                let scalar = ScalarValue::try_from_array(values.as_ref(), i)?;
+                Ok(decode_discrete_null_scalar(scalar))
+            })
+            .collect::<Result<Vec<_>>>()?;
+        if elements.is_empty() {
+            new_empty_array(&DataType::Float64)
+        } else {
+            ScalarValue::iter_to_array(elements)?
+        }
+    } else {
+        values.clone()
+    };
+
+    Ok(ScalarValue::List(Arc::new(
+        SingleRowListArrayBuilder::new(normalized_values)
+            .with_nullable(true)
+            .build_list_array(),
+    )))
+}
+
 fn min_fn(args: &[Expr], schema: &DFSchema) -> Result<Expr> {
     // Vega min delegates to JavaScript Math.min, which returns +Infinity for zero arguments.
     if args.is_empty() {
@@ -296,11 +523,23 @@ pub fn default_callables() -> HashMap<String, VegaFusionCallable> {
 
     callables.insert(
         "scale".to_string(),
-        VegaFusionCallable::Scale { invert: false },
+        VegaFusionCallable::Scale(Arc::new(compile_scale_fn)),
     );
     callables.insert(
         "invert".to_string(),
-        VegaFusionCallable::Scale { invert: true },
+        VegaFusionCallable::Scale(Arc::new(compile_invert_fn)),
+    );
+    callables.insert(
+        "domain".to_string(),
+        VegaFusionCallable::Scale(Arc::new(compile_domain_fn)),
+    );
+    callables.insert(
+        "range".to_string(),
+        VegaFusionCallable::Scale(Arc::new(compile_range_fn)),
+    );
+    callables.insert(
+        "bandwidth".to_string(),
+        VegaFusionCallable::Scale(Arc::new(compile_bandwidth_fn)),
     );
 
     // Numeric functions built into DataFusion with mapping to Vega names
@@ -362,6 +601,42 @@ pub fn default_callables() -> HashMap<String, VegaFusionCallable> {
     callables.insert(
         "span".to_string(),
         VegaFusionCallable::Transform(Arc::new(span_transform)),
+    );
+    callables.insert(
+        "bandspace".to_string(),
+        VegaFusionCallable::Transform(Arc::new(bandspace_transform)),
+    );
+    callables.insert(
+        "panLinear".to_string(),
+        VegaFusionCallable::Transform(Arc::new(pan_linear_transform)),
+    );
+    callables.insert(
+        "panLog".to_string(),
+        VegaFusionCallable::Transform(Arc::new(pan_log_transform)),
+    );
+    callables.insert(
+        "panPow".to_string(),
+        VegaFusionCallable::Transform(Arc::new(pan_pow_transform)),
+    );
+    callables.insert(
+        "panSymlog".to_string(),
+        VegaFusionCallable::Transform(Arc::new(pan_symlog_transform)),
+    );
+    callables.insert(
+        "zoomLinear".to_string(),
+        VegaFusionCallable::Transform(Arc::new(zoom_linear_transform)),
+    );
+    callables.insert(
+        "zoomLog".to_string(),
+        VegaFusionCallable::Transform(Arc::new(zoom_log_transform)),
+    );
+    callables.insert(
+        "zoomPow".to_string(),
+        VegaFusionCallable::Transform(Arc::new(zoom_pow_transform)),
+    );
+    callables.insert(
+        "zoomSymlog".to_string(),
+        VegaFusionCallable::Transform(Arc::new(zoom_symlog_transform)),
     );
 
     callables.insert(
@@ -530,9 +805,10 @@ mod tests {
     use crate::expression::compiler::compile;
     use crate::expression::compiler::config::CompilationConfig;
     use crate::expression::compiler::utils::ExprHelpers;
+    use crate::scale::DISCRETE_NULL_SENTINEL;
     use std::collections::HashMap;
     use std::sync::Arc;
-    use vegafusion_common::arrow::array::Float64Array;
+    use vegafusion_common::arrow::array::{Float64Array, StringArray};
     use vegafusion_common::data::scalar::ScalarValueHelpers;
     use vegafusion_common::datafusion_common::ScalarValue;
     use vegafusion_core::expression::parser::parse;
@@ -544,11 +820,23 @@ mod tests {
         let callables = default_callables();
         assert!(matches!(
             callables.get("scale"),
-            Some(VegaFusionCallable::Scale { invert: false })
+            Some(VegaFusionCallable::Scale(_))
         ));
         assert!(matches!(
             callables.get("invert"),
-            Some(VegaFusionCallable::Scale { invert: true })
+            Some(VegaFusionCallable::Scale(_))
+        ));
+        assert!(matches!(
+            callables.get("domain"),
+            Some(VegaFusionCallable::Scale(_))
+        ));
+        assert!(matches!(
+            callables.get("range"),
+            Some(VegaFusionCallable::Scale(_))
+        ));
+        assert!(matches!(
+            callables.get("bandwidth"),
+            Some(VegaFusionCallable::Scale(_))
         ));
     }
 
@@ -563,6 +851,42 @@ mod tests {
     #[test]
     fn test_scale_group_arg_not_supported() {
         let expr = parse("scale('x', 5, 0)").unwrap();
+        let err = compile(&expr, &CompilationConfig::default(), None).unwrap_err();
+        assert!(format!("{err}").contains("optional group argument"));
+    }
+
+    #[test]
+    fn test_domain_and_range_unknown_scale_defaults() {
+        let domain_expr = parse("domain('missing')").unwrap();
+        let domain_compiled = compile(&domain_expr, &CompilationConfig::default(), None).unwrap();
+        let domain_result = domain_compiled.eval_to_scalar().unwrap();
+        if let ScalarValue::List(arr) = domain_result {
+            assert_eq!(arr.value(0).len(), 0);
+        } else {
+            panic!("Expected list result from domain lookup");
+        }
+
+        let range_expr = parse("range('missing')").unwrap();
+        let range_compiled = compile(&range_expr, &CompilationConfig::default(), None).unwrap();
+        let range_result = range_compiled.eval_to_scalar().unwrap();
+        if let ScalarValue::List(arr) = range_result {
+            assert_eq!(arr.value(0).len(), 0);
+        } else {
+            panic!("Expected list result from range lookup");
+        }
+    }
+
+    #[test]
+    fn test_bandwidth_unknown_scale_defaults_to_zero() {
+        let expr = parse("bandwidth('missing')").unwrap();
+        let compiled = compile(&expr, &CompilationConfig::default(), None).unwrap();
+        let result = compiled.eval_to_scalar().unwrap();
+        assert_eq!(result.to_f64().unwrap(), 0.0);
+    }
+
+    #[test]
+    fn test_scale_lookup_group_arg_not_supported() {
+        let expr = parse("domain('x', 0)").unwrap();
         let err = compile(&expr, &CompilationConfig::default(), None).unwrap_err();
         assert!(format!("{err}").contains("optional group argument"));
     }
@@ -624,5 +948,56 @@ mod tests {
         let expr = parse("scale('x', 0.5)").unwrap();
         let err = compile(&expr, &config, None).unwrap_err();
         assert!(format!("{err}").contains("Scale type not supported"));
+    }
+
+    #[cfg(feature = "scales")]
+    #[test]
+    fn test_domain_lookup_decodes_discrete_null_sentinel() {
+        let mut config = CompilationConfig::default();
+        config.scale_scope.insert(
+            "b".to_string(),
+            ScaleState {
+                scale_type: ScaleTypeSpec::Band,
+                domain: Arc::new(StringArray::from(vec![
+                    DISCRETE_NULL_SENTINEL.to_string(),
+                    "A".to_string(),
+                ])),
+                range: Arc::new(Float64Array::from(vec![0.0, 100.0])),
+                options: HashMap::new(),
+            },
+        );
+
+        let expr = parse("domain('b')").unwrap();
+        let compiled = compile(&expr, &config, None).unwrap();
+        let result = compiled.eval_to_scalar().unwrap();
+        if let ScalarValue::List(arr) = result {
+            let values = arr.value(0);
+            let v0 = ScalarValue::try_from_array(values.as_ref(), 0).unwrap();
+            let v1 = ScalarValue::try_from_array(values.as_ref(), 1).unwrap();
+            assert!(v0.is_null());
+            assert_eq!(v1.to_scalar_string().unwrap(), "A");
+        } else {
+            panic!("Expected list result from domain lookup");
+        }
+    }
+
+    #[cfg(feature = "scales")]
+    #[test]
+    fn test_bandwidth_non_band_scale_returns_zero() {
+        let mut config = CompilationConfig::default();
+        config.scale_scope.insert(
+            "x".to_string(),
+            ScaleState {
+                scale_type: ScaleTypeSpec::Linear,
+                domain: Arc::new(Float64Array::from(vec![0.0, 10.0])),
+                range: Arc::new(Float64Array::from(vec![0.0, 100.0])),
+                options: HashMap::new(),
+            },
+        );
+
+        let expr = parse("bandwidth('x')").unwrap();
+        let compiled = compile(&expr, &config, None).unwrap();
+        let result = compiled.eval_to_scalar().unwrap();
+        assert_eq!(result.to_f64().unwrap(), 0.0);
     }
 }

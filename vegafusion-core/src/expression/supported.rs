@@ -38,6 +38,9 @@ lazy_static! {
     pub static ref SUPPORTED_SCALE_FNS: HashSet<&'static str> = vec![
         "scale",
         "invert",
+        "domain",
+        "range",
+        "bandwidth",
     ]
     .into_iter()
     .collect();
@@ -51,7 +54,7 @@ lazy_static! {
         "isNaN", "isFinite", "isValid", "isDate",
 
         // Array
-        "length", "span", "indexof",
+        "length", "span", "indexof", "bandspace",
 
         // Datetime
         "year", "quarter", "month", "day", "date", "dayofyear", "hours", "minutes", "seconds", "milliseconds",
@@ -64,6 +67,10 @@ lazy_static! {
 
         // Control flow
         "if",
+
+        // Scale interaction
+        "panLinear", "panLog", "panPow", "panSymlog",
+        "zoomLinear", "zoomLog", "zoomPow", "zoomSymlog",
     ]
     .into_iter()
     .collect();
@@ -77,12 +84,29 @@ lazy_static! {
 
 #[cfg(test)]
 mod tests {
-    use crate::expression::supported::SUPPORTED_SCALE_FNS;
+    use crate::expression::supported::{SUPPORTED_EXPRESSION_FNS, SUPPORTED_SCALE_FNS};
 
     #[test]
     fn test_supported_scale_functions_phase_one() {
         assert!(SUPPORTED_SCALE_FNS.contains("scale"));
         assert!(SUPPORTED_SCALE_FNS.contains("invert"));
-        assert!(!SUPPORTED_SCALE_FNS.contains("bandwidth"));
+        assert!(SUPPORTED_SCALE_FNS.contains("domain"));
+        assert!(SUPPORTED_SCALE_FNS.contains("range"));
+        assert!(SUPPORTED_SCALE_FNS.contains("bandwidth"));
+        assert!(!SUPPORTED_SCALE_FNS.contains("gradient"));
+        assert!(!SUPPORTED_SCALE_FNS.contains("copy"));
+    }
+
+    #[test]
+    fn test_supported_scale_interaction_functions() {
+        assert!(SUPPORTED_EXPRESSION_FNS.contains("bandspace"));
+        assert!(SUPPORTED_EXPRESSION_FNS.contains("panLinear"));
+        assert!(SUPPORTED_EXPRESSION_FNS.contains("panLog"));
+        assert!(SUPPORTED_EXPRESSION_FNS.contains("panPow"));
+        assert!(SUPPORTED_EXPRESSION_FNS.contains("panSymlog"));
+        assert!(SUPPORTED_EXPRESSION_FNS.contains("zoomLinear"));
+        assert!(SUPPORTED_EXPRESSION_FNS.contains("zoomLog"));
+        assert!(SUPPORTED_EXPRESSION_FNS.contains("zoomPow"));
+        assert!(SUPPORTED_EXPRESSION_FNS.contains("zoomSymlog"));
     }
 }
