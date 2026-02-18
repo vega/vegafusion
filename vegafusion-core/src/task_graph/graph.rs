@@ -85,7 +85,7 @@ impl TaskGraph {
 
                 return Err(VegaFusionError::internal(format!(
                     "failed to sort dependency graph topologically: {err:?}. cycle_vars: [{cycle_vars}]"
-                )))
+                )));
             }
             Ok(toposorted) => toposorted,
         };

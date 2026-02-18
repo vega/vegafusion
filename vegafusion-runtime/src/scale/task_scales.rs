@@ -32,8 +32,8 @@ use vegafusion_common::escape::unescape_field;
 use vegafusion_core::expression::parser::parse;
 use vegafusion_core::spec::scale::{
     ScaleArrayElementSpec, ScaleBinsSpec, ScaleDataReferenceOrSignalSpec, ScaleDataReferenceSort,
-    ScaleDataReferenceSortParameters, ScaleDomainSpec, ScaleFieldReferenceSpec, ScaleRangeSpec, ScaleSpec,
-    ScaleTypeSpec, ScaleVecStringsSpec,
+    ScaleDataReferenceSortParameters, ScaleDomainSpec, ScaleFieldReferenceSpec, ScaleRangeSpec,
+    ScaleSpec, ScaleTypeSpec, ScaleVecStringsSpec,
 };
 use vegafusion_core::spec::transform::aggregate::AggregateOpSpec;
 use vegafusion_core::spec::values::SortOrderSpec;
@@ -207,9 +207,7 @@ fn resolve_domain(
         ScaleDomainSpec::Array(values) => scale_array_elements_to_array(values, config),
         ScaleDomainSpec::Signal(signal_expr) => signal_expr_to_array(&signal_expr.signal, config),
         ScaleDomainSpec::Value(value) => json_value_to_array(value),
-        ScaleDomainSpec::FieldsVecStrings(vec_strings) => {
-            domain_from_vec_strings(vec_strings)
-        }
+        ScaleDomainSpec::FieldsVecStrings(vec_strings) => domain_from_vec_strings(vec_strings),
         ScaleDomainSpec::FieldReference(reference) => {
             domain_from_field_reference(scale_type, reference, config)
         }

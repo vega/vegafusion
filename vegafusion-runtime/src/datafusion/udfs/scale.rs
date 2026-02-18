@@ -227,8 +227,7 @@ impl ScaleExprUDF {
         cast(values.as_ref(), target_dtype).map_err(|err| {
             DataFusionError::Execution(format!(
                 "Failed to coerce scale('{}', ...) temporal input to {:?}: {err}",
-                self.scale_name,
-                target_dtype
+                self.scale_name, target_dtype
             ))
         })
     }
@@ -290,8 +289,8 @@ impl ScaleExprUDF {
         let mut repaired = Vec::with_capacity(scaled_values.len());
         for row in 0..scaled_values.len() {
             let scaled_scalar = ScalarValue::try_from_array(scaled_values.as_ref(), row)?;
-            let needs_repair =
-                !input_values.is_null(row) && (scaled_scalar.is_null() || scalar_is_nan(&scaled_scalar));
+            let needs_repair = !input_values.is_null(row)
+                && (scaled_scalar.is_null() || scalar_is_nan(&scaled_scalar));
             if needs_repair {
                 repaired.push(midpoint.clone());
                 changed = true;
@@ -306,7 +305,10 @@ impl ScaleExprUDF {
         ScalarValue::iter_to_array(repaired)
     }
 
-    fn singular_domain_midpoint_scalar(&self, output_dtype: &DataType) -> DFResult<Option<ScalarValue>> {
+    fn singular_domain_midpoint_scalar(
+        &self,
+        output_dtype: &DataType,
+    ) -> DFResult<Option<ScalarValue>> {
         if !matches!(
             output_dtype,
             DataType::Float16

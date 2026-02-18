@@ -106,6 +106,25 @@ pub fn scalar_value_to_avenger_scalar(value: &ScalarValue) -> Result<AvengerScal
     }
 }
 
+pub fn scale_bandwidth(
+    scale_state: &ScaleState,
+    tz_config: &Option<RuntimeTzConfig>,
+) -> Result<f64> {
+    match scale_state.scale_type {
+        ScaleTypeSpec::Band => {
+            let configured = to_configured_scale(scale_state, tz_config)?;
+            avenger_scales::scales::band::bandwidth(&configured.config)
+                .map(|v| v as f64)
+                .map_err(|err| {
+                    VegaFusionError::internal(format!(
+                        "Failed computing band scale bandwidth for server mark_encoding: {err}"
+                    ))
+                })
+        }
+        _ => Ok(0.0),
+    }
+}
+
 fn map_options(
     scale_type: &ScaleTypeSpec,
     options: &HashMap<String, ScalarValue>,
@@ -187,7 +206,9 @@ fn map_option_name<'a>(scale_type: &ScaleTypeSpec, key: &'a str) -> Result<Optio
 mod tests {
     use super::*;
     use std::sync::Arc;
-    use vegafusion_common::arrow::array::{ArrayRef, Float64Array, TimestampMillisecondArray};
+    use vegafusion_common::arrow::array::{
+        ArrayRef, Float64Array, StringArray, TimestampMillisecondArray,
+    };
     use vegafusion_core::task_graph::scale_state::ScaleState;
 
     fn numeric_interval(values: [f64; 2]) -> vegafusion_common::arrow::array::ArrayRef {
@@ -235,9 +256,10 @@ mod tests {
 
     #[test]
     fn test_time_scale_maps_timestamp_inputs_to_range() {
-        let domain: ArrayRef = Arc::new(
-            TimestampMillisecondArray::from(vec![1317441600000_i64, 1451624400000_i64]),
-        );
+        let domain: ArrayRef = Arc::new(TimestampMillisecondArray::from(vec![
+            1317441600000_i64,
+            1451624400000_i64,
+        ]));
         let range: ArrayRef = Arc::new(Float64Array::from(vec![0.0_f64, 200.0_f64]));
 
         let state = ScaleState {
@@ -258,6 +280,28 @@ mod tests {
             other => panic!("Unexpected time-scale output scalar: {other:?}"),
         };
 
-        assert!((x - 11.853_f32).abs() < 0.5, "unexpected scaled x value: {x}");
+        assert!(
+            (x - 11.853_f32).abs() < 0.5,
+            "unexpected scaled x value: {x}"
+        );
+    }
+
+    #[test]
+    fn test_band_scale_bandwidth_matches_vega_formula() {
+        let state = ScaleState {
+            scale_type: ScaleTypeSpec::Band,
+            domain: Arc::new(StringArray::from(vec!["a", "b", "c"])),
+            range: Arc::new(Float64Array::from(vec![0.0_f64, 300.0_f64])),
+            options: HashMap::from([
+                ("padding_inner".to_string(), ScalarValue::from(0.1_f64)),
+                ("padding_outer".to_string(), ScalarValue::from(0.05_f64)),
+            ]),
+        };
+
+        let bandwidth = scale_bandwidth(&state, &None).unwrap();
+        assert!(
+            (bandwidth - 90.0).abs() < 1e-6,
+            "unexpected bandwidth {bandwidth}"
+        );
     }
 }

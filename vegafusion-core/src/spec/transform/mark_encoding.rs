@@ -131,9 +131,13 @@ pub fn mark_encoding_input_vars(encoding: &MarkEncodingOrList) -> Result<Vec<Inp
 }
 
 fn mark_encoding_rule_supported(rule: &MarkEncodingSpec) -> bool {
-    // Unsupported value-ref keys in this phase
-    if rule.band.is_some() {
-        return false;
+    if let Some(band) = &rule.band {
+        if band.as_f64().is_none_or(|v| !v.is_finite()) {
+            return false;
+        }
+        if rule.scale.is_none() {
+            return false;
+        }
     }
 
     // Only allow mult / round as extra keys
@@ -353,6 +357,14 @@ mod tests {
         .unwrap();
         assert!(mark_encoding_channel_spec_supported(&supported));
 
+        let supported_band: MarkEncodingChannelSpec = serde_json::from_value(json!({
+            "channel": "x",
+            "as": "x_center",
+            "encoding": {"field": "v", "scale": "x", "band": 0.5}
+        }))
+        .unwrap();
+        assert!(mark_encoding_channel_spec_supported(&supported_band));
+
         let unsupported: MarkEncodingChannelSpec = serde_json::from_value(json!({
             "channel": "x",
             "as": "x_px",
@@ -360,6 +372,17 @@ mod tests {
         }))
         .unwrap();
         assert!(!mark_encoding_channel_spec_supported(&unsupported));
+
+        let unsupported_band_without_scale: MarkEncodingChannelSpec =
+            serde_json::from_value(json!({
+                "channel": "width",
+                "as": "w",
+                "encoding": {"band": 1}
+            }))
+            .unwrap();
+        assert!(!mark_encoding_channel_spec_supported(
+            &unsupported_band_without_scale
+        ));
 
         let unsupported_format: MarkEncodingChannelSpec = serde_json::from_value(json!({
             "channel": "text",
@@ -375,7 +398,9 @@ mod tests {
             "encoding": {"signal": "datum.v"}
         }))
         .unwrap();
-        assert!(!mark_encoding_channel_spec_supported(&unsupported_text_channel));
+        assert!(!mark_encoding_channel_spec_supported(
+            &unsupported_text_channel
+        ));
 
         let unsupported_tooltip_channel: MarkEncodingChannelSpec = serde_json::from_value(json!({
             "channel": "tooltip",
@@ -383,7 +408,9 @@ mod tests {
             "encoding": {"signal": "datum"}
         }))
         .unwrap();
-        assert!(!mark_encoding_channel_spec_supported(&unsupported_tooltip_channel));
+        assert!(!mark_encoding_channel_spec_supported(
+            &unsupported_tooltip_channel
+        ));
     }
 
     #[test]

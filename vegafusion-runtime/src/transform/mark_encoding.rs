@@ -20,7 +20,7 @@ use vegafusion_core::spec::mark::{
 use vegafusion_core::task_graph::task_value::TaskValue;
 
 #[cfg(feature = "scales")]
-use crate::datafusion::udfs::scale::make_scale_udf;
+use crate::{datafusion::udfs::scale::make_scale_udf, scale::adapter::scale_bandwidth};
 
 #[async_trait]
 impl TransformTrait for MarkEncoding {
@@ -111,11 +111,34 @@ fn compile_rule_value(
 ) -> Result<Expr> {
     validate_rule_supported(rule)?;
 
-    let mut value_expr = compile_base_value(rule, config, schema)?;
+    let (base_value_expr, has_base_value) = compile_base_value(rule, config, schema)?;
+    let mut value_expr = if has_base_value {
+        Some(base_value_expr)
+    } else {
+        None
+    };
 
     if let Some(scale_name) = &rule.scale {
-        value_expr = apply_scale(value_expr, scale_name, config)?;
+        value_expr = value_expr
+            .map(|expr| apply_scale(expr, scale_name, config))
+            .transpose()?;
+
+        if let Some(band) = band_factor(rule)? {
+            let band_expr = apply_band_offset(scale_name, band, config)?;
+            value_expr = Some(match value_expr {
+                Some(expr) => add_numeric(expr, band_expr, schema)?,
+                None => band_expr,
+            });
+        }
+
+        // Vega value refs with `scale` and no base value (for example `{"scale":"x","band":1}`)
+        // resolve to 0 / bandwidth forms rather than null.
+        if value_expr.is_none() {
+            value_expr = Some(lit(ScalarValue::from(0.0)));
+        }
     }
+
+    let mut value_expr = value_expr.unwrap_or_else(|| lit(ScalarValue::Null));
 
     if let Some(mult) = rule.extra.get("mult") {
         let mult_expr = compile_json_or_signal(mult, config, schema)?;
@@ -174,21 +197,21 @@ fn compile_base_value(
     rule: &MarkEncodingSpec,
     config: &CompilationConfig,
     schema: &DFSchema,
-) -> Result<Expr> {
+) -> Result<(Expr, bool)> {
     if let Some(signal) = &rule.signal {
         let parsed = parse(signal)?;
-        return compile(&parsed, config, Some(schema));
+        return Ok((compile(&parsed, config, Some(schema))?, true));
     }
 
     if let Some(field) = &rule.field {
-        return compile_field_expr(field, schema);
+        return Ok((compile_field_expr(field, schema)?, true));
     }
 
     if let Some(value) = &rule.value {
-        return Ok(lit(ScalarValue::from_json(value)?));
+        return Ok((lit(ScalarValue::from_json(value)?), true));
     }
 
-    Ok(lit(ScalarValue::Null))
+    Ok((lit(ScalarValue::Null), false))
 }
 
 fn compile_field_expr(field: &MarkEncodingField, schema: &DFSchema) -> Result<Expr> {
@@ -255,10 +278,17 @@ fn compile_json_or_signal(
 }
 
 fn validate_rule_supported(rule: &MarkEncodingSpec) -> Result<()> {
-    if rule.band.is_some() {
-        return Err(VegaFusionError::internal(
-            "mark_encoding does not support band value refs in this phase",
-        ));
+    if let Some(band) = &rule.band {
+        if band.as_f64().is_none_or(|v| !v.is_finite()) {
+            return Err(VegaFusionError::internal(
+                "mark_encoding band must be a finite numeric value",
+            ));
+        }
+        if rule.scale.is_none() {
+            return Err(VegaFusionError::internal(
+                "mark_encoding band value refs require a scale",
+            ));
+        }
     }
 
     for key in rule.extra.keys() {
@@ -287,6 +317,35 @@ fn validate_rule_supported(rule: &MarkEncodingSpec) -> Result<()> {
     Ok(())
 }
 
+fn band_factor(rule: &MarkEncodingSpec) -> Result<Option<f64>> {
+    let Some(band) = &rule.band else {
+        return Ok(None);
+    };
+    let Some(factor) = band.as_f64() else {
+        return Err(VegaFusionError::internal(
+            "mark_encoding band must be a finite numeric value",
+        ));
+    };
+    if !factor.is_finite() {
+        return Err(VegaFusionError::internal(
+            "mark_encoding band must be a finite numeric value",
+        ));
+    }
+    if factor == 0.0 {
+        Ok(None)
+    } else {
+        Ok(Some(factor))
+    }
+}
+
+fn add_numeric(lhs: Expr, rhs: Expr, schema: &DFSchema) -> Result<Expr> {
+    Ok(Expr::BinaryExpr(BinaryExpr {
+        left: Box::new(to_numeric(lhs, schema)?),
+        op: Operator::Plus,
+        right: Box::new(to_numeric(rhs, schema)?),
+    }))
+}
+
 #[cfg(feature = "scales")]
 fn apply_scale(value_expr: Expr, scale_name: &str, config: &CompilationConfig) -> Result<Expr> {
     let Some(scale_state) = config.scale_scope.get(scale_name) else {
@@ -302,6 +361,25 @@ fn apply_scale(value_expr: Expr, scale_name: &str, config: &CompilationConfig) -
 
 #[cfg(not(feature = "scales"))]
 fn apply_scale(_value_expr: Expr, _scale_name: &str, _config: &CompilationConfig) -> Result<Expr> {
+    Err(VegaFusionError::internal(
+        "mark_encoding scale evaluation requires the vegafusion-runtime `scales` feature",
+    ))
+}
+
+#[cfg(feature = "scales")]
+fn apply_band_offset(scale_name: &str, band: f64, config: &CompilationConfig) -> Result<Expr> {
+    let bandwidth = config
+        .scale_scope
+        .get(scale_name)
+        .map(|scale_state| scale_bandwidth(scale_state, &config.tz_config))
+        .transpose()?
+        .unwrap_or(0.0);
+
+    Ok(lit(ScalarValue::from(bandwidth * band)))
+}
+
+#[cfg(not(feature = "scales"))]
+fn apply_band_offset(_scale_name: &str, _band: f64, _config: &CompilationConfig) -> Result<Expr> {
     Err(VegaFusionError::internal(
         "mark_encoding scale evaluation requires the vegafusion-runtime `scales` feature",
     ))

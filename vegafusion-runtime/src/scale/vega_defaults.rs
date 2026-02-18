@@ -29,9 +29,9 @@ pub(crate) fn apply_vega_domain_defaults(
             } else {
                 implicit_zero_allowed
                     && matches!(
-                    scale_type,
-                    ScaleTypeSpec::Linear | ScaleTypeSpec::Pow | ScaleTypeSpec::Sqrt
-                )
+                        scale_type,
+                        ScaleTypeSpec::Linear | ScaleTypeSpec::Pow | ScaleTypeSpec::Sqrt
+                    )
             };
 
         if zero_enabled {

@@ -345,7 +345,9 @@ impl ScaleSpec {
                 ScaleArrayElementSpec::Value(value) => value.is_number(),
             }),
             ScaleRangeSpec::Signal(_) => true,
-            ScaleRangeSpec::Value(Value::String(name)) => matches!(name.as_str(), "width" | "height"),
+            ScaleRangeSpec::Value(Value::String(name)) => {
+                matches!(name.as_str(), "width" | "height")
+            }
             _ => false,
         }
     }
@@ -610,10 +612,8 @@ mod tests {
         .unwrap();
 
         let input_vars = scale.input_vars().unwrap();
-        assert!(
-            input_vars
-                .iter()
-                .any(|input_var| input_var.var == Variable::new_data("data_0"))
-        );
+        assert!(input_vars
+            .iter()
+            .any(|input_var| input_var.var == Variable::new_data("data_0")));
     }
 }

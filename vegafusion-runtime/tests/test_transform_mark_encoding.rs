@@ -10,6 +10,7 @@ use serde_json::json;
 use util::check::{check_transform_evaluation, eval_vegafusion_transforms};
 use util::equality::{assert_tables_equal, TablesEqualConfig};
 use vegafusion_common::arrow::array::{Float64Array, StringArray};
+use vegafusion_common::data::scalar::ScalarValueHelpers;
 use vegafusion_common::data::table::VegaFusionTable;
 use vegafusion_core::proto::gen::transforms::TransformPipeline;
 use vegafusion_core::spec::scale::ScaleTypeSpec;
@@ -56,6 +57,29 @@ fn heatmap_scale_config() -> CompilationConfig {
                 "#2182b8", "#2163aa", "#23479c", "#1c3185",
             ])),
             options: HashMap::new(),
+        },
+    );
+    config
+}
+
+fn band_scale_config() -> CompilationConfig {
+    let mut config = CompilationConfig::default();
+    config.scale_scope.insert(
+        "x".to_string(),
+        ScaleState {
+            scale_type: ScaleTypeSpec::Band,
+            domain: Arc::new(StringArray::from(vec!["A", "B", "C"])),
+            range: Arc::new(Float64Array::from(vec![0.0, 300.0])),
+            options: HashMap::from([
+                (
+                    "padding_inner".to_string(),
+                    datafusion_common::ScalarValue::from(0.1_f64),
+                ),
+                (
+                    "padding_outer".to_string(),
+                    datafusion_common::ScalarValue::from(0.05_f64),
+                ),
+            ]),
         },
     );
     config
@@ -285,4 +309,84 @@ fn test_mark_encoding_heatmap_fill_outputs_hex_strings() {
         }
     }
     assert!(!values_debug.is_empty());
+}
+
+#[test]
+fn test_mark_encoding_band_offsets_match_bandwidth() {
+    let dataset = VegaFusionTable::from_json(&json!([
+        {"k": "A"},
+        {"k": "B"},
+        {"k": "C"}
+    ]))
+    .unwrap();
+
+    let transform_specs: Vec<TransformSpec> = serde_json::from_value(json!([
+        {
+            "type": "mark_encoding",
+            "channels": [
+                {"channel": "x", "as": "x_start", "encoding": {"field": "k", "scale": "x"}},
+                {"channel": "x", "as": "x_center", "encoding": {"field": "k", "scale": "x", "band": 0.5}},
+                {"channel": "width", "as": "w", "encoding": {"scale": "x", "band": 1}}
+            ]
+        }
+    ]))
+    .unwrap();
+
+    let (result, _) =
+        eval_vegafusion_transforms(&dataset, transform_specs.as_slice(), &band_scale_config());
+    let rb = result.to_record_batch().unwrap();
+    let x_start = rb.column(rb.schema().index_of("x_start").unwrap());
+    let x_center = rb.column(rb.schema().index_of("x_center").unwrap());
+    let w = rb.column(rb.schema().index_of("w").unwrap());
+
+    for i in 0..rb.num_rows() {
+        let x0 = datafusion_common::ScalarValue::try_from_array(x_start, i)
+            .unwrap()
+            .to_f64()
+            .unwrap();
+        let xc = datafusion_common::ScalarValue::try_from_array(x_center, i)
+            .unwrap()
+            .to_f64()
+            .unwrap();
+        let width = datafusion_common::ScalarValue::try_from_array(w, i)
+            .unwrap()
+            .to_f64()
+            .unwrap();
+
+        assert!(width > 0.0, "expected positive band width");
+        assert!(
+            (xc - (x0 + width * 0.5)).abs() < 1e-6,
+            "x_center should equal x_start + 0.5 * width"
+        );
+    }
+}
+
+#[test]
+fn test_mark_encoding_band_without_scale_errors() {
+    let dataset = base_dataset().with_ordering().unwrap();
+    let transform_specs: Vec<TransformSpec> = serde_json::from_value(json!([
+        {
+            "type": "mark_encoding",
+            "channels": [
+                {
+                    "channel": "width",
+                    "as": "w",
+                    "encoding": {"band": 1}
+                }
+            ]
+        }
+    ]))
+    .unwrap();
+
+    let pipeline = TransformPipeline::try_from(transform_specs.as_slice()).unwrap();
+    let config = CompilationConfig::default();
+    let ctx = Arc::new(make_datafusion_context());
+    let sql_df = TOKIO_RUNTIME
+        .block_on(ctx.vegafusion_table(dataset))
+        .unwrap();
+    let err = TOKIO_RUNTIME
+        .block_on(pipeline.eval_sql(sql_df, &config))
+        .unwrap_err();
+
+    assert!(format!("{err}").contains("require a scale"));
 }

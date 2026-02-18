@@ -1839,8 +1839,6 @@ async fn check_spec_sequence_with_planner_config(
         })
         .collect();
 
-
-
     // Export the planned client spec with updates from task graph
 
     // Compare exported images
@@ -1852,9 +1850,9 @@ async fn check_spec_sequence_with_planner_config(
             planned_spec_updates,
             Default::default(),
         )
-        .unwrap_or_else(|err| panic!(
-            "Failed exporting planned spec sequence for {spec_name}: {err}"
-        ))
+        .unwrap_or_else(|err| {
+            panic!("Failed exporting planned spec sequence for {spec_name}: {err}")
+        })
         .into_iter()
         .map(|(img, _)| img)
         .enumerate()
