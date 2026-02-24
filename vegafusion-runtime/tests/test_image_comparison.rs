@@ -1184,7 +1184,7 @@ mod test_pre_transform_inline {
         let vegajs_runtime = vegajs_runtime();
 
         // Initialize task graph runtime
-        let runtime = VegaFusionRuntime::new(None);
+        let runtime = VegaFusionRuntime::default();
 
         // Get timezone
         let local_tz = vegajs_runtime.nodejs_runtime.local_timezone().unwrap();
@@ -1336,7 +1336,7 @@ async fn check_pre_transform_spec_from_files(spec_name: &str, tolerance: f64) {
     let vegajs_runtime = vegajs_runtime();
 
     // Initialize task graph runtime
-    let runtime = VegaFusionRuntime::new(None);
+    let runtime = VegaFusionRuntime::default();
 
     // Get timezone
     let local_tz = vegajs_runtime.nodejs_runtime.local_timezone().unwrap();
@@ -1455,7 +1455,7 @@ async fn check_spec_sequence(
         .collect();
 
     // Initialize task graph runtime
-    let runtime = VegaFusionRuntime::new(None);
+    let runtime = VegaFusionRuntime::default();
 
     // Extract the initial values of all of the variables that should be sent from the
     // server to the client
@@ -1470,11 +1470,15 @@ async fn check_spec_sequence(
             .await
             .expect("Failed to get node value");
 
+        let materialized_value = value
+            .to_materialized(runtime.plan_executor.clone())
+            .await
+            .unwrap();
         init.push(ExportUpdateJSON {
             namespace: ExportUpdateNamespace::try_from(var.0.namespace()).unwrap(),
             name: var.0.name.clone(),
             scope: var.1.clone(),
-            value: value.to_json().unwrap(),
+            value: materialized_value.to_json().unwrap(),
         });
     }
 
@@ -1555,6 +1559,9 @@ async fn check_spec_sequence(
                     let json_value = match value {
                         TaskValue::Scalar(value) => value.to_json().unwrap(),
                         TaskValue::Table(value) => value.to_json().unwrap(),
+                        TaskValue::Plan(_) => {
+                            panic!("Plan values should not appear in client updates")
+                        }
                     };
                     ExportUpdateJSON {
                         namespace: ExportUpdateNamespace::try_from(scoped_var.0.namespace())

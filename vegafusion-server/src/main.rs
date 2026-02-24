@@ -13,7 +13,9 @@ use vegafusion_core::proto::gen::services::{
     PreTransformValuesResult, QueryRequest, QueryResult,
 };
 use vegafusion_core::proto::gen::tasks::TaskGraphValueResponse;
-use vegafusion_core::proto::gen::tasks::{ResponseTaskValue, TaskValue as ProtoTaskValue};
+use vegafusion_core::proto::gen::tasks::{
+    MaterializedTaskValue as ProtoMaterializedTaskValue, ResponseTaskValue,
+};
 use vegafusion_core::runtime::VegaFusionRuntimeTrait;
 use vegafusion_core::spec::chart::ChartSpec;
 use vegafusion_core::task_graph::graph::ScopedVariable;
@@ -59,13 +61,45 @@ impl VegaFusionRuntimeGrpc {
                     .await
                 {
                     Ok(response_values) => {
+                        // Materialize all TaskValues before converting to protobuf
+                        let materialized_futures: Vec<_> = response_values
+                            .into_iter()
+                            .map(|named_value| {
+                                let executor = self.runtime.plan_executor.clone();
+                                async move {
+                                    let materialized_value =
+                                        named_value.value.to_materialized(executor).await?;
+                                    Ok::<_, VegaFusionError>(
+                                        vegafusion_core::proto::gen::tasks::ResponseTaskValue {
+                                            variable: Some(named_value.variable),
+                                            scope: named_value.scope,
+                                            value: Some(ProtoMaterializedTaskValue::try_from(
+                                                &materialized_value,
+                                            )?),
+                                        },
+                                    )
+                                }
+                            })
+                            .collect();
+                        let materialized_response_values =
+                            match futures::future::try_join_all(materialized_futures).await {
+                                Ok(v) => v,
+                                Err(e) => {
+                                    let response_msg = QueryResult {
+                                        response: Some(query_result::Response::Error(Error {
+                                            errorkind: Some(Errorkind::Error(
+                                                TaskGraphValueError { msg: e.to_string() },
+                                            )),
+                                        })),
+                                    };
+                                    return Ok(response_msg);
+                                }
+                            };
+
                         let response_msg = QueryResult {
                             response: Some(query_result::Response::TaskGraphValues(
                                 TaskGraphValueResponse {
-                                    response_values: response_values
-                                        .into_iter()
-                                        .map(|v| v.into())
-                                        .collect::<Vec<_>>(),
+                                    response_values: materialized_response_values,
                                 },
                             )),
                         };
@@ -210,14 +244,14 @@ impl VegaFusionRuntimeGrpc {
             .iter()
             .zip(&variables)
             .map(|(value, var)| {
-                let proto_value = ProtoTaskValue::try_from(value)?;
-                Ok(ResponseTaskValue {
+                let proto_value = ProtoMaterializedTaskValue::try_from(value)?;
+                Ok::<_, VegaFusionError>(ResponseTaskValue {
                     variable: Some(var.0.clone()),
                     scope: var.1.clone(),
                     value: Some(proto_value),
                 })
             })
-            .collect::<Result<Vec<_>, VegaFusionError>>()?;
+            .collect::<Result<Vec<_>, _>>()?;
 
         // Build result
         let result = PreTransformValuesResult {
@@ -312,7 +346,7 @@ struct Args {
 fn main() -> Result<(), VegaFusionError> {
     let args = Args::parse();
 
-    // Create addresse
+    // Create address
     let grpc_address = format!("{}:{}", args.host, args.port);
 
     // Log Capacity limit
@@ -334,10 +368,10 @@ fn main() -> Result<(), VegaFusionError> {
         .build()
         .expect("Failed to create tokio runtime");
 
-    let tg_runtime = VegaFusionRuntime::new(Some(VegaFusionCache::new(
-        Some(args.capacity),
-        memory_limit,
-    )));
+    let tg_runtime = VegaFusionRuntime::new(
+        Some(VegaFusionCache::new(Some(args.capacity), memory_limit)),
+        None,
+    );
 
     tokio_runtime.block_on(async move {
         grpc_server(grpc_address, tg_runtime.clone(), args.web)

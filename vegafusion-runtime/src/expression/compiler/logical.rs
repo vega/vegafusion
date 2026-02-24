@@ -7,14 +7,14 @@ use vegafusion_common::datatypes::{cast_to, data_type, is_numeric_datatype, to_b
 use vegafusion_core::error::Result;
 use vegafusion_core::proto::gen::expression::{LogicalExpression, LogicalOperator};
 
-pub fn compile_logical(
+pub async fn compile_logical(
     node: &LogicalExpression,
     config: &CompilationConfig,
     schema: &DFSchema,
 ) -> Result<Expr> {
     // Compile branches
-    let mut compiled_lhs = compile(node.left(), config, Some(schema))?;
-    let mut compiled_rhs = compile(node.right(), config, Some(schema))?;
+    let mut compiled_lhs = compile(node.left(), config, Some(schema)).await?;
+    let mut compiled_rhs = compile(node.right(), config, Some(schema)).await?;
 
     let lhs_dtype = data_type(&compiled_lhs, schema)?;
     let rhs_dtype = data_type(&compiled_rhs, schema)?;

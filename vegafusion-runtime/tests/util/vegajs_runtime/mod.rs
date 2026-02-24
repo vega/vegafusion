@@ -259,7 +259,7 @@ impl VegaJsRuntime {
         // Add datasets (for use in data expressions)
         let mut data = vec![];
         for (name, val) in &config.data_scope {
-            data.push(json!({"name": name, "values": val.to_json()?}))
+            data.push(json!({"name": name, "values": val.as_table().unwrap_or(&VegaFusionTable::empty_with_ordering()).to_json()?}))
         }
 
         // Create spec
@@ -288,7 +288,7 @@ impl VegaJsRuntime {
         // Add additional dataset from compilation config
         let mut data = Vec::new();
         for (name, val) in &config.data_scope {
-            data.push(json!({"name": name.clone(), "values": val.to_json()?}))
+            data.push(json!({"name": name.clone(), "values": val.as_table().unwrap_or(&VegaFusionTable::empty_with_ordering()).to_json()?}))
         }
 
         data.push(json!({

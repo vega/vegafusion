@@ -43,7 +43,7 @@ async fn main() -> vegafusion_common::error::Result<()> {
     let inline_datasets: HashMap<String, VegaFusionDataset> =
         vec![("movies".to_string(), dataset)].into_iter().collect();
 
-    let runtime = VegaFusionRuntime::new(None);
+    let runtime = VegaFusionRuntime::default();
 
     let (transformed_spec, warnings) = runtime
         .pre_transform_spec(

@@ -1,19 +1,27 @@
-use crate::proto::gen::tasks::task_value::Data;
+use crate::proto::gen::tasks::materialized_task_value::Data as MaterializedTaskValueData;
 use crate::proto::gen::tasks::ResponseTaskValue;
-use crate::proto::gen::tasks::{TaskGraphValueResponse, TaskValue as ProtoTaskValue, Variable};
-use crate::task_graph::memory::{inner_size_of_scalar, inner_size_of_table};
+use crate::proto::gen::tasks::{
+    MaterializedTaskValue as ProtoMaterializedTaskValue, TaskGraphValueResponse, Variable,
+};
+use crate::runtime::PlanExecutor;
+use crate::task_graph::memory::{
+    inner_size_of_logical_plan, inner_size_of_scalar, inner_size_of_table,
+};
 use datafusion_common::ScalarValue;
 use serde_json::Value;
 use std::convert::TryFrom;
+use std::sync::Arc;
 use vegafusion_common::arrow::record_batch::RecordBatch;
 use vegafusion_common::data::scalar::ScalarValueHelpers;
 use vegafusion_common::data::table::VegaFusionTable;
+use vegafusion_common::datafusion_expr::LogicalPlan;
 use vegafusion_common::error::{Result, ResultWithContext, VegaFusionError};
 
 #[derive(Debug, Clone)]
 pub enum TaskValue {
     Scalar(ScalarValue),
     Table(VegaFusionTable),
+    Plan(LogicalPlan),
 }
 
 impl TaskValue {
@@ -31,30 +39,69 @@ impl TaskValue {
         }
     }
 
-    pub fn to_json(&self) -> Result<Value> {
-        match self {
-            TaskValue::Scalar(value) => value.to_json(),
-            TaskValue::Table(value) => Ok(value.to_json()?),
-        }
-    }
-
     pub fn size_of(&self) -> usize {
         let inner_size = match self {
             TaskValue::Scalar(scalar) => inner_size_of_scalar(scalar),
             TaskValue::Table(table) => inner_size_of_table(table),
+            TaskValue::Plan(plan) => inner_size_of_logical_plan(plan),
         };
 
         std::mem::size_of::<Self>() + inner_size
     }
+
+    pub async fn to_materialized(
+        self,
+        plan_executor: Arc<dyn PlanExecutor>,
+    ) -> Result<MaterializedTaskValue> {
+        match self {
+            TaskValue::Plan(plan) => {
+                let table = plan_executor.execute_plan(plan).await?;
+                Ok(MaterializedTaskValue::Table(table))
+            }
+            TaskValue::Scalar(scalar) => Ok(MaterializedTaskValue::Scalar(scalar)),
+            TaskValue::Table(table) => Ok(MaterializedTaskValue::Table(table)),
+        }
+    }
 }
 
-impl TryFrom<&ProtoTaskValue> for TaskValue {
+#[derive(Debug, Clone)]
+pub enum MaterializedTaskValue {
+    Scalar(ScalarValue),
+    Table(VegaFusionTable),
+}
+
+impl MaterializedTaskValue {
+    pub fn as_scalar(&self) -> Result<&ScalarValue> {
+        match self {
+            MaterializedTaskValue::Scalar(value) => Ok(value),
+            _ => Err(VegaFusionError::internal("Value is not a scalar")),
+        }
+    }
+
+    pub fn as_table(&self) -> Result<&VegaFusionTable> {
+        match self {
+            MaterializedTaskValue::Table(value) => Ok(value),
+            _ => Err(VegaFusionError::internal("Value is not a table")),
+        }
+    }
+
+    pub fn to_json(&self) -> Result<Value> {
+        match self {
+            MaterializedTaskValue::Scalar(value) => value.to_json(),
+            MaterializedTaskValue::Table(value) => Ok(value.to_json()?),
+        }
+    }
+}
+
+impl TryFrom<&ProtoMaterializedTaskValue> for TaskValue {
     type Error = VegaFusionError;
 
-    fn try_from(value: &ProtoTaskValue) -> std::result::Result<Self, Self::Error> {
+    fn try_from(value: &ProtoMaterializedTaskValue) -> std::result::Result<Self, Self::Error> {
         match value.data.as_ref().unwrap() {
-            Data::Table(value) => Ok(Self::Table(VegaFusionTable::from_ipc_bytes(value)?)),
-            Data::Scalar(value) => {
+            MaterializedTaskValueData::Table(value) => {
+                Ok(Self::Table(VegaFusionTable::from_ipc_bytes(value)?))
+            }
+            MaterializedTaskValueData::Scalar(value) => {
                 let scalar_table = VegaFusionTable::from_ipc_bytes(value)?;
                 let scalar_rb = scalar_table.to_record_batch()?;
                 let scalar_array = scalar_rb.column(0);
@@ -65,7 +112,7 @@ impl TryFrom<&ProtoTaskValue> for TaskValue {
     }
 }
 
-impl TryFrom<&TaskValue> for ProtoTaskValue {
+impl TryFrom<&TaskValue> for ProtoMaterializedTaskValue {
     type Error = VegaFusionError;
 
     fn try_from(value: &TaskValue) -> std::result::Result<Self, Self::Error> {
@@ -75,11 +122,34 @@ impl TryFrom<&TaskValue> for ProtoTaskValue {
                 let scalar_rb = RecordBatch::try_from_iter(vec![("value", scalar_array)])?;
                 let ipc_bytes = VegaFusionTable::from(scalar_rb).to_ipc_bytes()?;
                 Ok(Self {
-                    data: Some(Data::Scalar(ipc_bytes)),
+                    data: Some(MaterializedTaskValueData::Scalar(ipc_bytes)),
                 })
             }
             TaskValue::Table(table) => Ok(Self {
-                data: Some(Data::Table(table.to_ipc_bytes()?)),
+                data: Some(MaterializedTaskValueData::Table(table.to_ipc_bytes()?)),
+            }),
+            TaskValue::Plan(_) => Err(VegaFusionError::internal(
+                "TaskValue::Plan cannot be serialized to protobuf. Plans are intermediate values that should be materialized to tables using .to_materialized(plan_executor) before serialization.",
+            )),
+        }
+    }
+}
+
+impl TryFrom<&MaterializedTaskValue> for ProtoMaterializedTaskValue {
+    type Error = VegaFusionError;
+
+    fn try_from(value: &MaterializedTaskValue) -> std::result::Result<Self, Self::Error> {
+        match value {
+            MaterializedTaskValue::Scalar(scalar) => {
+                let scalar_array = scalar.to_array()?;
+                let scalar_rb = RecordBatch::try_from_iter(vec![("value", scalar_array)])?;
+                let ipc_bytes = VegaFusionTable::from(scalar_rb).to_ipc_bytes()?;
+                Ok(Self {
+                    data: Some(MaterializedTaskValueData::Scalar(ipc_bytes)),
+                })
+            }
+            MaterializedTaskValue::Table(table) => Ok(Self {
+                data: Some(MaterializedTaskValueData::Table(table.to_ipc_bytes()?)),
             }),
         }
     }
@@ -114,16 +184,6 @@ pub struct NamedTaskValue {
     pub variable: Variable,
     pub scope: Vec<u32>,
     pub value: TaskValue,
-}
-
-impl From<NamedTaskValue> for ResponseTaskValue {
-    fn from(value: NamedTaskValue) -> Self {
-        ResponseTaskValue {
-            variable: Some(value.variable),
-            scope: value.scope,
-            value: Some(ProtoTaskValue::try_from(&value.value).unwrap()),
-        }
-    }
 }
 
 impl From<ResponseTaskValue> for NamedTaskValue {

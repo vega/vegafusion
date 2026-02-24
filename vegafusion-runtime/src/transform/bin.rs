@@ -32,7 +32,7 @@ impl TransformTrait for Bin {
         let schema = sql_df.schema().clone();
 
         // Compute binning solution
-        let params = calculate_bin_params(self, &schema, config)?;
+        let params = calculate_bin_params(self, &schema, config).await?;
 
         let BinParams {
             start,
@@ -152,13 +152,13 @@ pub struct BinParams {
     pub n: i32,
 }
 
-pub fn calculate_bin_params(
+pub async fn calculate_bin_params(
     tx: &Bin,
     schema: &DFSchema,
     config: &CompilationConfig,
 ) -> Result<BinParams> {
     // Evaluate extent
-    let extent_expr = compile(tx.extent.as_ref().unwrap(), config, Some(schema))?;
+    let extent_expr = compile(tx.extent.as_ref().unwrap(), config, Some(schema)).await?;
     let extent_scalar = extent_expr.eval_to_scalar()?;
 
     let extent = extent_scalar.to_f64x2().unwrap_or([0.0, 0.0]);
@@ -181,7 +181,7 @@ pub fn calculate_bin_params(
 
     // Override span with specified value if available
     if let Some(span_expression) = &tx.span {
-        let span_expr = compile(span_expression, config, Some(schema))?;
+        let span_expr = compile(span_expression, config, Some(schema)).await?;
         let span_scalar = span_expr.eval_to_scalar()?;
         if let Ok(span_f64) = span_scalar.to_f64() {
             if span_f64 > 0.0 {
@@ -190,7 +190,8 @@ pub fn calculate_bin_params(
         }
     }
 
-    let maxbins = compile(tx.maxbins.as_ref().unwrap(), config, Some(schema))?
+    let maxbins = compile(tx.maxbins.as_ref().unwrap(), config, Some(schema))
+        .await?
         .eval_to_scalar()?
         .to_f64()?;
 

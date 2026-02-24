@@ -2,11 +2,18 @@ from __future__ import annotations
 
 import sys
 from types import ModuleType
-from typing import TYPE_CHECKING, Any, Literal, TypedDict, Union, cast
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Literal,
+    TypedDict,
+    Union,
+    cast,
+)
 
 # Delay narwhals import to avoid eager pandas import
 # We'll import narwhals inside functions to avoid eager pandas import
-from arro3.core import Table
+from arro3.core import Schema, Table
 
 from vegafusion._vegafusion import get_cpu_count, get_virtual_memory
 from vegafusion.transformer import DataFrameLike
@@ -26,6 +33,7 @@ if TYPE_CHECKING:
         PyChartStateGrpc,
         PyVegaFusionRuntime,
     )
+
 
 # This type isn't defined in the grpcio package, so let's at least name it
 UnaryUnaryMultiCallable = Any
@@ -247,14 +255,14 @@ class VegaFusionRuntime:
         self,
         inline_datasets: dict[str, Any] | None = None,
         inline_dataset_usage: dict[str, list[str]] | None = None,
-    ) -> dict[str, Table]:
+    ) -> dict[str, Table | Schema]:
         """
         Import or register inline datasets.
 
         Args:
-            inline_datasets: A dictionary from dataset names to pandas DataFrames or
-                pyarrow Tables. Inline datasets may be referenced by the input
-                specification using the following url syntax
+            inline_datasets: A dictionary from dataset names to pandas DataFrames,
+                pyarrow Tables, or pyarrow Schemas. Inline datasets may be referenced
+                by the input specification using the following url syntax
                 'vegafusion+dataset://{dataset_name}' or 'table://{dataset_name}'.
             inline_dataset_usage: Columns that are referenced by datasets. If no
                 entry is found, then all columns should be included.
@@ -267,10 +275,14 @@ class VegaFusionRuntime:
 
         inline_datasets = inline_datasets or {}
         inline_dataset_usage = inline_dataset_usage or {}
-        imported_inline_datasets: dict[str, Table] = {}
+        imported_inline_datasets: dict[str, Table | Schema] = {}
         for name, value in inline_datasets.items():
             columns = inline_dataset_usage.get(name)
-            if pd is not None and pa is not None and isinstance(value, pd.DataFrame):
+            if (pa is not None and isinstance(value, pa.Schema)) or hasattr(
+                value, "__arrow_c_schema__"
+            ):
+                imported_inline_datasets[name] = Schema.from_arrow(value)
+            elif pd is not None and pa is not None and isinstance(value, pd.DataFrame):
                 # rename to help mypy
                 inner_value: pd.DataFrame = value
                 del value
@@ -372,10 +384,10 @@ class VegaFusionRuntime:
                 than being pre-transformed. If False, then all possible data
                 transformations are applied even if they break the original interactive
                 behavior of the chart.
-            inline_datasets: A dict from dataset names to pandas DataFrames or pyarrow
-                Tables. Inline datasets may be referenced by the input specification
-                using the following url syntax 'vegafusion+dataset://{dataset_name}' or
-                'table://{dataset_name}'.
+            inline_datasets: A dict from dataset names to pandas DataFrames, pyarrow
+                Tables, or pyarrow Schemas. Inline datasets may be referenced by the
+                input specification using the following url syntax
+                'vegafusion+dataset://{dataset_name}' or 'table://{dataset_name}'.
             keep_signals: Signals from the input spec that must be included in the
                 pre-transformed spec, even if they are no longer referenced.
                 A list with elements that are either:
@@ -450,11 +462,10 @@ class VegaFusionRuntime:
                 datasets. If exceeded, datasets will be truncated to this number of
                 rows and a RowLimitExceeded warning will be included in the ChartState's
                 warnings list.
-            inline_datasets: A dict from dataset names to pandas DataFrames or pyarrow
-                Tables. Inline datasets may be referenced by the input specification
-                using the following url syntax 'vegafusion+dataset://{dataset_name}' or
-                'table://{dataset_name}'.
-
+            inline_datasets: A dict from dataset names to pandas DataFrames, pyarrow
+                Tables, or pyarrow Schemas. Inline datasets may be referenced by the
+                input specification using the following url syntax
+                'vegafusion+dataset://{dataset_name}' or 'table://{dataset_name}'.
         Returns:
             ChartState
         """
@@ -464,7 +475,11 @@ class VegaFusionRuntime:
         )
         return ChartState(
             self.runtime.new_chart_state(
-                spec, local_tz, default_input_tz, row_limit, inline_arrow_dataset
+                spec,
+                local_tz,
+                default_input_tz,
+                row_limit,
+                inline_arrow_dataset,
             )
         )
 
@@ -500,10 +515,10 @@ class VegaFusionRuntime:
                 datasets. If exceeded, datasets will be truncated to this number of
                 rows and a RowLimitExceeded warning will be included in the resulting
                 warnings list.
-            inline_datasets: A dict from dataset names to pandas DataFrames or pyarrow
-                Tables. Inline datasets may be referenced by the input specification
-                using the following url syntax 'vegafusion+dataset://{dataset_name}'
-                or 'table://{dataset_name}'.
+            inline_datasets: A dict from dataset names to pandas DataFrames, pyarrow
+                Tables, or pyarrow Schemas. Inline datasets may be referenced by the
+                input specification using the following url syntax
+                'vegafusion+dataset://{dataset_name}' or 'table://{dataset_name}'.
             trim_unused_columns: If True, unused columns are removed from returned
                 datasets.
             dataset_format: Format for returned datasets. One of:
@@ -664,8 +679,8 @@ class VegaFusionRuntime:
                 * ``"pyarrow"``: pyarrow.Table
                 * ``"arrow-ipc"``: bytes in arrow IPC format
                 * ``"arrow-ipc-base64"``: base64 encoded arrow IPC format
-            inline_datasets: A dict from dataset names to pandas DataFrames or pyarrow
-                Tables. Inline datasets may be referenced by the input specification
+            inline_datasets: A dict from dataset names to pandas DataFrames, pyarrow
+                Tables, or pyarrow Schemas. Inline datasets may be referenced by the input specification
                 using the following url syntax 'vegafusion+dataset://{dataset_name}' or
                 'table://{dataset_name}'.
             keep_signals: Signals from the input spec that must be included in the
