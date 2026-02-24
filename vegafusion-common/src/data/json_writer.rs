@@ -102,6 +102,13 @@ pub fn array_to_json_array(array: &ArrayRef) -> Result<Vec<Value>> {
                 None => Value::Null,
             })
             .collect()),
+        DataType::Utf8View => Ok(as_string_view_array(array)?
+            .iter()
+            .map(|maybe_value| match maybe_value {
+                Some(v) => v.into(),
+                None => Value::Null,
+            })
+            .collect()),
         DataType::Int8 => primitive_array_to_json::<Int8Type>(array),
         DataType::Int16 => primitive_array_to_json::<Int16Type>(array),
         DataType::Int32 => primitive_array_to_json::<Int32Type>(array),
@@ -714,6 +721,56 @@ mod tests {
 {"c1":5,"c2":null}
 "#
         );
+    }
+
+    #[test]
+    fn write_utf8view_array_to_json() {
+        let arr = Arc::new(StringViewArray::from(vec![Some("a"), Some("b"), None])) as ArrayRef;
+        let values = array_to_json_array(&arr).unwrap();
+        assert_eq!(values, vec![json!("a"), json!("b"), Value::Null]);
+    }
+
+    fn assert_list_of_string_values_to_json(string_values: ArrayRef) {
+        let list_dtype = DataType::List(Arc::new(Field::new(
+            "item",
+            string_values.data_type().clone(),
+            true,
+        )));
+        let offsets = Buffer::from([0, 2, 2, 3].to_byte_slice());
+
+        let list_data = ArrayData::builder(list_dtype)
+            .len(3)
+            .add_buffer(offsets)
+            .add_child_data(string_values.to_data())
+            .build()
+            .unwrap();
+        let list = Arc::new(ListArray::from(list_data)) as ArrayRef;
+
+        let values = array_to_json_array(&list).unwrap();
+        assert_eq!(values, vec![json!(["a", "b"]), json!([]), json!(["c"])]);
+    }
+
+    #[test]
+    fn write_list_of_utf8_values() {
+        let values = Arc::new(StringArray::from(vec![Some("a"), Some("b"), Some("c")])) as ArrayRef;
+        assert_list_of_string_values_to_json(values);
+    }
+
+    #[test]
+    fn write_list_of_large_utf8_values() {
+        let values = Arc::new(LargeStringArray::from(vec![
+            Some("a"),
+            Some("b"),
+            Some("c"),
+        ])) as ArrayRef;
+        assert_list_of_string_values_to_json(values);
+    }
+
+    #[test]
+    fn write_list_of_utf8view_values() {
+        let values =
+            Arc::new(StringViewArray::from(vec![Some("a"), Some("b"), Some("c")])) as ArrayRef;
+        assert_list_of_string_values_to_json(values);
     }
 
     #[test]

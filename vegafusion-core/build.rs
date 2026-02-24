@@ -28,14 +28,9 @@ fn main() {
 
 #[cfg(feature = "tonic_support")]
 fn gen_tonic() {
-    let builder = tonic_build::configure();
-
-    let mut config = prost_build::Config::new();
-    config.protoc_arg("--experimental_allow_proto3_optional");
-
-    builder
-        .compile_protos_with_config(
-            config,
+    tonic_prost_build::configure()
+        .protoc_arg("--experimental_allow_proto3_optional")
+        .compile_protos(
             &[
                 "src/proto/expression.proto",
                 "src/proto/transforms.proto",

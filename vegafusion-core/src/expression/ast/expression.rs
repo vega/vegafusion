@@ -17,7 +17,7 @@ use crate::proto::gen::tasks::Variable;
 use crate::task_graph::graph::ScopedVariable;
 use crate::task_graph::scope::TaskScope;
 use crate::task_graph::task::InputVariable;
-use itertools::sorted;
+use itertools::Itertools;
 use std::fmt::{Display, Formatter};
 use std::ops::Deref;
 
@@ -74,20 +74,20 @@ impl Expression {
         let mut visitor = GetInputVariablesVisitor::new();
         self.walk(&mut visitor);
 
-        sorted(visitor.input_variables).collect()
+        visitor.input_variables.into_iter().sorted().collect()
     }
 
     pub fn update_vars(&self) -> Vec<Variable> {
         let mut visitor = UpdateVariablesExprVisitor::new();
         self.walk(&mut visitor);
 
-        sorted(visitor.update_variables).collect()
+        visitor.update_variables.into_iter().sorted().collect()
     }
 
     pub fn implicit_vars(&self) -> Vec<String> {
         let mut visitor = ImplicitVariablesExprVisitor::new();
         self.walk(&mut visitor);
-        sorted(visitor.implicit_vars).collect()
+        visitor.implicit_vars.into_iter().sorted().collect()
     }
 
     pub fn is_supported(&self) -> bool {

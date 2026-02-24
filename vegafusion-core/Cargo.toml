@@ -6,7 +6,7 @@ version = "2.0.3"
 description = "Core components required by multiple VegaFusion crates, with WASM compatibility"
 
 [features]
-tonic_support = ["tonic", "tonic-build"]
+tonic_support = ["tonic", "tonic-prost", "tonic-build", "tonic-prost-build"]
 py = ["pyo3", "vegafusion-common/py"]
 
 [dependencies]
@@ -83,6 +83,10 @@ workspace = true
 workspace = true
 optional = true
 
+[dependencies.tonic-prost]
+workspace = true
+optional = true
+
 [lints.clippy]
 module_inception = "allow"
 
@@ -90,6 +94,10 @@ module_inception = "allow"
 workspace = true
 
 [build-dependencies.tonic-build]
+workspace = true
+optional = true
+
+[build-dependencies.tonic-prost-build]
 workspace = true
 optional = true
 

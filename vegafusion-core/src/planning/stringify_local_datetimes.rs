@@ -12,7 +12,7 @@ use crate::spec::transform::formula::FormulaTransformSpec;
 use crate::spec::transform::TransformSpec;
 use crate::task_graph::graph::ScopedVariable;
 use crate::task_graph::scope::TaskScope;
-use itertools::sorted;
+use itertools::Itertools;
 use std::collections::hash_map::Entry;
 use std::collections::{HashMap, HashSet};
 use vegafusion_common::escape::unescape_field;
@@ -385,7 +385,7 @@ impl MutChartVisitor for StringifyLocalDatetimeFieldsVisitor<'_> {
             self.domain_dataset_fields,
         );
 
-        for field in sorted(fields) {
+        for field in fields.into_iter().sorted() {
             let field = unescape_field(&field);
             let expr_str =
                 format!("timeFormat(toDate(datum['{field}'], 'local'), '%Y-%m-%dT%H:%M:%S.%L')");
@@ -406,7 +406,7 @@ impl MutChartVisitor for StringifyLocalDatetimeFieldsVisitor<'_> {
             let source_resolved = self.scope.resolve_scope(&source_var, scope)?;
             let source_resolved_var = (source_resolved.var, source_resolved.scope);
             if let Some(fields) = self.local_datetime_fields.get(&source_resolved_var) {
-                for field in sorted(fields) {
+                for field in fields.into_iter().sorted() {
                     let field = unescape_field(field);
                     let expr_str = format!("toDate(datum['{field}'], 'local')");
                     let transforms = &mut data.transform;
@@ -450,7 +450,7 @@ impl MutChartVisitor for FormatLocalDatetimeFieldsVisitor<'_> {
             self.local_datetime_fields,
             self.domain_dataset_fields,
         );
-        for field in sorted(fields) {
+        for field in fields.into_iter().sorted() {
             let field = unescape_field(&field);
             let transforms = &mut data.transform;
             let transform = FormulaTransformSpec {

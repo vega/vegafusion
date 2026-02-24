@@ -14,7 +14,8 @@ repository = "https://github.com/vega/vegafusion"
 protobuf-src = ["vegafusion-core/protobuf-src", "dep:protobuf-src"]
 
 [dependencies]
-h2 = "0.3.26"
+futures-util = "0.3.31"
+h2 = "0.4"
 
 [dev-dependencies]
 assert_cmd = "2.0.17"
@@ -57,7 +58,10 @@ workspace = true
 
 [dependencies.tonic]
 workspace = true
-features = ["tls"]
+features = ["tls-ring"]
+
+[dependencies.tonic-prost]
+workspace = true
 
 [dependencies.clap]
 version = "4.5.23"
@@ -67,6 +71,9 @@ features = ["derive"]
 workspace = true
 
 [build-dependencies.tonic-build]
+workspace = true
+
+[build-dependencies.tonic-prost-build]
 workspace = true
 
 [build-dependencies.prost-build]

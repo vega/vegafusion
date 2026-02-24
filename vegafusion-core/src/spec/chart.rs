@@ -13,7 +13,7 @@ use crate::spec::visitors::{
 };
 use crate::task_graph::graph::ScopedVariable;
 use crate::task_graph::scope::TaskScope;
-use itertools::sorted;
+use itertools::Itertools;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::collections::HashMap;
@@ -297,19 +297,19 @@ impl ChartSpec {
     pub fn definition_vars(&self) -> Result<Vec<ScopedVariable>> {
         let mut visitor = DefinitionVarsChartVisitor::new();
         self.walk(&mut visitor)?;
-        Ok(sorted(visitor.definition_vars).collect())
+        Ok(visitor.definition_vars.into_iter().sorted().collect())
     }
 
     pub fn update_vars(&self, task_scope: &TaskScope) -> Result<Vec<ScopedVariable>> {
         let mut visitor = UpdateVarsChartVisitor::new(task_scope);
         self.walk(&mut visitor)?;
-        Ok(sorted(visitor.update_vars).collect())
+        Ok(visitor.update_vars.into_iter().sorted().collect())
     }
 
     pub fn input_vars(&self, task_scope: &TaskScope) -> Result<Vec<ScopedVariable>> {
         let mut visitor = InputVarsChartVisitor::new(task_scope);
         self.walk(&mut visitor)?;
-        Ok(sorted(visitor.input_vars).collect())
+        Ok(visitor.input_vars.into_iter().sorted().collect())
     }
 }
 

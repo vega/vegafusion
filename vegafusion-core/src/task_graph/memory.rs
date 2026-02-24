@@ -47,6 +47,7 @@ pub fn inner_size_of_scalar(value: &ScalarValue) -> usize {
     match value {
         ScalarValue::Utf8(Some(s)) => size_of_val(s.as_bytes()) + size_of::<String>(),
         ScalarValue::LargeUtf8(Some(s)) => size_of_val(s.as_bytes()) + size_of::<String>(),
+        ScalarValue::Utf8View(Some(s)) => size_of_val(s.as_bytes()) + size_of::<String>(),
         ScalarValue::Binary(Some(b)) => size_of_val(b.as_slice()) + size_of::<Vec<u8>>(),
         ScalarValue::LargeBinary(Some(b)) => size_of_val(b.as_slice()) + size_of::<Vec<u8>>(),
         ScalarValue::List(array) => size_of::<Vec<ScalarValue>>() + size_of_list_array(array),
@@ -103,4 +104,71 @@ pub fn inner_size_of_logical_plan(plan: &LogicalPlan) -> usize {
             .iter()
             .map(|p| inner_size_of_logical_plan(p))
             .sum::<usize>()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// Test that all three Arrow string types (Utf8, LargeUtf8, Utf8View) return
+    /// equivalent memory size calculations for the same string content.
+    /// This ensures Utf8View strings (used by Polars) are properly accounted for
+    /// in memory tracking.
+    #[test]
+    fn test_string_types_memory_size() {
+        let test_string = "Hello, World!".to_string();
+        let expected_size = size_of_val(test_string.as_bytes()) + size_of::<String>();
+
+        // Test Utf8
+        let utf8_scalar = ScalarValue::Utf8(Some(test_string.clone()));
+        assert_eq!(
+            inner_size_of_scalar(&utf8_scalar),
+            expected_size,
+            "Utf8 memory size should be correct"
+        );
+
+        // Test LargeUtf8
+        let large_utf8_scalar = ScalarValue::LargeUtf8(Some(test_string.clone()));
+        assert_eq!(
+            inner_size_of_scalar(&large_utf8_scalar),
+            expected_size,
+            "LargeUtf8 memory size should be correct"
+        );
+
+        // Test Utf8View - this was the missing case
+        let utf8view_scalar = ScalarValue::Utf8View(Some(test_string.clone()));
+        assert_eq!(
+            inner_size_of_scalar(&utf8view_scalar),
+            expected_size,
+            "Utf8View memory size should be correct"
+        );
+    }
+
+    #[test]
+    fn test_none_string_types_memory_size() {
+        // None values should return 0 for all string types
+        assert_eq!(inner_size_of_scalar(&ScalarValue::Utf8(None)), 0);
+        assert_eq!(inner_size_of_scalar(&ScalarValue::LargeUtf8(None)), 0);
+        assert_eq!(inner_size_of_scalar(&ScalarValue::Utf8View(None)), 0);
+    }
+
+    #[test]
+    fn test_empty_string_memory_size() {
+        // Empty strings should have consistent size across types
+        let empty = "".to_string();
+        let expected_size = size_of_val(empty.as_bytes()) + size_of::<String>();
+
+        assert_eq!(
+            inner_size_of_scalar(&ScalarValue::Utf8(Some(empty.clone()))),
+            expected_size
+        );
+        assert_eq!(
+            inner_size_of_scalar(&ScalarValue::LargeUtf8(Some(empty.clone()))),
+            expected_size
+        );
+        assert_eq!(
+            inner_size_of_scalar(&ScalarValue::Utf8View(Some(empty))),
+            expected_size
+        );
+    }
 }

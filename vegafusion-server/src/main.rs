@@ -420,9 +420,9 @@ async fn grpc_server(
 
     if web {
         println!("Starting gRPC + gRPC-Web server on {address}");
-        let server = tonic_web::enable(server);
         Server::builder()
             .accept_http1(true)
+            .layer(tonic_web::GrpcWebLayer::new())
             .add_service(server)
             .serve(addr)
             .await?;

@@ -5,7 +5,7 @@ use crate::spec::chart::ChartSpec;
 use crate::spec::transform::TransformSpec;
 use crate::spec::values::StringOrSignalSpec;
 use crate::task_graph::scope::TaskScope;
-use itertools::sorted;
+use itertools::Itertools;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::collections::{HashMap, HashSet};
@@ -46,7 +46,7 @@ impl DataSpec {
             signals.extend(tx.output_signals())
         }
 
-        sorted(signals).collect()
+        signals.into_iter().sorted().collect()
     }
 
     pub fn supported(

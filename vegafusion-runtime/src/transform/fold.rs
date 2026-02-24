@@ -4,7 +4,6 @@ use crate::transform::TransformTrait;
 use async_trait::async_trait;
 use datafusion::prelude::DataFrame;
 use datafusion_common::ScalarValue;
-use datafusion_expr::expr::NullTreatment;
 use datafusion_expr::{
     expr, expr::WindowFunctionParams, lit, Expr, WindowFrame, WindowFunctionDefinition,
 };
@@ -125,7 +124,7 @@ impl TransformTrait for Fold {
                     },
                 ],
                 window_frame: WindowFrame::new(Some(true)),
-                null_treatment: Some(NullTreatment::IgnoreNulls),
+                null_treatment: None,
                 distinct: false,
                 filter: None,
             },

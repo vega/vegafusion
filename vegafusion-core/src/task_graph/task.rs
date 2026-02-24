@@ -1,7 +1,6 @@
 use crate::error::{Result, VegaFusionError};
 use crate::proto::gen::tasks::{
-    task::TaskKind, DataSourceTask, DataUrlTask, DataValuesTask, NodeValueIndex, Task, TzConfig,
-    Variable,
+    task::TaskKind, DataSourceTask, DataUrlTask, DataValuesTask, Task, TzConfig, Variable,
 };
 use crate::proto::gen::tasks::{MaterializedTaskValue as ProtoMaterializedTaskValue, SignalTask};
 use crate::task_graph::task_value::TaskValue;
@@ -148,13 +147,3 @@ pub trait TaskDependencies {
         Vec::new()
     }
 }
-
-#[allow(clippy::derived_hash_with_manual_eq)]
-impl Hash for NodeValueIndex {
-    fn hash<H: Hasher>(&self, state: &mut H) {
-        self.node_index.hash(state);
-        self.output_index.hash(state);
-    }
-}
-
-impl Eq for NodeValueIndex {}

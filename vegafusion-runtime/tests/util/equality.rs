@@ -284,7 +284,12 @@ fn timestamp_to_int(scalar: &ScalarValue) -> ScalarValue {
         ScalarValue::TimestampNanosecond(Some(v), _) => ScalarValue::Int64(Some(*v / 1000000)),
         ScalarValue::TimestampMicrosecond(Some(v), _) => ScalarValue::Int64(Some(*v / 1000)),
         ScalarValue::TimestampSecond(Some(v), _) => ScalarValue::Int64(Some(*v * 1000)),
-        ScalarValue::Utf8(Some(s)) if s.starts_with(DATETIME_PREFIX) => {
+        // Handle all three Arrow string types for datetime prefix check
+        ScalarValue::Utf8(Some(s))
+        | ScalarValue::LargeUtf8(Some(s))
+        | ScalarValue::Utf8View(Some(s))
+            if s.starts_with(DATETIME_PREFIX) =>
+        {
             let v: i64 = s.strip_prefix(DATETIME_PREFIX).unwrap().parse().unwrap();
             ScalarValue::Int64(Some(v))
         }

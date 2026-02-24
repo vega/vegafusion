@@ -4,7 +4,7 @@ use crate::proto::gen::transforms::{Transform, TransformPipeline};
 use crate::spec::transform::TransformSpec;
 use crate::task_graph::task::InputVariable;
 use crate::transform::TransformDependencies;
-use itertools::sorted;
+use itertools::Itertools;
 use std::collections::HashSet;
 use std::convert::TryFrom;
 
@@ -35,7 +35,7 @@ impl TransformDependencies for TransformPipeline {
             }
         }
 
-        sorted(vars).collect()
+        vars.into_iter().sorted().collect()
     }
 
     fn output_vars(&self) -> Vec<Variable> {
@@ -46,6 +46,6 @@ impl TransformDependencies for TransformPipeline {
             }
         }
 
-        sorted(vars).collect()
+        vars.into_iter().sorted().collect()
     }
 }
