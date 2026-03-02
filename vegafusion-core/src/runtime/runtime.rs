@@ -13,8 +13,7 @@ use crate::{
     proto::gen::{
         pretransform::{
             pre_transform_extract_warning, PlannerWarning, PreTransformExtractOpts,
-            PreTransformExtractWarning, PreTransformLogicalPlanOpts,
-            PreTransformLogicalPlanWarning, PreTransformRowLimitWarning, PreTransformSpecOpts,
+            PreTransformExtractWarning, PreTransformRowLimitWarning, PreTransformSpecOpts,
             PreTransformSpecWarning, PreTransformValuesOpts, PreTransformValuesWarning,
         },
         tasks::{NodeValueIndex, TaskGraph, TzConfig, VariableNamespace},
@@ -423,49 +422,5 @@ pub trait VegaFusionRuntimeTrait: Send + Sync {
         }
 
         Ok((task_values, warnings))
-    }
-
-    async fn pre_transform_logical_plan(
-        &self,
-        spec: &ChartSpec,
-        inline_datasets: HashMap<String, VegaFusionDataset>,
-        options: &PreTransformLogicalPlanOpts,
-    ) -> Result<(
-        ChartSpec,
-        Vec<ExportUpdate>,
-        Vec<PreTransformLogicalPlanWarning>,
-    )> {
-        let keep_variables: Vec<ScopedVariable> = options
-            .keep_variables
-            .clone()
-            .into_iter()
-            .map(|var| (var.variable.unwrap(), var.scope))
-            .collect();
-        let (plan, export_updates) = self
-            .pre_transform_spec_plan(
-                spec,
-                &options.local_tz,
-                &options.default_input_tz,
-                options.preserve_interactivity,
-                &inline_datasets,
-                keep_variables,
-            )
-            .await?;
-
-        let warnings: Vec<PreTransformLogicalPlanWarning> = plan
-            .warnings
-            .iter()
-            .map(|planner_warning| PreTransformLogicalPlanWarning {
-                warning_type: Some(
-                    crate::proto::gen::pretransform::pre_transform_logical_plan_warning::WarningType::Planner(
-                        PlannerWarning {
-                            message: planner_warning.message(),
-                        },
-                    ),
-                ),
-            })
-            .collect();
-
-        Ok((plan.client_spec, export_updates, warnings))
     }
 }
