@@ -627,65 +627,65 @@ mod test_string_type_equality {
         }
     }
 
-    fn eval_expr(expr_str: &str) -> ScalarValue {
+    async fn eval_expr(expr_str: &str) -> ScalarValue {
         let config = config();
         let parsed = parse(expr_str).unwrap();
-        let compiled = compile(&parsed, &config, None).unwrap();
+        let compiled = compile(&parsed, &config, None).await.unwrap();
         compiled.eval_to_scalar().unwrap()
     }
 
-    #[test]
-    fn test_utf8view_strict_equals_literal() {
+    #[tokio::test]
+    async fn test_utf8view_strict_equals_literal() {
         // Utf8View === Utf8 literal should be true when values match
-        let result = eval_expr("name_view === 'Bob'");
+        let result = eval_expr("name_view === 'Bob'").await;
         assert_eq!(result, ScalarValue::Boolean(Some(true)));
 
         // Should be false when values don't match
-        let result = eval_expr("name_view === 'Alice'");
+        let result = eval_expr("name_view === 'Alice'").await;
         assert_eq!(result, ScalarValue::Boolean(Some(false)));
     }
 
-    #[test]
-    fn test_large_utf8_strict_equals_literal() {
+    #[tokio::test]
+    async fn test_large_utf8_strict_equals_literal() {
         // LargeUtf8 === Utf8 literal should be true when values match
-        let result = eval_expr("name_large === 'Bob'");
+        let result = eval_expr("name_large === 'Bob'").await;
         assert_eq!(result, ScalarValue::Boolean(Some(true)));
 
         // Should be false when values don't match
-        let result = eval_expr("name_large === 'Alice'");
+        let result = eval_expr("name_large === 'Alice'").await;
         assert_eq!(result, ScalarValue::Boolean(Some(false)));
     }
 
-    #[test]
-    fn test_utf8_strict_equals_literal() {
+    #[tokio::test]
+    async fn test_utf8_strict_equals_literal() {
         // Utf8 === Utf8 literal (baseline)
-        let result = eval_expr("name_utf8 === 'Bob'");
+        let result = eval_expr("name_utf8 === 'Bob'").await;
         assert_eq!(result, ScalarValue::Boolean(Some(true)));
 
-        let result = eval_expr("name_utf8 === 'Alice'");
+        let result = eval_expr("name_utf8 === 'Alice'").await;
         assert_eq!(result, ScalarValue::Boolean(Some(false)));
     }
 
-    #[test]
-    fn test_utf8view_not_strict_equals_literal() {
+    #[tokio::test]
+    async fn test_utf8view_not_strict_equals_literal() {
         // Utf8View !== Utf8 literal
-        let result = eval_expr("name_view !== 'Bob'");
+        let result = eval_expr("name_view !== 'Bob'").await;
         assert_eq!(result, ScalarValue::Boolean(Some(false)));
 
-        let result = eval_expr("name_view !== 'Alice'");
+        let result = eval_expr("name_view !== 'Alice'").await;
         assert_eq!(result, ScalarValue::Boolean(Some(true)));
     }
 
-    #[test]
-    fn test_mixed_string_types_equality() {
+    #[tokio::test]
+    async fn test_mixed_string_types_equality() {
         // Cross-type comparisons should work
-        let result = eval_expr("name_view === name_large");
+        let result = eval_expr("name_view === name_large").await;
         assert_eq!(result, ScalarValue::Boolean(Some(true)));
 
-        let result = eval_expr("name_view === name_utf8");
+        let result = eval_expr("name_view === name_utf8").await;
         assert_eq!(result, ScalarValue::Boolean(Some(true)));
 
-        let result = eval_expr("name_large === name_utf8");
+        let result = eval_expr("name_large === name_utf8").await;
         assert_eq!(result, ScalarValue::Boolean(Some(true)));
     }
 }
