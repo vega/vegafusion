@@ -79,12 +79,14 @@ pub trait VegaFusionRuntimeTrait: Send + Sync {
         Ok(materialized
             .into_iter()
             .zip(metadata)
-            .map(|(value, (namespace, name, scope))| MaterializedExportUpdate {
-                namespace,
-                name,
-                scope,
-                value,
-            })
+            .map(
+                |(value, (namespace, name, scope))| MaterializedExportUpdate {
+                    namespace,
+                    name,
+                    scope,
+                    value,
+                },
+            )
             .collect())
     }
 
@@ -403,22 +405,19 @@ pub trait VegaFusionRuntimeTrait: Send + Sync {
 
         let mut task_values = Vec::new();
         for (materialized_value, variable) in materialized.into_iter().zip(variables) {
-            let final_value =
-                if let (Some(row_limit), MaterializedTaskValue::Table(table)) =
-                    (row_limit, &materialized_value)
-                {
-                    let warning = PreTransformValuesWarning {
-                        warning_type: Some(ValuesWarningType::RowLimit(
-                            PreTransformRowLimitWarning {
-                                datasets: vec![variable],
-                            },
-                        )),
-                    };
-                    warnings.push(warning);
-                    MaterializedTaskValue::Table(table.head(row_limit))
-                } else {
-                    materialized_value
+            let final_value = if let (Some(row_limit), MaterializedTaskValue::Table(table)) =
+                (row_limit, &materialized_value)
+            {
+                let warning = PreTransformValuesWarning {
+                    warning_type: Some(ValuesWarningType::RowLimit(PreTransformRowLimitWarning {
+                        datasets: vec![variable],
+                    })),
                 };
+                warnings.push(warning);
+                MaterializedTaskValue::Table(table.head(row_limit))
+            } else {
+                materialized_value
+            };
 
             task_values.push(final_value);
         }

@@ -210,7 +210,6 @@ impl TaskCall for DataUrlTask {
             let pipeline = self.pipeline.as_ref().unwrap();
             pipeline.eval_sql(df, &config).await?
         } else {
-            // No transforms, just remove any ordering column
             (df, Vec::new())
         };
 
