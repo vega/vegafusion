@@ -9,7 +9,7 @@ use crate::{
         apply_pre_transform::apply_pre_transform_datasets,
         destringify_selection_datetimes::destringify_selection_datetimes,
         plan::{PlannerConfig, SpecPlan},
-        watch::{ExportUpdate, ExportUpdateArrow, ExportUpdateNamespace},
+        watch::{ExportUpdate, ExportUpdateNamespace, MaterializedExportUpdate},
     },
     proto::gen::{
         pretransform::{
@@ -55,13 +55,13 @@ pub trait VegaFusionRuntimeTrait: Send + Sync {
     async fn materialize_export_updates(
         &self,
         export_updates: Vec<ExportUpdate>,
-    ) -> Result<Vec<ExportUpdateArrow>> {
+    ) -> Result<Vec<MaterializedExportUpdate>> {
         let executor = self.plan_executor();
         try_join_all(export_updates.into_iter().map(|eu| {
             let exec = executor.clone();
             async move {
                 let value = eu.value.to_materialized(exec).await?;
-                Ok(ExportUpdateArrow {
+                Ok(MaterializedExportUpdate {
                     namespace: eu.namespace,
                     name: eu.name,
                     scope: eu.scope,

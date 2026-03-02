@@ -128,14 +128,14 @@ pub struct ExportUpdate {
 }
 
 #[derive(Debug, Clone)]
-pub struct ExportUpdateArrow {
+pub struct MaterializedExportUpdate {
     pub namespace: ExportUpdateNamespace,
     pub name: String,
     pub scope: Vec<u32>,
     pub value: MaterializedTaskValue,
 }
 
-impl ExportUpdateArrow {
+impl MaterializedExportUpdate {
     pub fn to_json(&self) -> Result<ExportUpdateJSON> {
         Ok(ExportUpdateJSON {
             namespace: self.namespace.clone(),

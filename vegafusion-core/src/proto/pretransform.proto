@@ -123,7 +123,7 @@ message PreTransformLogicalPlanOpts {
   repeated PreTransformVariable keep_variables = 4;
 }
 
-message ExportUpdate {
+message MaterializedExportUpdate {
   string namespace = 1;
   string name = 2;
   repeated uint32 scope = 3;
