@@ -25,6 +25,10 @@ impl LoggingExecutor {
 
 #[async_trait::async_trait]
 impl PlanExecutor for LoggingExecutor {
+    fn name(&self) -> &str {
+        "LoggingExecutor"
+    }
+
     async fn execute_plan(&self, plan: LogicalPlan) -> Result<VegaFusionTable> {
         println!("Custom executor received logical plan");
         println!("Plan details:\n{}\n", plan.display_indent());

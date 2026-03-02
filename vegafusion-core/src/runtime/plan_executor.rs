@@ -5,6 +5,7 @@ use vegafusion_common::error::{Result, VegaFusionError};
 
 #[async_trait]
 pub trait PlanExecutor: Send + Sync {
+    fn name(&self) -> &str;
     async fn execute_plan(&self, plan: LogicalPlan) -> Result<VegaFusionTable>;
 }
 
@@ -15,6 +16,10 @@ pub struct NoOpPlanExecutor;
 
 #[async_trait]
 impl PlanExecutor for NoOpPlanExecutor {
+    fn name(&self) -> &str {
+        "NoOpPlanExecutor"
+    }
+
     async fn execute_plan(&self, _plan: LogicalPlan) -> Result<VegaFusionTable> {
         Err(VegaFusionError::internal(
             "NoOpPlanExecutor cannot execute logical plans. Provide a concrete PlanExecutor (e.g., DataFusionPlanExecutor).",

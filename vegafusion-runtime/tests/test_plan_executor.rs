@@ -123,6 +123,10 @@ impl TreeNodeRewriter for TableRewriter {
 
 #[async_trait]
 impl PlanExecutor for TrackingPlanExecutor {
+    fn name(&self) -> &str {
+        "TrackingPlanExecutor"
+    }
+
     async fn execute_plan(&self, plan: LogicalPlan) -> Result<VegaFusionTable> {
         self.call_count.fetch_add(1, Ordering::SeqCst);
 

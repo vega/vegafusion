@@ -21,6 +21,10 @@ impl DataFusionPlanExecutor {
 
 #[async_trait]
 impl PlanExecutor for DataFusionPlanExecutor {
+    fn name(&self) -> &str {
+        "DataFusionPlanExecutor"
+    }
+
     async fn execute_plan(&self, plan: LogicalPlan) -> Result<VegaFusionTable> {
         let df = DataFrame::new(self.ctx.state(), plan);
         df.collect_to_table().await
