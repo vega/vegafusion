@@ -3,7 +3,7 @@ use crate::proto::gen::tasks::{
     task::TaskKind, DataSourceTask, DataUrlTask, DataValuesTask, Task, TzConfig, Variable,
 };
 use crate::proto::gen::tasks::{MaterializedTaskValue as ProtoMaterializedTaskValue, SignalTask};
-use crate::task_graph::task_value::TaskValue;
+use crate::task_graph::task_value::MaterializedTaskValue;
 use std::convert::TryFrom;
 
 use crate::proto::gen::expression::Expression;
@@ -28,7 +28,7 @@ impl Task {
         self.scope.as_slice()
     }
 
-    pub fn new_value(variable: Variable, scope: &[u32], value: TaskValue) -> Self {
+    pub fn new_value(variable: Variable, scope: &[u32], value: MaterializedTaskValue) -> Self {
         Self {
             variable: Some(variable),
             scope: Vec::from(scope),
@@ -39,9 +39,9 @@ impl Task {
         }
     }
 
-    pub fn to_value(&self) -> Result<TaskValue> {
+    pub fn to_value(&self) -> Result<MaterializedTaskValue> {
         if let TaskKind::Value(value) = self.task_kind() {
-            Ok(TaskValue::try_from(value)?)
+            Ok(MaterializedTaskValue::try_from(value)?)
         } else {
             Err(VegaFusionError::internal("Task is not a TaskValue"))
         }

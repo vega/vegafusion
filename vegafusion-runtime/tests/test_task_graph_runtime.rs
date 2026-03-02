@@ -11,7 +11,7 @@ use vegafusion_core::proto::gen::transforms::{
 };
 use vegafusion_core::spec::chart::ChartSpec;
 use vegafusion_core::task_graph::scope::TaskScope;
-use vegafusion_core::task_graph::task_value::TaskValue;
+use vegafusion_core::task_graph::task_value::MaterializedTaskValue;
 use vegafusion_runtime::task_graph::runtime::VegaFusionRuntime;
 
 #[tokio::test(flavor = "multi_thread")]
@@ -38,7 +38,7 @@ async fn try_it() {
         Task::new_value(
             Variable::new_signal("url"),
             Default::default(),
-            TaskValue::Scalar(ScalarValue::from(
+            MaterializedTaskValue::Scalar(ScalarValue::from(
                 "https://raw.githubusercontent.com/vega/vega-datasets/master/data/penguins.json",
             )),
         ),

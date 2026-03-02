@@ -112,6 +112,25 @@ impl TryFrom<&ProtoMaterializedTaskValue> for TaskValue {
     }
 }
 
+impl TryFrom<&ProtoMaterializedTaskValue> for MaterializedTaskValue {
+    type Error = VegaFusionError;
+
+    fn try_from(value: &ProtoMaterializedTaskValue) -> std::result::Result<Self, Self::Error> {
+        match value.data.as_ref().unwrap() {
+            MaterializedTaskValueData::Table(value) => {
+                Ok(Self::Table(VegaFusionTable::from_ipc_bytes(value)?))
+            }
+            MaterializedTaskValueData::Scalar(value) => {
+                let scalar_table = VegaFusionTable::from_ipc_bytes(value)?;
+                let scalar_rb = scalar_table.to_record_batch()?;
+                let scalar_array = scalar_rb.column(0);
+                let scalar = ScalarValue::try_from_array(scalar_array, 0)?;
+                Ok(Self::Scalar(scalar))
+            }
+        }
+    }
+}
+
 impl TryFrom<&TaskValue> for ProtoMaterializedTaskValue {
     type Error = VegaFusionError;
 
