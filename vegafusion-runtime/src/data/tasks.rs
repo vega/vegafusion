@@ -59,6 +59,22 @@ use {datafusion::prelude::ParquetReadOptions, vegafusion_common::error::ToExtern
 #[cfg(target_arch = "wasm32")]
 use object_store_wasm::HttpStore;
 
+async fn maybe_materialize_plan(
+    task_value: TaskValue,
+    plan_executor: &Arc<dyn PlanExecutor>,
+) -> Result<TaskValue> {
+    // HACK: currently we force eager materialization for DataFusion plan executor
+    // to match original behavior (before support for custom executors and lazy evaluation),
+    // see for more context: https://github.com/vega/vegafusion/pull/573
+    if plan_executor.name() == "DataFusionPlanExecutor" {
+        if let TaskValue::Plan(plan) = task_value {
+            let table = plan_executor.execute_plan(plan).await?;
+            return Ok(TaskValue::Table(table));
+        }
+    }
+    Ok(task_value)
+}
+
 pub fn build_compilation_config(
     input_vars: &[InputVariable],
     values: &[TaskValue],
@@ -217,7 +233,8 @@ impl TaskCall for DataUrlTask {
 
         // Return value based on whether inline dataset was used
         let task_value = if let Some(inline_dataset) = inline_dataset_info {
-            result_df.to_task_value(inline_dataset).await?
+            let task_value = result_df.to_task_value(inline_dataset).await?;
+            maybe_materialize_plan(task_value, &plan_executor).await?
         } else {
             TaskValue::Table(result_df.collect_to_table().await?)
         };
@@ -566,7 +583,9 @@ impl TaskCall for DataSourceTask {
         if !has_transforms {
             match source_dataset {
                 VegaFusionDataset::Plan { plan } => {
-                    return Ok((TaskValue::Plan(plan), Vec::new()));
+                    let task_value =
+                        maybe_materialize_plan(TaskValue::Plan(plan), &plan_executor).await?;
+                    return Ok((task_value, Vec::new()));
                 }
                 VegaFusionDataset::Table { table, .. } => {
                     let table_val = TaskValue::Table(table.without_ordering()?);
@@ -586,6 +605,7 @@ impl TaskCall for DataSourceTask {
         let (df, output_values) = pipeline.eval_sql(source_df, &config).await?;
         let df = df.drop_index()?;
         let task_value = df.to_task_value(&source_dataset).await?;
+        let task_value = maybe_materialize_plan(task_value, &plan_executor).await?;
         Ok((task_value, output_values))
     }
 }
