@@ -1,8 +1,7 @@
 use std::{any::Any, collections::HashMap, sync::Arc};
 
 use crate::proto::gen::pretransform::pre_transform_values_warning::WarningType as ValuesWarningType;
-use crate::runtime::{NoOpPlanExecutor, PlanExecutor};
-use crate::task_graph::task_value::MaterializedTaskValue;
+use crate::task_graph::task_value::{MaterializedTaskValue, TaskValue};
 use crate::{
     data::dataset::VegaFusionDataset,
     planning::{
@@ -24,7 +23,6 @@ use crate::{
     task_graph::{graph::ScopedVariable, task_value::NamedTaskValue},
 };
 use async_trait::async_trait;
-use futures::future::try_join_all;
 use vegafusion_common::{
     data::table::VegaFusionTable,
     error::{Result, ResultWithContext, VegaFusionError},
@@ -41,10 +39,6 @@ pub struct PreTransformExtractTable {
 pub trait VegaFusionRuntimeTrait: Send + Sync {
     fn as_any(&self) -> &dyn Any;
 
-    fn plan_executor(&self) -> Arc<dyn PlanExecutor> {
-        Arc::new(NoOpPlanExecutor)
-    }
-
     async fn query_request(
         &self,
         task_graph: Arc<TaskGraph>,
@@ -52,24 +46,46 @@ pub trait VegaFusionRuntimeTrait: Send + Sync {
         inline_datasets: &HashMap<String, VegaFusionDataset>,
     ) -> Result<Vec<NamedTaskValue>>;
 
+    async fn materialize_task_values(
+        &self,
+        values: Vec<TaskValue>,
+    ) -> Result<Vec<MaterializedTaskValue>> {
+        let mut results = Vec::with_capacity(values.len());
+        for value in values {
+            results.push(match value {
+                TaskValue::Scalar(s) => MaterializedTaskValue::Scalar(s),
+                TaskValue::Table(t) => MaterializedTaskValue::Table(t),
+                TaskValue::Plan(_) => {
+                    return Err(VegaFusionError::internal(
+                        "Cannot materialize LogicalPlan in this runtime. Use a runtime with a PlanExecutor.",
+                    ))
+                }
+            });
+        }
+        Ok(results)
+    }
+
     async fn materialize_export_updates(
         &self,
         export_updates: Vec<ExportUpdate>,
     ) -> Result<Vec<MaterializedExportUpdate>> {
-        let executor = self.plan_executor();
-        try_join_all(export_updates.into_iter().map(|eu| {
-            let exec = executor.clone();
-            async move {
-                let value = eu.value.to_materialized(exec).await?;
-                Ok(MaterializedExportUpdate {
-                    namespace: eu.namespace,
-                    name: eu.name,
-                    scope: eu.scope,
-                    value,
-                })
-            }
-        }))
-        .await
+        let (values, metadata): (Vec<_>, Vec<_>) = export_updates
+            .into_iter()
+            .map(|eu| (eu.value, (eu.namespace, eu.name, eu.scope)))
+            .unzip();
+
+        let materialized = self.materialize_task_values(values).await?;
+
+        Ok(materialized
+            .into_iter()
+            .zip(metadata)
+            .map(|(value, (namespace, name, scope))| MaterializedExportUpdate {
+                namespace,
+                name,
+                scope,
+                value,
+            })
+            .collect())
     }
 
     async fn pre_transform_spec_plan(
@@ -375,49 +391,36 @@ pub trait VegaFusionRuntimeTrait: Send + Sync {
             .query_request(Arc::new(task_graph.clone()), &indices, inline_datasets)
             .await?;
 
-        // Collect values and handle row limit in parallel
+        // Collect values and handle row limit
         let row_limit = options.row_limit.map(|l| l as usize);
-        let plan_executor = self.plan_executor();
 
-        let materialized_futures = named_task_values.into_iter().map(|named_task_value| {
-            let plan_executor = plan_executor.clone();
-            async move {
-                let value = named_task_value.value;
-                let variable = named_task_value.variable;
+        let (values, variables): (Vec<_>, Vec<_>) = named_task_values
+            .into_iter()
+            .map(|ntv| (ntv.value, ntv.variable))
+            .unzip();
 
-                let materialized_value = value.to_materialized(plan_executor).await?;
+        let materialized = self.materialize_task_values(values).await?;
 
-                // Apply row_limit and collect warnings
-                let (final_value, warning) =
-                    if let (Some(row_limit), MaterializedTaskValue::Table(table)) =
-                        (row_limit, &materialized_value)
-                    {
-                        let warning = PreTransformValuesWarning {
-                            warning_type: Some(ValuesWarningType::RowLimit(
-                                PreTransformRowLimitWarning {
-                                    datasets: vec![variable],
-                                },
-                            )),
-                        };
-                        (
-                            MaterializedTaskValue::Table(table.head(row_limit)),
-                            Some(warning),
-                        )
-                    } else {
-                        (materialized_value, None)
-                    };
-
-                Ok::<_, VegaFusionError>((final_value, warning))
-            }
-        });
-
-        let materialized_results = try_join_all(materialized_futures).await?;
         let mut task_values = Vec::new();
-        for (value, warning) in materialized_results {
-            task_values.push(value);
-            if let Some(warning) = warning {
-                warnings.push(warning);
-            }
+        for (materialized_value, variable) in materialized.into_iter().zip(variables) {
+            let final_value =
+                if let (Some(row_limit), MaterializedTaskValue::Table(table)) =
+                    (row_limit, &materialized_value)
+                {
+                    let warning = PreTransformValuesWarning {
+                        warning_type: Some(ValuesWarningType::RowLimit(
+                            PreTransformRowLimitWarning {
+                                datasets: vec![variable],
+                            },
+                        )),
+                    };
+                    warnings.push(warning);
+                    MaterializedTaskValue::Table(table.head(row_limit))
+                } else {
+                    materialized_value
+                };
+
+            task_values.push(final_value);
         }
 
         Ok((task_values, warnings))

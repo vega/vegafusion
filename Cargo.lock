@@ -4866,7 +4866,6 @@ dependencies = [
  "chrono",
  "chrono-tz 0.9.0",
  "datafusion-common",
- "futures",
  "itertools 0.14.0",
  "lazy_static",
  "log",

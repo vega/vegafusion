@@ -20,7 +20,7 @@ use vegafusion_core::proto::gen::tasks::{
 };
 use vegafusion_core::runtime::PlanExecutor;
 use vegafusion_core::runtime::VegaFusionRuntimeTrait;
-use vegafusion_core::task_graph::task_value::{NamedTaskValue, TaskValue};
+use vegafusion_core::task_graph::task_value::{MaterializedTaskValue, NamedTaskValue, TaskValue};
 
 #[cfg(feature = "proto")]
 use {
@@ -60,7 +60,7 @@ impl VegaFusionRuntime {
     ) -> Result<TaskValue> {
         // We shouldn't panic inside get_or_compute_node_value, but since this may be used
         // in a server context, wrap in catch_unwind just in case.
-        let executor = self.plan_executor();
+        let executor = self.plan_executor.clone();
         let node_value = AssertUnwindSafe(get_or_compute_node_value(
             task_graph,
             node_value_index.node_index as usize,
@@ -99,8 +99,16 @@ impl VegaFusionRuntimeTrait for VegaFusionRuntime {
         self
     }
 
-    fn plan_executor(&self) -> Arc<dyn PlanExecutor> {
-        self.plan_executor.clone()
+    async fn materialize_task_values(
+        &self,
+        values: Vec<TaskValue>,
+    ) -> Result<Vec<MaterializedTaskValue>> {
+        let executor = self.plan_executor.clone();
+        futures_util::future::try_join_all(values.into_iter().map(|value| {
+            let exec = executor.clone();
+            async move { value.to_materialized(exec).await }
+        }))
+        .await
     }
 
     async fn query_request(
