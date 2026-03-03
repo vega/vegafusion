@@ -7,6 +7,7 @@ use datafusion_common::ScalarValue;
 use serde_json::json;
 use util::check::check_transform_evaluation;
 use util::datasets::vega_json_dataset;
+use vegafusion_common::data::table::VegaFusionTable;
 use vegafusion_core::spec::transform::formula::FormulaTransformSpec;
 use vegafusion_core::spec::transform::TransformSpec;
 use vegafusion_runtime::expression::compiler::config::CompilationConfig;
@@ -273,6 +274,45 @@ fn test_formula_span() {
             "type": "formula",
             "expr": "span([1, 2, 5, 6, 7])",
             "as": "span6"
+        },
+    ]))
+    .unwrap();
+
+    let comp_config = Default::default();
+    let eq_config = Default::default();
+
+    check_transform_evaluation(
+        &dataset,
+        transform_specs.as_slice(),
+        &comp_config,
+        &eq_config,
+    );
+}
+
+#[test]
+fn test_formula_time_offset_date() {
+    let dataset = VegaFusionTable::from_json(&json!([
+        {"date": "2023-01-15"},
+        {"date": "2023-06-20"},
+        {"date": "2023-12-31"},
+    ]))
+    .unwrap();
+
+    let transform_specs: Vec<TransformSpec> = serde_json::from_value(json!([
+        {
+            "type": "formula",
+            "expr": "toDate(datum['date'])",
+            "as": "timestamp"
+        },
+        {
+            "type": "formula",
+            "expr": "timeOffset('date', datum['timestamp'], -1)",
+            "as": "prev_day"
+        },
+        {
+            "type": "formula",
+            "expr": "timeOffset('date', datum['timestamp'], 1)",
+            "as": "next_day"
         },
     ]))
     .unwrap();

@@ -2,7 +2,6 @@ use crate::expression::compiler::config::CompilationConfig;
 use crate::transform::TransformTrait;
 use async_trait::async_trait;
 
-use crate::data::util::DataFrameUtils;
 use datafusion::arrow::array::RecordBatch;
 use datafusion::prelude::DataFrame;
 use datafusion_common::utils::SingleRowListArrayBuilder;
@@ -21,7 +20,7 @@ impl TransformTrait for Extent {
     async fn eval(
         &self,
         sql_df: DataFrame,
-        _config: &CompilationConfig,
+        config: &CompilationConfig,
     ) -> Result<(DataFrame, Vec<TaskValue>)> {
         let output_values = if self.signal.is_some() {
             let (min_expr, max_expr) = min_max_exprs(self.field.as_str(), sql_df.schema())?;
@@ -30,8 +29,9 @@ impl TransformTrait for Extent {
                 .clone()
                 .aggregate(Vec::new(), vec![min_expr, max_expr])?;
 
-            // Eval to single row dataframe and extract scalar values
-            let result_batch = extent_df.collect_flat().await?;
+            let logical_plan = extent_df.logical_plan().clone();
+            let result_table = config.plan_executor.execute_plan(logical_plan).await?;
+            let result_batch = result_table.to_record_batch()?;
             let extent_list = extract_extent_list(&result_batch)?;
             vec![extent_list]
         } else {

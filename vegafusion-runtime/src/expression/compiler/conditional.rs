@@ -7,15 +7,15 @@ use vegafusion_core::arrow::datatypes::DataType;
 use vegafusion_core::error::Result;
 use vegafusion_core::proto::gen::expression::ConditionalExpression;
 
-pub fn compile_conditional(
+pub async fn compile_conditional(
     node: &ConditionalExpression,
     config: &CompilationConfig,
     schema: &DFSchema,
 ) -> Result<Expr> {
     // Compile branches
-    let test_expr = compile(node.test(), config, Some(schema))?;
-    let consequent_expr = compile(node.consequent(), config, Some(schema))?;
-    let alternate_expr = compile(node.alternate(), config, Some(schema))?;
+    let test_expr = compile(node.test(), config, Some(schema)).await?;
+    let consequent_expr = compile(node.consequent(), config, Some(schema)).await?;
+    let alternate_expr = compile(node.alternate(), config, Some(schema)).await?;
 
     let test = to_boolean(test_expr, schema)?;
 

@@ -10,7 +10,7 @@ async fn main() {
     let spec = get_spec();
 
     // Make runtime
-    let runtime = VegaFusionRuntime::new(None);
+    let runtime = VegaFusionRuntime::default();
 
     // Construct ChartState
     let chart_state = ChartState::try_new(

@@ -438,7 +438,7 @@ pub async fn vegafusion_embed(
     let runtime: Box<dyn VegaFusionRuntimeTrait> = if query_fn.is_undefined() || query_fn.is_null()
     {
         // Use embedded runtime
-        Box::new(VegaFusionRuntime::new(None))
+        Box::new(VegaFusionRuntime::default())
     } else {
         let query_fn = query_fn.dyn_into::<js_sys::Function>().map_err(|e| {
             JsError::new(&format!(

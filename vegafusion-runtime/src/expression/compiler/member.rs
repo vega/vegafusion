@@ -16,7 +16,7 @@ use vegafusion_common::datatypes::{data_type, is_numeric_datatype};
 use vegafusion_core::error::{Result, ResultWithContext, VegaFusionError};
 use vegafusion_core::proto::gen::expression::{Identifier, MemberExpression};
 
-pub fn compile_member(
+pub async fn compile_member(
     node: &MemberExpression,
     config: &CompilationConfig,
     schema: &DFSchema,
@@ -27,7 +27,7 @@ pub fn compile_member(
     // Get string-form of index
     let property_string = if node.computed {
         // e.g. foo[val]
-        let compiled_property = compile(node.property(), config, Some(schema))?;
+        let compiled_property = compile(node.property(), config, Some(schema)).await?;
         let evaluated_property = compiled_property.eval_to_scalar().with_context(
             || format!("VegaFusion does not support the use of datum expressions in object member access: {node}")
         )?;
@@ -67,7 +67,7 @@ pub fn compile_member(
         _ => {}
     }
 
-    let compiled_object = compile(node.object(), config, Some(schema))?;
+    let compiled_object = compile(node.object(), config, Some(schema)).await?;
     let dtype = data_type(&compiled_object, schema)?;
 
     let expr = match dtype {

@@ -44,6 +44,7 @@ use vegafusion_common::data::table::VegaFusionTable;
 use vegafusion_common::datafusion_common::DFSchema;
 use vegafusion_common::datatypes::cast_to;
 use vegafusion_common::error::{Result, ResultWithContext, VegaFusionError};
+use vegafusion_core::data::dataset::VegaFusionDataset;
 use vegafusion_core::proto::gen::expression::{
     expression, literal, CallExpression, Expression, Literal,
 };
@@ -96,7 +97,7 @@ pub enum VegaFusionCallable {
     Scale,
 }
 
-pub fn compile_scalar_arguments(
+pub async fn compile_scalar_arguments(
     node: &CallExpression,
     config: &CompilationConfig,
     schema: &DFSchema,
@@ -104,7 +105,7 @@ pub fn compile_scalar_arguments(
 ) -> Result<Vec<Expr>> {
     let mut args: Vec<Expr> = Vec::new();
     for arg in &node.arguments {
-        let compiled_arg = compile(arg, config, Some(schema))?;
+        let compiled_arg = compile(arg, config, Some(schema)).await?;
         let arg_expr = match cast {
             None => compiled_arg,
             Some(dtype) => cast_to(compiled_arg, dtype, schema)?,
@@ -114,7 +115,7 @@ pub fn compile_scalar_arguments(
     Ok(args)
 }
 
-pub fn compile_call(
+pub async fn compile_call(
     node: &CallExpression,
     config: &CompilationConfig,
     schema: &DFSchema,
@@ -127,10 +128,10 @@ pub fn compile_call(
         VegaFusionCallable::Macro(callable) => {
             // Apply macro then recursively compile
             let new_expr = callable(&node.arguments)?;
-            compile(&new_expr, config, Some(schema))
+            compile(&new_expr, config, Some(schema)).await
         }
         VegaFusionCallable::ScalarUDF { udf, cast } => {
-            let args = compile_scalar_arguments(node, config, schema, cast)?;
+            let args = compile_scalar_arguments(node, config, schema, cast).await?;
             Ok(Expr::ScalarFunction(expr::ScalarFunction {
                 func: udf.clone(),
                 args,
@@ -144,11 +145,19 @@ pub fn compile_call(
                         ..
                     }) => {
                         if let Some(dataset) = config.data_scope.get(name) {
+                            let table = match dataset {
+                                VegaFusionDataset::Table { table, .. } => table.clone(),
+                                // Materialize plans on-demand when needed for expression evaluation.
+                                // This allows lazy evaluation of data transformations - plans are only
+                                // executed when the data is actually needed by an expression.
+                                VegaFusionDataset::Plan { plan } => {
+                                    config.plan_executor.execute_plan(plan.clone()).await?
+                                }
+                            };
                             let tz_config = config
                                 .tz_config
                                 .with_context(|| "No local timezone info provided".to_string())?;
-
-                            callee(dataset, &node.arguments[1..], schema, &tz_config)
+                            callee(&table, &node.arguments[1..], schema, &tz_config)
                         } else {
                             Err(VegaFusionError::internal(format!(
                                 "No dataset named {}. Available: {:?}",
@@ -172,11 +181,11 @@ pub fn compile_call(
             }
         }
         VegaFusionCallable::Transform(callable) => {
-            let args = compile_scalar_arguments(node, config, schema, &None)?;
+            let args = compile_scalar_arguments(node, config, schema, &None).await?;
             callable(&args, schema)
         }
         VegaFusionCallable::UnaryTransform(callable) => {
-            let mut args = compile_scalar_arguments(node, config, schema, &None)?;
+            let mut args = compile_scalar_arguments(node, config, schema, &None).await?;
             if args.len() != 1 {
                 Err(VegaFusionError::internal(format!(
                     "The {} function requires 1 argument. Received {}",
@@ -188,14 +197,14 @@ pub fn compile_call(
             }
         }
         VegaFusionCallable::LocalTransform(callable) => {
-            let args = compile_scalar_arguments(node, config, schema, &None)?;
+            let args = compile_scalar_arguments(node, config, schema, &None).await?;
             let tz_config = config
                 .tz_config
                 .with_context(|| "No local timezone info provided".to_string())?;
             callable(&tz_config, &args, schema)
         }
         VegaFusionCallable::UtcTransform(callable) => {
-            let args = compile_scalar_arguments(node, config, schema, &None)?;
+            let args = compile_scalar_arguments(node, config, schema, &None).await?;
             let tz_config = RuntimeTzConfig {
                 local_tz: chrono_tz::UTC,
                 default_input_tz: chrono_tz::UTC,

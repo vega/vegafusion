@@ -12,14 +12,14 @@ use vegafusion_core::arrow::datatypes::DataType;
 use vegafusion_core::error::Result;
 use vegafusion_core::proto::gen::expression::{BinaryExpression, BinaryOperator};
 
-pub fn compile_binary(
+pub async fn compile_binary(
     node: &BinaryExpression,
     config: &CompilationConfig,
     schema: &DFSchema,
 ) -> Result<Expr> {
     // First, compile argument
-    let lhs = compile(node.left(), config, Some(schema))?;
-    let rhs = compile(node.right(), config, Some(schema))?;
+    let lhs = compile(node.left(), config, Some(schema)).await?;
+    let rhs = compile(node.right(), config, Some(schema)).await?;
 
     let lhs_dtype = data_type(&lhs, schema)?;
     let rhs_dtype = data_type(&rhs, schema)?;
