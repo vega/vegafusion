@@ -20,7 +20,8 @@ impl TransformTrait for Filter {
             self.expr.as_ref().unwrap(),
             config,
             Some(dataframe.schema()),
-        )?;
+        )
+        .await?;
 
         // Cast filter expr to boolean
         let filter_expr = to_boolean(filter_expr, dataframe.schema())?;

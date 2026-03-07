@@ -32,7 +32,8 @@ use vegafusion_core::proto::gen::expression::{expression::Expr as vfExpr, Expres
 
 /// Function to compile a parsed expression into a CompiledExpression, given a scope containing
 /// a SignalValue for every unbound identifier in the expression.
-pub fn compile(
+#[async_recursion::async_recursion]
+pub async fn compile(
     expr: &Expression,
     config: &CompilationConfig,
     schema: Option<&DFSchema>,
@@ -43,14 +44,14 @@ pub fn compile(
     match expr {
         Literal(node) => Ok(compile_literal(node)),
         Identifier(node) => compile_identifier(node, config),
-        Unary(node) => compile_unary(node, config, schema),
-        Conditional(node) => compile_conditional(node, config, schema),
-        Logical(node) => compile_logical(node, config, schema),
-        Binary(node) => compile_binary(node, config, schema),
-        Array(node) => compile_array(node, config, schema),
-        Object(node) => compile_object(node, config, schema),
-        Member(node) => compile_member(node, config, schema),
-        Call(node) => compile_call(node, config, schema),
+        Unary(node) => compile_unary(node, config, schema).await,
+        Conditional(node) => compile_conditional(node, config, schema).await,
+        Logical(node) => compile_logical(node, config, schema).await,
+        Binary(node) => compile_binary(node, config, schema).await,
+        Array(node) => compile_array(node, config, schema).await,
+        Object(node) => compile_object(node, config, schema).await,
+        Member(node) => compile_member(node, config, schema).await,
+        Call(node) => compile_call(node, config, schema).await,
     }
 }
 
@@ -78,36 +79,44 @@ mod test_compile {
     use vegafusion_core::arrow::array::{Array, Float64Array};
     use vegafusion_core::arrow::datatypes::Fields;
 
-    #[test]
-    fn test_compile_literal_float() {
+    #[tokio::test]
+    async fn test_compile_literal_float() {
         let expression = parse(r#"22.50"#).unwrap();
-        let result = compile(&expression, &Default::default(), None).unwrap();
+        let result = compile(&expression, &Default::default(), None)
+            .await
+            .unwrap();
         assert_eq!(result, lit(22.5))
     }
 
-    #[test]
-    fn test_compile_literal_integer() {
+    #[tokio::test]
+    async fn test_compile_literal_integer() {
         let expression = parse(r#"22"#).unwrap();
-        let result = compile(&expression, &Default::default(), None).unwrap();
+        let result = compile(&expression, &Default::default(), None)
+            .await
+            .unwrap();
         assert_eq!(result, lit(22.0))
     }
 
-    #[test]
-    fn test_compile_literal_string() {
+    #[tokio::test]
+    async fn test_compile_literal_string() {
         let expression = parse(r#"'Hello, world!'"#).unwrap();
-        let result = compile(&expression, &Default::default(), None).unwrap();
+        let result = compile(&expression, &Default::default(), None)
+            .await
+            .unwrap();
         assert_eq!(result, lit("Hello, world!"))
     }
 
-    #[test]
-    fn test_compile_literal_boolean() {
+    #[tokio::test]
+    async fn test_compile_literal_boolean() {
         let expression = parse(r#" false "#).unwrap();
-        let result = compile(&expression, &Default::default(), None).unwrap();
+        let result = compile(&expression, &Default::default(), None)
+            .await
+            .unwrap();
         assert_eq!(result, lit(false))
     }
 
-    #[test]
-    fn test_compile_identifier_in_scope() {
+    #[tokio::test]
+    async fn test_compile_identifier_in_scope() {
         let scope: HashMap<String, ScalarValue> =
             vec![("foo".to_string(), ScalarValue::Int32(Some(42)))]
                 .into_iter()
@@ -118,7 +127,7 @@ mod test_compile {
         };
 
         let expr = parse("foo").unwrap();
-        let result_expr = compile(&expr, &config, None).unwrap();
+        let result_expr = compile(&expr, &config, None).await.unwrap();
         println!("expr: {result_expr:?}");
         assert_eq!(result_expr, lit(42));
 
@@ -129,10 +138,10 @@ mod test_compile {
         assert_eq!(result_value, expected_value);
     }
 
-    #[test]
-    fn test_compile_unary_neg() {
+    #[tokio::test]
+    async fn test_compile_unary_neg() {
         let expr = parse("-(23.5)").unwrap();
-        let result_expr = compile(&expr, &Default::default(), None).unwrap();
+        let result_expr = compile(&expr, &Default::default(), None).await.unwrap();
         println!("expr: {result_expr:?}");
 
         let expected_expr = Expr::Negative(Box::new(lit(23.5)));
@@ -145,10 +154,10 @@ mod test_compile {
         assert_eq!(result_value, expected_value);
     }
 
-    #[test]
-    fn test_compile_unary_pos() {
+    #[tokio::test]
+    async fn test_compile_unary_pos() {
         let expr = parse("+'72'").unwrap();
-        let result_expr = compile(&expr, &Default::default(), None).unwrap();
+        let result_expr = compile(&expr, &Default::default(), None).await.unwrap();
         println!("expr: {result_expr:?}");
 
         // plus prefix on a string should result in a numeric cast
@@ -166,10 +175,10 @@ mod test_compile {
         assert_eq!(result_value, expected_value);
     }
 
-    #[test]
-    fn test_compile_unary_not() {
+    #[tokio::test]
+    async fn test_compile_unary_not() {
         let expr = parse("!32").unwrap();
-        let result_expr = compile(&expr, &Default::default(), None).unwrap();
+        let result_expr = compile(&expr, &Default::default(), None).await.unwrap();
         println!("expr: {result_expr:?}");
 
         // unary not should cast numeric value to boolean
@@ -191,10 +200,10 @@ mod test_compile {
         assert_eq!(result_value, expected_value);
     }
 
-    #[test]
-    fn test_compile_conditional() {
+    #[tokio::test]
+    async fn test_compile_conditional() {
         let expr = parse("32? 7: 9").unwrap();
-        let result_expr = compile(&expr, &Default::default(), None).unwrap();
+        let result_expr = compile(&expr, &Default::default(), None).await.unwrap();
         println!("expr: {result_expr:?}");
         let cast_expr = Expr::TryCast(TryCast {
             expr: Box::new(lit(32.0)),
@@ -223,10 +232,10 @@ mod test_compile {
         assert_eq!(result_value, expected_value);
     }
 
-    #[test]
-    fn test_compile_logical_boolean() {
+    #[tokio::test]
+    async fn test_compile_logical_boolean() {
         let expr = parse("false || true").unwrap();
-        let result_expr = compile(&expr, &Default::default(), None).unwrap();
+        let result_expr = compile(&expr, &Default::default(), None).await.unwrap();
         println!("expr: {result_expr:?}");
 
         let expected_expr = Expr::BinaryExpr(BinaryExpr {
@@ -244,10 +253,10 @@ mod test_compile {
         assert_eq!(result_value, expected_value);
     }
 
-    #[test]
-    fn test_compile_logical_non_boolean() {
+    #[tokio::test]
+    async fn test_compile_logical_non_boolean() {
         let expr = parse("5 && 55").unwrap();
-        let result_expr = compile(&expr, &Default::default(), None).unwrap();
+        let result_expr = compile(&expr, &Default::default(), None).await.unwrap();
         println!("expr: {result_expr:?}");
 
         let cast_expr = Expr::TryCast(TryCast {
@@ -277,10 +286,10 @@ mod test_compile {
         assert_eq!(result_value, expected_value);
     }
 
-    #[test]
-    fn test_compile_binary_mixed() {
+    #[tokio::test]
+    async fn test_compile_binary_mixed() {
         let expr = parse("1 + +'2' + true * 10").unwrap();
-        let result_expr = compile(&expr, &Default::default(), None).unwrap();
+        let result_expr = compile(&expr, &Default::default(), None).await.unwrap();
         println!("expr: {result_expr:?}");
 
         // 1 + +'2'
@@ -320,10 +329,10 @@ mod test_compile {
         assert_eq!(result_value, expected_value);
     }
 
-    #[test]
-    fn test_compile_binary_string_addition() {
+    #[tokio::test]
+    async fn test_compile_binary_string_addition() {
         let expr = parse("'2' + '4'").unwrap();
-        let result_expr = compile(&expr, &Default::default(), None).unwrap();
+        let result_expr = compile(&expr, &Default::default(), None).await.unwrap();
 
         let expected_expr = concat(vec![lit("2"), lit("4")]);
         println!("expr: {result_expr:?}");
@@ -337,10 +346,10 @@ mod test_compile {
         assert_eq!(result_value, expected_value);
     }
 
-    #[test]
-    fn test_compile_binary_loose_equality() {
+    #[tokio::test]
+    async fn test_compile_binary_loose_equality() {
         let expr = parse("'2.0' == 2").unwrap();
-        let result_expr = compile(&expr, &Default::default(), None).unwrap();
+        let result_expr = compile(&expr, &Default::default(), None).await.unwrap();
 
         let expected_expr = Expr::BinaryExpr(BinaryExpr {
             left: Box::new(Expr::TryCast(TryCast {
@@ -362,10 +371,10 @@ mod test_compile {
         assert_eq!(result_value, expected_value);
     }
 
-    #[test]
-    fn test_compile_binary_strict_equality() {
+    #[tokio::test]
+    async fn test_compile_binary_strict_equality() {
         let expr = parse("'2.0' === 2").unwrap();
-        let result_expr = compile(&expr, &Default::default(), None).unwrap();
+        let result_expr = compile(&expr, &Default::default(), None).await.unwrap();
 
         // Types don't match, so this is compiled to the literal `false`
         let expected_expr = lit(false);
@@ -380,10 +389,10 @@ mod test_compile {
         assert_eq!(result_value, expected_value);
     }
 
-    #[test]
-    fn test_compile_array_numeric() {
+    #[tokio::test]
+    async fn test_compile_array_numeric() {
         let expr = parse("[1, 2, 3]").unwrap();
-        let result_expr = compile(&expr, &Default::default(), None).unwrap();
+        let result_expr = compile(&expr, &Default::default(), None).await.unwrap();
         let expected_expr = make_array(vec![lit(1.0), lit(2.0), lit(3.0)]);
         println!("expr: {result_expr:?}");
         assert_eq!(result_expr, expected_expr);
@@ -401,10 +410,10 @@ mod test_compile {
         assert_eq!(result_value, expected_value);
     }
 
-    #[test]
-    fn test_compile_array_empty() {
+    #[tokio::test]
+    async fn test_compile_array_empty() {
         let expr = parse("[]").unwrap();
-        let result_expr = compile(&expr, &Default::default(), None).unwrap();
+        let result_expr = compile(&expr, &Default::default(), None).await.unwrap();
 
         let expected_expr = make_array(vec![]);
         println!("expr: {result_expr:?}");
@@ -429,10 +438,10 @@ mod test_compile {
         }
     }
 
-    #[test]
-    fn test_compile_array_2d() {
+    #[tokio::test]
+    async fn test_compile_array_2d() {
         let expr = parse("[[1, 2], [3, 4], [5, 6]]").unwrap();
-        let result_expr = compile(&expr, &Default::default(), None).unwrap();
+        let result_expr = compile(&expr, &Default::default(), None).await.unwrap();
 
         let expected_expr = make_array(vec![
             make_array(vec![lit(1.0), lit(2.0)]),
@@ -480,10 +489,10 @@ mod test_compile {
         assert_eq!(result_value, expected_value);
     }
 
-    #[test]
-    fn test_compile_object() {
+    #[tokio::test]
+    async fn test_compile_object() {
         let expr = parse("{a: 1, 'two': {three: 3}}").unwrap();
-        let result_expr = compile(&expr, &Default::default(), None).unwrap();
+        let result_expr = compile(&expr, &Default::default(), None).await.unwrap();
 
         // Check compiled representation
         assert_eq!(result_expr.to_string(), "named_struct(Utf8(\"a\"), Float64(1), Utf8(\"two\"), named_struct(Utf8(\"three\"), Float64(3)))");
@@ -506,10 +515,10 @@ mod test_compile {
         assert_eq!(format!("{result_value:?}"), format!("{expected_value:?}"));
     }
 
-    #[test]
-    fn test_eval_object_member() {
+    #[tokio::test]
+    async fn test_eval_object_member() {
         let expr = parse("({a: 1, 'two': 2})['tw' + 'o']").unwrap();
-        let result_expr = compile(&expr, &Default::default(), None).unwrap();
+        let result_expr = compile(&expr, &Default::default(), None).await.unwrap();
         println!("expr: {result_expr:?}");
 
         // Check evaluated value
@@ -519,8 +528,8 @@ mod test_compile {
         assert_eq!(result_value, expected);
     }
 
-    #[test]
-    fn test_compile_datum_member() {
+    #[tokio::test]
+    async fn test_compile_datum_member() {
         let expr = parse("datum['tw' + 'o'] * 3").unwrap();
         let schema = DFSchema::try_from(Schema::new(vec![Field::new(
             "two",
@@ -529,7 +538,9 @@ mod test_compile {
         )]))
         .unwrap();
 
-        let result_expr = compile(&expr, &Default::default(), Some(&schema)).unwrap();
+        let result_expr = compile(&expr, &Default::default(), Some(&schema))
+            .await
+            .unwrap();
 
         let expected_expr = Expr::BinaryExpr(BinaryExpr {
             left: Box::new(flat_col("two")),
@@ -541,8 +552,8 @@ mod test_compile {
         assert_eq!(result_expr, expected_expr);
     }
 
-    #[test]
-    fn test_compile_datum_nested_member() {
+    #[tokio::test]
+    async fn test_compile_datum_nested_member() {
         let expr = parse("datum['two'].foo * 3").unwrap();
         // let expr = parse("[datum['two'].foo * 3, datum['two'].foo]").unwrap();
         let foo_field = Field::new("foo", DataType::Float64, true);
@@ -551,7 +562,9 @@ mod test_compile {
         let two_field = Field::new("two", two_type, true);
         let schema = Schema::new(vec![two_field]);
         let schema = DFSchema::try_from(schema).unwrap();
-        let result_expr = compile(&expr, &Default::default(), Some(&schema)).unwrap();
+        let result_expr = compile(&expr, &Default::default(), Some(&schema))
+            .await
+            .unwrap();
         println!("compiled: {result_expr:?}");
 
         // Eval to column no longer available on Expr
@@ -574,10 +587,10 @@ mod test_compile {
         // }
     }
 
-    #[test]
-    fn test_eval_call_if() {
+    #[tokio::test]
+    async fn test_eval_call_if() {
         let expr = parse("if(32, 7, 9)").unwrap();
-        let result_expr = compile(&expr, &Default::default(), None).unwrap();
+        let result_expr = compile(&expr, &Default::default(), None).await.unwrap();
 
         let cast_expr = Expr::TryCast(TryCast {
             expr: Box::new(lit(32.0)),
@@ -606,10 +619,10 @@ mod test_compile {
         assert_eq!(result_value, expected);
     }
 
-    #[test]
-    fn test_eval_call_abs() {
+    #[tokio::test]
+    async fn test_eval_call_abs() {
         let expr = parse("abs(-2)").unwrap();
-        let result_expr = compile(&expr, &Default::default(), None).unwrap();
+        let result_expr = compile(&expr, &Default::default(), None).await.unwrap();
         println!("expr: {result_expr:?}");
 
         let result_value = result_expr.eval_to_scalar().unwrap();
@@ -619,10 +632,10 @@ mod test_compile {
         assert_eq!(result_value, expected);
     }
 
-    #[test]
-    fn test_eval_call_pow() {
+    #[tokio::test]
+    async fn test_eval_call_pow() {
         let expr = parse("pow(3, 4)").unwrap();
-        let result_expr = compile(&expr, &Default::default(), None).unwrap();
+        let result_expr = compile(&expr, &Default::default(), None).await.unwrap();
         println!("expr: {result_expr:?}");
 
         let result_value = result_expr.eval_to_scalar().unwrap();
@@ -632,10 +645,10 @@ mod test_compile {
         assert_eq!(result_value, expected);
     }
 
-    #[test]
-    fn test_eval_call_round() {
+    #[tokio::test]
+    async fn test_eval_call_round() {
         let expr = parse("round(4.8)").unwrap();
-        let result_expr = compile(&expr, &Default::default(), None).unwrap();
+        let result_expr = compile(&expr, &Default::default(), None).await.unwrap();
         println!("expr: {result_expr:?}");
 
         let result_value = result_expr.eval_to_scalar().unwrap();
@@ -645,10 +658,10 @@ mod test_compile {
         assert_eq!(result_value, expected);
     }
 
-    #[test]
-    fn test_eval_call_is_nan() {
+    #[tokio::test]
+    async fn test_eval_call_is_nan() {
         let expr = parse("isNaN(NaN + 4)").unwrap();
-        let result_expr = compile(&expr, &Default::default(), None).unwrap();
+        let result_expr = compile(&expr, &Default::default(), None).await.unwrap();
         println!("expr: {result_expr:?}");
 
         let result_value = result_expr.eval_to_scalar().unwrap();
@@ -658,10 +671,10 @@ mod test_compile {
         assert_eq!(result_value, expected);
     }
 
-    #[test]
-    fn test_eval_length() {
+    #[tokio::test]
+    async fn test_eval_length() {
         let expr = parse("length([1, 2, 3])").unwrap();
-        let result_expr = compile(&expr, &Default::default(), None).unwrap();
+        let result_expr = compile(&expr, &Default::default(), None).await.unwrap();
         println!("expr: {result_expr:?}");
 
         let result_value = result_expr.eval_to_scalar().unwrap();
@@ -671,10 +684,10 @@ mod test_compile {
         assert_eq!(result_value, expected);
     }
 
-    #[test]
-    fn test_eval_length_member() {
+    #[tokio::test]
+    async fn test_eval_length_member() {
         let expr = parse("[1, 2, 3].length").unwrap();
-        let result_expr = compile(&expr, &Default::default(), None).unwrap();
+        let result_expr = compile(&expr, &Default::default(), None).await.unwrap();
         println!("expr: {result_expr:?}");
 
         let result_value = result_expr.eval_to_scalar().unwrap();
@@ -684,8 +697,8 @@ mod test_compile {
         assert_eq!(result_value, expected);
     }
 
-    #[test]
-    fn try_datetime() {
+    #[tokio::test]
+    async fn try_datetime() {
         let expr = parse("datetime('2007-04-05T14:30:00')").unwrap();
         let config = CompilationConfig {
             tz_config: Some(RuntimeTzConfig {
@@ -694,7 +707,7 @@ mod test_compile {
             }),
             ..Default::default()
         };
-        let result_expr = compile(&expr, &config, None).unwrap();
+        let result_expr = compile(&expr, &config, None).await.unwrap();
         println!("expr: {result_expr:?}");
 
         let result_value = result_expr.eval_to_scalar().unwrap();

@@ -1,7 +1,7 @@
 use super::{
     destringify_selection_datetimes::destringify_selection_datetimes,
     plan::SpecPlan,
-    watch::{ExportUpdateArrow, ExportUpdateNamespace},
+    watch::{ExportUpdateNamespace, MaterializedExportUpdate},
 };
 use crate::{
     proto::gen::{
@@ -20,7 +20,7 @@ use vegafusion_common::error::{Result, VegaFusionError};
 pub fn apply_pre_transform_datasets(
     input_spec: &ChartSpec,
     plan: &SpecPlan,
-    init: Vec<ExportUpdateArrow>,
+    init: Vec<MaterializedExportUpdate>,
     row_limit: Option<u32>,
 ) -> Result<(ChartSpec, Vec<PreTransformSpecWarning>)> {
     // Update client spec with server values

@@ -1,7 +1,7 @@
 use vegafusion_core::proto::gen::tasks::Variable;
 use vegafusion_core::runtime::VegaFusionRuntimeTrait;
 use vegafusion_core::spec::chart::ChartSpec;
-use vegafusion_core::task_graph::task_value::TaskValue;
+use vegafusion_core::task_graph::task_value::MaterializedTaskValue;
 use vegafusion_runtime::task_graph::runtime::VegaFusionRuntime;
 
 /// This example demonstrates how to use the `pre_transform_values` method to get
@@ -10,7 +10,7 @@ use vegafusion_runtime::task_graph::runtime::VegaFusionRuntime;
 async fn main() {
     let spec = get_spec();
 
-    let runtime = VegaFusionRuntime::new(None);
+    let runtime = VegaFusionRuntime::default();
 
     let (values, warnings) = runtime
         .pre_transform_values(
@@ -25,7 +25,7 @@ async fn main() {
     assert_eq!(values.len(), 1);
     assert_eq!(warnings.len(), 0);
 
-    let TaskValue::Table(counts_table) = &values[0] else {
+    let MaterializedTaskValue::Table(counts_table) = &values[0] else {
         panic!("Expected a table")
     };
 

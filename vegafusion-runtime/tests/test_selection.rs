@@ -7,12 +7,13 @@ use rstest::*;
 use serde_json::{json, Value};
 use util::check::check_transform_evaluation;
 use vegafusion_common::data::table::VegaFusionTable;
+use vegafusion_core::data::dataset::VegaFusionDataset;
 use vegafusion_core::spec::transform::formula::FormulaTransformSpec;
 use vegafusion_core::spec::transform::TransformSpec;
 use vegafusion_runtime::expression::compiler::config::CompilationConfig;
 use vegafusion_runtime::task_graph::timezone::RuntimeTzConfig;
 
-fn make_brush_r(ranges: &[Vec<(&str, &str, [f64; 2])>], typ: &str) -> VegaFusionTable {
+fn make_brush_r(ranges: &[Vec<(&str, &str, [f64; 2])>], typ: &str) -> VegaFusionDataset {
     let mut rows: Vec<Value> = Vec::new();
     for (i, row_ranges) in ranges.iter().enumerate() {
         let mut field_elements: Vec<Value> = Vec::new();
@@ -34,10 +35,14 @@ fn make_brush_r(ranges: &[Vec<(&str, &str, [f64; 2])>], typ: &str) -> VegaFusion
             "values": Value::Array(value_elements),
         }));
     }
-    VegaFusionTable::from_json(&Value::Array(rows)).unwrap()
+    VegaFusionDataset::from_table(
+        VegaFusionTable::from_json(&Value::Array(rows)).unwrap(),
+        None,
+    )
+    .unwrap()
 }
 
-fn make_brush_e_single(field: &str, values: &[f64]) -> VegaFusionTable {
+fn make_brush_e_single(field: &str, values: &[f64]) -> VegaFusionDataset {
     let mut rows: Vec<Value> = Vec::new();
 
     for (i, val) in values.iter().enumerate() {
@@ -54,10 +59,14 @@ fn make_brush_e_single(field: &str, values: &[f64]) -> VegaFusionTable {
         }));
     }
 
-    VegaFusionTable::from_json(&Value::Array(rows)).unwrap()
+    VegaFusionDataset::from_table(
+        VegaFusionTable::from_json(&Value::Array(rows)).unwrap(),
+        None,
+    )
+    .unwrap()
 }
 
-fn make_brush_e_str(ranges: &Vec<Vec<(&str, &str, Vec<&str>)>>) -> VegaFusionTable {
+fn make_brush_e_str(ranges: &Vec<Vec<(&str, &str, Vec<&str>)>>) -> VegaFusionDataset {
     let mut rows: Vec<Value> = Vec::new();
     for (i, row_ranges) in ranges.iter().enumerate() {
         let mut field_elements: Vec<Value> = Vec::new();
@@ -80,7 +89,11 @@ fn make_brush_e_str(ranges: &Vec<Vec<(&str, &str, Vec<&str>)>>) -> VegaFusionTab
         }));
     }
 
-    VegaFusionTable::from_json(&Value::Array(rows)).unwrap()
+    VegaFusionDataset::from_table(
+        VegaFusionTable::from_json(&Value::Array(rows)).unwrap(),
+        None,
+    )
+    .unwrap()
 }
 
 fn datum() -> VegaFusionTable {
@@ -98,7 +111,7 @@ fn datum() -> VegaFusionTable {
 
 pub fn check_vl_selection_test(
     selection_expr: &str,
-    brush_dataset: VegaFusionTable,
+    brush_dataset: VegaFusionDataset,
     dataset: &VegaFusionTable,
 ) {
     let formula_spec = FormulaTransformSpec {
@@ -124,7 +137,7 @@ pub fn check_vl_selection_test(
     check_transform_evaluation(dataset, transform_specs.as_slice(), &config, &eq_config);
 }
 
-pub fn check_vl_selection_resolve(selection_expr: &str, brush_dataset: VegaFusionTable) {
+pub fn check_vl_selection_resolve(selection_expr: &str, brush_dataset: VegaFusionDataset) {
     let config = CompilationConfig {
         data_scope: vec![("brush".to_string(), brush_dataset)]
             .into_iter()
@@ -241,7 +254,9 @@ mod test_vl_selection_test_e_mixed_str_bool {
               "values": ["Comedy", false]
             }
         ]);
-        let brush = VegaFusionTable::from_json(&brush_json).unwrap();
+        let brush =
+            VegaFusionDataset::from_table(VegaFusionTable::from_json(&brush_json).unwrap(), None)
+                .unwrap();
 
         let dataset_json = json!([
             {"Major Genre": "Adventure", "is_pg": true, "Title": "A"},

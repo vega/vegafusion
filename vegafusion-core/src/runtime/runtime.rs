@@ -1,13 +1,14 @@
 use std::{any::Any, collections::HashMap, sync::Arc};
 
 use crate::proto::gen::pretransform::pre_transform_values_warning::WarningType as ValuesWarningType;
+use crate::task_graph::task_value::{MaterializedTaskValue, TaskValue};
 use crate::{
     data::dataset::VegaFusionDataset,
     planning::{
         apply_pre_transform::apply_pre_transform_datasets,
         destringify_selection_datetimes::destringify_selection_datetimes,
         plan::{PlannerConfig, SpecPlan},
-        watch::{ExportUpdateArrow, ExportUpdateNamespace},
+        watch::{ExportUpdate, ExportUpdateNamespace, MaterializedExportUpdate},
     },
     proto::gen::{
         pretransform::{
@@ -18,10 +19,7 @@ use crate::{
         tasks::{NodeValueIndex, TaskGraph, TzConfig, VariableNamespace},
     },
     spec::{chart::ChartSpec, values::MissingNullOrValue},
-    task_graph::{
-        graph::ScopedVariable,
-        task_value::{NamedTaskValue, TaskValue},
-    },
+    task_graph::{graph::ScopedVariable, task_value::NamedTaskValue},
 };
 use async_trait::async_trait;
 use vegafusion_common::{
@@ -47,6 +45,50 @@ pub trait VegaFusionRuntimeTrait: Send + Sync {
         inline_datasets: &HashMap<String, VegaFusionDataset>,
     ) -> Result<Vec<NamedTaskValue>>;
 
+    async fn materialize_task_values(
+        &self,
+        values: Vec<TaskValue>,
+    ) -> Result<Vec<MaterializedTaskValue>> {
+        let mut results = Vec::with_capacity(values.len());
+        for value in values {
+            results.push(match value {
+                TaskValue::Scalar(s) => MaterializedTaskValue::Scalar(s),
+                TaskValue::Table(t) => MaterializedTaskValue::Table(t),
+                TaskValue::Plan(_) => {
+                    return Err(VegaFusionError::internal(
+                        "Cannot materialize LogicalPlan in this runtime. Use a runtime with a PlanExecutor.",
+                    ))
+                }
+            });
+        }
+        Ok(results)
+    }
+
+    async fn materialize_export_updates(
+        &self,
+        export_updates: Vec<ExportUpdate>,
+    ) -> Result<Vec<MaterializedExportUpdate>> {
+        let (values, metadata): (Vec<_>, Vec<_>) = export_updates
+            .into_iter()
+            .map(|eu| (eu.value, (eu.namespace, eu.name, eu.scope)))
+            .unzip();
+
+        let materialized = self.materialize_task_values(values).await?;
+
+        Ok(materialized
+            .into_iter()
+            .zip(metadata)
+            .map(
+                |(value, (namespace, name, scope))| MaterializedExportUpdate {
+                    namespace,
+                    name,
+                    scope,
+                    value,
+                },
+            )
+            .collect())
+    }
+
     async fn pre_transform_spec_plan(
         &self,
         spec: &ChartSpec,
@@ -55,7 +97,7 @@ pub trait VegaFusionRuntimeTrait: Send + Sync {
         preserve_interactivity: bool,
         inline_datasets: &HashMap<String, VegaFusionDataset>,
         keep_variables: Vec<ScopedVariable>,
-    ) -> Result<(SpecPlan, Vec<ExportUpdateArrow>)> {
+    ) -> Result<(SpecPlan, Vec<ExportUpdate>)> {
         // Create spec plan
         let plan = SpecPlan::try_new(
             spec,
@@ -97,7 +139,7 @@ pub trait VegaFusionRuntimeTrait: Send + Sync {
             .with_context(|| "Failed to query node values")?;
 
         for (var, response_value) in plan.comm_plan.server_to_client.iter().zip(response_values) {
-            init.push(ExportUpdateArrow {
+            init.push(ExportUpdate {
                 namespace: ExportUpdateNamespace::try_from(var.0.namespace()).unwrap(),
                 name: var.0.name.clone(),
                 scope: var.1.clone(),
@@ -132,7 +174,9 @@ pub trait VegaFusionRuntimeTrait: Send + Sync {
             )
             .await?;
 
-        apply_pre_transform_datasets(input_spec, &plan, init, options.row_limit)
+        let init_arrow = self.materialize_export_updates(init).await?;
+
+        apply_pre_transform_datasets(input_spec, &plan, init_arrow, options.row_limit)
     }
 
     async fn pre_transform_extract(
@@ -163,13 +207,14 @@ pub trait VegaFusionRuntimeTrait: Send + Sync {
                 keep_variables,
             )
             .await?;
+        let init_arrow = self.materialize_export_updates(init).await?;
 
         // Update client spec with server values
         let mut spec = plan.client_spec.clone();
         let mut datasets: Vec<PreTransformExtractTable> = Vec::new();
         let extract_threshold = options.extract_threshold as usize;
 
-        for export_update in init {
+        for export_update in init_arrow {
             let scope = export_update.scope.clone();
             let name = export_update.name.as_str();
             match export_update.namespace {
@@ -199,7 +244,7 @@ pub trait VegaFusionRuntimeTrait: Send + Sync {
                     if let Some(input_values) = input_values {
                         // Set inline value
                         data.values = Some(input_values);
-                    } else if let TaskValue::Table(table) = export_update.value {
+                    } else if let MaterializedTaskValue::Table(table) = export_update.value {
                         if table.num_rows() <= extract_threshold {
                             // Inline small tables
                             data.values = Some(table.to_json()?);
@@ -246,7 +291,7 @@ pub trait VegaFusionRuntimeTrait: Send + Sync {
         variables: &[ScopedVariable],
         inline_datasets: &HashMap<String, VegaFusionDataset>,
         options: &PreTransformValuesOpts,
-    ) -> Result<(Vec<TaskValue>, Vec<PreTransformValuesWarning>)> {
+    ) -> Result<(Vec<MaterializedTaskValue>, Vec<PreTransformValuesWarning>)> {
         // Check that requested variables exist and collect indices
         for var in variables {
             let scope = var.1.as_slice();
@@ -348,25 +393,32 @@ pub trait VegaFusionRuntimeTrait: Send + Sync {
             .await?;
 
         // Collect values and handle row limit
-        let mut task_values: Vec<TaskValue> = Vec::new();
         let row_limit = options.row_limit.map(|l| l as usize);
-        for named_task_value in named_task_values {
-            let value = named_task_value.value;
-            let variable = named_task_value.variable;
 
-            // Apply row_limit
-            let value = if let (Some(row_limit), TaskValue::Table(table)) = (row_limit, &value) {
-                warnings.push(PreTransformValuesWarning {
+        let (values, variables): (Vec<_>, Vec<_>) = named_task_values
+            .into_iter()
+            .map(|ntv| (ntv.value, ntv.variable))
+            .unzip();
+
+        let materialized = self.materialize_task_values(values).await?;
+
+        let mut task_values = Vec::new();
+        for (materialized_value, variable) in materialized.into_iter().zip(variables) {
+            let final_value = if let (Some(row_limit), MaterializedTaskValue::Table(table)) =
+                (row_limit, &materialized_value)
+            {
+                let warning = PreTransformValuesWarning {
                     warning_type: Some(ValuesWarningType::RowLimit(PreTransformRowLimitWarning {
-                        datasets: vec![variable.clone()],
+                        datasets: vec![variable],
                     })),
-                });
-                TaskValue::Table(table.head(row_limit))
+                };
+                warnings.push(warning);
+                MaterializedTaskValue::Table(table.head(row_limit))
             } else {
-                value
+                materialized_value
             };
 
-            task_values.push(value);
+            task_values.push(final_value);
         }
 
         Ok((task_values, warnings))
