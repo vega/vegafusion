@@ -4,14 +4,13 @@ use crate::transform::TransformTrait;
 use itertools::Itertools;
 use std::collections::HashMap;
 
-use crate::data::util::DataFrameUtils;
 use async_trait::async_trait;
 use datafusion::prelude::DataFrame;
 use datafusion_expr::expr;
 use vegafusion_common::column::flat_col;
-use vegafusion_common::data::table::VegaFusionTable;
 use vegafusion_common::data::ORDER_COL;
 use vegafusion_common::error::{Result, VegaFusionError};
+use vegafusion_core::data::dataset::VegaFusionDataset;
 use vegafusion_core::proto::gen::tasks::{Variable, VariableNamespace};
 use vegafusion_core::proto::gen::transforms::TransformPipeline;
 use vegafusion_core::task_graph::task_value::TaskValue;
@@ -23,7 +22,7 @@ pub trait TransformPipelineUtils {
         &self,
         dataframe: DataFrame,
         config: &CompilationConfig,
-    ) -> Result<(VegaFusionTable, Vec<TaskValue>)>;
+    ) -> Result<(DataFrame, Vec<TaskValue>)>;
 }
 
 #[async_trait]
@@ -32,7 +31,7 @@ impl TransformPipelineUtils for TransformPipeline {
         &self,
         sql_df: DataFrame,
         config: &CompilationConfig,
-    ) -> Result<(VegaFusionTable, Vec<TaskValue>)> {
+    ) -> Result<(DataFrame, Vec<TaskValue>)> {
         let mut result_sql_df = sql_df;
         let mut result_outputs: HashMap<Variable, TaskValue> = Default::default();
         let mut config = config.clone();
@@ -58,9 +57,18 @@ impl TransformPipelineUtils for TransformPipeline {
                             .insert(var.name.clone(), val.as_scalar()?.clone());
                     }
                     VariableNamespace::Data => {
-                        config
-                            .data_scope
-                            .insert(var.name.clone(), val.as_table()?.clone());
+                        let dataset = match &val {
+                            TaskValue::Table(table) => {
+                                VegaFusionDataset::from_table(table.clone(), None).unwrap()
+                            }
+                            TaskValue::Plan(plan) => VegaFusionDataset::from_plan(plan.clone()),
+                            _ => {
+                                return Err(VegaFusionError::internal(
+                                    "Expected table or plan value for data variable",
+                                ))
+                            }
+                        };
+                        config.data_scope.insert(var.name.clone(), dataset);
                     }
                     VariableNamespace::Scale => {
                         unimplemented!()
@@ -103,14 +111,12 @@ impl TransformPipelineUtils for TransformPipeline {
             nulls_first: false,
         }])?;
 
-        let table = result_sql_df.collect_to_table().await?;
-
         // Sort result signal value by signal name
         let (_, signals_values): (Vec<_>, Vec<_>) = result_outputs
             .into_iter()
             .sorted_by_key(|(k, _v)| k.clone())
             .unzip();
 
-        Ok((table, signals_values))
+        Ok((result_sql_df, signals_values))
     }
 }

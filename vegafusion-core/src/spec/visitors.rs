@@ -17,7 +17,7 @@ use crate::spec::signal::{SignalOnEventSpec, SignalSpec};
 use crate::spec::values::{SignalExpressionSpec, StringOrSignalSpec};
 use crate::task_graph::graph::ScopedVariable;
 use crate::task_graph::scope::TaskScope;
-use crate::task_graph::task_value::TaskValue;
+use crate::task_graph::task_value::MaterializedTaskValue;
 use datafusion_common::ScalarValue;
 use rand::random;
 use std::collections::{HashMap, HashSet};
@@ -218,8 +218,8 @@ impl ChartVisitor for MakeTasksVisitor<'_> {
             };
 
             if pipeline.is_none() && format_type.is_none() {
-                // If no transforms, treat as regular TaskValue task
-                Task::new_value(data_var, scope, TaskValue::Table(values_table))
+                // If no transforms, treat as regular MaterializedTaskValue task
+                Task::new_value(data_var, scope, MaterializedTaskValue::Table(values_table))
             } else {
                 // Otherwise, create data values task (which supports transforms)
                 Task::new_data_values(
@@ -242,13 +242,13 @@ impl ChartVisitor for MakeTasksVisitor<'_> {
         let signal_var = Variable::new_signal(&signal.name);
 
         let task = if let Some(value) = &signal.value.as_option() {
-            let value = TaskValue::Scalar(ScalarValue::from_json(value)?);
+            let value = MaterializedTaskValue::Scalar(ScalarValue::from_json(value)?);
             Task::new_value(signal_var, scope, value)
         } else if let Some(update) = &signal.update {
             let expression = parse(update)?;
             Task::new_signal(signal_var, scope, expression, &self.tz_config)
         } else {
-            let value = TaskValue::Scalar(ScalarValue::Null);
+            let value = MaterializedTaskValue::Scalar(ScalarValue::Null);
             Task::new_value(signal_var, scope, value)
         };
 

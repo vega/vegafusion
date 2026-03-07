@@ -7,6 +7,7 @@ use datafusion::prelude::SessionContext;
 use std::collections::HashMap;
 use std::sync::Arc;
 use vegafusion_core::data::dataset::VegaFusionDataset;
+use vegafusion_core::runtime::PlanExecutor;
 
 use crate::task_graph::timezone::RuntimeTzConfig;
 use vegafusion_core::error::Result;
@@ -22,10 +23,11 @@ impl TaskCall for SignalTask {
         tz_config: &Option<RuntimeTzConfig>,
         _inline_datasets: HashMap<String, VegaFusionDataset>,
         _ctx: Arc<SessionContext>,
+        plan_executor: Arc<dyn PlanExecutor>,
     ) -> Result<(TaskValue, Vec<TaskValue>)> {
-        let config = build_compilation_config(&self.input_vars(), values, tz_config);
+        let config = build_compilation_config(&self.input_vars(), values, tz_config, plan_executor);
         let expression = self.expr.as_ref().unwrap();
-        let expr = compile(expression, &config, None)?;
+        let expr = compile(expression, &config, None).await?;
         let value = expr.eval_to_scalar()?;
         let task_value = TaskValue::Scalar(value);
         Ok((task_value, Default::default()))

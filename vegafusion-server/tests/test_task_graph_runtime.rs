@@ -1,4 +1,3 @@
-use assert_cmd::prelude::*;
 use std::time::Duration;
 use vegafusion_common::data::scalar::ScalarValueHelpers;
 use vegafusion_core::proto::gen::services::query_result::Response;
@@ -64,8 +63,7 @@ async fn try_it_from_spec() {
         )),
     };
 
-    let mut bin = std::process::Command::cargo_bin("vegafusion-server")
-        .expect("Failed to build vegafusion-server");
+    let mut bin = std::process::Command::new(assert_cmd::cargo::cargo_bin!("vegafusion-server"));
     let cmd = bin.args(["--port", "50059"]);
 
     let mut proc = cmd.spawn().expect("Failed to spawn vegafusion-server");

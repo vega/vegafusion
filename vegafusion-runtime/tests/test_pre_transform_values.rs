@@ -39,7 +39,7 @@ mod tests {
         let spec: ChartSpec = serde_json::from_str(&spec_str).unwrap();
 
         // Initialize task graph runtime
-        let runtime = VegaFusionRuntime::new(None);
+        let runtime = VegaFusionRuntime::default();
 
         let (values, warnings) = runtime
             .pre_transform_values(
@@ -88,7 +88,7 @@ mod tests {
         let spec: ChartSpec = serde_json::from_str(&spec_str).unwrap();
 
         // Initialize task graph runtime
-        let runtime = VegaFusionRuntime::new(None);
+        let runtime = VegaFusionRuntime::default();
 
         let (values, warnings) = runtime
             .pre_transform_values(
@@ -137,7 +137,7 @@ mod tests {
         let spec: ChartSpec = serde_json::from_str(&spec_str).unwrap();
 
         // Initialize task graph runtime
-        let runtime = VegaFusionRuntime::new(None);
+        let runtime = VegaFusionRuntime::default();
 
         // Check existent but unsupported dataset name
         let result = runtime
@@ -195,7 +195,7 @@ mod tests {
         let spec: ChartSpec = serde_json::from_str(&spec_str).unwrap();
 
         // Initialize task graph runtime
-        let runtime = VegaFusionRuntime::new(None);
+        let runtime = VegaFusionRuntime::default();
 
         let source_0 =
             VegaFusionTable::from_json(&json!([{"normal": 1, "a.b": 2}, {"normal": 1, "a.b": 4}]))
@@ -251,7 +251,7 @@ mod tests {
         let spec: ChartSpec = serde_json::from_str(&spec_str).unwrap();
 
         // Initialize task graph runtime
-        let runtime = VegaFusionRuntime::new(None);
+        let runtime = VegaFusionRuntime::default();
 
         let (values, warnings) = runtime
             .pre_transform_values(
@@ -298,7 +298,7 @@ mod tests {
         let spec: ChartSpec = serde_json::from_str(&spec_str).unwrap();
 
         // Initialize task graph runtime
-        let runtime = VegaFusionRuntime::new(None);
+        let runtime = VegaFusionRuntime::default();
 
         let (values, warnings) = runtime
             .pre_transform_values(
@@ -382,7 +382,7 @@ mod tests {
             )));
 
             // Initialize task graph runtime
-            let runtime = VegaFusionRuntime::new(None);
+            let runtime = VegaFusionRuntime::default();
 
             let (values, warnings) = runtime
                 .pre_transform_values(
@@ -441,7 +441,7 @@ mod tests {
         .unwrap();
 
         // Initialize task graph runtime
-        let runtime = VegaFusionRuntime::new(None);
+        let runtime = VegaFusionRuntime::default();
 
         let (values, warnings) = runtime
             .pre_transform_values(
