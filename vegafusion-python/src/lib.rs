@@ -65,19 +65,27 @@ impl PyVegaFusionRuntime {
         memory_limit: Option<usize>,
         worker_threads: Option<i32>,
         resolvers: Vec<Arc<dyn PlanResolver>>,
+        use_current_thread: bool,
     ) -> PyResult<Self> {
         initialize_logging();
 
-        let mut builder = tokio::runtime::Builder::new_multi_thread();
-        if let Some(worker_threads) = worker_threads {
-            builder.worker_threads(worker_threads.max(1) as usize);
-        }
-
-        let tokio_runtime_connection = builder
-            .enable_all()
-            .thread_stack_size(TOKIO_THREAD_STACK_SIZE)
-            .build()
-            .external("Failed to create Tokio thread pool")?;
+        let tokio_runtime_connection = if use_current_thread {
+            tokio::runtime::Builder::new_current_thread()
+                .enable_all()
+                .thread_stack_size(TOKIO_THREAD_STACK_SIZE)
+                .build()
+                .external("Failed to create Tokio current-thread runtime")?
+        } else {
+            let mut builder = tokio::runtime::Builder::new_multi_thread();
+            if let Some(worker_threads) = worker_threads {
+                builder.worker_threads(worker_threads.max(1) as usize);
+            }
+            builder
+                .enable_all()
+                .thread_stack_size(TOKIO_THREAD_STACK_SIZE)
+                .build()
+                .external("Failed to create Tokio thread pool")?
+        };
 
         Ok(Self {
             runtime: Arc::new(VegaFusionRuntime::new(
@@ -98,7 +106,13 @@ impl PyVegaFusionRuntime {
         memory_limit: Option<usize>,
         worker_threads: Option<i32>,
     ) -> PyResult<Self> {
-        Self::build_with_resolvers(max_capacity, memory_limit, worker_threads, Vec::new())
+        Self::build_with_resolvers(
+            max_capacity,
+            memory_limit,
+            worker_threads,
+            Vec::new(),
+            false,
+        )
     }
 
     #[staticmethod]
@@ -109,13 +123,25 @@ impl PyVegaFusionRuntime {
         memory_limit: Option<usize>,
         worker_threads: Option<i32>,
     ) -> PyResult<Self> {
+        let py_resolvers: Vec<crate::plan_resolver::PyPlanResolver> = py_resolvers
+            .into_iter()
+            .map(crate::plan_resolver::PyPlanResolver::new)
+            .collect();
+
+        // Use current-thread runtime if any resolver requires thread affinity
+        let use_current_thread = py_resolvers.iter().any(|r| !r.thread_safe());
+
         let resolvers: Vec<Arc<dyn PlanResolver>> = py_resolvers
             .into_iter()
-            .map(|r| {
-                Arc::new(crate::plan_resolver::PyPlanResolver::new(r)) as Arc<dyn PlanResolver>
-            })
+            .map(|r| Arc::new(r) as Arc<dyn PlanResolver>)
             .collect();
-        Self::build_with_resolvers(max_capacity, memory_limit, worker_threads, resolvers)
+        Self::build_with_resolvers(
+            max_capacity,
+            memory_limit,
+            worker_threads,
+            resolvers,
+            use_current_thread,
+        )
     }
 
     #[staticmethod]

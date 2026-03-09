@@ -26,21 +26,33 @@ use vegafusion_runtime::data::external_table::ExternalTableProvider;
 pub struct PyPlanResolver {
     py_resolver: Py<PyAny>,
     requires_external_tables: bool,
+    thread_safe: bool,
 }
 
 impl PyPlanResolver {
     pub fn new(py_resolver: Py<PyAny>) -> Self {
-        let requires_external_tables = Python::attach(|py| {
-            py_resolver
+        let (requires_external_tables, thread_safe) = Python::attach(|py| {
+            let requires = py_resolver
                 .getattr(py, "requires_external_tables")
                 .and_then(|v| v.extract::<bool>(py))
-        })
-        .unwrap_or(true);
+                .unwrap_or(true);
+            let safe = py_resolver
+                .getattr(py, "thread_safe")
+                .and_then(|v| v.extract::<bool>(py))
+                .unwrap_or(true);
+            (requires, safe)
+        });
 
         Self {
             py_resolver,
             requires_external_tables,
+            thread_safe,
         }
+    }
+
+    /// Whether this resolver is safe to call from any thread.
+    pub fn thread_safe(&self) -> bool {
+        self.thread_safe
     }
 }
 

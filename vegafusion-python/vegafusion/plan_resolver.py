@@ -62,6 +62,12 @@ class PlanResolver:
     ExternalTableProvider nodes. Set to False to receive all plans, e.g. for
     logging or custom query rewriting."""
 
+    thread_safe: bool = True
+    """Whether the resolver can be called from any thread. When False, the
+    VegaFusionRuntime uses a single-threaded tokio runtime so that resolver
+    callbacks run on the main thread. Set to False for backends with
+    thread-affine connections (e.g. DuckDB in-memory databases)."""
+
     def resolve_table(
         self,
         name: str,
