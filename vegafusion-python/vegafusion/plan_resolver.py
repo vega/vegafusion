@@ -250,3 +250,27 @@ def inline_table_scan_node(
     node = LogicalPlanNode()
     node.ParseFromString(_native(name, schema))
     return node
+
+
+def unparse_to_sql(
+    plan: bytes | LogicalPlanNode,
+    dialect: str = "default",
+) -> str:
+    """Convert a protobuf LogicalPlan to a SQL string.
+
+    Uses DataFusion's Unparser to convert a serialized LogicalPlan into
+    a SQL string in the specified dialect.
+
+    Args:
+        plan: Serialized protobuf bytes or a deserialized LogicalPlanNode.
+        dialect: SQL dialect. One of ``"default"``, ``"postgres"``,
+            ``"mysql"``, ``"sqlite"``, ``"duckdb"``, ``"bigquery"``.
+
+    Returns:
+        The SQL string.
+    """
+    from vegafusion._vegafusion import unparse_plan_to_sql as _native
+
+    if not isinstance(plan, bytes):
+        plan = plan.SerializeToString()
+    return _native(plan, dialect)

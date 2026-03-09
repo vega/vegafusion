@@ -4815,6 +4815,7 @@ dependencies = [
  "async-trait",
  "datafusion",
  "datafusion-proto",
+ "datafusion-sql",
  "env_logger",
  "lazy_static",
  "log",
