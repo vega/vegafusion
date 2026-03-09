@@ -314,11 +314,7 @@ class VegaFusionRuntime:
             columns = inline_dataset_usage.get(name)
             if isinstance(value, ExternalDataset):
                 # Pass (kind, schema, metadata_dict) tuple to Rust
-                imported_inline_datasets[name] = (
-                    value.kind,
-                    value.schema,
-                    value.metadata,
-                )
+                imported_inline_datasets[name] = (value.kind, value.schema, value.metadata)
                 external_dataset_refs.append(value)
             elif (pa is not None and isinstance(value, pa.Schema)) or hasattr(
                 value, "__arrow_c_schema__"
