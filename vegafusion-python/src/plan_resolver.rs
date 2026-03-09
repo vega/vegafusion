@@ -25,27 +25,27 @@ use vegafusion_runtime::data::external_table::ExternalTableProvider;
 /// `resolve_plan_proto(bytes, datasets)` on the Python side.
 pub struct PyPlanResolver {
     py_resolver: Py<PyAny>,
-    requires_external_tables: bool,
+    skip_when_no_external_tables: bool,
     thread_safe: bool,
 }
 
 impl PyPlanResolver {
     pub fn new(py_resolver: Py<PyAny>) -> Self {
-        let (requires_external_tables, thread_safe) = Python::attach(|py| {
-            let requires = py_resolver
-                .getattr(py, "requires_external_tables")
+        let (skip_when_no_external_tables, thread_safe) = Python::attach(|py| {
+            let skip = py_resolver
+                .getattr(py, "skip_when_no_external_tables")
                 .and_then(|v| v.extract::<bool>(py))
                 .unwrap_or(true);
             let safe = py_resolver
                 .getattr(py, "thread_safe")
                 .and_then(|v| v.extract::<bool>(py))
                 .unwrap_or(true);
-            (requires, safe)
+            (skip, safe)
         });
 
         Self {
             py_resolver,
-            requires_external_tables,
+            skip_when_no_external_tables,
             thread_safe,
         }
     }
@@ -151,7 +151,7 @@ impl PlanResolver for PyPlanResolver {
     async fn resolve_plan(&self, plan: LogicalPlan) -> Result<ResolutionResult> {
         let tables = extract_external_tables(&plan);
 
-        if self.requires_external_tables && tables.is_empty() {
+        if self.skip_when_no_external_tables && tables.is_empty() {
             return Ok(ResolutionResult::Plan(plan));
         }
 

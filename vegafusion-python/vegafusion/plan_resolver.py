@@ -57,8 +57,8 @@ class PlanResolver:
         VegaFusion if the underlying DataFusion version changes.
     """
 
-    requires_external_tables: bool = True
-    """When True (default), the resolver is only called for plans that contain
+    skip_when_no_external_tables: bool = True
+    """When True (default), the resolver is skipped for plans that contain no
     ExternalTableProvider nodes. Set to False to receive all plans, e.g. for
     logging or custom query rewriting."""
 
