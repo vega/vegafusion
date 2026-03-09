@@ -127,7 +127,9 @@ async fn extract_sorted_pivot_values(
         .limit(0, limit)?;
 
     let logical_plan = sorted_query.logical_plan().clone();
-    let result_table = config.plan_executor.execute_plan(logical_plan).await?;
+    let result_table =
+        crate::task_graph::runtime::execute_plan(&config.ctx, logical_plan, &config.plan_resolver)
+            .await?;
     let pivot_batch = result_table.to_record_batch()?;
     let pivot_array = pivot_batch
         .column_by_name(&tx.field)

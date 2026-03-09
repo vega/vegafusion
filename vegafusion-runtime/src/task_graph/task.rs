@@ -8,7 +8,7 @@ use vegafusion_core::data::dataset::VegaFusionDataset;
 use vegafusion_core::error::Result;
 use vegafusion_core::proto::gen::tasks::task::TaskKind;
 use vegafusion_core::proto::gen::tasks::Task;
-use vegafusion_core::runtime::PlanExecutor;
+use vegafusion_core::runtime::PlanResolver;
 use vegafusion_core::task_graph::task_value::TaskValue;
 
 #[async_trait]
@@ -19,7 +19,7 @@ pub trait TaskCall {
         tz_config: &Option<RuntimeTzConfig>,
         inline_datasets: HashMap<String, VegaFusionDataset>,
         ctx: Arc<SessionContext>,
-        plan_executor: Arc<dyn PlanExecutor>,
+        plan_resolver: Option<Arc<dyn PlanResolver>>,
     ) -> Result<(TaskValue, Vec<TaskValue>)>;
 }
 
@@ -31,24 +31,24 @@ impl TaskCall for Task {
         tz_config: &Option<RuntimeTzConfig>,
         inline_datasets: HashMap<String, VegaFusionDataset>,
         ctx: Arc<SessionContext>,
-        plan_executor: Arc<dyn PlanExecutor>,
+        plan_resolver: Option<Arc<dyn PlanResolver>>,
     ) -> Result<(TaskValue, Vec<TaskValue>)> {
         match self.task_kind() {
             TaskKind::Value(value) => Ok((value.try_into()?, Default::default())),
             TaskKind::DataUrl(task) => {
-                task.eval(values, tz_config, inline_datasets, ctx, plan_executor)
+                task.eval(values, tz_config, inline_datasets, ctx, plan_resolver)
                     .await
             }
             TaskKind::DataValues(task) => {
-                task.eval(values, tz_config, inline_datasets, ctx, plan_executor)
+                task.eval(values, tz_config, inline_datasets, ctx, plan_resolver)
                     .await
             }
             TaskKind::DataSource(task) => {
-                task.eval(values, tz_config, inline_datasets, ctx, plan_executor)
+                task.eval(values, tz_config, inline_datasets, ctx, plan_resolver)
                     .await
             }
             TaskKind::Signal(task) => {
-                task.eval(values, tz_config, inline_datasets, ctx, plan_executor)
+                task.eval(values, tz_config, inline_datasets, ctx, plan_resolver)
                     .await
             }
         }
