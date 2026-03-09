@@ -62,13 +62,21 @@ impl VegaFusionRuntimeGrpc {
                 {
                     Ok(response_values) => {
                         // Materialize all TaskValues before converting to protobuf
+                        let ctx = self.runtime.ctx.clone();
+                        let resolver = self.runtime.plan_resolver.clone();
                         let materialized_futures: Vec<_> = response_values
                             .into_iter()
                             .map(|named_value| {
-                                let executor = self.runtime.plan_executor.clone();
+                                let ctx = ctx.clone();
+                                let resolver = resolver.clone();
                                 async move {
                                     let materialized_value =
-                                        named_value.value.to_materialized(executor).await?;
+                                        vegafusion_runtime::task_graph::runtime::materialize_task_value(
+                                            named_value.value,
+                                            &ctx,
+                                            &resolver,
+                                        )
+                                        .await?;
                                     Ok::<_, VegaFusionError>(
                                         vegafusion_core::proto::gen::tasks::ResponseTaskValue {
                                             variable: Some(named_value.variable),
