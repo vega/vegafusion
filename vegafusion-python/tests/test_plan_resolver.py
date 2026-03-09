@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import os
 import tempfile
 from typing import Any
@@ -10,7 +12,11 @@ from vegafusion import ExternalDataset, PlanResolver
 import pytest
 from inline_snapshot import snapshot
 
-from vegafusion.plan_resolver import ResolvedPlan, inline_table_scan_node, unparse_to_sql
+from vegafusion.plan_resolver import (
+    ResolvedPlan,
+    inline_table_scan_node,
+    unparse_to_sql,
+)
 
 
 def setup_module(module: Any) -> None:
@@ -43,9 +49,7 @@ class DeserializingResolver(PlanResolver):
         self.last_plan: Any = None
         self.last_datasets: dict[str, Any] | None = None
 
-    def resolve_plan(
-        self, logical_plan: Any, datasets: dict[str, Any]
-    ) -> pa.Table:
+    def resolve_plan(self, logical_plan: Any, datasets: dict[str, Any]) -> pa.Table:
         self.last_plan = logical_plan
         self.last_datasets = datasets
         return self._result_table
@@ -137,7 +141,9 @@ def test_deserializing_resolver() -> None:
 def test_external_dataset_registry() -> None:
     """ExternalDataset with data registers data in weakref registry."""
     table = pa.table({"a": [1, 2, 3]})
-    ext = ExternalDataset("test", schema=table.schema, data=table, metadata={"engine": "test"})
+    ext = ExternalDataset(
+        "test", schema=table.schema, data=table, metadata={"engine": "test"}
+    )
 
     assert ext.kind == "test"
     assert "_vf_kind" not in ext.metadata  # kind is separate from metadata
@@ -213,7 +219,9 @@ def test_datafusion_resolver_aggregate() -> None:
     }
 
     class DataFusionResolver(PlanResolver):
-        def resolve_plan_proto(self, plan_bytes: bytes, datasets: dict[str, Any]) -> pa.Table:  # noqa: ANN401
+        def resolve_plan_proto(
+            self, plan_bytes: bytes, datasets: dict[str, Any]
+        ) -> pa.Table:  # noqa: ANN401
             ctx = datafusion.SessionContext()
             plan = datafusion.LogicalPlan.from_proto(ctx, plan_bytes)
             df = ctx.create_dataframe_from_logical_plan(plan)
@@ -273,7 +281,9 @@ def test_datafusion_resolver_filter_formula() -> None:
     }
 
     class DataFusionResolver(PlanResolver):
-        def resolve_plan_proto(self, plan_bytes: bytes, datasets: dict[str, Any]) -> pa.Table:  # noqa: ANN401
+        def resolve_plan_proto(
+            self, plan_bytes: bytes, datasets: dict[str, Any]
+        ) -> pa.Table:  # noqa: ANN401
             ctx = datafusion.SessionContext()
             plan = datafusion.LogicalPlan.from_proto(ctx, plan_bytes)
             df = ctx.create_dataframe_from_logical_plan(plan)
@@ -307,11 +317,13 @@ def test_resolve_table_resolver() -> None:
             metadata: dict[str, Any],
             projected_columns: list[str] | None = None,
         ) -> pa.Table:
-            self.resolve_calls.append({
-                "name": name,
-                "metadata": metadata,
-                "projected_columns": projected_columns,
-            })
+            self.resolve_calls.append(
+                {
+                    "name": name,
+                    "metadata": metadata,
+                    "projected_columns": projected_columns,
+                }
+            )
             return source_table
 
     resolver = TableResolver()
@@ -572,11 +584,21 @@ def test_unparse_plan_to_sql_from_resolver() -> None:
     )
 
     # Verify SQL output with inline snapshots for each dialect
-    assert resolver.captured_sql["default"] == snapshot('SELECT x, y FROM (SELECT _vf_order AS _vf_order, "source".x AS x, "source".y AS y FROM (SELECT row_number() OVER (ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING) AS _vf_order, "source".x, "source".y FROM "source")) WHERE CASE WHEN (x > 3.0) IS NULL THEN false ELSE (x > 3.0) END ORDER BY _vf_order ASC NULLS LAST')
-    assert resolver.captured_sql["postgres"] == snapshot('SELECT "x", "y" FROM (SELECT "_vf_order" AS "_vf_order", "source"."x" AS "x", "source"."y" AS "y" FROM (SELECT row_number() OVER (ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING) AS "_vf_order", "source"."x", "source"."y" FROM "source") AS "derived_projection") AS "derived_projection" WHERE CASE WHEN ("x" > 3.0) IS NULL THEN false ELSE ("x" > 3.0) END ORDER BY "_vf_order" ASC NULLS LAST')
-    assert resolver.captured_sql["mysql"] == snapshot('SELECT `x`, `y` FROM (SELECT `_vf_order` AS `_vf_order`, `source`.`x` AS `x`, `source`.`y` AS `y` FROM (SELECT row_number() OVER (ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING) AS `_vf_order`, `source`.`x`, `source`.`y` FROM `source`) AS `derived_projection`) AS `derived_projection` WHERE CASE WHEN (`x` > 3.0) IS NULL THEN false ELSE (`x` > 3.0) END ORDER BY `_vf_order` ASC')
-    assert resolver.captured_sql["sqlite"] == snapshot('SELECT `x`, `y` FROM (SELECT `_vf_order` AS `_vf_order`, `source`.`x` AS `x`, `source`.`y` AS `y` FROM (SELECT row_number() OVER (ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING) AS `_vf_order`, `source`.`x`, `source`.`y` FROM `source`)) WHERE CASE WHEN (`x` > 3.0) IS NULL THEN false ELSE (`x` > 3.0) END ORDER BY `_vf_order` ASC NULLS LAST')
-    assert resolver.captured_sql["duckdb"] == snapshot('SELECT "x", "y" FROM (SELECT "_vf_order" AS "_vf_order", "source"."x" AS "x", "source"."y" AS "y" FROM (SELECT row_number() OVER (ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING) AS "_vf_order", "source"."x", "source"."y" FROM "source")) WHERE CASE WHEN ("x" > 3.0) IS NULL THEN false ELSE ("x" > 3.0) END ORDER BY "_vf_order" ASC NULLS LAST')
+    assert resolver.captured_sql["default"] == snapshot(
+        'SELECT x, y FROM (SELECT _vf_order AS _vf_order, "source".x AS x, "source".y AS y FROM (SELECT row_number() OVER (ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING) AS _vf_order, "source".x, "source".y FROM "source")) WHERE CASE WHEN (x > 3.0) IS NULL THEN false ELSE (x > 3.0) END ORDER BY _vf_order ASC NULLS LAST'
+    )
+    assert resolver.captured_sql["postgres"] == snapshot(
+        'SELECT "x", "y" FROM (SELECT "_vf_order" AS "_vf_order", "source"."x" AS "x", "source"."y" AS "y" FROM (SELECT row_number() OVER (ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING) AS "_vf_order", "source"."x", "source"."y" FROM "source") AS "derived_projection") AS "derived_projection" WHERE CASE WHEN ("x" > 3.0) IS NULL THEN false ELSE ("x" > 3.0) END ORDER BY "_vf_order" ASC NULLS LAST'
+    )
+    assert resolver.captured_sql["mysql"] == snapshot(
+        "SELECT `x`, `y` FROM (SELECT `_vf_order` AS `_vf_order`, `source`.`x` AS `x`, `source`.`y` AS `y` FROM (SELECT row_number() OVER (ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING) AS `_vf_order`, `source`.`x`, `source`.`y` FROM `source`) AS `derived_projection`) AS `derived_projection` WHERE CASE WHEN (`x` > 3.0) IS NULL THEN false ELSE (`x` > 3.0) END ORDER BY `_vf_order` ASC"
+    )
+    assert resolver.captured_sql["sqlite"] == snapshot(
+        "SELECT `x`, `y` FROM (SELECT `_vf_order` AS `_vf_order`, `source`.`x` AS `x`, `source`.`y` AS `y` FROM (SELECT row_number() OVER (ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING) AS `_vf_order`, `source`.`x`, `source`.`y` FROM `source`)) WHERE CASE WHEN (`x` > 3.0) IS NULL THEN false ELSE (`x` > 3.0) END ORDER BY `_vf_order` ASC NULLS LAST"
+    )
+    assert resolver.captured_sql["duckdb"] == snapshot(
+        'SELECT "x", "y" FROM (SELECT "_vf_order" AS "_vf_order", "source"."x" AS "x", "source"."y" AS "y" FROM (SELECT row_number() OVER (ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING) AS "_vf_order", "source"."x", "source"."y" FROM "source")) WHERE CASE WHEN ("x" > 3.0) IS NULL THEN false ELSE ("x" > 3.0) END ORDER BY "_vf_order" ASC NULLS LAST'
+    )
 
 
 def test_unparse_plan_to_sql_from_proto_message() -> None:
@@ -588,9 +610,7 @@ def test_unparse_plan_to_sql_from_proto_message() -> None:
             self.sql_from_bytes: str | None = None
             self.sql_from_proto: str | None = None
 
-        def resolve_plan(
-            self, logical_plan: Any, datasets: dict[str, Any]
-        ) -> pa.Table:
+        def resolve_plan(self, logical_plan: Any, datasets: dict[str, Any]) -> pa.Table:
             # Test with deserialized protobuf message
             self.sql_from_proto = unparse_to_sql(logical_plan, dialect="postgres")
             # Also test via bytes for comparison
@@ -616,7 +636,9 @@ def test_unparse_plan_to_sql_from_proto_message() -> None:
     assert resolver.sql_from_bytes is not None
     assert resolver.sql_from_proto == resolver.sql_from_bytes
     # Verify the SQL references the external table name
-    assert resolver.sql_from_proto == snapshot('SELECT "x", "y" FROM (SELECT "_vf_order" AS "_vf_order", "source"."x" AS "x", "source"."y" AS "y" FROM (SELECT row_number() OVER (ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING) AS "_vf_order", "source"."x", "source"."y" FROM "source") AS "derived_projection") AS "derived_projection" WHERE CASE WHEN ("x" > 3.0) IS NULL THEN false ELSE ("x" > 3.0) END ORDER BY "_vf_order" ASC NULLS LAST')
+    assert resolver.sql_from_proto == snapshot(
+        'SELECT "x", "y" FROM (SELECT "_vf_order" AS "_vf_order", "source"."x" AS "x", "source"."y" AS "y" FROM (SELECT row_number() OVER (ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING) AS "_vf_order", "source"."x", "source"."y" FROM "source") AS "derived_projection") AS "derived_projection" WHERE CASE WHEN ("x" > 3.0) IS NULL THEN false ELSE ("x" > 3.0) END ORDER BY "_vf_order" ASC NULLS LAST'
+    )
 
 
 def test_external_dataset_without_resolver_raises() -> None:

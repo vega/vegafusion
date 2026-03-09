@@ -177,6 +177,8 @@ libgfortran = ">=15.1.0"
 scikit-image = ">=0.25"
 # Test dependency for plan executor integration tests
 datafusion = ">=52,<53"
+# Snapshot testing for SQL unparse assertions
+inline-snapshot = ">=0.19"
 
 [target.osx-arm64.build-dependencies]
 # These dependencies are for building node canvas from source on apple silicon
