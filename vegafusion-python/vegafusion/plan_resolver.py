@@ -11,7 +11,9 @@ logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     from vegafusion.dataset import ExternalDataset
-    from vegafusion.proto.datafusion_pb2 import LogicalPlanNode  # type: ignore[attr-defined]
+    from vegafusion.proto.datafusion_pb2 import (
+        LogicalPlanNode,  # type: ignore[attr-defined]
+    )
 
 
 @dataclass
@@ -54,6 +56,11 @@ class PlanResolver:
         VegaFusion version. Resolver code may require updates when upgrading
         VegaFusion if the underlying DataFusion version changes.
     """
+
+    requires_external_tables: bool = True
+    """When True (default), the resolver is only called for plans that contain
+    ExternalTableProvider nodes. Set to False to receive all plans, e.g. for
+    logging or custom query rewriting."""
 
     def resolve_table(
         self,
@@ -171,7 +178,7 @@ class PlanResolver:
             self._resolve_external_tables(child, datasets, sidecar)
 
 
-def _extract_table_name(table_ref: Any) -> str:
+def _extract_table_name(table_ref: Any) -> str:  # noqa: ANN401
     """Extract table name string from an OwnedTableReference."""
     which = table_ref.WhichOneof("table_reference_enum")
     if which == "bare":
@@ -191,7 +198,10 @@ def _build_child_fields() -> dict[str, list[tuple[str, bool]]]:
     tuples for each LogicalPlanNode-typed child field. Leaf variants are omitted.
     """
     from google.protobuf.descriptor import FieldDescriptor
-    from vegafusion.proto.datafusion_pb2 import LogicalPlanNode  # type: ignore[attr-defined]
+
+    from vegafusion.proto.datafusion_pb2 import (
+        LogicalPlanNode,  # type: ignore[attr-defined]
+    )
 
     desc = LogicalPlanNode.DESCRIPTOR
     oneof = desc.oneofs_by_name["LogicalPlanType"]
@@ -211,7 +221,7 @@ def _build_child_fields() -> dict[str, list[tuple[str, bool]]]:
 _CHILD_FIELDS = _build_child_fields()
 
 
-def _get_child_nodes(variant: str, inner: Any) -> list[LogicalPlanNode]:
+def _get_child_nodes(variant: str, inner: Any) -> list[LogicalPlanNode]:  # noqa: ANN401
     """Return child LogicalPlanNode references for a plan node variant."""
     fields = _CHILD_FIELDS.get(variant)
     if fields is None:

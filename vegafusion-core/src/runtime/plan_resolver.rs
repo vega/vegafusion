@@ -6,7 +6,8 @@ use vegafusion_common::error::Result;
 pub enum ResolutionResult {
     /// Resolver fully materialized the plan
     Table(VegaFusionTable),
-    /// Resolver produced a rewritten plan for DataFusion to execute
+    /// Resolver produced a rewritten plan for the next resolver to handle,
+    /// or for DataFusion to execute if this is the last resolver
     Plan(LogicalPlan),
 }
 

@@ -514,11 +514,11 @@ def test_resolve_table_error_propagates() -> None:
         )
 
 
-def test_no_override_passthrough() -> None:
-    """Resolver with no overrides acts as passthrough (no Python call)."""
+def test_no_external_tables_passthrough() -> None:
+    """Plans without external tables skip the resolver and execute directly."""
 
     class NoOpResolver(PlanResolver):
-        pass  # No methods overridden
+        pass
 
     # Use a CSV-based spec so DataFusion can execute without external tables
     csv_path = os.path.join(tempfile.gettempdir(), "vf_noop_test.csv")

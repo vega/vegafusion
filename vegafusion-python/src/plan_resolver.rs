@@ -25,38 +25,23 @@ use vegafusion_runtime::data::external_table::ExternalTableProvider;
 /// `resolve_plan_proto(bytes, datasets)` on the Python side.
 pub struct PyPlanResolver {
     py_resolver: Py<PyAny>,
-    has_any_override: bool,
+    requires_external_tables: bool,
 }
 
 impl PyPlanResolver {
     pub fn new(py_resolver: Py<PyAny>) -> Self {
-        let has_any_override = Python::attach(|py| {
-            let obj = py_resolver.bind(py);
-            check_has_override(py, obj)
+        let requires_external_tables = Python::attach(|py| {
+            py_resolver
+                .getattr(py, "requires_external_tables")
+                .and_then(|v| v.extract::<bool>(py))
         })
-        .unwrap_or(false);
+        .unwrap_or(true);
 
         Self {
             py_resolver,
-            has_any_override,
+            requires_external_tables,
         }
     }
-}
-
-/// Check whether any of the three resolve methods are overridden on the Python object.
-fn check_has_override(py: Python<'_>, obj: &Bound<PyAny>) -> PyResult<bool> {
-    let base_cls = py
-        .import("vegafusion.plan_resolver")?
-        .getattr("PlanResolver")?;
-
-    for method_name in &["resolve_table", "resolve_plan_proto", "resolve_plan"] {
-        let obj_method = obj.get_type().getattr(*method_name)?;
-        let base_method = base_cls.getattr(*method_name)?;
-        if !obj_method.is(&base_method) {
-            return Ok(true);
-        }
-    }
-    Ok(false)
 }
 
 /// Info extracted from an ExternalTableProvider node in the plan.
@@ -152,11 +137,11 @@ fn build_datasets_dict<'py>(
 #[async_trait]
 impl PlanResolver for PyPlanResolver {
     async fn resolve_plan(&self, plan: LogicalPlan) -> Result<ResolutionResult> {
-        if !self.has_any_override {
+        let tables = extract_external_tables(&plan);
+
+        if self.requires_external_tables && tables.is_empty() {
             return Ok(ResolutionResult::Plan(plan));
         }
-
-        let tables = extract_external_tables(&plan);
 
         let codec = VegaFusionCodec::new();
         let bytes = logical_plan_to_bytes_with_extension_codec(&plan, &codec).map_err(|e| {
