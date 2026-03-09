@@ -7,16 +7,31 @@ from typing import Any, ClassVar
 from arro3.core import Schema
 
 
-class ExternalDataset:
-    """An external dataset with schema, JSON metadata, and optional object ref.
+class _DataRef:
+    """Weak-referenceable wrapper holding an opaque data object."""
 
-    When ``data`` is provided, the instance is registered in a class-level
-    :class:`weakref.WeakValueDictionary` keyed by a UUID.  The UUID is embedded
-    in the metadata under ``_vf_ref_id`` so that a :class:`PlanResolver` can
-    resolve the live Python object after the plan has round-tripped through Rust.
+    __slots__ = ("data", "__weakref__")
+
+    def __init__(self, data: Any) -> None:  # noqa: ANN401
+        self.data = data
+
+
+class ExternalDataset:
+    """An external dataset with schema, JSON metadata, and optional data ref.
+
+    When ``data`` is provided, it is registered in a class-level
+    :class:`weakref.WeakValueDictionary` keyed by a UUID.  The UUID is
+    embedded in the metadata under ``_vf_ref_id`` so that the Rust bridge
+    can recover the live Python data object after the plan has round-tripped
+    through protobuf serialization.
+
+    The ``ExternalDataset`` itself is *not* stored in the registry — only
+    the data.  On the return path from Rust, a fresh ``ExternalDataset``
+    is reconstructed from the protobuf schema + metadata plus the recovered
+    data (if still alive).
     """
 
-    _registry: ClassVar[weakref.WeakValueDictionary[str, ExternalDataset]] = (
+    _registry: ClassVar[weakref.WeakValueDictionary[str, _DataRef]] = (
         weakref.WeakValueDictionary()
     )
 
@@ -31,16 +46,23 @@ class ExternalDataset:
         )
         self._metadata: dict[str, Any] = dict(metadata) if metadata else {}
         self._data: Any = data
+        self._data_ref: _DataRef | None = None
 
-        if data is not None:
-            self._ref_id = str(uuid.uuid4())
-            ExternalDataset._registry[self._ref_id] = self
-            self._metadata["_vf_ref_id"] = self._ref_id
+        if data is not None and "_vf_ref_id" not in self._metadata:
+            ref_id = str(uuid.uuid4())
+            self._data_ref = _DataRef(data)
+            ExternalDataset._registry[ref_id] = self._data_ref
+            self._metadata["_vf_ref_id"] = ref_id
 
     @classmethod
-    def resolve_ref(cls, ref_id: str) -> ExternalDataset | None:
-        """Look up an ExternalDataset by its ``_vf_ref_id``."""
-        return cls._registry.get(ref_id)
+    def resolve_data(cls, ref_id: str) -> Any | None:  # noqa: ANN401
+        """Look up a data object by its ``_vf_ref_id``.
+
+        Returns the raw data object, or ``None`` if the owning
+        ``ExternalDataset`` has been garbage-collected.
+        """
+        data_ref = cls._registry.get(ref_id)
+        return data_ref.data if data_ref is not None else None
 
     @property
     def schema(self) -> Schema:

@@ -1,12 +1,16 @@
 use std::collections::HashMap;
 
 use async_trait::async_trait;
+use datafusion::catalog::TableProvider;
 use datafusion::common::tree_node::TreeNode;
 use datafusion::datasource::source_as_provider;
 use pyo3::prelude::*;
 use pyo3::types::{PyBytes, PyDict};
+use pyo3_arrow::PySchema;
+use serde_json::Value;
 
 use datafusion_proto::bytes::logical_plan_to_bytes_with_extension_codec;
+use vegafusion_common::arrow::datatypes::SchemaRef;
 use vegafusion_common::arrow::record_batch::RecordBatch;
 use vegafusion_common::data::table::VegaFusionTable;
 use vegafusion_common::datafusion_expr::LogicalPlan;
@@ -55,30 +59,48 @@ fn check_has_override(py: Python<'_>, obj: &Bound<PyAny>) -> PyResult<bool> {
     Ok(false)
 }
 
-/// Walk a LogicalPlan and collect (table_name, _vf_ref_id) pairs for all
-/// TableScan nodes backed by ExternalTableProvider with a `_vf_ref_id` in metadata.
-fn extract_external_ref_ids(plan: &LogicalPlan) -> HashMap<String, String> {
-    let mut refs = HashMap::new();
+/// Info extracted from an ExternalTableProvider node in the plan.
+struct ExternalTableInfo {
+    schema: SchemaRef,
+    metadata: Value,
+    ref_id: Option<String>,
+}
+
+/// Walk a LogicalPlan and collect ExternalTableProvider info for each table.
+fn extract_external_tables(plan: &LogicalPlan) -> HashMap<String, ExternalTableInfo> {
+    let mut tables = HashMap::new();
     let _ = plan.apply(|node| {
         if let LogicalPlan::TableScan(scan) = node {
             if let Ok(provider) = source_as_provider(&scan.source) {
                 if let Some(ext) = provider.as_any().downcast_ref::<ExternalTableProvider>() {
-                    if let Some(ref_id) = ext.metadata().get("_vf_ref_id").and_then(|v| v.as_str())
-                    {
-                        refs.insert(scan.table_name.table().to_string(), ref_id.to_string());
-                    }
+                    let ref_id = ext
+                        .metadata()
+                        .get("_vf_ref_id")
+                        .and_then(|v| v.as_str())
+                        .map(|s| s.to_string());
+                    tables.insert(
+                        scan.table_name.table().to_string(),
+                        ExternalTableInfo {
+                            schema: ext.schema(),
+                            metadata: ext.metadata().clone(),
+                            ref_id,
+                        },
+                    );
                 }
             }
         }
         Ok(datafusion::common::tree_node::TreeNodeRecursion::Continue)
     });
-    refs
+    tables
 }
 
-/// Build a Python dict mapping table names to resolved ExternalDataset objects.
+/// Build a Python dict mapping table names to reconstructed ExternalDataset objects.
+///
+/// Each ExternalDataset is freshly constructed from protobuf-sourced schema and
+/// metadata, plus the data object recovered from the Python-side registry (if any).
 fn build_datasets_dict<'py>(
     py: Python<'py>,
-    ref_ids: &HashMap<String, String>,
+    tables: &HashMap<String, ExternalTableInfo>,
 ) -> PyResult<Bound<'py, PyDict>> {
     let dataset_cls = py
         .import("vegafusion.dataset")?
@@ -86,21 +108,41 @@ fn build_datasets_dict<'py>(
     let logging = py.import("logging")?;
     let logger = logging.call_method1("getLogger", ("vegafusion.plan_resolver",))?;
     let dict = PyDict::new(py);
-    for (table_name, ref_id) in ref_ids {
-        let resolved = dataset_cls.call_method1("resolve_ref", (ref_id.as_str(),))?;
-        if resolved.is_none() {
-            logger.call_method1(
-                "warning",
-                (format!(
-                    "ExternalDataset with _vf_ref_id '{}' for table '{}' was not found \
-                     (possibly garbage-collected)",
-                    ref_id, table_name
-                ),),
-            )?;
+
+    for (table_name, info) in tables {
+        // Recover data from registry if ref_id is present
+        let data = if let Some(ref ref_id) = info.ref_id {
+            let resolved = dataset_cls.call_method1("resolve_data", (ref_id.as_str(),))?;
+            if resolved.is_none() {
+                logger.call_method1(
+                    "warning",
+                    (format!(
+                        "Data for table '{}' with _vf_ref_id '{}' was not found \
+                         (possibly garbage-collected)",
+                        table_name, ref_id
+                    ),),
+                )?;
+            }
+            resolved
         } else {
-            dict.set_item(table_name, resolved)?;
-        }
+            py.None().into_bound(py)
+        };
+
+        // Convert schema to Python via pyo3-arrow
+        let py_schema = PySchema::new(info.schema.clone()).into_pyobject(py)?;
+
+        // Convert metadata to Python dict
+        let py_metadata = pythonize::pythonize(py, &info.metadata)?;
+
+        // Reconstruct ExternalDataset(schema, metadata, data)
+        let kwargs = PyDict::new(py);
+        kwargs.set_item("schema", py_schema)?;
+        kwargs.set_item("metadata", py_metadata)?;
+        kwargs.set_item("data", &data)?;
+        let dataset = dataset_cls.call((), Some(&kwargs))?;
+        dict.set_item(table_name, dataset)?;
     }
+
     Ok(dict)
 }
 
@@ -108,11 +150,10 @@ fn build_datasets_dict<'py>(
 impl PlanResolver for PyPlanResolver {
     async fn resolve_plan(&self, plan: LogicalPlan) -> Result<ResolutionResult> {
         if !self.has_any_override {
-            // Nothing overridden — passthrough, no Python call
             return Ok(ResolutionResult::Plan(plan));
         }
 
-        let ref_ids = extract_external_ref_ids(&plan);
+        let tables = extract_external_tables(&plan);
 
         let codec = VegaFusionCodec::new();
         let bytes = logical_plan_to_bytes_with_extension_codec(&plan, &codec).map_err(|e| {
@@ -120,7 +161,7 @@ impl PlanResolver for PyPlanResolver {
         })?;
 
         Python::attach(|py| {
-            let datasets = build_datasets_dict(py, &ref_ids).map_err(|e| {
+            let datasets = build_datasets_dict(py, &tables).map_err(|e| {
                 VegaFusionError::internal(format!("Failed to build datasets dict: {e}"))
             })?;
             let py_bytes = PyBytes::new(py, bytes.as_ref());

@@ -9,7 +9,7 @@ import vegafusion as vf
 from vegafusion import ExternalDataset, PlanResolver
 import pytest
 
-from vegafusion.plan_resolver import ResolvedPlan, inline_table_scan_node
+from vegafusion.plan_resolver import ResolvedPlan, inline_table_scan_node, unparse_to_sql
 
 
 def setup_module(module: Any) -> None:
@@ -95,10 +95,12 @@ def test_passthrough_resolver() -> None:
     assert datasets[0].equals(expected_result)
     assert resolver.last_plan_bytes is not None
     assert len(resolver.last_plan_bytes) > 0
-    # Verify datasets dict was passed with the resolved ExternalDataset
+    # Verify datasets dict was passed with a reconstructed ExternalDataset
     assert resolver.last_datasets is not None
     assert "source" in resolver.last_datasets
-    assert resolver.last_datasets["source"] is ext
+    ds = resolver.last_datasets["source"]
+    assert isinstance(ds, ExternalDataset)
+    assert ds.data is source_table  # data recovered via registry
 
 
 def test_deserializing_resolver() -> None:
@@ -126,17 +128,19 @@ def test_deserializing_resolver() -> None:
     # Verify datasets dict was passed through the two-way dispatch
     assert resolver.last_datasets is not None
     assert "source" in resolver.last_datasets
-    assert resolver.last_datasets["source"] is ext
+    ds = resolver.last_datasets["source"]
+    assert isinstance(ds, ExternalDataset)
+    assert ds.data is source_table  # data recovered via registry
 
 
 def test_external_dataset_registry() -> None:
-    """ExternalDataset with data registers in weakref registry."""
+    """ExternalDataset with data registers data in weakref registry."""
     table = pa.table({"a": [1, 2, 3]})
     ext = ExternalDataset(schema=table.schema, data=table, metadata={"engine": "test"})
 
     assert "_vf_ref_id" in ext.metadata
     ref_id = ext.metadata["_vf_ref_id"]
-    assert ExternalDataset.resolve_ref(ref_id) is ext
+    assert ExternalDataset.resolve_data(ref_id) is table
     assert ext.data is table
     assert ext.metadata["engine"] == "test"
 
@@ -533,3 +537,110 @@ def test_no_override_passthrough() -> None:
     result = datasets[0]
     assert result.num_rows == 2
     assert result.column("x").to_pylist() == ["5", "10"]
+
+
+def test_unparse_plan_to_sql_from_resolver() -> None:
+    """unparse_to_sql converts a plan from resolve_plan_proto into SQL."""
+    source_table = pa.table({"x": [1, 5, 10], "y": ["a", "b", "c"]})
+
+    class SqlCapturingResolver(PlanResolver):
+        def __init__(self) -> None:
+            self.captured_sql: dict[str, str] = {}
+
+        def resolve_plan_proto(
+            self, plan_bytes: bytes, datasets: dict[str, Any]
+        ) -> pa.Table:
+            for dialect in ["default", "postgres", "mysql", "sqlite", "duckdb"]:
+                self.captured_sql[dialect] = unparse_to_sql(plan_bytes, dialect=dialect)
+            # Return a dummy result
+            return source_table
+
+    resolver = SqlCapturingResolver()
+    ext = ExternalDataset(schema=source_table.schema, data=source_table)
+
+    rt = vf.VegaFusionRuntime(plan_resolver=resolver)
+    spec = _simple_spec()
+
+    rt.pre_transform_datasets(
+        spec,
+        datasets=["filtered"],
+        inline_datasets={"source": ext},
+        dataset_format="pyarrow",
+    )
+
+    # Verify SQL was generated for each dialect
+    for dialect, sql in resolver.captured_sql.items():
+        assert isinstance(sql, str), f"Expected string for {dialect}, got {type(sql)}"
+        assert len(sql) > 0, f"Empty SQL for {dialect}"
+        # All dialects should produce a SELECT statement
+        assert "SELECT" in sql.upper(), f"No SELECT in {dialect} SQL: {sql}"
+
+
+def test_unparse_plan_to_sql_from_proto_message() -> None:
+    """unparse_to_sql accepts a deserialized LogicalPlanNode."""
+    source_table = pa.table({"x": [1, 5, 10], "y": ["a", "b", "c"]})
+
+    class ProtoCapturingResolver(PlanResolver):
+        def __init__(self) -> None:
+            self.sql_from_bytes: str | None = None
+            self.sql_from_proto: str | None = None
+
+        def resolve_plan(
+            self, logical_plan: Any, datasets: dict[str, Any]
+        ) -> pa.Table:
+            # Test with deserialized protobuf message
+            self.sql_from_proto = unparse_to_sql(logical_plan, dialect="postgres")
+            # Also test via bytes for comparison
+            self.sql_from_bytes = unparse_to_sql(
+                logical_plan.SerializeToString(), dialect="postgres"
+            )
+            return source_table
+
+    resolver = ProtoCapturingResolver()
+    ext = ExternalDataset(schema=source_table.schema, data=source_table)
+
+    rt = vf.VegaFusionRuntime(plan_resolver=resolver)
+    spec = _simple_spec()
+
+    rt.pre_transform_datasets(
+        spec,
+        datasets=["filtered"],
+        inline_datasets={"source": ext},
+        dataset_format="pyarrow",
+    )
+
+    assert resolver.sql_from_proto is not None
+    assert resolver.sql_from_bytes is not None
+    assert resolver.sql_from_proto == resolver.sql_from_bytes
+
+
+def test_unparse_invalid_dialect() -> None:
+    """unparse_to_sql raises ValueError for unknown dialect."""
+    source_table = pa.table({"x": [1, 5, 10]})
+
+    class DialectTestResolver(PlanResolver):
+        def __init__(self) -> None:
+            self.error: Exception | None = None
+
+        def resolve_plan_proto(
+            self, plan_bytes: bytes, datasets: dict[str, Any]
+        ) -> pa.Table:
+            try:
+                unparse_to_sql(plan_bytes, dialect="spark")
+            except ValueError as e:
+                self.error = e
+            return source_table
+
+    resolver = DialectTestResolver()
+    ext = ExternalDataset(schema=source_table.schema, data=source_table)
+    rt = vf.VegaFusionRuntime(plan_resolver=resolver)
+
+    rt.pre_transform_datasets(
+        _simple_spec(),
+        datasets=["filtered"],
+        inline_datasets={"source": ext},
+        dataset_format="pyarrow",
+    )
+
+    assert resolver.error is not None
+    assert "Unknown dialect" in str(resolver.error)
