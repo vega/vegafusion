@@ -743,15 +743,11 @@ mod serialization_tests {
 
         let codec = VegaFusionCodec::new();
 
-        // Serialize
         let bytes = logical_plan_to_bytes_with_extension_codec(&plan, &codec).unwrap();
-
-        // Deserialize back to LogicalPlan
         let ctx = SessionContext::new();
         let round_tripped =
             logical_plan_from_bytes_with_extension_codec(&bytes, &ctx.task_ctx(), &codec).unwrap();
 
-        // Verify the plan structure matches
         assert_eq!(format!("{plan:?}"), format!("{round_tripped:?}"));
     }
 
@@ -795,7 +791,6 @@ mod serialization_tests {
             other => panic!("Expected CustomScan, got {:?}", other),
         };
 
-        // Verify table name
         let table_ref = custom_scan.table_name.as_ref().unwrap();
         use datafusion_proto::protobuf::table_reference::TableReferenceEnum;
         match table_ref.table_reference_enum.as_ref().unwrap() {
@@ -803,7 +798,6 @@ mod serialization_tests {
             other => panic!("Expected Bare table reference, got {:?}", other),
         }
 
-        // Verify schema has the right fields
         let proto_schema = custom_scan.schema.as_ref().unwrap();
         let field_names: Vec<&str> = proto_schema
             .columns
@@ -824,7 +818,6 @@ mod serialization_tests {
             ]
         );
 
-        // Verify custom_table_data contains the envelope with null metadata
         let envelope: serde_json::Value =
             serde_json::from_slice(&custom_scan.custom_table_data).unwrap();
         assert_eq!(envelope["type"], "external");
@@ -854,13 +847,11 @@ mod serialization_tests {
 
         let codec = VegaFusionCodec::new();
 
-        // Round-trip through codec
         let bytes = logical_plan_to_bytes_with_extension_codec(&plan, &codec).unwrap();
         let ctx = SessionContext::new();
         let round_tripped =
             logical_plan_from_bytes_with_extension_codec(&bytes, &ctx.task_ctx(), &codec).unwrap();
 
-        // Extract the ExternalTableProvider from the round-tripped plan
         if let DFLogicalPlan::TableScan(scan) = &round_tripped {
             let provider = datafusion::datasource::source_as_provider(&scan.source).unwrap();
             let ext = provider
@@ -895,7 +886,6 @@ mod serialization_tests {
         let schema = get_movies_schema();
         let movies = create_movies_table();
 
-        // Create a plan with InlineTableProvider
         let provider = Arc::new(InlineTableProvider::new(
             schema.clone(),
             "movies".to_string(),
@@ -929,16 +919,55 @@ mod serialization_tests {
                 provider.as_any().downcast_ref::<MemTable>().is_some(),
                 "Expected MemTable after decoding with sidecar"
             );
-            // Verify the schema matches
             assert_eq!(provider.schema().fields().len(), schema.fields().len());
         } else {
             panic!("Expected TableScan, got {:?}", decoded);
         }
 
-        // Execute the decoded plan to verify data is correct
         let df = datafusion::prelude::DataFrame::new(ctx.state(), decoded);
         let result_batches = df.collect().await.unwrap();
         let total_rows: usize = result_batches.iter().map(|b| b.num_rows()).sum();
         assert_eq!(total_rows, 10, "Expected 10 rows from the movies table");
     }
+}
+
+/// Test that resolver errors propagate correctly through the runtime.
+#[tokio::test]
+async fn test_resolver_error_propagation() {
+    struct FailingResolver;
+
+    #[async_trait]
+    impl PlanResolver for FailingResolver {
+        async fn resolve_plan(&self, _plan: LogicalPlan) -> Result<ResolutionResult> {
+            Err(vegafusion_common::error::VegaFusionError::internal(
+                "resolver deliberately failed",
+            ))
+        }
+    }
+
+    let runtime = VegaFusionRuntime::new(None, Some(Arc::new(FailingResolver)));
+
+    let spec = get_simple_spec();
+    let inline_datasets = get_inline_datasets();
+
+    let result = runtime
+        .pre_transform_spec(
+            &spec,
+            &inline_datasets,
+            &PreTransformSpecOpts {
+                preserve_interactivity: false,
+                local_tz: "UTC".to_string(),
+                default_input_tz: None,
+                row_limit: None,
+                keep_variables: vec![],
+            },
+        )
+        .await;
+
+    let err = result.unwrap_err();
+    let msg = err.to_string();
+    assert!(
+        msg.contains("resolver deliberately failed"),
+        "Error should contain resolver message, got: {msg}"
+    );
 }

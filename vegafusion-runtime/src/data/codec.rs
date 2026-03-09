@@ -23,7 +23,7 @@ use super::inline_table::InlineTableProvider;
 ///
 /// The optional `sidecar` carries inline table data (keyed by table_id)
 /// that is injected during deserialization to reconstruct `MemTable` instances.
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct VegaFusionCodec {
     sidecar: Option<HashMap<String, Vec<RecordBatch>>>,
 }
@@ -37,12 +37,6 @@ impl VegaFusionCodec {
         Self {
             sidecar: Some(sidecar),
         }
-    }
-}
-
-impl Default for VegaFusionCodec {
-    fn default() -> Self {
-        Self::new()
     }
 }
 

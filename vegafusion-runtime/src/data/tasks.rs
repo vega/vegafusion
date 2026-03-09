@@ -59,6 +59,22 @@ use {datafusion::prelude::ParquetReadOptions, vegafusion_common::error::ToExtern
 #[cfg(target_arch = "wasm32")]
 use object_store_wasm::HttpStore;
 
+/// If no plan resolver is configured, eagerly materialize a `TaskValue::Plan`
+/// into a `TaskValue::Table` via DataFusion execution. Passthrough otherwise.
+async fn maybe_materialize_plan(
+    task_value: TaskValue,
+    plan_resolver: &Option<Arc<dyn PlanResolver>>,
+    ctx: &SessionContext,
+) -> Result<TaskValue> {
+    if plan_resolver.is_none() {
+        if let TaskValue::Plan(plan) = task_value {
+            let table = DataFrame::new(ctx.state(), plan).collect_to_table().await?;
+            return Ok(TaskValue::Table(table));
+        }
+    }
+    Ok(task_value)
+}
+
 pub fn build_compilation_config(
     input_vars: &[InputVariable],
     values: &[TaskValue],
@@ -224,15 +240,8 @@ impl TaskCall for DataUrlTask {
 
         // Return value based on whether inline dataset was used
         let task_value = if let Some(inline_dataset) = inline_dataset_info {
-            let mut task_value = result_df.to_task_value(inline_dataset).await?;
-            // No resolver: eagerly materialize plans (pure DataFusion behavior)
-            if plan_resolver.is_none() {
-                if let TaskValue::Plan(plan) = task_value {
-                    let table = DataFrame::new(ctx.state(), plan).collect_to_table().await?;
-                    task_value = TaskValue::Table(table);
-                }
-            }
-            task_value
+            let task_value = result_df.to_task_value(inline_dataset).await?;
+            maybe_materialize_plan(task_value, &plan_resolver, &ctx).await?
         } else {
             TaskValue::Table(result_df.collect_to_table().await?)
         };
@@ -587,13 +596,8 @@ impl TaskCall for DataSourceTask {
         if !has_transforms {
             match source_dataset {
                 VegaFusionDataset::Plan { plan } => {
-                    // No resolver: eagerly materialize plans (pure DataFusion behavior)
-                    let task_value = if plan_resolver.is_none() {
-                        let table = DataFrame::new(ctx.state(), plan).collect_to_table().await?;
-                        TaskValue::Table(table)
-                    } else {
-                        TaskValue::Plan(plan)
-                    };
+                    let task_value =
+                        maybe_materialize_plan(TaskValue::Plan(plan), &plan_resolver, &ctx).await?;
                     return Ok((task_value, Vec::new()));
                 }
                 VegaFusionDataset::Table { table, .. } => {
@@ -613,14 +617,8 @@ impl TaskCall for DataSourceTask {
         let pipeline = self.pipeline.as_ref().unwrap();
         let (df, output_values) = pipeline.eval_sql(source_df, &config).await?;
         let df = df.drop_index()?;
-        let mut task_value = df.to_task_value(&source_dataset).await?;
-        // No resolver: eagerly materialize plans (pure DataFusion behavior)
-        if plan_resolver.is_none() {
-            if let TaskValue::Plan(plan) = task_value {
-                let table = DataFrame::new(ctx.state(), plan).collect_to_table().await?;
-                task_value = TaskValue::Table(table);
-            }
-        }
+        let task_value = df.to_task_value(&source_dataset).await?;
+        let task_value = maybe_materialize_plan(task_value, &plan_resolver, &ctx).await?;
         Ok((task_value, output_values))
     }
 }

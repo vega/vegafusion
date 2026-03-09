@@ -1,10 +1,13 @@
 from __future__ import annotations
 
 import json
+import logging
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, Union
 
 from arro3.core import Schema, Table
+
+logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     from vegafusion.dataset import ExternalDataset
@@ -43,6 +46,13 @@ class PlanResolver:
     the non-``_proto`` variant (deserialized ``LogicalPlanNode``). The ``_proto``
     variant's default implementation deserializes and delegates to
     ``resolve_plan``.
+
+    .. warning::
+
+        Implementations that override ``resolve_plan`` or ``resolve_plan_proto``
+        are coupled to the DataFusion protobuf schema used by the current
+        VegaFusion version. Resolver code may require updates when upgrading
+        VegaFusion if the underlying DataFusion version changes.
     """
 
     def resolve_table(
@@ -126,12 +136,10 @@ class PlanResolver:
             if table_name in datasets:
                 dataset = datasets[table_name]
 
-                # Extract projected columns
                 projected_columns = None
                 if inner.HasField("projection"):
                     projected_columns = list(inner.projection.columns)
 
-                # Extract metadata from custom_table_data
                 metadata: dict[str, Any] = {}
                 if inner.custom_table_data:
                     try:
@@ -139,9 +147,11 @@ class PlanResolver:
                         if isinstance(envelope, dict):
                             metadata = envelope.get("metadata", {}) or {}
                     except (json.JSONDecodeError, UnicodeDecodeError):
-                        pass
+                        logger.warning(
+                            "Failed to decode metadata for table '%s'",
+                            table_name,
+                        )
 
-                # Call resolve_table
                 table_data = self.resolve_table(
                     name=table_name,
                     schema=dataset.schema,
@@ -149,18 +159,14 @@ class PlanResolver:
                     projected_columns=projected_columns,
                 )
 
-                # Replace node in-place with inline table scan
                 replacement = inline_table_scan_node(
                     name=table_name,
                     schema=dataset.schema,
                 )
                 node.CopyFrom(replacement)
-
-                # Store the resolved data in sidecar
                 sidecar[table_name] = table_data
                 return
 
-        # Recurse into children
         for child in _get_child_nodes(variant, inner):
             self._resolve_external_tables(child, datasets, sidecar)
 
@@ -178,30 +184,53 @@ def _extract_table_name(table_ref: Any) -> str:
         raise ValueError(f"Unknown table reference variant: {which}")
 
 
+# Plan node variants grouped by child structure.
+# NOTE: Update these when upgrading DataFusion — new plan node types with
+# children must be added here, or their subtrees will be silently skipped
+# during resolve_table tree walking.
+_SINGLE_INPUT = frozenset({
+    "projection",
+    "selection",
+    "limit",
+    "aggregate",
+    "sort",
+    "repartition",
+    "window",
+    "analyze",
+    "explain",
+    "distinct",
+    "subquery_alias",
+    "create_view",
+    "prepare",
+    "distinct_on",
+    "copy_to",
+    "view_scan",
+})
+
+_TWO_CHILD = frozenset({"join", "cross_join"})
+_MULTI_INPUT = frozenset({"union", "extension"})
+
+# Leaf nodes that are known to have no children (no warning needed).
+_KNOWN_LEAF = frozenset({
+    "custom_scan",
+    "table_scan",
+    "listing_scan",
+    "empty_relation",
+    "values",
+    "create_external_table",
+    "create_catalog_schema",
+    "create_catalog",
+    "drop_table",
+    "drop_view",
+    "set_variable",
+    "unnest",
+    "recursive_query",
+    "statement",
+})
+
+
 def _get_child_nodes(variant: str, inner: Any) -> list[LogicalPlanNode]:
     """Return child LogicalPlanNode references for a plan node variant."""
-    _SINGLE_INPUT = {
-        "projection",
-        "selection",
-        "limit",
-        "aggregate",
-        "sort",
-        "repartition",
-        "window",
-        "analyze",
-        "explain",
-        "distinct",
-        "subquery_alias",
-        "create_view",
-        "prepare",
-        "distinct_on",
-        "copy_to",
-        "view_scan",
-    }
-
-    _TWO_CHILD = {"join", "cross_join"}
-    _MULTI_INPUT = {"union", "extension"}
-
     if variant in _SINGLE_INPUT:
         if inner.HasField("input"):
             return [inner.input]
@@ -215,8 +244,14 @@ def _get_child_nodes(variant: str, inner: Any) -> list[LogicalPlanNode]:
         return children
     elif variant in _MULTI_INPUT:
         return list(inner.inputs)
-    else:
-        return []
+    elif variant not in _KNOWN_LEAF:
+        logger.warning(
+            "Unknown plan node variant '%s' — children will not be walked. "
+            "ExternalTableProvider nodes under this variant will not be resolved. "
+            "This may indicate a DataFusion version upgrade added a new node type.",
+            variant,
+        )
+    return []
 
 
 def inline_table_scan_node(
