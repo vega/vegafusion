@@ -1,4 +1,5 @@
 mod chart_state;
+mod plan_resolver;
 mod utils;
 use lazy_static::lazy_static;
 use pyo3::exceptions::PyValueError;
@@ -30,7 +31,7 @@ use vegafusion_core::task_graph::graph::ScopedVariable;
 use vegafusion_core::task_graph::task_value::MaterializedTaskValue;
 use vegafusion_runtime::tokio_runtime::TOKIO_THREAD_STACK_SIZE;
 
-use vegafusion_core::runtime::{PlanExecutor, VegaFusionRuntimeTrait};
+use vegafusion_core::runtime::{PlanResolver, VegaFusionRuntimeTrait};
 use vegafusion_runtime::task_graph::cache::VegaFusionCache;
 
 use crate::chart_state::PyChartState;
@@ -58,11 +59,11 @@ struct PyVegaFusionRuntime {
 }
 
 impl PyVegaFusionRuntime {
-    fn build_with_executor(
+    fn build_with_resolver(
         max_capacity: Option<usize>,
         memory_limit: Option<usize>,
         worker_threads: Option<i32>,
-        rust_executor: Option<Arc<dyn PlanExecutor>>,
+        rust_resolver: Option<Arc<dyn PlanResolver>>,
     ) -> PyResult<Self> {
         initialize_logging();
 
@@ -80,7 +81,7 @@ impl PyVegaFusionRuntime {
         Ok(Self {
             runtime: Arc::new(VegaFusionRuntime::new(
                 Some(VegaFusionCache::new(max_capacity, memory_limit)),
-                rust_executor,
+                rust_resolver,
             )),
             tokio_runtime: Arc::new(tokio_runtime_connection),
         })
@@ -96,7 +97,24 @@ impl PyVegaFusionRuntime {
         memory_limit: Option<usize>,
         worker_threads: Option<i32>,
     ) -> PyResult<Self> {
-        Self::build_with_executor(max_capacity, memory_limit, worker_threads, None)
+        Self::build_with_resolver(max_capacity, memory_limit, worker_threads, None)
+    }
+
+    #[staticmethod]
+    #[pyo3(signature = (py_resolver, max_capacity=None, memory_limit=None, worker_threads=None))]
+    pub fn new_with_resolver(
+        py_resolver: Py<PyAny>,
+        max_capacity: Option<usize>,
+        memory_limit: Option<usize>,
+        worker_threads: Option<i32>,
+    ) -> PyResult<Self> {
+        let resolver = crate::plan_resolver::PyPlanResolver::new(py_resolver);
+        Self::build_with_resolver(
+            max_capacity,
+            memory_limit,
+            worker_threads,
+            Some(Arc::new(resolver)),
+        )
     }
 
     #[staticmethod]
@@ -497,6 +515,49 @@ pub fn build_pre_transform_spec_plan(
     })
 }
 
+/// Build a LogicalPlanNode protobuf (as bytes) for an inline table scan.
+///
+/// Use this in `resolve_plan` implementations to replace a subtree that the
+/// resolver has already executed with a leaf node referencing sidecar Arrow data.
+///
+/// Args:
+///     name: Key that will match an entry in ResolvedPlan.datasets.
+///     schema: Arrow schema of the sidecar table (arro3.core.Schema).
+///
+/// Returns:
+///     bytes: Serialized LogicalPlanNode protobuf.
+#[pyfunction]
+#[pyo3(signature = (name, schema))]
+pub fn inline_table_scan_node(name: String, schema: pyo3_arrow::PySchema) -> PyResult<Vec<u8>> {
+    use datafusion::datasource::provider_as_source;
+    use datafusion_proto::bytes::logical_plan_to_bytes_with_extension_codec;
+    use vegafusion_common::datafusion_expr::LogicalPlanBuilder;
+    use vegafusion_runtime::data::codec::VegaFusionCodec;
+    use vegafusion_runtime::data::inline_table::InlineTableProvider;
+
+    let arrow_schema = schema.into_inner();
+    let provider = Arc::new(InlineTableProvider::new(arrow_schema, name.clone()));
+    let table_source = provider_as_source(provider);
+
+    let plan = LogicalPlanBuilder::scan(&name, table_source, None)
+        .map_err(|e| {
+            pyo3::exceptions::PyValueError::new_err(format!("Failed to build scan plan: {e}"))
+        })?
+        .build()
+        .map_err(|e| {
+            pyo3::exceptions::PyValueError::new_err(format!("Failed to build plan: {e}"))
+        })?;
+
+    let codec = VegaFusionCodec::new();
+    let bytes = logical_plan_to_bytes_with_extension_codec(&plan, &codec).map_err(|e| {
+        pyo3::exceptions::PyValueError::new_err(format!(
+            "Failed to serialize inline table plan: {e}"
+        ))
+    })?;
+
+    Ok(bytes.to_vec())
+}
+
 /// A Python module implemented in Rust. The name of this function must match
 /// the `lib.name` setting in the `Cargo.toml`, else Python will not be able to
 /// import the module.
@@ -508,6 +569,7 @@ fn _vegafusion(_py: Python, m: &Bound<PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(build_pre_transform_spec_plan, m)?)?;
     m.add_function(wrap_pyfunction!(get_virtual_memory, m)?)?;
     m.add_function(wrap_pyfunction!(get_cpu_count, m)?)?;
+    m.add_function(wrap_pyfunction!(inline_table_scan_node, m)?)?;
     m.add("__version__", env!("CARGO_PKG_VERSION"))?;
     Ok(())
 }

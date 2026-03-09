@@ -1,11 +1,10 @@
 use std::collections::HashMap;
 use std::sync::Arc;
 
-use datafusion::datasource::empty::EmptyTable;
 use datafusion::datasource::provider_as_source;
 use pyo3::exceptions::PyValueError as PyValErr;
 use pyo3::prelude::*;
-use pyo3::types::{PyAny, PyDict};
+use pyo3::types::{PyAny, PyDict, PyTuple};
 use pyo3_arrow::PySchema;
 use pythonize::depythonize;
 use std::borrow::Cow;
@@ -13,6 +12,7 @@ use vegafusion_common::data::table::VegaFusionTable;
 use vegafusion_common::datafusion_expr::LogicalPlanBuilder;
 use vegafusion_core::data::dataset::VegaFusionDataset;
 use vegafusion_core::spec::chart::ChartSpec;
+use vegafusion_runtime::data::external_table::ExternalTableProvider;
 
 /// Convert optional inline datasets provided from Python into VegaFusion datasets.
 pub fn process_inline_datasets(
@@ -24,7 +24,42 @@ pub fn process_inline_datasets(
                 .iter()
                 .map(|(name, inline_dataset)| {
                     let inline_dataset = inline_dataset;
-                    let dataset = if inline_dataset.hasattr("__arrow_c_stream__")? {
+                    let dataset = if let Ok(tuple) = inline_dataset.cast::<PyTuple>() {
+                        // Handle (Schema, metadata_dict) tuple from ExternalDataset
+                        if tuple.len() != 2 {
+                            return Err(PyValErr::new_err(
+                                "Expected a 2-element tuple (schema, metadata)",
+                            ));
+                        }
+                        let pyschema = tuple.get_item(0)?.extract::<PySchema>()?;
+                        let schema = pyschema.into_inner();
+                        let metadata_dict = tuple.get_item(1)?;
+                        let metadata: serde_json::Value =
+                            depythonize(&metadata_dict).map_err(|e| {
+                                PyValErr::new_err(format!(
+                                    "Failed to deserialize metadata dict: {e}"
+                                ))
+                            })?;
+
+                        let provider =
+                            Arc::new(ExternalTableProvider::with_metadata(schema, metadata));
+                        let table_source = provider_as_source(provider);
+                        let logical_plan =
+                            LogicalPlanBuilder::scan(name.to_string(), table_source, None)
+                                .map_err(|e| {
+                                    PyValErr::new_err(format!(
+                                        "Failed to build logical plan from ExternalDataset: {e}"
+                                    ))
+                                })?
+                                .build()
+                                .map_err(|e| {
+                                    PyValErr::new_err(format!(
+                                        "Failed to finalize logical plan from ExternalDataset: {e}"
+                                    ))
+                                })?;
+
+                        VegaFusionDataset::from_plan(logical_plan)
+                    } else if inline_dataset.hasattr("__arrow_c_stream__")? {
                         // Import via Arrow PyCapsule Interface
                         let (table, hash) =
                             VegaFusionTable::from_pyarrow_with_hash(py, &inline_dataset)?;
@@ -33,8 +68,8 @@ pub fn process_inline_datasets(
                         // Handle PyArrow Schema as VegaFusionDataset::Plan
                         let schema = pyschema.into_inner();
 
-                        // Build an empty table provider with the given schema and scan it
-                        let provider = Arc::new(EmptyTable::new(schema.clone()));
+                        // Build an external table provider with the given schema
+                        let provider = Arc::new(ExternalTableProvider::new(schema));
                         let table_source = provider_as_source(provider);
                         let logical_plan =
                             LogicalPlanBuilder::scan(name.to_string(), table_source, None)

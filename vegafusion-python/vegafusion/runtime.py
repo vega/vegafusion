@@ -33,6 +33,7 @@ if TYPE_CHECKING:
         PyChartStateGrpc,
         PyVegaFusionRuntime,
     )
+    from vegafusion.plan_resolver import PlanResolver
 
 
 # This type isn't defined in the grpcio package, so let's at least name it
@@ -190,6 +191,7 @@ class VegaFusionRuntime:
         cache_capacity: int = 64,
         memory_limit: int | None = None,
         worker_threads: int | None = None,
+        plan_resolver: PlanResolver | None = None,
     ) -> None:
         """
         Initialize a VegaFusionRuntime.
@@ -198,12 +200,15 @@ class VegaFusionRuntime:
             cache_capacity: Cache capacity.
             memory_limit: Memory limit.
             worker_threads: Number of worker threads.
+            plan_resolver: Optional custom plan resolver for resolving
+                external table references in DataFusion logical plans.
         """
         self._runtime = None
         self._grpc_url: str | None = None
         self._cache_capacity = cache_capacity
         self._memory_limit = memory_limit
         self._worker_threads = worker_threads
+        self._plan_resolver = plan_resolver
 
     @property
     def runtime(self) -> PyVegaFusionRuntime:
@@ -222,11 +227,19 @@ class VegaFusionRuntime:
             if self.worker_threads is None:
                 self.worker_threads = get_cpu_count()
 
-            self._runtime = PyVegaFusionRuntime.new_embedded(
-                self.cache_capacity,
-                self.memory_limit,
-                self.worker_threads,
-            )
+            if self._plan_resolver is not None:
+                self._runtime = PyVegaFusionRuntime.new_with_resolver(
+                    self._plan_resolver,
+                    self.cache_capacity,
+                    self.memory_limit,
+                    self.worker_threads,
+                )
+            else:
+                self._runtime = PyVegaFusionRuntime.new_embedded(
+                    self.cache_capacity,
+                    self.memory_limit,
+                    self.worker_threads,
+                )
         return self._runtime
 
     def grpc_connect(self, url: str) -> None:
@@ -255,7 +268,7 @@ class VegaFusionRuntime:
         self,
         inline_datasets: dict[str, Any] | None = None,
         inline_dataset_usage: dict[str, list[str]] | None = None,
-    ) -> dict[str, Table | Schema]:
+    ) -> dict[str, Table | Schema | tuple[Schema, dict[str, Any]]]:
         """
         Import or register inline datasets.
 
@@ -273,12 +286,23 @@ class VegaFusionRuntime:
             pd = sys.modules.get("pandas", None)
             pa = sys.modules.get("pyarrow", None)
 
+        from vegafusion.dataset import ExternalDataset
+
         inline_datasets = inline_datasets or {}
         inline_dataset_usage = inline_dataset_usage or {}
-        imported_inline_datasets: dict[str, Table | Schema] = {}
+        imported_inline_datasets: dict[
+            str, Table | Schema | tuple[Schema, dict[str, Any]]
+        ] = {}
+        # Keep strong references to ExternalDataset objects so their
+        # WeakValueDictionary entries survive until the call completes.
+        external_dataset_refs: list[ExternalDataset] = []
         for name, value in inline_datasets.items():
             columns = inline_dataset_usage.get(name)
-            if (pa is not None and isinstance(value, pa.Schema)) or hasattr(
+            if isinstance(value, ExternalDataset):
+                # Pass (schema, metadata_dict) tuple to Rust
+                imported_inline_datasets[name] = (value.schema, value.metadata)
+                external_dataset_refs.append(value)
+            elif (pa is not None and isinstance(value, pa.Schema)) or hasattr(
                 value, "__arrow_c_schema__"
             ):
                 imported_inline_datasets[name] = Schema.from_arrow(value)
@@ -821,6 +845,16 @@ class VegaFusionRuntime:
         """
         if value != self._cache_capacity:
             self._cache_capacity = value
+            self.reset()
+
+    @property
+    def plan_resolver(self) -> PlanResolver | None:
+        return self._plan_resolver
+
+    @plan_resolver.setter
+    def plan_resolver(self, value: PlanResolver | None) -> None:
+        if value is not self._plan_resolver:
+            self._plan_resolver = value
             self.reset()
 
     def reset(self) -> None:
