@@ -23,10 +23,10 @@ impl TaskCall for SignalTask {
         tz_config: &Option<RuntimeTzConfig>,
         _inline_datasets: HashMap<String, VegaFusionDataset>,
         ctx: Arc<SessionContext>,
-        plan_resolver: Option<Arc<dyn PlanResolver>>,
+        plan_resolvers: Vec<Arc<dyn PlanResolver>>,
     ) -> Result<(TaskValue, Vec<TaskValue>)> {
         let config =
-            build_compilation_config(&self.input_vars(), values, tz_config, ctx, plan_resolver);
+            build_compilation_config(&self.input_vars(), values, tz_config, ctx, plan_resolvers);
         let expression = self.expr.as_ref().unwrap();
         let expr = compile(expression, &config, None).await?;
         let value = expr.eval_to_scalar()?;

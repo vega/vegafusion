@@ -185,13 +185,24 @@ class ChartState:
         return cast(dict[str, Any], self._chart_state.get_client_spec())
 
 
+def _normalize_resolvers(
+    value: PlanResolver | list[PlanResolver] | None,
+) -> list[PlanResolver]:
+    """Convert a single resolver, list, or None into a list."""
+    if value is None:
+        return []
+    if isinstance(value, list):
+        return list(value)
+    return [value]
+
+
 class VegaFusionRuntime:
     def __init__(
         self,
         cache_capacity: int = 64,
         memory_limit: int | None = None,
         worker_threads: int | None = None,
-        plan_resolver: PlanResolver | None = None,
+        plan_resolver: PlanResolver | list[PlanResolver] | None = None,
     ) -> None:
         """
         Initialize a VegaFusionRuntime.
@@ -200,15 +211,18 @@ class VegaFusionRuntime:
             cache_capacity: Cache capacity.
             memory_limit: Memory limit.
             worker_threads: Number of worker threads.
-            plan_resolver: Optional custom plan resolver for resolving
+            plan_resolver: Optional custom plan resolver(s) for resolving
                 external table references in DataFusion logical plans.
+                Can be a single resolver or a list of resolvers that form
+                a pipeline (executed in order; short-circuits on first
+                Table result).
         """
         self._runtime = None
         self._grpc_url: str | None = None
         self._cache_capacity = cache_capacity
         self._memory_limit = memory_limit
         self._worker_threads = worker_threads
-        self._plan_resolver = plan_resolver
+        self._plan_resolvers = _normalize_resolvers(plan_resolver)
 
     @property
     def runtime(self) -> PyVegaFusionRuntime:
@@ -227,9 +241,9 @@ class VegaFusionRuntime:
             if self.worker_threads is None:
                 self.worker_threads = get_cpu_count()
 
-            if self._plan_resolver is not None:
-                self._runtime = PyVegaFusionRuntime.new_with_resolver(
-                    self._plan_resolver,
+            if self._plan_resolvers:
+                self._runtime = PyVegaFusionRuntime.new_with_resolvers(
+                    self._plan_resolvers,
                     self.cache_capacity,
                     self.memory_limit,
                     self.worker_threads,
@@ -848,13 +862,18 @@ class VegaFusionRuntime:
             self.reset()
 
     @property
-    def plan_resolver(self) -> PlanResolver | None:
-        return self._plan_resolver
+    def plan_resolver(self) -> PlanResolver | list[PlanResolver] | None:
+        if not self._plan_resolvers:
+            return None
+        if len(self._plan_resolvers) == 1:
+            return self._plan_resolvers[0]
+        return list(self._plan_resolvers)
 
     @plan_resolver.setter
-    def plan_resolver(self, value: PlanResolver | None) -> None:
-        if value is not self._plan_resolver:
-            self._plan_resolver = value
+    def plan_resolver(self, value: PlanResolver | list[PlanResolver] | None) -> None:
+        new_resolvers = _normalize_resolvers(value)
+        if new_resolvers != self._plan_resolvers:
+            self._plan_resolvers = new_resolvers
             self.reset()
 
     def reset(self) -> None:

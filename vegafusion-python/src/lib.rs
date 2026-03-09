@@ -60,11 +60,11 @@ struct PyVegaFusionRuntime {
 }
 
 impl PyVegaFusionRuntime {
-    fn build_with_resolver(
+    fn build_with_resolvers(
         max_capacity: Option<usize>,
         memory_limit: Option<usize>,
         worker_threads: Option<i32>,
-        rust_resolver: Option<Arc<dyn PlanResolver>>,
+        resolvers: Vec<Arc<dyn PlanResolver>>,
     ) -> PyResult<Self> {
         initialize_logging();
 
@@ -82,7 +82,7 @@ impl PyVegaFusionRuntime {
         Ok(Self {
             runtime: Arc::new(VegaFusionRuntime::new(
                 Some(VegaFusionCache::new(max_capacity, memory_limit)),
-                rust_resolver,
+                resolvers,
             )),
             tokio_runtime: Arc::new(tokio_runtime_connection),
         })
@@ -98,24 +98,24 @@ impl PyVegaFusionRuntime {
         memory_limit: Option<usize>,
         worker_threads: Option<i32>,
     ) -> PyResult<Self> {
-        Self::build_with_resolver(max_capacity, memory_limit, worker_threads, None)
+        Self::build_with_resolvers(max_capacity, memory_limit, worker_threads, Vec::new())
     }
 
     #[staticmethod]
-    #[pyo3(signature = (py_resolver, max_capacity=None, memory_limit=None, worker_threads=None))]
-    pub fn new_with_resolver(
-        py_resolver: Py<PyAny>,
+    #[pyo3(signature = (py_resolvers, max_capacity=None, memory_limit=None, worker_threads=None))]
+    pub fn new_with_resolvers(
+        py_resolvers: Vec<Py<PyAny>>,
         max_capacity: Option<usize>,
         memory_limit: Option<usize>,
         worker_threads: Option<i32>,
     ) -> PyResult<Self> {
-        let resolver = crate::plan_resolver::PyPlanResolver::new(py_resolver);
-        Self::build_with_resolver(
-            max_capacity,
-            memory_limit,
-            worker_threads,
-            Some(Arc::new(resolver)),
-        )
+        let resolvers: Vec<Arc<dyn PlanResolver>> = py_resolvers
+            .into_iter()
+            .map(|r| {
+                Arc::new(crate::plan_resolver::PyPlanResolver::new(r)) as Arc<dyn PlanResolver>
+            })
+            .collect();
+        Self::build_with_resolvers(max_capacity, memory_limit, worker_threads, resolvers)
     }
 
     #[staticmethod]

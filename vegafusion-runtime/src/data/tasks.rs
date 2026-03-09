@@ -59,14 +59,14 @@ use {datafusion::prelude::ParquetReadOptions, vegafusion_common::error::ToExtern
 #[cfg(target_arch = "wasm32")]
 use object_store_wasm::HttpStore;
 
-/// If no plan resolver is configured, eagerly materialize a `TaskValue::Plan`
+/// If no plan resolvers are configured, eagerly materialize a `TaskValue::Plan`
 /// into a `TaskValue::Table` via DataFusion execution. Passthrough otherwise.
 async fn maybe_materialize_plan(
     task_value: TaskValue,
-    plan_resolver: &Option<Arc<dyn PlanResolver>>,
+    plan_resolvers: &[Arc<dyn PlanResolver>],
     ctx: &SessionContext,
 ) -> Result<TaskValue> {
-    if plan_resolver.is_none() {
+    if plan_resolvers.is_empty() {
         if let TaskValue::Plan(plan) = task_value {
             let table = DataFrame::new(ctx.state(), plan).collect_to_table().await?;
             return Ok(TaskValue::Table(table));
@@ -80,7 +80,7 @@ pub fn build_compilation_config(
     values: &[TaskValue],
     tz_config: &Option<RuntimeTzConfig>,
     ctx: Arc<SessionContext>,
-    plan_resolver: Option<Arc<dyn PlanResolver>>,
+    plan_resolvers: Vec<Arc<dyn PlanResolver>>,
 ) -> CompilationConfig {
     // Build compilation config from input_vals
     let mut signal_scope: HashMap<String, ScalarValue> = HashMap::new();
@@ -113,7 +113,7 @@ pub fn build_compilation_config(
         data_scope,
         tz_config: *tz_config,
         ctx,
-        plan_resolver,
+        plan_resolvers,
         ..Default::default()
     }
 }
@@ -126,7 +126,7 @@ impl TaskCall for DataUrlTask {
         tz_config: &Option<RuntimeTzConfig>,
         inline_datasets: HashMap<String, VegaFusionDataset>,
         ctx: Arc<SessionContext>,
-        plan_resolver: Option<Arc<dyn PlanResolver>>,
+        plan_resolvers: Vec<Arc<dyn PlanResolver>>,
     ) -> Result<(TaskValue, Vec<TaskValue>)> {
         // Build compilation config for url signal (if any) and transforms (if any)
         let config = build_compilation_config(
@@ -134,7 +134,7 @@ impl TaskCall for DataUrlTask {
             values,
             tz_config,
             ctx.clone(),
-            plan_resolver.clone(),
+            plan_resolvers.clone(),
         );
 
         // Build url string
@@ -241,7 +241,7 @@ impl TaskCall for DataUrlTask {
         // Return value based on whether inline dataset was used
         let task_value = if let Some(inline_dataset) = inline_dataset_info {
             let task_value = result_df.to_task_value(inline_dataset).await?;
-            maybe_materialize_plan(task_value, &plan_resolver, &ctx).await?
+            maybe_materialize_plan(task_value, &plan_resolvers, &ctx).await?
         } else {
             TaskValue::Table(result_df.collect_to_table().await?)
         };
@@ -494,7 +494,7 @@ impl TaskCall for DataValuesTask {
         tz_config: &Option<RuntimeTzConfig>,
         _inline_datasets: HashMap<String, VegaFusionDataset>,
         ctx: Arc<SessionContext>,
-        plan_resolver: Option<Arc<dyn PlanResolver>>,
+        plan_resolvers: Vec<Arc<dyn PlanResolver>>,
     ) -> Result<(TaskValue, Vec<TaskValue>)> {
         // Deserialize data into table
         let values_table = VegaFusionTable::from_ipc_bytes(&self.values)?;
@@ -534,7 +534,7 @@ impl TaskCall for DataValuesTask {
                 values,
                 tz_config,
                 ctx.clone(),
-                plan_resolver.clone(),
+                plan_resolvers.clone(),
             );
 
             // Process datetime columns
@@ -568,7 +568,7 @@ impl TaskCall for DataSourceTask {
         tz_config: &Option<RuntimeTzConfig>,
         _inline_datasets: HashMap<String, VegaFusionDataset>,
         ctx: Arc<SessionContext>,
-        plan_resolver: Option<Arc<dyn PlanResolver>>,
+        plan_resolvers: Vec<Arc<dyn PlanResolver>>,
     ) -> Result<(TaskValue, Vec<TaskValue>)> {
         let input_vars = self.input_vars();
         let mut config = build_compilation_config(
@@ -576,7 +576,7 @@ impl TaskCall for DataSourceTask {
             values,
             tz_config,
             ctx.clone(),
-            plan_resolver.clone(),
+            plan_resolvers.clone(),
         );
 
         // Remove source dataset from config
@@ -597,7 +597,8 @@ impl TaskCall for DataSourceTask {
             match source_dataset {
                 VegaFusionDataset::Plan { plan } => {
                     let task_value =
-                        maybe_materialize_plan(TaskValue::Plan(plan), &plan_resolver, &ctx).await?;
+                        maybe_materialize_plan(TaskValue::Plan(plan), &plan_resolvers, &ctx)
+                            .await?;
                     return Ok((task_value, Vec::new()));
                 }
                 VegaFusionDataset::Table { table, .. } => {
@@ -618,7 +619,7 @@ impl TaskCall for DataSourceTask {
         let (df, output_values) = pipeline.eval_sql(source_df, &config).await?;
         let df = df.drop_index()?;
         let task_value = df.to_task_value(&source_dataset).await?;
-        let task_value = maybe_materialize_plan(task_value, &plan_resolver, &ctx).await?;
+        let task_value = maybe_materialize_plan(task_value, &plan_resolvers, &ctx).await?;
         Ok((task_value, output_values))
     }
 }

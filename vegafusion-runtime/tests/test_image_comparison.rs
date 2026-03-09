@@ -1473,7 +1473,7 @@ async fn check_spec_sequence(
         let materialized_value = vegafusion_runtime::task_graph::runtime::materialize_task_value(
             value,
             &runtime.ctx,
-            &runtime.plan_resolver,
+            &runtime.plan_resolvers,
         )
         .await
         .unwrap();

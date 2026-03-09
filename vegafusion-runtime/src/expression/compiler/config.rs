@@ -17,7 +17,7 @@ pub struct CompilationConfig {
     pub constants: HashMap<String, ScalarValue>,
     pub tz_config: Option<RuntimeTzConfig>,
     pub ctx: Arc<SessionContext>,
-    pub plan_resolver: Option<Arc<dyn PlanResolver>>,
+    pub plan_resolvers: Vec<Arc<dyn PlanResolver>>,
 }
 
 impl Default for CompilationConfig {
@@ -31,7 +31,7 @@ impl Default for CompilationConfig {
             constants: default_constants(),
             tz_config: None,
             ctx,
-            plan_resolver: None,
+            plan_resolvers: Vec::new(),
         }
     }
 }

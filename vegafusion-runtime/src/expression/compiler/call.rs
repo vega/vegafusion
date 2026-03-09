@@ -154,7 +154,7 @@ pub async fn compile_call(
                                     crate::task_graph::runtime::execute_plan(
                                         &config.ctx,
                                         plan.clone(),
-                                        &config.plan_resolver,
+                                        &config.plan_resolvers,
                                     )
                                     .await?
                                 }

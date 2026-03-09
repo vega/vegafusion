@@ -33,7 +33,7 @@ impl TransformTrait for Extent {
             let result_table = crate::task_graph::runtime::execute_plan(
                 &config.ctx,
                 logical_plan,
-                &config.plan_resolver,
+                &config.plan_resolvers,
             )
             .await?;
             let result_batch = result_table.to_record_batch()?;

@@ -19,7 +19,7 @@ pub trait TaskCall {
         tz_config: &Option<RuntimeTzConfig>,
         inline_datasets: HashMap<String, VegaFusionDataset>,
         ctx: Arc<SessionContext>,
-        plan_resolver: Option<Arc<dyn PlanResolver>>,
+        plan_resolvers: Vec<Arc<dyn PlanResolver>>,
     ) -> Result<(TaskValue, Vec<TaskValue>)>;
 }
 
@@ -31,24 +31,24 @@ impl TaskCall for Task {
         tz_config: &Option<RuntimeTzConfig>,
         inline_datasets: HashMap<String, VegaFusionDataset>,
         ctx: Arc<SessionContext>,
-        plan_resolver: Option<Arc<dyn PlanResolver>>,
+        plan_resolvers: Vec<Arc<dyn PlanResolver>>,
     ) -> Result<(TaskValue, Vec<TaskValue>)> {
         match self.task_kind() {
             TaskKind::Value(value) => Ok((value.try_into()?, Default::default())),
             TaskKind::DataUrl(task) => {
-                task.eval(values, tz_config, inline_datasets, ctx, plan_resolver)
+                task.eval(values, tz_config, inline_datasets, ctx, plan_resolvers)
                     .await
             }
             TaskKind::DataValues(task) => {
-                task.eval(values, tz_config, inline_datasets, ctx, plan_resolver)
+                task.eval(values, tz_config, inline_datasets, ctx, plan_resolvers)
                     .await
             }
             TaskKind::DataSource(task) => {
-                task.eval(values, tz_config, inline_datasets, ctx, plan_resolver)
+                task.eval(values, tz_config, inline_datasets, ctx, plan_resolvers)
                     .await
             }
             TaskKind::Signal(task) => {
-                task.eval(values, tz_config, inline_datasets, ctx, plan_resolver)
+                task.eval(values, tz_config, inline_datasets, ctx, plan_resolvers)
                     .await
             }
         }

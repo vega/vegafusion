@@ -30,7 +30,7 @@ async fn main() {
     let custom_resolver = Arc::new(LoggingResolver) as Arc<dyn PlanResolver>;
 
     // Create runtime with custom resolver
-    let runtime = VegaFusionRuntime::new(None, Some(custom_resolver));
+    let runtime = VegaFusionRuntime::new(None, vec![custom_resolver]);
 
     println!("Starting pre-transform with custom resolver\n");
 

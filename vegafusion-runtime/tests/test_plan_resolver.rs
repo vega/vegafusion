@@ -100,7 +100,7 @@ async fn test_custom_executor_called_in_pre_transform_spec() {
     let tracking_resolver = TrackingResolver::new();
     let resolver_clone = tracking_resolver.clone();
 
-    let runtime = VegaFusionRuntime::new(None, Some(Arc::new(tracking_resolver)));
+    let runtime = VegaFusionRuntime::new(None, vec![Arc::new(tracking_resolver)]);
 
     let spec = get_simple_spec();
     let inline_datasets = get_inline_datasets();
@@ -134,7 +134,7 @@ async fn test_custom_executor_called_in_pre_transform_extract() {
     let tracking_resolver = TrackingResolver::new();
     let resolver_clone = tracking_resolver.clone();
 
-    let runtime = VegaFusionRuntime::new(None, Some(Arc::new(tracking_resolver)));
+    let runtime = VegaFusionRuntime::new(None, vec![Arc::new(tracking_resolver)]);
 
     let spec = get_simple_spec();
     let inline_datasets = get_inline_datasets();
@@ -168,7 +168,7 @@ async fn test_custom_executor_called_in_pre_transform_values() {
     let tracking_resolver = TrackingResolver::new();
     let resolver_clone = tracking_resolver.clone();
 
-    let runtime = VegaFusionRuntime::new(None, Some(Arc::new(tracking_resolver)));
+    let runtime = VegaFusionRuntime::new(None, vec![Arc::new(tracking_resolver)]);
 
     let spec = get_simple_spec();
     let inline_datasets = get_inline_datasets();
@@ -213,7 +213,7 @@ async fn test_bin_transform_uses_custom_executor() {
     let tracking_resolver = TrackingResolver::new();
     let resolver_clone = tracking_resolver.clone();
 
-    let runtime = VegaFusionRuntime::new(None, Some(Arc::new(tracking_resolver)));
+    let runtime = VegaFusionRuntime::new(None, vec![Arc::new(tracking_resolver)]);
 
     let spec_str = r#"{
         "$schema": "https://vega.github.io/schema/vega/v5.json",
@@ -324,7 +324,7 @@ async fn test_mixed_data_only_executes_plans() {
     let tracking_resolver = TrackingResolver::new();
     let resolver_clone = tracking_resolver.clone();
 
-    let runtime = VegaFusionRuntime::new(None, Some(Arc::new(tracking_resolver)));
+    let runtime = VegaFusionRuntime::new(None, vec![Arc::new(tracking_resolver)]);
 
     let spec_str = r#"{
         "$schema": "https://vega.github.io/schema/vega/v5.json",
@@ -621,7 +621,7 @@ async fn test_table_returning_resolver() {
     let resolver = TableResolver {
         movies_table: mem_table,
     };
-    let runtime = VegaFusionRuntime::new(None, Some(Arc::new(resolver)));
+    let runtime = VegaFusionRuntime::new(None, vec![Arc::new(resolver)]);
 
     let spec = get_simple_spec();
     let inline_datasets = get_inline_datasets();
@@ -647,7 +647,7 @@ async fn test_table_returning_resolver() {
 /// Test that VegaFusionRuntime works with no resolver (None) when inline datasets are tables.
 #[tokio::test]
 async fn test_no_resolver() {
-    let runtime = VegaFusionRuntime::new(None, None);
+    let runtime = VegaFusionRuntime::new(None, Vec::new());
 
     let spec_str = r#"{
         "$schema": "https://vega.github.io/schema/vega/v5.json",
@@ -945,7 +945,7 @@ async fn test_resolver_error_propagation() {
         }
     }
 
-    let runtime = VegaFusionRuntime::new(None, Some(Arc::new(FailingResolver)));
+    let runtime = VegaFusionRuntime::new(None, vec![Arc::new(FailingResolver)]);
 
     let spec = get_simple_spec();
     let inline_datasets = get_inline_datasets();
