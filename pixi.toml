@@ -101,6 +101,18 @@ docs-rebuild = { depends-on = ["docs-clean", "docs-build"] }
 docs-serve = { cmd = "python -m http.server --directory docs/build/html 8000" }
 docs-publish = { cmd = "./sync_docs.sh", depends-on = ["docs-rebuild"], cwd = "docs" }
 
+# Proto code generation for Python
+download-datafusion-proto = """
+curl -sL https://raw.githubusercontent.com/apache/datafusion/refs/tags/52.1.0/datafusion/proto/src/datafusion.proto \
+  -o vegafusion-python/proto/datafusion.proto
+"""
+gen-proto-py = """
+python -m grpc_tools.protoc \
+  -I vegafusion-python/proto \
+  --python_out=vegafusion-python/vegafusion/proto \
+  vegafusion-python/proto/datafusion.proto
+"""
+
 [tasks.publish-rs]
 cmd = """
 cargo publish -p vegafusion-common &&
@@ -156,12 +168,15 @@ vl-convert-python = "1.7.*"
 anywidget = ">=0.9.13,<0.10"
 polars = "1.8.*"
 grpcio = ">=1.56.2,<2"
+grpcio-tools = ">=1.56.2,<2"
 pyarrow = "16.*"
 libgfortran = ">=15.1.0"
 
 [pypi-dependencies]
 # Works around pixi solve conflict with arrow >13
 scikit-image = ">=0.25"
+# Test dependency for plan executor integration tests
+datafusion = ">=52,<53"
 
 [target.osx-arm64.build-dependencies]
 # These dependencies are for building node canvas from source on apple silicon

@@ -127,6 +127,10 @@ jobs:
       - name: Type check
         run: |
           pixi run type-check-py
+      - name: Verify generated proto files are up to date
+        run: |
+          pixi run gen-proto-py
+          git diff --exit-code vegafusion-python/vegafusion/proto/
 
   # Use maturin action to build linux wheels within proper manylinux compatible containers
   # (This is why we don't use the pixi "build-py" action)

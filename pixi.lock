@@ -83,6 +83,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/linux-64/glog-0.7.1-hbabe93e_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/graphite2-1.3.13-h59595ed_1003.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/grpcio-1.67.1-py310h1a6248f_0.conda
+      - conda: https://conda.anaconda.org/conda-forge/linux-64/grpcio-tools-1.67.1-py310hf71b8c6_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/h11-0.16.0-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/h2-4.1.0-pyhd8ed1ab_0.tar.bz2
       - conda: https://conda.anaconda.org/conda-forge/linux-64/harfbuzz-8.5.0-hfac3d4d_0.conda
@@ -227,6 +228,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/linux-64/polars-1.8.2-py310h4a863d9_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/prometheus_client-0.21.0-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/prompt-toolkit-3.0.48-pyha770c72_0.conda
+      - conda: https://conda.anaconda.org/conda-forge/linux-64/protobuf-5.28.2-py310hf71b8c6_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/psutil-5.9.5-py310h2372a71_1.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/psygnal-0.11.1-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/pthread-stubs-0.4-hb9d3cd8_1002.conda
@@ -338,6 +340,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/linux-64/zlib-1.3.1-hb9d3cd8_2.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/zstandard-0.23.0-py310ha39cb0e_1.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/zstd-1.5.6-ha6fb4c9_0.conda
+      - pypi: https://files.pythonhosted.org/packages/b0/2f/14cffc5305abe05d56f3e99e8054c96bd94411185de059a98fc1ca0e5ec0/datafusion-52.0.0-cp310-abi3-manylinux_2_28_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/cb/bd/b394387b598ed84d8d0fa90611a90bee0adc2021820ad5729f7ced74a8e2/imageio-2.37.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/83/60/d497a310bde3f01cb805196ac61b7ad6dc5dcf8dce66634dc34364b20b4f/lazy_loader-0.4-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/b9/54/dd730b32ea14ea797530a4479b2ed46a6fb250f682a9cfb997e968bf0261/networkx-3.4.2-py3-none-any.whl
@@ -407,6 +410,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/osx-64/gflags-2.2.2-hac325c4_1005.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-64/glog-0.7.1-h2790a97_0.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-64/grpcio-1.67.1-py310h8ec686d_0.conda
+      - conda: https://conda.anaconda.org/conda-forge/osx-64/grpcio-tools-1.67.1-py310h2e7bc63_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/h11-0.16.0-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/h2-4.1.0-pyhd8ed1ab_0.tar.bz2
       - conda: https://conda.anaconda.org/conda-forge/noarch/hpack-4.0.0-pyh9f0ad1d_0.tar.bz2
@@ -528,6 +532,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/osx-64/polars-1.8.2-py310h5ef5ada_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/prometheus_client-0.21.0-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/prompt-toolkit-3.0.48-pyha770c72_0.conda
+      - conda: https://conda.anaconda.org/conda-forge/osx-64/protobuf-5.28.2-py310h2e7bc63_0.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-64/psutil-5.9.5-py310h6729b98_1.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/psygnal-0.11.1-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/ptyprocess-0.7.0-pyhd3deb0d_0.tar.bz2
@@ -621,6 +626,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/osx-64/zlib-1.3.1-hd23fc13_2.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-64/zstandard-0.23.0-py310h41d873f_1.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-64/zstd-1.5.6-h915ae27_0.conda
+      - pypi: https://files.pythonhosted.org/packages/77/38/66b2f2fd77d3fb66ff48a8922130379dece3ba6d2e29fc86fbb4298a874b/datafusion-52.0.0-cp310-abi3-macosx_10_12_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/cb/bd/b394387b598ed84d8d0fa90611a90bee0adc2021820ad5729f7ced74a8e2/imageio-2.37.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/83/60/d497a310bde3f01cb805196ac61b7ad6dc5dcf8dce66634dc34364b20b4f/lazy_loader-0.4-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/b9/54/dd730b32ea14ea797530a4479b2ed46a6fb250f682a9cfb997e968bf0261/networkx-3.4.2-py3-none-any.whl
@@ -703,6 +709,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/glog-0.7.1-heb240a5_0.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/graphite2-1.3.13-hebf3989_1003.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/grpcio-1.62.2-py310hf7687f1_0.conda
+      - conda: https://conda.anaconda.org/conda-forge/osx-arm64/grpcio-tools-1.62.2-py310h1c30a33_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/h11-0.16.0-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/h2-4.1.0-pyhd8ed1ab_0.tar.bz2
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/harfbuzz-7.3.0-h46e5fef_0.conda
@@ -844,6 +851,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/polars-1.8.2-py310hb6ae7db_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/prometheus_client-0.21.0-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/prompt-toolkit-3.0.48-pyha770c72_0.conda
+      - conda: https://conda.anaconda.org/conda-forge/osx-arm64/protobuf-4.25.3-py310ha1b16c5_1.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/psutil-5.9.5-py310h2aa6e3c_1.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/psygnal-0.11.1-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/ptyprocess-0.7.0-pyhd3deb0d_0.tar.bz2
@@ -937,6 +945,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/zlib-1.3.1-h8359307_2.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/zstandard-0.23.0-py310h2665a74_1.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/zstd-1.5.6-hb46c0d2_0.conda
+      - pypi: https://files.pythonhosted.org/packages/d0/b5/ce6c6030fa8e4fc38d10d5c4aa9cc6fe1cda625e409a18eb08ea09a87c8d/datafusion-52.0.0-cp310-abi3-macosx_11_0_arm64.whl
       - pypi: https://files.pythonhosted.org/packages/cb/bd/b394387b598ed84d8d0fa90611a90bee0adc2021820ad5729f7ced74a8e2/imageio-2.37.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/83/60/d497a310bde3f01cb805196ac61b7ad6dc5dcf8dce66634dc34364b20b4f/lazy_loader-0.4-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/b9/54/dd730b32ea14ea797530a4479b2ed46a6fb250f682a9cfb997e968bf0261/networkx-3.4.2-py3-none-any.whl
@@ -1000,6 +1009,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/fqdn-1.5.1-pyhd8ed1ab_0.tar.bz2
       - conda: https://conda.anaconda.org/conda-forge/noarch/future-1.0.0-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/win-64/grpcio-1.67.1-py310h0288bfe_0.conda
+      - conda: https://conda.anaconda.org/conda-forge/win-64/grpcio-tools-1.67.1-py310h9e98ed7_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/h11-0.16.0-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/h2-4.1.0-pyhd8ed1ab_0.tar.bz2
       - conda: https://conda.anaconda.org/conda-forge/noarch/hpack-4.0.0-pyh9f0ad1d_0.tar.bz2
@@ -1117,6 +1127,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/win-64/polars-1.8.2-py310hc41e00b_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/prometheus_client-0.21.0-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/prompt-toolkit-3.0.48-pyha770c72_0.conda
+      - conda: https://conda.anaconda.org/conda-forge/win-64/protobuf-5.28.2-py310h9e98ed7_0.conda
       - conda: https://conda.anaconda.org/conda-forge/win-64/psutil-5.9.5-py310h8d17308_1.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/psygnal-0.11.1-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/pure_eval-0.2.3-pyhd8ed1ab_0.conda
@@ -1215,6 +1226,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/zipp-3.20.2-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/win-64/zstandard-0.23.0-py310he5e10e1_1.conda
       - conda: https://conda.anaconda.org/conda-forge/win-64/zstd-1.5.6-h0ea2cb4_0.conda
+      - pypi: https://files.pythonhosted.org/packages/24/ae/3fdea50fa88f304db96728a67deb6e07bb0d9a02f665ca09db4237a9a199/datafusion-52.0.0-cp310-abi3-win_amd64.whl
       - pypi: https://files.pythonhosted.org/packages/cb/bd/b394387b598ed84d8d0fa90611a90bee0adc2021820ad5729f7ced74a8e2/imageio-2.37.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/83/60/d497a310bde3f01cb805196ac61b7ad6dc5dcf8dce66634dc34364b20b4f/lazy_loader-0.4-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/b9/54/dd730b32ea14ea797530a4479b2ed46a6fb250f682a9cfb997e968bf0261/networkx-3.4.2-py3-none-any.whl
@@ -2877,6 +2889,42 @@ packages:
   purls: []
   size: 48936
   timestamp: 1729041693552
+- pypi: https://files.pythonhosted.org/packages/24/ae/3fdea50fa88f304db96728a67deb6e07bb0d9a02f665ca09db4237a9a199/datafusion-52.0.0-cp310-abi3-win_amd64.whl
+  name: datafusion
+  version: 52.0.0
+  sha256: 67e252ef20b918537c8fdb47e6c825c0bd639795e19715a85fedde331a83d2e1
+  requires_dist:
+  - pyarrow>=16.0.0 ; python_full_version < '3.14'
+  - pyarrow>=22.0.0 ; python_full_version >= '3.14'
+  - typing-extensions ; python_full_version < '3.13'
+  requires_python: '>=3.10'
+- pypi: https://files.pythonhosted.org/packages/77/38/66b2f2fd77d3fb66ff48a8922130379dece3ba6d2e29fc86fbb4298a874b/datafusion-52.0.0-cp310-abi3-macosx_10_12_x86_64.whl
+  name: datafusion
+  version: 52.0.0
+  sha256: 999881df12ab78b6c8f04dd2056b24389374e93775a649ed20c5e35db2f42f65
+  requires_dist:
+  - pyarrow>=16.0.0 ; python_full_version < '3.14'
+  - pyarrow>=22.0.0 ; python_full_version >= '3.14'
+  - typing-extensions ; python_full_version < '3.13'
+  requires_python: '>=3.10'
+- pypi: https://files.pythonhosted.org/packages/b0/2f/14cffc5305abe05d56f3e99e8054c96bd94411185de059a98fc1ca0e5ec0/datafusion-52.0.0-cp310-abi3-manylinux_2_28_x86_64.whl
+  name: datafusion
+  version: 52.0.0
+  sha256: ac4b364937c277bbfcac032dbc49d08c078b13ba3f8bfda117da5fda4ea328bc
+  requires_dist:
+  - pyarrow>=16.0.0 ; python_full_version < '3.14'
+  - pyarrow>=22.0.0 ; python_full_version >= '3.14'
+  - typing-extensions ; python_full_version < '3.13'
+  requires_python: '>=3.10'
+- pypi: https://files.pythonhosted.org/packages/d0/b5/ce6c6030fa8e4fc38d10d5c4aa9cc6fe1cda625e409a18eb08ea09a87c8d/datafusion-52.0.0-cp310-abi3-macosx_11_0_arm64.whl
+  name: datafusion
+  version: 52.0.0
+  sha256: fd58e64158152f5c4a5836a3ce3bcca2a109d600c9ce7efdcf82e61c1ab0fbc8
+  requires_dist:
+  - pyarrow>=16.0.0 ; python_full_version < '3.14'
+  - pyarrow>=22.0.0 ; python_full_version >= '3.14'
+  - typing-extensions ; python_full_version < '3.13'
+  requires_python: '>=3.10'
 - conda: https://conda.anaconda.org/conda-forge/linux-64/debugpy-1.8.8-py310hf71b8c6_0.conda
   sha256: 7f41768a009d06f7551e86fd38e7c95c32a7620b559f46dfb78c9e2d1f54c86a
   md5: 1e12c55d575c0820836bf008f12cd98c
@@ -3422,6 +3470,77 @@ packages:
   - pkg:pypi/grpcio?source=hash-mapping
   size: 687004
   timestamp: 1730238001328
+- conda: https://conda.anaconda.org/conda-forge/linux-64/grpcio-tools-1.67.1-py310hf71b8c6_0.conda
+  sha256: 16d2a5c4bdaa1ad1bc528be287faca1ca341f8ccff2c76cd9ef0d6901127fc8e
+  md5: a8b1e26d67758d82a0ba0fd21d6160cf
+  depends:
+  - __glibc >=2.17,<3.0.a0
+  - grpcio 1.67.1 *_0
+  - libgcc >=13
+  - libstdcxx >=13
+  - protobuf
+  - python >=3.10,<3.11.0a0
+  - python_abi 3.10.* *_cp310
+  - setuptools
+  license: Apache-2.0
+  license_family: APACHE
+  purls:
+  - pkg:pypi/grpcio-tools?source=hash-mapping
+  size: 2093039
+  timestamp: 1730238486008
+- conda: https://conda.anaconda.org/conda-forge/osx-64/grpcio-tools-1.67.1-py310h2e7bc63_0.conda
+  sha256: 21f72bb67dea5f2cb5b155c6e528320b1356dfb8aa4192989a733c04eb60b95e
+  md5: a2df9f941aa1f01c686e09e4fe352afb
+  depends:
+  - __osx >=10.13
+  - grpcio 1.67.1 *_0
+  - libcxx >=17
+  - protobuf
+  - python >=3.10,<3.11.0a0
+  - python_abi 3.10.* *_cp310
+  - setuptools
+  license: Apache-2.0
+  license_family: APACHE
+  purls:
+  - pkg:pypi/grpcio-tools?source=hash-mapping
+  size: 2076305
+  timestamp: 1730237900370
+- conda: https://conda.anaconda.org/conda-forge/osx-arm64/grpcio-tools-1.62.2-py310h1c30a33_0.conda
+  sha256: 9cb420ae7b418dce680fa1de6afd1007309ab9a7eeeb539e9af7dfa86373ac26
+  md5: 0a3f6d89747c5310457fd26563d0fbae
+  depends:
+  - __osx >=11.0
+  - grpcio >=1.62.2
+  - libcxx >=16
+  - protobuf >=4.21.6,<5.0dev
+  - python >=3.10,<3.11.0a0
+  - python >=3.10,<3.11.0a0 *_cpython
+  - python_abi 3.10.* *_cp310
+  - setuptools
+  license: Apache-2.0
+  license_family: APACHE
+  purls:
+  - pkg:pypi/grpcio-tools?source=hash-mapping
+  size: 1645768
+  timestamp: 1713481300576
+- conda: https://conda.anaconda.org/conda-forge/win-64/grpcio-tools-1.67.1-py310h9e98ed7_0.conda
+  sha256: 5a4339a4a0a9e54c20e1c86c1d96d9126625b9b0574f025f18a3ef509f177f0a
+  md5: 703eaaa76720a236799ef35ccdc62ed0
+  depends:
+  - grpcio 1.67.1 *_0
+  - protobuf
+  - python >=3.10,<3.11.0a0
+  - python_abi 3.10.* *_cp310
+  - setuptools
+  - ucrt >=10.0.20348.0
+  - vc >=14.2,<15
+  - vc14_runtime >=14.29.30139
+  license: Apache-2.0
+  license_family: APACHE
+  purls:
+  - pkg:pypi/grpcio-tools?source=hash-mapping
+  size: 946941
+  timestamp: 1730240863813
 - conda: https://conda.anaconda.org/conda-forge/noarch/h11-0.16.0-pyhd8ed1ab_0.conda
   sha256: f64b68148c478c3bfc8f8d519541de7d2616bf59d44485a5271041d40c061887
   md5: 4b69232755285701bc86a5afe4d9933a
@@ -8268,6 +8387,75 @@ packages:
   - pkg:pypi/prompt-toolkit?source=hash-mapping
   size: 270271
   timestamp: 1727341744544
+- conda: https://conda.anaconda.org/conda-forge/linux-64/protobuf-5.28.2-py310hf71b8c6_0.conda
+  sha256: baca426cb6b866c527b8bacac0ed68f95bcdbc148ff9a2b61d6c393a088954c0
+  md5: 954ff1c6e2163931100629f38b9011c8
+  depends:
+  - __glibc >=2.17,<3.0.a0
+  - libgcc >=13
+  - libstdcxx >=13
+  - python >=3.10,<3.11.0a0
+  - python_abi 3.10.* *_cp310
+  constrains:
+  - libprotobuf 5.28.2
+  license: BSD-3-Clause
+  license_family: BSD
+  purls:
+  - pkg:pypi/protobuf?source=hash-mapping
+  size: 391891
+  timestamp: 1728669452145
+- conda: https://conda.anaconda.org/conda-forge/osx-64/protobuf-5.28.2-py310h2e7bc63_0.conda
+  sha256: a5282d17e62ec8cfe883ed837cf679bf2a67916dd8b3d1cdaa351e7581bf2e64
+  md5: b1ce0d667eaff534891a0f206b06c329
+  depends:
+  - __osx >=10.13
+  - libcxx >=17
+  - python >=3.10,<3.11.0a0
+  - python_abi 3.10.* *_cp310
+  constrains:
+  - libprotobuf 5.28.2
+  license: BSD-3-Clause
+  license_family: BSD
+  purls:
+  - pkg:pypi/protobuf?source=hash-mapping
+  size: 380613
+  timestamp: 1728669774252
+- conda: https://conda.anaconda.org/conda-forge/osx-arm64/protobuf-4.25.3-py310ha1b16c5_1.conda
+  sha256: 5b0c50ca224e12bd07eafe32b5708fe82d92513e23db404421f9ec00ddbe37e8
+  md5: 8d1dc9d4be78c814024a8a60fa62b5b7
+  depends:
+  - __osx >=11.0
+  - libabseil * cxx17*
+  - libabseil >=20240116.2,<20240117.0a0
+  - libcxx >=17
+  - libprotobuf >=4.25.3,<4.25.4.0a0
+  - python >=3.10,<3.11.0a0
+  - python >=3.10,<3.11.0a0 *_cpython
+  - python_abi 3.10.* *_cp310
+  - setuptools
+  license: BSD-3-Clause
+  license_family: BSD
+  purls:
+  - pkg:pypi/protobuf?source=hash-mapping
+  size: 314747
+  timestamp: 1725018767731
+- conda: https://conda.anaconda.org/conda-forge/win-64/protobuf-5.28.2-py310h9e98ed7_0.conda
+  sha256: 3be12a14770021d94ef54b1268c3f99fa1f7d7129b9a0a310a128483618626f8
+  md5: b6994c91c4233b4df385c670bc7e66f2
+  depends:
+  - python >=3.10,<3.11.0a0
+  - python_abi 3.10.* *_cp310
+  - ucrt >=10.0.20348.0
+  - vc >=14.2,<15
+  - vc14_runtime >=14.29.30139
+  constrains:
+  - libprotobuf 5.28.2
+  license: BSD-3-Clause
+  license_family: BSD
+  purls:
+  - pkg:pypi/protobuf?source=hash-mapping
+  size: 381401
+  timestamp: 1728670866910
 - conda: https://conda.anaconda.org/conda-forge/linux-64/psutil-5.9.5-py310h2372a71_1.conda
   sha256: db8a99bc41c1b0405c8e9daa92b9d4e7711f9717aff7fd3feeba407ca2a91aa2
   md5: cb25177acf28cc35cfa6c1ac1c679e22

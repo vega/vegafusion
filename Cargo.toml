@@ -151,6 +151,11 @@ default-features = false
 version = "=52.1.0"
 default-features = false
 
+[workspace.dependencies.datafusion-sql]
+version = "=52.1.0"
+default-features = false
+features = ["unparser"]
+
 [workspace.dependencies.thiserror]
 version = "1.0.69"
 
