@@ -62,9 +62,10 @@ impl LogicalExtensionCodec for VegaFusionCodec {
         _ctx: &datafusion::execution::TaskContext,
     ) -> Result<Arc<dyn TableProvider>> {
         if buf.is_empty() {
-            // Backward compatibility: empty buf treated as ExternalTableProvider with null metadata
-            return Ok(Arc::new(ExternalTableProvider::with_metadata(
+            // Backward compatibility: empty buf treated as ExternalTableProvider
+            return Ok(Arc::new(ExternalTableProvider::new(
                 schema,
+                "unknown".to_string(),
                 Value::Null,
             )));
         }
@@ -75,10 +76,13 @@ impl LogicalExtensionCodec for VegaFusionCodec {
 
         match envelope.get("type").and_then(|t| t.as_str()) {
             Some("external") => {
+                let kind = envelope
+                    .get("kind")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("unknown")
+                    .to_string();
                 let metadata = envelope.get("metadata").cloned().unwrap_or(Value::Null);
-                Ok(Arc::new(ExternalTableProvider::with_metadata(
-                    schema, metadata,
-                )))
+                Ok(Arc::new(ExternalTableProvider::new(schema, kind, metadata)))
             }
             Some("inline") => {
                 let name = envelope
@@ -111,8 +115,10 @@ impl LogicalExtensionCodec for VegaFusionCodec {
             None => {
                 // No "type" field — treat as legacy ExternalTableProvider where
                 // the entire JSON value is the metadata
-                Ok(Arc::new(ExternalTableProvider::with_metadata(
-                    schema, envelope,
+                Ok(Arc::new(ExternalTableProvider::new(
+                    schema,
+                    "unknown".to_string(),
+                    envelope,
                 )))
             }
         }
@@ -125,10 +131,10 @@ impl LogicalExtensionCodec for VegaFusionCodec {
         buf: &mut Vec<u8>,
     ) -> Result<()> {
         if let Some(ext) = node.as_any().downcast_ref::<ExternalTableProvider>() {
-            let metadata = ext.metadata();
             let envelope = serde_json::json!({
                 "type": "external",
-                "metadata": metadata,
+                "kind": ext.kind(),
+                "metadata": ext.metadata(),
             });
             let json_bytes = serde_json::to_vec(&envelope).map_err(|e| {
                 DataFusionError::Plan(format!(

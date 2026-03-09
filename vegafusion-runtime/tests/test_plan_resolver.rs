@@ -567,7 +567,11 @@ fn create_movies_table() -> VegaFusionTable {
 fn create_movies_logical_plan() -> LogicalPlan {
     let schema = get_movies_schema();
 
-    let provider = Arc::new(ExternalTableProvider::new(schema));
+    let provider = Arc::new(ExternalTableProvider::new(
+        schema,
+        "test".to_string(),
+        serde_json::Value::Null,
+    ));
     let table_source = provider_as_source(provider);
 
     LogicalPlanBuilder::scan("movies", table_source, None)
@@ -728,7 +732,11 @@ mod serialization_tests {
     #[tokio::test]
     async fn test_external_table_proto_round_trip() {
         let schema = get_movies_schema();
-        let provider = Arc::new(ExternalTableProvider::new(schema));
+        let provider = Arc::new(ExternalTableProvider::new(
+            schema,
+            "test".to_string(),
+            serde_json::Value::Null,
+        ));
         let table_source = provider_as_source(provider);
 
         // Build: TableScan -> Filter -> Projection
@@ -758,7 +766,11 @@ mod serialization_tests {
     #[tokio::test]
     async fn test_external_table_raw_proto_inspection() {
         let schema = get_movies_schema();
-        let provider = Arc::new(ExternalTableProvider::new(schema.clone()));
+        let provider = Arc::new(ExternalTableProvider::new(
+            schema.clone(),
+            "test".to_string(),
+            serde_json::Value::Null,
+        ));
         let table_source = provider_as_source(provider);
 
         // Build: TableScan -> Filter(release_year > 2000)
@@ -834,8 +846,9 @@ mod serialization_tests {
             "table": "public.movies",
             "filters": [{"col": "year", "op": ">", "val": 2000}],
         });
-        let provider = Arc::new(ExternalTableProvider::with_metadata(
+        let provider = Arc::new(ExternalTableProvider::new(
             schema.clone(),
+            "test".to_string(),
             metadata.clone(),
         ));
         let table_source = provider_as_source(provider);
@@ -858,6 +871,7 @@ mod serialization_tests {
                 .as_any()
                 .downcast_ref::<ExternalTableProvider>()
                 .expect("Expected ExternalTableProvider");
+            assert_eq!(ext.kind(), "test");
             assert_eq!(ext.metadata(), &metadata);
         } else {
             panic!("Expected TableScan, got {:?}", round_tripped);

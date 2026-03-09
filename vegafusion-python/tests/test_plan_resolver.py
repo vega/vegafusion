@@ -78,7 +78,7 @@ def test_passthrough_resolver() -> None:
     source_table = pa.table({"x": [1, 5, 10], "y": ["a", "b", "c"]})
     expected_result = pa.table({"x": [5, 10], "y": ["b", "c"]})
 
-    ext = ExternalDataset(schema=source_table.schema, data=source_table)
+    ext = ExternalDataset("test", schema=source_table.schema, data=source_table)
     resolver = PassthroughResolver(result_table=expected_result)
 
     rt = vf.VegaFusionRuntime(plan_resolver=resolver)
@@ -108,7 +108,7 @@ def test_deserializing_resolver() -> None:
     source_table = pa.table({"x": [1, 5, 10], "y": ["a", "b", "c"]})
     expected_result = pa.table({"x": [5, 10], "y": ["b", "c"]})
 
-    ext = ExternalDataset(schema=source_table.schema, data=source_table)
+    ext = ExternalDataset("test", schema=source_table.schema, data=source_table)
     resolver = DeserializingResolver(result_table=expected_result)
 
     rt = vf.VegaFusionRuntime(plan_resolver=resolver)
@@ -136,8 +136,10 @@ def test_deserializing_resolver() -> None:
 def test_external_dataset_registry() -> None:
     """ExternalDataset with data registers data in weakref registry."""
     table = pa.table({"a": [1, 2, 3]})
-    ext = ExternalDataset(schema=table.schema, data=table, metadata={"engine": "test"})
+    ext = ExternalDataset("test", schema=table.schema, data=table, metadata={"engine": "test"})
 
+    assert ext.kind == "test"
+    assert "_vf_kind" not in ext.metadata  # kind is separate from metadata
     assert "_vf_ref_id" in ext.metadata
     ref_id = ext.metadata["_vf_ref_id"]
     assert ExternalDataset.resolve_data(ref_id) is table
@@ -148,7 +150,7 @@ def test_external_dataset_registry() -> None:
 def test_external_dataset_schema_only() -> None:
     """ExternalDataset without data does not register."""
     schema = pa.schema([("x", pa.int64())])
-    ext = ExternalDataset(schema=schema)
+    ext = ExternalDataset("test", schema=schema)
 
     assert "_vf_ref_id" not in ext.metadata
     assert ext.data is None
@@ -312,7 +314,7 @@ def test_resolve_table_resolver() -> None:
             return source_table
 
     resolver = TableResolver()
-    ext = ExternalDataset(schema=source_table.schema, data=source_table)
+    ext = ExternalDataset("test", schema=source_table.schema, data=source_table)
 
     rt = vf.VegaFusionRuntime(plan_resolver=resolver)
     spec = _simple_spec()
@@ -385,7 +387,7 @@ def test_resolve_plan_returns_resolved_plan() -> None:
                 self._replace_custom_scan(child, target_name, replacement)
 
     resolver = ManualResolver()
-    ext = ExternalDataset(schema=source_table.schema, data=source_table)
+    ext = ExternalDataset("test", schema=source_table.schema, data=source_table)
 
     rt = vf.VegaFusionRuntime(plan_resolver=resolver)
     spec = _simple_spec()
@@ -446,8 +448,8 @@ def test_multiple_external_tables() -> None:
         ],
     }
 
-    ext_a = ExternalDataset(schema=table_a.schema, data=table_a)
-    ext_b = ExternalDataset(schema=table_b.schema, data=table_b)
+    ext_a = ExternalDataset("test", schema=table_a.schema, data=table_a)
+    ext_b = ExternalDataset("test", schema=table_b.schema, data=table_b)
     resolver = MultiTableResolver()
 
     rt = vf.VegaFusionRuntime(plan_resolver=resolver)
@@ -485,7 +487,7 @@ def test_resolve_table_error_propagates() -> None:
         ) -> pa.Table:
             raise ValueError("Simulated resolver failure")
 
-    ext = ExternalDataset(schema=source_table.schema, data=source_table)
+    ext = ExternalDataset("test", schema=source_table.schema, data=source_table)
     resolver = FailingResolver()
     rt = vf.VegaFusionRuntime(plan_resolver=resolver)
     spec = _simple_spec()
@@ -556,7 +558,7 @@ def test_unparse_plan_to_sql_from_resolver() -> None:
             return source_table
 
     resolver = SqlCapturingResolver()
-    ext = ExternalDataset(schema=source_table.schema, data=source_table)
+    ext = ExternalDataset("test", schema=source_table.schema, data=source_table)
 
     rt = vf.VegaFusionRuntime(plan_resolver=resolver)
     spec = _simple_spec()
@@ -597,7 +599,7 @@ def test_unparse_plan_to_sql_from_proto_message() -> None:
             return source_table
 
     resolver = ProtoCapturingResolver()
-    ext = ExternalDataset(schema=source_table.schema, data=source_table)
+    ext = ExternalDataset("test", schema=source_table.schema, data=source_table)
 
     rt = vf.VegaFusionRuntime(plan_resolver=resolver)
     spec = _simple_spec()
@@ -612,6 +614,25 @@ def test_unparse_plan_to_sql_from_proto_message() -> None:
     assert resolver.sql_from_proto is not None
     assert resolver.sql_from_bytes is not None
     assert resolver.sql_from_proto == resolver.sql_from_bytes
+
+
+def test_external_dataset_without_resolver_raises() -> None:
+    """ExternalDataset without a plan resolver raises ValueError with helpful message."""
+    source_table = pa.table({"x": [1, 2, 3]})
+    ext = ExternalDataset("spark", schema=source_table.schema, data=source_table)
+
+    rt = vf.VegaFusionRuntime()  # No resolver
+    spec = _simple_spec()
+
+    with pytest.raises(ValueError, match="require a plan resolver") as exc_info:
+        rt.pre_transform_datasets(
+            spec,
+            datasets=["filtered"],
+            inline_datasets={"source": ext},
+            dataset_format="pyarrow",
+        )
+    # Verify kind appears in the error message
+    assert "spark" in str(exc_info.value)
 
 
 def test_unparse_invalid_dialect() -> None:
@@ -632,7 +653,7 @@ def test_unparse_invalid_dialect() -> None:
             return source_table
 
     resolver = DialectTestResolver()
-    ext = ExternalDataset(schema=source_table.schema, data=source_table)
+    ext = ExternalDataset("test", schema=source_table.schema, data=source_table)
     rt = vf.VegaFusionRuntime(plan_resolver=resolver)
 
     rt.pre_transform_datasets(

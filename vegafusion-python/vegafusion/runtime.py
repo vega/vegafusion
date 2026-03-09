@@ -313,8 +313,8 @@ class VegaFusionRuntime:
         for name, value in inline_datasets.items():
             columns = inline_dataset_usage.get(name)
             if isinstance(value, ExternalDataset):
-                # Pass (schema, metadata_dict) tuple to Rust
-                imported_inline_datasets[name] = (value.schema, value.metadata)
+                # Pass (kind, schema, metadata_dict) tuple to Rust
+                imported_inline_datasets[name] = (value.kind, value.schema, value.metadata)
                 external_dataset_refs.append(value)
             elif (pa is not None and isinstance(value, pa.Schema)) or hasattr(
                 value, "__arrow_c_schema__"
@@ -386,6 +386,22 @@ class VegaFusionRuntime:
                         imported_inline_datasets[name] = Table(value)
                     else:
                         raise
+
+        # Validate: ExternalDatasets require a plan resolver
+        if external_dataset_refs and not self._plan_resolvers:
+            details = [
+                f"  - {name!r} (kind={value.kind!r})"
+                for name, value in inline_datasets.items()
+                if isinstance(value, ExternalDataset)
+            ]
+            raise ValueError(
+                "The following ExternalDataset(s) require a plan resolver "
+                "to execute:\n"
+                + "\n".join(details)
+                + "\n\nSet runtime.plan_resolver before calling this method.\n\n"
+                "Example:\n"
+                "  vf.runtime.plan_resolver = MyResolver()\n"
+            )
 
         return imported_inline_datasets
 

@@ -7,6 +7,7 @@ use pyo3::prelude::*;
 use pyo3::types::{PyAny, PyDict, PyTuple};
 use pyo3_arrow::PySchema;
 use pythonize::depythonize;
+use serde_json::Value;
 use std::borrow::Cow;
 use vegafusion_common::data::table::VegaFusionTable;
 use vegafusion_common::datafusion_expr::LogicalPlanBuilder;
@@ -25,15 +26,16 @@ pub fn process_inline_datasets(
                 .map(|(name, inline_dataset)| {
                     let inline_dataset = inline_dataset;
                     let dataset = if let Ok(tuple) = inline_dataset.cast::<PyTuple>() {
-                        // Handle (Schema, metadata_dict) tuple from ExternalDataset
-                        if tuple.len() != 2 {
+                        // Handle (kind, Schema, metadata_dict) tuple from ExternalDataset
+                        if tuple.len() != 3 {
                             return Err(PyValErr::new_err(
-                                "Expected a 2-element tuple (schema, metadata)",
+                                "Expected a 3-element tuple (kind, schema, metadata)",
                             ));
                         }
-                        let pyschema = tuple.get_item(0)?.extract::<PySchema>()?;
+                        let kind: String = tuple.get_item(0)?.extract()?;
+                        let pyschema = tuple.get_item(1)?.extract::<PySchema>()?;
                         let schema = pyschema.into_inner();
-                        let metadata_dict = tuple.get_item(1)?;
+                        let metadata_dict = tuple.get_item(2)?;
                         let metadata: serde_json::Value =
                             depythonize(&metadata_dict).map_err(|e| {
                                 PyValErr::new_err(format!(
@@ -41,8 +43,7 @@ pub fn process_inline_datasets(
                                 ))
                             })?;
 
-                        let provider =
-                            Arc::new(ExternalTableProvider::with_metadata(schema, metadata));
+                        let provider = Arc::new(ExternalTableProvider::new(schema, kind, metadata));
                         let table_source = provider_as_source(provider);
                         let logical_plan =
                             LogicalPlanBuilder::scan(name.to_string(), table_source, None)
@@ -69,7 +70,11 @@ pub fn process_inline_datasets(
                         let schema = pyschema.into_inner();
 
                         // Build an external table provider with the given schema
-                        let provider = Arc::new(ExternalTableProvider::new(schema));
+                        let provider = Arc::new(ExternalTableProvider::new(
+                            schema,
+                            "unknown".to_string(),
+                            Value::Null,
+                        ));
                         let table_source = provider_as_source(provider);
                         let logical_plan =
                             LogicalPlanBuilder::scan(name.to_string(), table_source, None)

@@ -23,19 +23,21 @@ use vegafusion_common::arrow::datatypes::SchemaRef;
 /// which is serialized into `custom_table_data` by [`super::codec::VegaFusionCodec`].
 pub struct ExternalTableProvider {
     schema: SchemaRef,
+    kind: String,
     metadata: Value,
 }
 
 impl ExternalTableProvider {
-    pub fn new(schema: SchemaRef) -> Self {
+    pub fn new(schema: SchemaRef, kind: String, metadata: Value) -> Self {
         Self {
             schema,
-            metadata: Value::Null,
+            kind,
+            metadata,
         }
     }
 
-    pub fn with_metadata(schema: SchemaRef, metadata: Value) -> Self {
-        Self { schema, metadata }
+    pub fn kind(&self) -> &str {
+        &self.kind
     }
 
     pub fn metadata(&self) -> &Value {
@@ -46,6 +48,7 @@ impl ExternalTableProvider {
 impl Debug for ExternalTableProvider {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("ExternalTableProvider")
+            .field("kind", &self.kind)
             .field("schema", &self.schema)
             .field("metadata", &self.metadata)
             .finish()
@@ -73,6 +76,12 @@ impl TableProvider for ExternalTableProvider {
         _filters: &[Expr],
         _limit: Option<usize>,
     ) -> Result<Arc<dyn ExecutionPlan>> {
-        plan_err!("ExternalTableProvider cannot be executed directly — use a PlanResolver")
+        let kind = self.kind();
+        plan_err!(
+            "ExternalTableProvider (kind: {kind}) cannot be executed directly. \
+             This table represents an external data source that must be resolved \
+             before execution. Set a PlanResolver on the VegaFusionRuntime to \
+             handle external table references."
+        )
     }
 }
