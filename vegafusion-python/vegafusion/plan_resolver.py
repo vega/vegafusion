@@ -184,74 +184,45 @@ def _extract_table_name(table_ref: Any) -> str:
         raise ValueError(f"Unknown table reference variant: {which}")
 
 
-# Plan node variants grouped by child structure.
-# NOTE: Update these when upgrading DataFusion — new plan node types with
-# children must be added here, or their subtrees will be silently skipped
-# during resolve_table tree walking.
-_SINGLE_INPUT = frozenset({
-    "projection",
-    "selection",
-    "limit",
-    "aggregate",
-    "sort",
-    "repartition",
-    "window",
-    "analyze",
-    "explain",
-    "distinct",
-    "subquery_alias",
-    "create_view",
-    "prepare",
-    "distinct_on",
-    "copy_to",
-    "view_scan",
-})
+def _build_child_fields() -> dict[str, list[tuple[str, bool]]]:
+    """Derive plan node child fields from the LogicalPlanNode protobuf descriptor.
 
-_TWO_CHILD = frozenset({"join", "cross_join"})
-_MULTI_INPUT = frozenset({"union", "extension"})
+    Returns a dict mapping variant name to a list of (field_name, is_repeated)
+    tuples for each LogicalPlanNode-typed child field. Leaf variants are omitted.
+    """
+    from google.protobuf.descriptor import FieldDescriptor
+    from vegafusion.proto.datafusion_pb2 import LogicalPlanNode  # type: ignore[attr-defined]
 
-# Leaf nodes that are known to have no children (no warning needed).
-_KNOWN_LEAF = frozenset({
-    "custom_scan",
-    "table_scan",
-    "listing_scan",
-    "empty_relation",
-    "values",
-    "create_external_table",
-    "create_catalog_schema",
-    "create_catalog",
-    "drop_table",
-    "drop_view",
-    "set_variable",
-    "unnest",
-    "recursive_query",
-    "statement",
-})
+    desc = LogicalPlanNode.DESCRIPTOR
+    oneof = desc.oneofs_by_name["LogicalPlanType"]
+
+    result: dict[str, list[tuple[str, bool]]] = {}
+    for oneof_field in oneof.fields:
+        children = [
+            (f.name, f.label == FieldDescriptor.LABEL_REPEATED)
+            for f in oneof_field.message_type.fields
+            if f.message_type and f.message_type.name == "LogicalPlanNode"
+        ]
+        if children:
+            result[oneof_field.name] = children
+    return result
+
+
+_CHILD_FIELDS = _build_child_fields()
 
 
 def _get_child_nodes(variant: str, inner: Any) -> list[LogicalPlanNode]:
     """Return child LogicalPlanNode references for a plan node variant."""
-    if variant in _SINGLE_INPUT:
-        if inner.HasField("input"):
-            return [inner.input]
+    fields = _CHILD_FIELDS.get(variant)
+    if fields is None:
         return []
-    elif variant in _TWO_CHILD:
-        children = []
-        if inner.HasField("left"):
-            children.append(inner.left)
-        if inner.HasField("right"):
-            children.append(inner.right)
-        return children
-    elif variant in _MULTI_INPUT:
-        return list(inner.inputs)
-    elif variant not in _KNOWN_LEAF:
-        logger.warning(
-            "Unknown plan node variant '%s' — children will not be walked. "
-            "ExternalTableProvider nodes under this variant will not be resolved. "
-            "This may indicate a DataFusion version upgrade added a new node type.",
-            variant,
-        )
-    return []
+    children: list[LogicalPlanNode] = []
+    for field_name, is_repeated in fields:
+        if is_repeated:
+            children.extend(getattr(inner, field_name))
+        elif inner.HasField(field_name):
+            children.append(getattr(inner, field_name))
+    return children
 
 
 def inline_table_scan_node(
