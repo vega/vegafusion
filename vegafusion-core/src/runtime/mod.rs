@@ -1,5 +1,5 @@
-mod plan_executor;
+mod plan_resolver;
 mod runtime;
 
-pub use plan_executor::PlanExecutor;
+pub use plan_resolver::{PlanResolver, ResolutionResult};
 pub use runtime::{PreTransformExtractTable, VegaFusionRuntimeTrait};

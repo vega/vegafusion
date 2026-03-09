@@ -3,14 +3,12 @@ use crate::proto::gen::tasks::ResponseTaskValue;
 use crate::proto::gen::tasks::{
     MaterializedTaskValue as ProtoMaterializedTaskValue, TaskGraphValueResponse, Variable,
 };
-use crate::runtime::PlanExecutor;
 use crate::task_graph::memory::{
     inner_size_of_logical_plan, inner_size_of_scalar, inner_size_of_table,
 };
 use datafusion_common::ScalarValue;
 use serde_json::Value;
 use std::convert::TryFrom;
-use std::sync::Arc;
 use vegafusion_common::arrow::record_batch::RecordBatch;
 use vegafusion_common::data::scalar::ScalarValueHelpers;
 use vegafusion_common::data::table::VegaFusionTable;
@@ -47,20 +45,6 @@ impl TaskValue {
         };
 
         std::mem::size_of::<Self>() + inner_size
-    }
-
-    pub async fn to_materialized(
-        self,
-        plan_executor: Arc<dyn PlanExecutor>,
-    ) -> Result<MaterializedTaskValue> {
-        match self {
-            TaskValue::Plan(plan) => {
-                let table = plan_executor.execute_plan(plan).await?;
-                Ok(MaterializedTaskValue::Table(table))
-            }
-            TaskValue::Scalar(scalar) => Ok(MaterializedTaskValue::Scalar(scalar)),
-            TaskValue::Table(table) => Ok(MaterializedTaskValue::Table(table)),
-        }
     }
 }
 
@@ -148,7 +132,7 @@ impl TryFrom<&TaskValue> for ProtoMaterializedTaskValue {
                 data: Some(MaterializedTaskValueData::Table(table.to_ipc_bytes()?)),
             }),
             TaskValue::Plan(_) => Err(VegaFusionError::internal(
-                "TaskValue::Plan cannot be serialized to protobuf. Plans are intermediate values that should be materialized to tables using .to_materialized(plan_executor) before serialization.",
+                "TaskValue::Plan cannot be serialized to protobuf. Plans are intermediate values that should be materialized before serialization.",
             )),
         }
     }
