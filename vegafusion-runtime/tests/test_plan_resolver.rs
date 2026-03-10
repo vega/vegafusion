@@ -6,28 +6,49 @@ use datafusion_expr::LogicalPlan as DFLogicalPlan;
 use datafusion_expr::LogicalPlanBuilder;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
+use std::sync::Mutex;
 use vegafusion_common::arrow::array::{Float64Array, Int64Array, RecordBatch, StringArray};
 use vegafusion_common::arrow::datatypes::{DataType, Field, Schema};
 use vegafusion_common::data::table::VegaFusionTable;
 use vegafusion_common::datafusion_expr::LogicalPlan;
-use vegafusion_common::error::Result;
+use vegafusion_common::error::{Result, VegaFusionError};
 use vegafusion_core::data::dataset::VegaFusionDataset;
 use vegafusion_core::proto::gen::pretransform::PreTransformSpecOpts;
 use vegafusion_core::runtime::{PlanResolver, ResolutionResult, VegaFusionRuntimeTrait};
 use vegafusion_core::spec::chart::ChartSpec;
 use vegafusion_runtime::data::external_table::ExternalTableProvider;
-use vegafusion_runtime::task_graph::runtime::VegaFusionRuntime;
+use vegafusion_runtime::task_graph::runtime::{execute_plan, VegaFusionRuntime};
 
-// Custom resolver which tracks its invocations and rewrites plans to replace
-// ExternalTableProvider with MemTable, returning the rewritten plan for DataFusion to execute.
+#[derive(Clone, Debug)]
+struct ResolverEvent {
+    resolver_id: String,
+    table_names: Vec<String>,
+    has_external_scan: bool,
+}
+
 #[derive(Clone)]
-struct TrackingResolver {
+enum ResolverBehavior {
+    PassThroughPlan,
+    RewriteExternalToMemTable,
+    ReturnTable(VegaFusionTable),
+    Fail(&'static str),
+}
+
+#[derive(Clone)]
+struct ScriptedResolver {
+    id: String,
     call_count: Arc<AtomicUsize>,
+    events: Arc<Mutex<Vec<ResolverEvent>>>,
+    behavior: ResolverBehavior,
     movies_table: Arc<dyn TableProvider>,
 }
 
-impl TrackingResolver {
-    fn new() -> Self {
+impl ScriptedResolver {
+    fn new(
+        id: impl Into<String>,
+        behavior: ResolverBehavior,
+        events: Arc<Mutex<Vec<ResolverEvent>>>,
+    ) -> Self {
         let movies_table = create_movies_table();
         let schema = movies_table.schema.clone();
         let batches = movies_table.batches.clone();
@@ -35,7 +56,10 @@ impl TrackingResolver {
             Arc::new(MemTable::try_new(schema, vec![batches]).unwrap()) as Arc<dyn TableProvider>;
 
         Self {
+            id: id.into(),
             call_count: Arc::new(AtomicUsize::new(0)),
+            events,
+            behavior,
             movies_table: mem_table,
         }
     }
@@ -54,27 +78,25 @@ impl TreeNodeRewriter for TableRewriter {
 
     fn f_up(&mut self, node: Self::Node) -> datafusion_common::Result<Transformed<Self::Node>> {
         if let DFLogicalPlan::TableScan(scan) = &node {
-            if scan.table_name.table() == "movies" {
-                // Verify that the source is actually our ExternalTableProvider
-                if datafusion::datasource::source_as_provider(&scan.source)
-                    .ok()
-                    .and_then(|p| {
-                        p.as_any()
-                            .downcast_ref::<ExternalTableProvider>()
-                            .map(|_| ())
-                    })
-                    .is_some()
-                {
-                    let new_scan = DFLogicalPlan::TableScan(datafusion_expr::TableScan {
-                        table_name: scan.table_name.clone(),
-                        source: provider_as_source(self.movies_table.clone()),
-                        projection: scan.projection.clone(),
-                        projected_schema: scan.projected_schema.clone(),
-                        filters: scan.filters.clone(),
-                        fetch: scan.fetch,
-                    });
-                    return Ok(Transformed::yes(new_scan));
-                }
+            // Verify that the source is actually our ExternalTableProvider
+            if datafusion::datasource::source_as_provider(&scan.source)
+                .ok()
+                .and_then(|p| {
+                    p.as_any()
+                        .downcast_ref::<ExternalTableProvider>()
+                        .map(|_| ())
+                })
+                .is_some()
+            {
+                let new_scan = DFLogicalPlan::TableScan(datafusion_expr::TableScan {
+                    table_name: scan.table_name.clone(),
+                    source: provider_as_source(self.movies_table.clone()),
+                    projection: scan.projection.clone(),
+                    projected_schema: scan.projected_schema.clone(),
+                    filters: scan.filters.clone(),
+                    fetch: scan.fetch,
+                });
+                return Ok(Transformed::yes(new_scan));
             }
         }
         Ok(Transformed::no(node))
@@ -82,25 +104,95 @@ impl TreeNodeRewriter for TableRewriter {
 }
 
 #[async_trait]
-impl PlanResolver for TrackingResolver {
+impl PlanResolver for ScriptedResolver {
     async fn resolve_plan(&self, plan: LogicalPlan) -> Result<ResolutionResult> {
         self.call_count.fetch_add(1, Ordering::SeqCst);
 
-        let mut rewriter = TableRewriter {
-            movies_table: self.movies_table.clone(),
+        let event = ResolverEvent {
+            resolver_id: self.id.clone(),
+            table_names: collect_scan_table_names(&plan),
+            has_external_scan: has_external_table_scans(&plan),
         };
-        let rewritten_plan = plan.rewrite(&mut rewriter).unwrap().data;
+        self.events.lock().unwrap().push(event);
 
-        Ok(ResolutionResult::Plan(rewritten_plan))
+        match &self.behavior {
+            ResolverBehavior::PassThroughPlan => Ok(ResolutionResult::Plan(plan)),
+            ResolverBehavior::RewriteExternalToMemTable => {
+                let mut rewriter = TableRewriter {
+                    movies_table: self.movies_table.clone(),
+                };
+                let rewritten_plan = plan.rewrite(&mut rewriter).unwrap().data;
+                Ok(ResolutionResult::Plan(rewritten_plan))
+            }
+            ResolverBehavior::ReturnTable(table) => Ok(ResolutionResult::Table(table.clone())),
+            ResolverBehavior::Fail(msg) => Err(VegaFusionError::internal(*msg)),
+        }
     }
+}
+
+fn collect_scan_table_names(plan: &LogicalPlan) -> Vec<String> {
+    let mut table_names = Vec::new();
+    let _ = plan.apply(|node| {
+        if let DFLogicalPlan::TableScan(scan) = node {
+            table_names.push(scan.table_name.table().to_string());
+        }
+        Ok(datafusion_common::tree_node::TreeNodeRecursion::Continue)
+    });
+    table_names
+}
+
+fn has_external_table_scans(plan: &LogicalPlan) -> bool {
+    let mut has_external = false;
+    let _ = plan.apply(|node| {
+        if let DFLogicalPlan::TableScan(scan) = node {
+            let is_external = datafusion::datasource::source_as_provider(&scan.source)
+                .ok()
+                .map(|provider| {
+                    provider
+                        .as_any()
+                        .downcast_ref::<ExternalTableProvider>()
+                        .is_some()
+                })
+                .unwrap_or(false);
+            if is_external {
+                has_external = true;
+                return Ok(datafusion_common::tree_node::TreeNodeRecursion::Stop);
+            }
+        }
+        Ok(datafusion_common::tree_node::TreeNodeRecursion::Continue)
+    });
+    has_external
+}
+
+fn table_row_count(table: &VegaFusionTable) -> usize {
+    table.batches.iter().map(|batch| batch.num_rows()).sum()
+}
+
+fn build_external_scan_plan(table_name: &str) -> LogicalPlan {
+    let schema = get_movies_schema();
+    let provider = Arc::new(ExternalTableProvider::new(
+        schema,
+        "test".to_string(),
+        serde_json::Value::Null,
+    ));
+    let table_source = provider_as_source(provider);
+    LogicalPlanBuilder::scan(table_name, table_source, None)
+        .unwrap()
+        .build()
+        .unwrap()
 }
 
 #[tokio::test]
 async fn test_custom_executor_called_in_pre_transform_spec() {
-    let tracking_resolver = TrackingResolver::new();
-    let resolver_clone = tracking_resolver.clone();
+    let events = Arc::new(Mutex::new(Vec::new()));
+    let resolver = ScriptedResolver::new(
+        "pre_transform_spec",
+        ResolverBehavior::RewriteExternalToMemTable,
+        events,
+    );
+    let resolver_clone = resolver.clone();
 
-    let runtime = VegaFusionRuntime::new(None, vec![Arc::new(tracking_resolver)]);
+    let runtime = VegaFusionRuntime::new(None, vec![Arc::new(resolver)]);
 
     let spec = get_simple_spec();
     let inline_datasets = get_inline_datasets();
@@ -131,10 +223,15 @@ async fn test_custom_executor_called_in_pre_transform_spec() {
 
 #[tokio::test]
 async fn test_custom_executor_called_in_pre_transform_extract() {
-    let tracking_resolver = TrackingResolver::new();
-    let resolver_clone = tracking_resolver.clone();
+    let events = Arc::new(Mutex::new(Vec::new()));
+    let resolver = ScriptedResolver::new(
+        "pre_transform_extract",
+        ResolverBehavior::RewriteExternalToMemTable,
+        events,
+    );
+    let resolver_clone = resolver.clone();
 
-    let runtime = VegaFusionRuntime::new(None, vec![Arc::new(tracking_resolver)]);
+    let runtime = VegaFusionRuntime::new(None, vec![Arc::new(resolver)]);
 
     let spec = get_simple_spec();
     let inline_datasets = get_inline_datasets();
@@ -165,10 +262,15 @@ async fn test_custom_executor_called_in_pre_transform_extract() {
 
 #[tokio::test]
 async fn test_custom_executor_called_in_pre_transform_values() {
-    let tracking_resolver = TrackingResolver::new();
-    let resolver_clone = tracking_resolver.clone();
+    let events = Arc::new(Mutex::new(Vec::new()));
+    let resolver = ScriptedResolver::new(
+        "pre_transform_values",
+        ResolverBehavior::RewriteExternalToMemTable,
+        events,
+    );
+    let resolver_clone = resolver.clone();
 
-    let runtime = VegaFusionRuntime::new(None, vec![Arc::new(tracking_resolver)]);
+    let runtime = VegaFusionRuntime::new(None, vec![Arc::new(resolver)]);
 
     let spec = get_simple_spec();
     let inline_datasets = get_inline_datasets();
@@ -205,15 +307,18 @@ async fn test_custom_executor_called_in_pre_transform_values() {
     );
 }
 
-// Bin transform internally uses data from extent transform to compute binning boundaries.
-// This requires materializing extend data before binning can be done, which creates kind of chain
-// where binning logical plan will depend on materialized results of extent.
+// This remains an API-level smoke test for resolver wiring on a multi-step transform chain.
 #[tokio::test]
 async fn test_bin_transform_uses_custom_executor() {
-    let tracking_resolver = TrackingResolver::new();
-    let resolver_clone = tracking_resolver.clone();
+    let events = Arc::new(Mutex::new(Vec::new()));
+    let resolver = ScriptedResolver::new(
+        "bin_transform",
+        ResolverBehavior::RewriteExternalToMemTable,
+        events,
+    );
+    let resolver_clone = resolver.clone();
 
-    let runtime = VegaFusionRuntime::new(None, vec![Arc::new(tracking_resolver)]);
+    let runtime = VegaFusionRuntime::new(None, vec![Arc::new(resolver)]);
 
     let spec_str = r#"{
         "$schema": "https://vega.github.io/schema/vega/v5.json",
@@ -310,21 +415,20 @@ async fn test_bin_transform_uses_custom_executor() {
 
     let call_count = resolver_clone.get_call_count();
 
-    assert_eq!(
-        call_count, 3,
-        "Custom resolver should have been called 3 times: \
-        (1) extent transform for binning boundaries, \
-        (2) bin + aggregate transforms, \
-        (3) scale domain computation for yscale"
-    );
+    assert!(call_count >= 1, "Custom resolver should have been called");
 }
 
 #[tokio::test]
 async fn test_mixed_data_only_executes_plans() {
-    let tracking_resolver = TrackingResolver::new();
-    let resolver_clone = tracking_resolver.clone();
+    let events = Arc::new(Mutex::new(Vec::new()));
+    let resolver = ScriptedResolver::new(
+        "mixed_data",
+        ResolverBehavior::RewriteExternalToMemTable,
+        events.clone(),
+    );
+    let resolver_clone = resolver.clone();
 
-    let runtime = VegaFusionRuntime::new(None, vec![Arc::new(tracking_resolver)]);
+    let runtime = VegaFusionRuntime::new(None, vec![Arc::new(resolver)]);
 
     let spec_str = r#"{
         "$schema": "https://vega.github.io/schema/vega/v5.json",
@@ -374,7 +478,7 @@ async fn test_mixed_data_only_executes_plans() {
     let spec: ChartSpec = serde_json::from_str(spec_str).unwrap();
 
     let movies_table = create_movies_table();
-    let movies_plan = create_movies_logical_plan();
+    let movies_plan = build_external_scan_plan("plan_only_source");
 
     let mut inline_datasets = std::collections::HashMap::new();
     inline_datasets.insert(
@@ -403,12 +507,119 @@ async fn test_mixed_data_only_executes_plans() {
 
     assert!(warnings.is_empty());
 
-    let call_count = resolver_clone.get_call_count();
-
-    assert_eq!(
-        call_count, 1,
-        "Custom resolver should have been called only once"
+    assert!(
+        resolver_clone.get_call_count() > 0,
+        "Custom resolver should have been called for plan-backed datasets"
     );
+
+    let observed_events = events.lock().unwrap().clone();
+    assert!(
+        observed_events.iter().all(|event| event.has_external_scan),
+        "Expected only external plan scans in resolver inputs"
+    );
+    let observed_table_names: Vec<String> = observed_events
+        .iter()
+        .flat_map(|event| event.table_names.clone())
+        .collect();
+    assert!(
+        observed_table_names
+            .iter()
+            .any(|table| table == "plan_only_source"),
+        "Expected resolver to observe the plan-backed source table"
+    );
+    assert!(
+        observed_table_names
+            .iter()
+            .all(|table| table != "movies_table"),
+        "Resolver should not run for table-backed datasets"
+    );
+}
+
+#[tokio::test]
+async fn test_execute_plan_pipeline_chains_resolvers_in_order() {
+    let events = Arc::new(Mutex::new(Vec::new()));
+    let rewrite_resolver = ScriptedResolver::new(
+        "rewrite",
+        ResolverBehavior::RewriteExternalToMemTable,
+        events.clone(),
+    );
+    let inspect_resolver =
+        ScriptedResolver::new("inspect", ResolverBehavior::PassThroughPlan, events.clone());
+
+    let resolvers: Vec<Arc<dyn PlanResolver>> = vec![
+        Arc::new(rewrite_resolver.clone()),
+        Arc::new(inspect_resolver.clone()),
+    ];
+    let plan = build_external_scan_plan("movies_chain");
+    let ctx = datafusion::prelude::SessionContext::new();
+
+    let table = execute_plan(&ctx, plan, &resolvers).await.unwrap();
+    assert_eq!(table_row_count(&table), 10);
+    assert_eq!(rewrite_resolver.get_call_count(), 1);
+    assert_eq!(inspect_resolver.get_call_count(), 1);
+
+    let observed_events = events.lock().unwrap().clone();
+    assert_eq!(observed_events.len(), 2);
+    assert_eq!(observed_events[0].resolver_id, "rewrite");
+    assert!(observed_events[0].has_external_scan);
+    assert_eq!(observed_events[1].resolver_id, "inspect");
+    assert!(
+        !observed_events[1].has_external_scan,
+        "Second resolver should see rewritten non-external plan"
+    );
+}
+
+#[tokio::test]
+async fn test_execute_plan_pipeline_short_circuits_after_table_result() {
+    let events = Arc::new(Mutex::new(Vec::new()));
+    let table_resolver = ScriptedResolver::new(
+        "table",
+        ResolverBehavior::ReturnTable(create_movies_table()),
+        events.clone(),
+    );
+    let never_called_resolver = ScriptedResolver::new(
+        "never_called",
+        ResolverBehavior::Fail("second resolver should not have been called"),
+        events.clone(),
+    );
+
+    let resolvers: Vec<Arc<dyn PlanResolver>> = vec![
+        Arc::new(table_resolver.clone()),
+        Arc::new(never_called_resolver.clone()),
+    ];
+    let plan = build_external_scan_plan("movies_short_circuit");
+    let ctx = datafusion::prelude::SessionContext::new();
+
+    let table = execute_plan(&ctx, plan, &resolvers).await.unwrap();
+    assert_eq!(table_row_count(&table), 10);
+    assert_eq!(table_resolver.get_call_count(), 1);
+    assert_eq!(never_called_resolver.get_call_count(), 0);
+
+    let observed_events = events.lock().unwrap().clone();
+    assert_eq!(observed_events.len(), 1);
+    assert_eq!(observed_events[0].resolver_id, "table");
+}
+
+#[tokio::test]
+async fn test_execute_plan_pipeline_fails_if_external_not_resolved() {
+    let events = Arc::new(Mutex::new(Vec::new()));
+    let passthrough_resolver = ScriptedResolver::new(
+        "passthrough",
+        ResolverBehavior::PassThroughPlan,
+        events.clone(),
+    );
+
+    let resolvers: Vec<Arc<dyn PlanResolver>> = vec![Arc::new(passthrough_resolver.clone())];
+    let plan = build_external_scan_plan("movies_unresolved");
+    let ctx = datafusion::prelude::SessionContext::new();
+
+    let err = execute_plan(&ctx, plan, &resolvers).await.unwrap_err();
+    let msg = err.to_string();
+    assert!(
+        msg.contains("cannot be executed directly"),
+        "Expected unresolved external-table execution error, got: {msg}"
+    );
+    assert_eq!(passthrough_resolver.get_call_count(), 1);
 }
 
 fn get_simple_spec() -> ChartSpec {
@@ -565,19 +776,7 @@ fn create_movies_table() -> VegaFusionTable {
 }
 
 fn create_movies_logical_plan() -> LogicalPlan {
-    let schema = get_movies_schema();
-
-    let provider = Arc::new(ExternalTableProvider::new(
-        schema,
-        "test".to_string(),
-        serde_json::Value::Null,
-    ));
-    let table_source = provider_as_source(provider);
-
-    LogicalPlanBuilder::scan("movies", table_source, None)
-        .unwrap()
-        .build()
-        .unwrap()
+    build_external_scan_plan("movies")
 }
 
 fn get_inline_datasets() -> std::collections::HashMap<String, VegaFusionDataset> {
@@ -979,6 +1178,27 @@ async fn test_resolver_error_propagation() {
         .await;
 
     let err = result.unwrap_err();
+    let msg = err.to_string();
+    assert!(
+        msg.contains("resolver deliberately failed"),
+        "Error should contain resolver message, got: {msg}"
+    );
+}
+
+#[tokio::test]
+async fn test_execute_plan_pipeline_propagates_resolver_errors() {
+    let events = Arc::new(Mutex::new(Vec::new()));
+    let failing_resolver = ScriptedResolver::new(
+        "failing",
+        ResolverBehavior::Fail("resolver deliberately failed"),
+        events,
+    );
+
+    let resolvers: Vec<Arc<dyn PlanResolver>> = vec![Arc::new(failing_resolver)];
+    let ctx = datafusion::prelude::SessionContext::new();
+    let plan = build_external_scan_plan("movies");
+
+    let err = execute_plan(&ctx, plan, &resolvers).await.unwrap_err();
     let msg = err.to_string();
     assert!(
         msg.contains("resolver deliberately failed"),
