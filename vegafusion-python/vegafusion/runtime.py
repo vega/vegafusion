@@ -186,12 +186,12 @@ class ChartState:
 
 
 def _normalize_resolvers(
-    value: PlanResolver | list[PlanResolver] | None,
+    value: PlanResolver | list[PlanResolver] | tuple[PlanResolver, ...] | None,
 ) -> list[PlanResolver]:
     """Convert a single resolver, list, or None into a list."""
     if value is None:
         return []
-    if isinstance(value, list):
+    if isinstance(value, (list, tuple)):
         return list(value)
     return [value]
 
@@ -263,6 +263,13 @@ class VegaFusionRuntime:
         Args:
             url: URL of a running VegaFusion server
         """
+        if self._plan_resolvers:
+            raise ValueError(
+                "Cannot use grpc_connect with custom plan resolvers. "
+                "Plan resolvers run locally and are not supported "
+                "with remote gRPC runtimes."
+            )
+
         from vegafusion._vegafusion import PyVegaFusionRuntime
 
         self._grpc_url = url
@@ -892,6 +899,12 @@ class VegaFusionRuntime:
     @plan_resolver.setter
     def plan_resolver(self, value: PlanResolver | list[PlanResolver] | None) -> None:
         new_resolvers = _normalize_resolvers(value)
+        if new_resolvers and self._grpc_url is not None:
+            raise ValueError(
+                "Cannot use plan resolvers with a gRPC runtime. "
+                "Plan resolvers run locally and are not supported "
+                "with remote gRPC runtimes."
+            )
         if new_resolvers != self._plan_resolvers:
             self._plan_resolvers = new_resolvers
             self.reset()
