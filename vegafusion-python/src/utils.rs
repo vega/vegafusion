@@ -4,7 +4,7 @@ use std::sync::Arc;
 use datafusion::datasource::provider_as_source;
 use pyo3::exceptions::PyValueError as PyValErr;
 use pyo3::prelude::*;
-use pyo3::types::{PyAny, PyDict, PyTuple};
+use pyo3::types::{PyAny, PyDict};
 use pyo3_arrow::PySchema;
 use pythonize::depythonize;
 use serde_json::Value;
@@ -25,19 +25,17 @@ pub fn process_inline_datasets(
                 .iter()
                 .map(|(name, inline_dataset)| {
                     let inline_dataset = inline_dataset;
-                    let dataset = if let Ok(tuple) = inline_dataset.cast::<PyTuple>() {
-                        // Handle (kind, Schema, metadata_dict) tuple from ExternalDataset
-                        if tuple.len() != 3 {
-                            return Err(PyValErr::new_err(
-                                "Expected a 3-element tuple (kind, schema, metadata)",
-                            ));
-                        }
-                        let kind: String = tuple.get_item(0)?.extract()?;
-                        let pyschema = tuple.get_item(1)?.extract::<PySchema>()?;
+                    let dataset = if inline_dataset.hasattr("kind")?
+                        && inline_dataset.hasattr("schema")?
+                        && inline_dataset.hasattr("metadata")?
+                    {
+                        // Handle ExternalDataset with .kind, .schema, .metadata
+                        let kind: String = inline_dataset.getattr("kind")?.extract()?;
+                        let pyschema = inline_dataset.getattr("schema")?.extract::<PySchema>()?;
                         let schema = pyschema.into_inner();
-                        let metadata_dict = tuple.get_item(2)?;
+                        let metadata_obj = inline_dataset.getattr("metadata")?;
                         let metadata: serde_json::Value =
-                            depythonize(&metadata_dict).map_err(|e| {
+                            depythonize(&metadata_obj).map_err(|e| {
                                 PyValErr::new_err(format!(
                                     "Failed to deserialize metadata dict: {e}"
                                 ))

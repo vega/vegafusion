@@ -289,15 +289,17 @@ class VegaFusionRuntime:
         self,
         inline_datasets: dict[str, Any] | None = None,
         inline_dataset_usage: dict[str, list[str]] | None = None,
-    ) -> dict[str, Table | Schema | tuple[Schema, dict[str, Any]]]:
+    ) -> dict[str, Table | Schema | ExternalDataset]:
         """
         Import or register inline datasets.
 
         Args:
             inline_datasets: A dictionary from dataset names to pandas DataFrames,
-                pyarrow Tables, or pyarrow Schemas. Inline datasets may be referenced
-                by the input specification using the following url syntax
-                'vegafusion+dataset://{dataset_name}' or 'table://{dataset_name}'.
+                pyarrow Tables, pyarrow Schemas, or ExternalDataset instances.
+                Inline datasets may be referenced by the input specification using
+                the following url syntax 'vegafusion+dataset://{dataset_name}' or
+                'table://{dataset_name}'. ExternalDataset entries are resolved by
+                the configured plan resolver(s) at execution time.
             inline_dataset_usage: Columns that are referenced by datasets. If no
                 entry is found, then all columns should be included.
         """
@@ -311,21 +313,14 @@ class VegaFusionRuntime:
 
         inline_datasets = inline_datasets or {}
         inline_dataset_usage = inline_dataset_usage or {}
-        imported_inline_datasets: dict[
-            str, Table | Schema | tuple[Schema, dict[str, Any]]
-        ] = {}
+        imported_inline_datasets: dict[str, Table | Schema | ExternalDataset] = {}
         # Keep strong references to ExternalDataset objects so their
         # WeakValueDictionary entries survive until the call completes.
         external_dataset_refs: list[ExternalDataset] = []
         for name, value in inline_datasets.items():
             columns = inline_dataset_usage.get(name)
             if isinstance(value, ExternalDataset):
-                # Pass (kind, schema, metadata_dict) tuple to Rust
-                imported_inline_datasets[name] = (
-                    value.kind,
-                    value.schema,
-                    value.metadata,
-                )
+                imported_inline_datasets[name] = value
                 external_dataset_refs.append(value)
             elif (pa is not None and isinstance(value, pa.Schema)) or hasattr(
                 value, "__arrow_c_schema__"
