@@ -102,16 +102,8 @@ docs-serve = { cmd = "python -m http.server --directory docs/build/html 8000" }
 docs-publish = { cmd = "./sync_docs.sh", depends-on = ["docs-rebuild"], cwd = "docs" }
 
 # Proto code generation for Python
-download-datafusion-proto = """
-curl -sL https://raw.githubusercontent.com/apache/datafusion/refs/tags/52.1.0/datafusion/proto/src/datafusion.proto \
-  -o vegafusion-python/proto/datafusion.proto
-"""
-gen-proto-py = """
-python -m grpc_tools.protoc \
-  -I vegafusion-python/proto \
-  --python_out=vegafusion-python/vegafusion/proto \
-  vegafusion-python/proto/datafusion.proto
-"""
+download-datafusion-proto = "python automation/download_datafusion_proto.py"
+gen-proto-py = "python automation/gen_proto_py.py"
 
 [tasks.publish-rs]
 cmd = """
