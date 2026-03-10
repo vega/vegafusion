@@ -89,6 +89,19 @@ def main():
     for pb2 in OUTPUT_DIR.rglob("*_pb2.py"):
         fix_imports(pb2)
 
+    # Format generated files
+    pb2_files = list(OUTPUT_DIR.rglob("*_pb2.py"))
+    if pb2_files:
+        result = subprocess.run(
+            ["ruff", "format"] + [str(f) for f in pb2_files],
+            capture_output=True,
+            text=True,
+        )
+        if result.returncode != 0:
+            print("WARNING: ruff format failed", file=sys.stderr)
+            if result.stderr:
+                print(result.stderr, file=sys.stderr)
+
     print("Done.")
 
 

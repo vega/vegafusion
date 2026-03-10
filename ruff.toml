@@ -8,7 +8,7 @@ include = [
 ]
 exclude = [
   "vegafusion-python/tests/altair_mocks/**/*.py",
-  "vegafusion-python/vegafusion/proto/datafusion_pb2.py",
+  "vegafusion-python/vegafusion/proto/**/*_pb2.py",
 ]
 target-version = "py39"
 
