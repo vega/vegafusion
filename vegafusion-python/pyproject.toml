@@ -32,6 +32,7 @@ Documentation = "https://vegafusion.io"
 
 [project.optional-dependencies]
 embed = []
+plan-resolver = ["protobuf"]
 
 [tool.maturin]
 module-name = "vegafusion._vegafusion"

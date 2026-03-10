@@ -9,6 +9,13 @@ from arro3.core import Schema, Table
 
 logger = logging.getLogger(__name__)
 
+_PROTOBUF_INSTALL_HINT = (
+    "The 'protobuf' package is required for plan-level resolvers "
+    "(resolve_plan / resolve_plan_proto) and related utilities "
+    "(inline_table_scan_node, unparse_to_sql). "
+    "Install it with: pip install vegafusion[plan-resolver]"
+)
+
 if TYPE_CHECKING:
     from vegafusion.dataset import ExternalDataset
     from vegafusion.proto.datafusion_pb2 import (
@@ -101,9 +108,12 @@ class PlanResolver:
         The default implementation deserializes into a
         LogicalPlanNode and calls resolve_plan().
         """
-        from vegafusion.proto.datafusion_pb2 import (  # type: ignore[attr-defined]
-            LogicalPlanNode,
-        )
+        try:
+            from vegafusion.proto.datafusion_pb2 import (  # type: ignore[attr-defined]
+                LogicalPlanNode,
+            )
+        except ImportError as e:
+            raise ImportError(_PROTOBUF_INSTALL_HINT) from e
 
         plan = LogicalPlanNode()
         plan.ParseFromString(plan_bytes)
@@ -203,11 +213,14 @@ def _build_child_fields() -> dict[str, list[tuple[str, bool]]]:
     Returns a dict mapping variant name to a list of (field_name, is_repeated)
     tuples for each LogicalPlanNode-typed child field. Leaf variants are omitted.
     """
-    from google.protobuf.descriptor import FieldDescriptor
+    try:
+        from google.protobuf.descriptor import FieldDescriptor
 
-    from vegafusion.proto.datafusion_pb2 import (
-        LogicalPlanNode,  # type: ignore[attr-defined]
-    )
+        from vegafusion.proto.datafusion_pb2 import (
+            LogicalPlanNode,  # type: ignore[attr-defined]
+        )
+    except ImportError as e:
+        raise ImportError(_PROTOBUF_INSTALL_HINT) from e
 
     desc = LogicalPlanNode.DESCRIPTOR
     oneof = desc.oneofs_by_name["LogicalPlanType"]
@@ -266,9 +279,13 @@ def inline_table_scan_node(
         A deserialized LogicalPlanNode protobuf message.
     """
     from vegafusion._vegafusion import inline_table_scan_node as _native
-    from vegafusion.proto.datafusion_pb2 import (  # type: ignore[attr-defined]
-        LogicalPlanNode,
-    )
+
+    try:
+        from vegafusion.proto.datafusion_pb2 import (  # type: ignore[attr-defined]
+            LogicalPlanNode,
+        )
+    except ImportError as e:
+        raise ImportError(_PROTOBUF_INSTALL_HINT) from e
 
     node = LogicalPlanNode()
     node.ParseFromString(_native(name, schema))

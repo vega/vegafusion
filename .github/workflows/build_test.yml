@@ -338,7 +338,7 @@ jobs:
           python -m pip install vegafusion-*macosx_11_*_arm64.whl
 
           # Optional dependencies
-          python -m pip install pyarrow pandas polars "duckdb>=1.0" vl-convert-python "pandas>=2.2"
+          python -m pip install pyarrow pandas polars "duckdb>=1.0" vl-convert-python "pandas>=2.2" protobuf
 
           # Test dependencies
           python -m pip install pytest altair vega-datasets scikit-image
@@ -372,7 +372,7 @@ jobs:
           python -m pip install $vegafusion
 
           # Optional dependencies
-          python -m pip install pyarrow pandas "numpy<2" polars[timezone] "duckdb>=1.0" vl-convert-python 
+          python -m pip install pyarrow pandas "numpy<2" polars[timezone] "duckdb>=1.0" vl-convert-python protobuf
 
           # Test dependencies
           python -m pip install pytest altair vega-datasets scikit-image
