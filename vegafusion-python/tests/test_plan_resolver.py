@@ -182,7 +182,7 @@ def test_plan_resolver_on_runtime_property() -> None:
 
 def test_datafusion_resolver_aggregate() -> None:
     """End-to-end: datafusion-python resolver with aggregate transforms on CSV."""
-    import datafusion
+    datafusion = pytest.importorskip("datafusion")
 
     # Write test CSV
     csv_path = os.path.join(tempfile.gettempdir(), "vf_resolver_test.csv")
@@ -246,7 +246,7 @@ def test_datafusion_resolver_aggregate() -> None:
 
 def test_datafusion_resolver_filter_formula() -> None:
     """End-to-end: datafusion-python resolver with filter + formula transforms."""
-    import datafusion
+    datafusion = pytest.importorskip("datafusion")
 
     csv_path = os.path.join(tempfile.gettempdir(), "vf_resolver_test2.csv")
     table = pa.table(
