@@ -224,12 +224,19 @@ def _build_child_fields() -> dict[str, list[tuple[str, bool]]]:
     return result
 
 
-_CHILD_FIELDS = _build_child_fields()
+_CHILD_FIELDS: dict[str, list[tuple[str, bool]]] | None = None
+
+
+def _get_child_fields() -> dict[str, list[tuple[str, bool]]]:
+    global _CHILD_FIELDS
+    if _CHILD_FIELDS is None:
+        _CHILD_FIELDS = _build_child_fields()
+    return _CHILD_FIELDS
 
 
 def _get_child_nodes(variant: str, inner: Any) -> list[LogicalPlanNode]:  # noqa: ANN401
     """Return child LogicalPlanNode references for a plan node variant."""
-    fields = _CHILD_FIELDS.get(variant)
+    fields = _get_child_fields().get(variant)
     if fields is None:
         return []
     children: list[LogicalPlanNode] = []
