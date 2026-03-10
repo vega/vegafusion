@@ -223,7 +223,7 @@ impl PlanResolver for PyPlanResolver {
                 }
 
                 let sidecar_codec = VegaFusionCodec::with_sidecar(sidecar);
-                let ctx = datafusion::prelude::SessionContext::new();
+                let ctx = vegafusion_runtime::datafusion::context::make_datafusion_context();
                 let resolved_plan =
                     datafusion_proto::bytes::logical_plan_from_bytes_with_extension_codec(
                         &plan_bytes,
