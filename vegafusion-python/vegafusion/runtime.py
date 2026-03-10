@@ -33,6 +33,7 @@ if TYPE_CHECKING:
         PyChartStateGrpc,
         PyVegaFusionRuntime,
     )
+    from vegafusion.dataset import ExternalDataset
     from vegafusion.plan_resolver import PlanResolver
 
 

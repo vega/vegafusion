@@ -83,7 +83,9 @@ def test_passthrough_resolver() -> None:
     source_table = pa.table({"x": [1, 5, 10], "y": ["a", "b", "c"]})
     expected_result = pa.table({"x": [5, 10], "y": ["b", "c"]})
 
-    ext = ExternalDataset(protocol="test", schema=source_table.schema, data=source_table)
+    ext = ExternalDataset(
+        protocol="test", schema=source_table.schema, data=source_table
+    )
     resolver = PassthroughResolver(result_table=expected_result)
 
     rt = vf.VegaFusionRuntime(plan_resolver=resolver)
@@ -113,7 +115,9 @@ def test_deserializing_resolver() -> None:
     source_table = pa.table({"x": [1, 5, 10], "y": ["a", "b", "c"]})
     expected_result = pa.table({"x": [5, 10], "y": ["b", "c"]})
 
-    ext = ExternalDataset(protocol="test", schema=source_table.schema, data=source_table)
+    ext = ExternalDataset(
+        protocol="test", schema=source_table.schema, data=source_table
+    )
     resolver = DeserializingResolver(result_table=expected_result)
 
     rt = vf.VegaFusionRuntime(plan_resolver=resolver)
@@ -327,7 +331,9 @@ def test_resolve_table_resolver() -> None:
             return source_table
 
     resolver = TableResolver()
-    ext = ExternalDataset(protocol="test", schema=source_table.schema, data=source_table)
+    ext = ExternalDataset(
+        protocol="test", schema=source_table.schema, data=source_table
+    )
 
     rt = vf.VegaFusionRuntime(plan_resolver=resolver)
     spec = simple_spec()
@@ -400,7 +406,9 @@ def test_resolve_plan_returns_resolved_plan() -> None:
                 self._replace_custom_scan(child, target_name, replacement)
 
     resolver = ManualResolver()
-    ext = ExternalDataset(protocol="test", schema=source_table.schema, data=source_table)
+    ext = ExternalDataset(
+        protocol="test", schema=source_table.schema, data=source_table
+    )
 
     rt = vf.VegaFusionRuntime(plan_resolver=resolver)
     spec = simple_spec()
@@ -500,7 +508,9 @@ def test_resolve_table_error_propagates() -> None:
         ) -> pa.Table:
             raise ValueError("Simulated resolver failure")
 
-    ext = ExternalDataset(protocol="test", schema=source_table.schema, data=source_table)
+    ext = ExternalDataset(
+        protocol="test", schema=source_table.schema, data=source_table
+    )
     resolver = FailingResolver()
     rt = vf.VegaFusionRuntime(plan_resolver=resolver)
     spec = simple_spec()
@@ -571,7 +581,9 @@ def test_unparse_plan_to_sql_from_resolver() -> None:
             return source_table
 
     resolver = SqlCapturingResolver()
-    ext = ExternalDataset(protocol="test", schema=source_table.schema, data=source_table)
+    ext = ExternalDataset(
+        protocol="test", schema=source_table.schema, data=source_table
+    )
 
     rt = vf.VegaFusionRuntime(plan_resolver=resolver)
     spec = simple_spec()
@@ -620,7 +632,9 @@ def test_unparse_plan_to_sql_from_proto_message() -> None:
             return source_table
 
     resolver = ProtoCapturingResolver()
-    ext = ExternalDataset(protocol="test", schema=source_table.schema, data=source_table)
+    ext = ExternalDataset(
+        protocol="test", schema=source_table.schema, data=source_table
+    )
 
     rt = vf.VegaFusionRuntime(plan_resolver=resolver)
     spec = simple_spec()
@@ -644,7 +658,9 @@ def test_unparse_plan_to_sql_from_proto_message() -> None:
 def test_external_dataset_without_resolver_raises() -> None:
     """ExternalDataset without a plan resolver raises ValueError with helpful message."""
     source_table = pa.table({"x": [1, 2, 3]})
-    ext = ExternalDataset(protocol="spark", schema=source_table.schema, data=source_table)
+    ext = ExternalDataset(
+        protocol="spark", schema=source_table.schema, data=source_table
+    )
 
     rt = vf.VegaFusionRuntime()  # No resolver
     spec = simple_spec()
@@ -678,7 +694,9 @@ def test_unparse_invalid_dialect() -> None:
             return source_table
 
     resolver = DialectTestResolver()
-    ext = ExternalDataset(protocol="test", schema=source_table.schema, data=source_table)
+    ext = ExternalDataset(
+        protocol="test", schema=source_table.schema, data=source_table
+    )
     rt = vf.VegaFusionRuntime(plan_resolver=resolver)
 
     rt.pre_transform_datasets(

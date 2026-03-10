@@ -17,7 +17,7 @@ class _DataRef:
 
 
 class ExternalDataset:
-    """An external dataset with a protocol label, schema, JSON metadata, and optional data ref.
+    """External dataset with protocol, schema, metadata, and optional data ref.
 
     The ``protocol`` parameter is an optional short identifier for the data
     source type (e.g. ``"spark"``, ``"snowflake"``, ``"duckdb"``).  It is

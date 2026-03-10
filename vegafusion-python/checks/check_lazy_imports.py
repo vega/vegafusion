@@ -16,9 +16,9 @@ if __name__ == "__main__":
     skip_eager_import_check = narwhals_version >= Version("1.43.0")
 
     # protobuf should not be loaded just from importing vegafusion
-    assert "google.protobuf" not in sys.modules, (
-        "google.protobuf should not be imported at vegafusion import time"
-    )
+    assert (
+        "google.protobuf" not in sys.modules
+    ), "google.protobuf should not be imported at vegafusion import time"
 
     for mod in ["polars", "pandas", "pyarrow", "duckdb", "altair"]:
         if mod in ["pandas", "pyarrow"] and skip_eager_import_check:
