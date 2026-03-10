@@ -109,8 +109,8 @@ class PlanResolver:
         LogicalPlanNode and calls resolve_plan().
         """
         try:
-            from vegafusion.proto.datafusion_pb2 import (  # type: ignore[attr-defined]
-                LogicalPlanNode,
+            from vegafusion.proto.datafusion_pb2 import (
+                LogicalPlanNode,  # type: ignore[attr-defined]
             )
         except ImportError as e:
             raise ImportError(_PROTOBUF_INSTALL_HINT) from e
@@ -119,8 +119,11 @@ class PlanResolver:
         plan.ParseFromString(plan_bytes)
         result = self.resolve_plan(plan, datasets)
         if isinstance(result, ResolvedPlan):
+            plan_obj = result.plan
+            if not isinstance(plan_obj, bytes):
+                plan_obj = plan_obj.SerializeToString()  # type: ignore[union-attr]
             return ResolvedPlan(
-                plan=result.plan.SerializeToString(),
+                plan=plan_obj,
                 datasets=result.datasets,
             )
         return result  # Arrow table passthrough
@@ -198,11 +201,11 @@ def _extract_table_name(table_ref: Any) -> str:  # noqa: ANN401
     """Extract table name string from an OwnedTableReference."""
     which = table_ref.WhichOneof("table_reference_enum")
     if which == "bare":
-        return table_ref.bare.table
+        return str(table_ref.bare.table)
     elif which == "partial":
-        return table_ref.partial.table
+        return str(table_ref.partial.table)
     elif which == "full":
-        return table_ref.full.table
+        return str(table_ref.full.table)
     else:
         raise ValueError(f"Unknown table reference variant: {which}")
 
@@ -281,8 +284,8 @@ def inline_table_scan_node(
     from vegafusion._vegafusion import inline_table_scan_node as _native
 
     try:
-        from vegafusion.proto.datafusion_pb2 import (  # type: ignore[attr-defined]
-            LogicalPlanNode,
+        from vegafusion.proto.datafusion_pb2 import (
+            LogicalPlanNode,  # type: ignore[attr-defined]
         )
     except ImportError as e:
         raise ImportError(_PROTOBUF_INSTALL_HINT) from e
@@ -313,4 +316,4 @@ def unparse_to_sql(
 
     if not isinstance(plan, bytes):
         plan = plan.SerializeToString()
-    return _native(plan, dialect)
+    return str(_native(plan, dialect))
