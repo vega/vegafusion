@@ -202,7 +202,10 @@ class VegaFusionRuntime:
         cache_capacity: int = 64,
         memory_limit: int | None = None,
         worker_threads: int | None = None,
-        plan_resolver: PlanResolver | list[PlanResolver] | None = None,
+        plan_resolver: PlanResolver
+        | list[PlanResolver]
+        | tuple[PlanResolver, ...]
+        | None = None,
     ) -> None:
         """
         Initialize a VegaFusionRuntime.
@@ -880,15 +883,17 @@ class VegaFusionRuntime:
             self.reset()
 
     @property
-    def plan_resolver(self) -> PlanResolver | list[PlanResolver] | None:
+    def plan_resolver(self) -> PlanResolver | tuple[PlanResolver, ...] | None:
         if not self._plan_resolvers:
             return None
         if len(self._plan_resolvers) == 1:
             return self._plan_resolvers[0]
-        return list(self._plan_resolvers)
+        return tuple(self._plan_resolvers)
 
     @plan_resolver.setter
-    def plan_resolver(self, value: PlanResolver | list[PlanResolver] | None) -> None:
+    def plan_resolver(
+        self, value: PlanResolver | list[PlanResolver] | tuple[PlanResolver, ...] | None
+    ) -> None:
         new_resolvers = _normalize_resolvers(value)
         if new_resolvers and self._grpc_url is not None:
             raise ValueError(
