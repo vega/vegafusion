@@ -7,7 +7,6 @@ use pyo3::prelude::*;
 use pyo3::types::{PyAny, PyDict};
 use pyo3_arrow::PySchema;
 use pythonize::depythonize;
-use serde_json::Value;
 use std::borrow::Cow;
 use vegafusion_common::data::table::VegaFusionTable;
 use vegafusion_common::datafusion_expr::LogicalPlanBuilder;
@@ -63,34 +62,6 @@ pub fn process_inline_datasets(
                         let (table, hash) =
                             VegaFusionTable::from_pyarrow_with_hash(py, &inline_dataset)?;
                         VegaFusionDataset::from_table(table, Some(hash))?
-                    } else if let Ok(pyschema) = inline_dataset.extract::<PySchema>() {
-                        // Handle PyArrow Schema as VegaFusionDataset::Plan
-                        let schema = pyschema.into_inner();
-
-                        // Build an external table provider with the given schema
-                        let provider = Arc::new(ExternalTableProvider::new(
-                            schema,
-                            "unknown".to_string(),
-                            Value::Null,
-                        ));
-                        let table_source = provider_as_source(provider);
-                        let logical_plan =
-                            LogicalPlanBuilder::scan(name.to_string(), table_source, None)
-                                .map_err(|e| {
-                                    PyValErr::new_err(format!(
-                                        "Failed to build logical plan from schema: {}",
-                                        e
-                                    ))
-                                })?
-                                .build()
-                                .map_err(|e| {
-                                    PyValErr::new_err(format!(
-                                        "Failed to finalize logical plan from schema: {}",
-                                        e
-                                    ))
-                                })?;
-
-                        VegaFusionDataset::from_plan(logical_plan)
                     } else {
                         // Assume PyArrow Table
                         // We convert to ipc bytes for two reasons:
