@@ -30,12 +30,7 @@ impl TransformTrait for Extent {
                 .aggregate(Vec::new(), vec![min_expr, max_expr])?;
 
             let logical_plan = extent_df.logical_plan().clone();
-            let result_table = crate::task_graph::runtime::execute_plan(
-                &config.ctx,
-                logical_plan,
-                &config.plan_resolvers,
-            )
-            .await?;
+            let result_table = config.pipeline.resolve(logical_plan).await?;
             let result_batch = result_table.to_record_batch()?;
             let extent_list = extract_extent_list(&result_batch)?;
             vec![extent_list]

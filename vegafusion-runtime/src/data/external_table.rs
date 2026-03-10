@@ -23,21 +23,32 @@ use vegafusion_common::arrow::datatypes::SchemaRef;
 /// which is serialized into `custom_table_data` by [`super::codec::VegaFusionCodec`].
 pub struct ExternalTableProvider {
     schema: SchemaRef,
-    kind: String,
+    protocol: Option<String>,
+    source: Option<String>,
     metadata: Value,
 }
 
 impl ExternalTableProvider {
-    pub fn new(schema: SchemaRef, kind: String, metadata: Value) -> Self {
+    pub fn new(schema: SchemaRef, protocol: Option<String>, metadata: Value) -> Self {
         Self {
             schema,
-            kind,
+            protocol,
+            source: None,
             metadata,
         }
     }
 
-    pub fn kind(&self) -> &str {
-        &self.kind
+    pub fn with_source(mut self, source: Option<String>) -> Self {
+        self.source = source;
+        self
+    }
+
+    pub fn protocol(&self) -> Option<&str> {
+        self.protocol.as_deref()
+    }
+
+    pub fn source(&self) -> Option<&str> {
+        self.source.as_deref()
     }
 
     pub fn metadata(&self) -> &Value {
@@ -48,7 +59,8 @@ impl ExternalTableProvider {
 impl Debug for ExternalTableProvider {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("ExternalTableProvider")
-            .field("kind", &self.kind)
+            .field("protocol", &self.protocol)
+            .field("source", &self.source)
             .field("schema", &self.schema)
             .field("metadata", &self.metadata)
             .finish()
@@ -76,9 +88,9 @@ impl TableProvider for ExternalTableProvider {
         _filters: &[Expr],
         _limit: Option<usize>,
     ) -> Result<Arc<dyn ExecutionPlan>> {
-        let kind = self.kind();
+        let protocol = self.protocol().unwrap_or("unknown");
         plan_err!(
-            "ExternalTableProvider (kind: {kind}) cannot be executed directly. \
+            "ExternalTableProvider (protocol: {protocol}) cannot be executed directly. \
              This table represents an external data source that must be resolved \
              before execution. Set a PlanResolver on the VegaFusionRuntime to \
              handle external table references."

@@ -1,13 +1,12 @@
+use crate::data::pipeline::ResolverPipeline;
 use crate::datafusion::context::make_datafusion_context;
 use crate::expression::compiler::call::{default_callables, VegaFusionCallable};
 use crate::task_graph::timezone::RuntimeTzConfig;
-use datafusion::prelude::SessionContext;
 use num_traits::float::FloatConst;
 use std::collections::HashMap;
 use std::sync::Arc;
 use vegafusion_common::datafusion_common::ScalarValue;
 use vegafusion_core::data::dataset::VegaFusionDataset;
-use vegafusion_core::runtime::PlanResolver;
 
 #[derive(Clone)]
 pub struct CompilationConfig {
@@ -16,8 +15,7 @@ pub struct CompilationConfig {
     pub callable_scope: HashMap<String, VegaFusionCallable>,
     pub constants: HashMap<String, ScalarValue>,
     pub tz_config: Option<RuntimeTzConfig>,
-    pub ctx: Arc<SessionContext>,
-    pub plan_resolvers: Vec<Arc<dyn PlanResolver>>,
+    pub pipeline: ResolverPipeline,
 }
 
 impl Default for CompilationConfig {
@@ -30,8 +28,7 @@ impl Default for CompilationConfig {
             callable_scope: default_callables(),
             constants: default_constants(),
             tz_config: None,
-            ctx,
-            plan_resolvers: Vec::new(),
+            pipeline: ResolverPipeline::new(Vec::new(), ctx),
         }
     }
 }

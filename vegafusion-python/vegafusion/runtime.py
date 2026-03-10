@@ -395,7 +395,7 @@ class VegaFusionRuntime:
         # Validate: ExternalDatasets require a plan resolver
         if external_dataset_refs and not self._plan_resolvers:
             details = [
-                f"  - {name!r} (kind={value.kind!r})"
+                f"  - {name!r} (protocol={value.protocol!r})"
                 for name, value in inline_datasets.items()
                 if isinstance(value, ExternalDataset)
             ]

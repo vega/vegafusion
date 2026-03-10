@@ -1,27 +1,25 @@
-use crate::data::util::DataFrameUtils;
+use crate::data::pipeline::ResolverPipeline;
 use crate::datafusion::context::make_datafusion_context;
 use crate::task_graph::cache::VegaFusionCache;
 use crate::task_graph::task::TaskCall;
 use crate::task_graph::timezone::RuntimeTzConfig;
 use async_recursion::async_recursion;
 use cfg_if::cfg_if;
-use datafusion::prelude::{DataFrame, SessionContext};
+use datafusion::prelude::SessionContext;
 use futures_util::{future, FutureExt};
 use std::any::Any;
 use std::collections::HashMap;
 use std::convert::TryInto;
 use std::panic::AssertUnwindSafe;
 use std::sync::Arc;
-use vegafusion_common::data::table::VegaFusionTable;
-use vegafusion_common::datafusion_expr::LogicalPlan;
 use vegafusion_core::data::dataset::VegaFusionDataset;
 use vegafusion_core::error::{Result, ResultWithContext, VegaFusionError};
 use vegafusion_core::proto::gen::tasks::inline_dataset::Dataset;
 use vegafusion_core::proto::gen::tasks::{
     task::TaskKind, InlineDataset, InlineDatasetTable, NodeValueIndex, TaskGraph,
 };
+use vegafusion_core::runtime::PlanResolver;
 use vegafusion_core::runtime::VegaFusionRuntimeTrait;
-use vegafusion_core::runtime::{PlanResolver, ResolutionResult};
 use vegafusion_core::task_graph::task_value::{MaterializedTaskValue, NamedTaskValue, TaskValue};
 
 #[cfg(feature = "proto")]
@@ -38,8 +36,7 @@ type CacheValue = (TaskValue, Vec<TaskValue>);
 #[derive(Clone)]
 pub struct VegaFusionRuntime {
     pub cache: VegaFusionCache,
-    pub ctx: Arc<SessionContext>,
-    pub plan_resolvers: Vec<Arc<dyn PlanResolver>>,
+    pub pipeline: ResolverPipeline,
 }
 
 impl VegaFusionRuntime {
@@ -47,8 +44,7 @@ impl VegaFusionRuntime {
         let ctx = Arc::new(make_datafusion_context());
         Self {
             cache: cache.unwrap_or_else(|| VegaFusionCache::new(Some(32), None)),
-            plan_resolvers,
-            ctx,
+            pipeline: ResolverPipeline::new(plan_resolvers, ctx),
         }
     }
 
@@ -60,14 +56,13 @@ impl VegaFusionRuntime {
     ) -> Result<TaskValue> {
         // We shouldn't panic inside get_or_compute_node_value, but since this may be used
         // in a server context, wrap in catch_unwind just in case.
-        let resolvers = self.plan_resolvers.clone();
+        let pipeline = self.pipeline.clone();
         let node_value = AssertUnwindSafe(get_or_compute_node_value(
             task_graph,
             node_value_index.node_index as usize,
             self.cache.clone(),
             inline_datasets,
-            self.ctx.clone(),
-            resolvers,
+            pipeline,
         ))
         .catch_unwind()
         .await;
@@ -103,12 +98,10 @@ impl VegaFusionRuntimeTrait for VegaFusionRuntime {
         &self,
         values: Vec<TaskValue>,
     ) -> Result<Vec<MaterializedTaskValue>> {
-        let ctx = self.ctx.clone();
-        let resolvers = self.plan_resolvers.clone();
+        let pipeline = self.pipeline.clone();
         futures_util::future::try_join_all(values.into_iter().map(|value| {
-            let ctx = ctx.clone();
-            let resolvers = resolvers.clone();
-            async move { materialize_task_value(value, &ctx, &resolvers).await }
+            let pipeline = pipeline.clone();
+            async move { materialize_task_value(value, &pipeline).await }
         }))
         .await
     }
@@ -171,8 +164,7 @@ async fn get_or_compute_node_value(
     node_index: usize,
     cache: VegaFusionCache,
     inline_datasets: HashMap<String, VegaFusionDataset>,
-    ctx: Arc<SessionContext>,
-    plan_resolvers: Vec<Arc<dyn PlanResolver>>,
+    pipeline: ResolverPipeline,
 ) -> Result<CacheValue> {
     // Get the cache key for requested node
     let node = task_graph.node(node_index).unwrap();
@@ -204,8 +196,7 @@ async fn get_or_compute_node_value(
                     input_node_index,
                     cloned_cache.clone(),
                     inline_datasets.clone(),
-                    ctx.clone(),
-                    plan_resolvers.clone(),
+                    pipeline.clone(),
                 );
 
                 cfg_if! {
@@ -253,14 +244,8 @@ async fn get_or_compute_node_value(
                 })
                 .collect::<Result<Vec<_>>>()?;
 
-            task.eval(
-                &input_values,
-                &tz_config,
-                inline_datasets,
-                ctx,
-                plan_resolvers,
-            )
-            .await
+            task.eval(&input_values, &tz_config, inline_datasets, pipeline)
+                .await
         };
 
         // get or construct from cache
@@ -268,50 +253,19 @@ async fn get_or_compute_node_value(
     }
 }
 
-/// Run a LogicalPlan through a pipeline of resolvers.
-///
-/// Each resolver is called in order. If a resolver returns `Table`, the pipeline
-/// short-circuits and the table is returned. If it returns `Plan`, the rewritten
-/// plan is passed to the next resolver. After all resolvers have run (or if there
-/// are none), the final plan is executed by DataFusion.
-async fn resolve_plan_pipeline(
-    mut plan: LogicalPlan,
-    ctx: &SessionContext,
-    plan_resolvers: &[Arc<dyn PlanResolver>],
-) -> Result<VegaFusionTable> {
-    for resolver in plan_resolvers {
-        match resolver.resolve_plan(plan).await? {
-            ResolutionResult::Table(table) => return Ok(table),
-            ResolutionResult::Plan(rewritten) => plan = rewritten,
-        }
-    }
-    DataFrame::new(ctx.state(), plan).collect_to_table().await
-}
-
-/// Materialize a TaskValue, resolving any LogicalPlan via the resolver pipeline
-/// and then executing via SessionContext.
+/// Materialize a TaskValue, resolving any LogicalPlan via the pipeline.
 pub async fn materialize_task_value(
     value: TaskValue,
-    ctx: &SessionContext,
-    plan_resolvers: &[Arc<dyn PlanResolver>],
+    pipeline: &ResolverPipeline,
 ) -> Result<MaterializedTaskValue> {
     match value {
         TaskValue::Plan(plan) => {
-            let table = resolve_plan_pipeline(plan, ctx, plan_resolvers).await?;
+            let table = pipeline.resolve(plan).await?;
             Ok(MaterializedTaskValue::Table(table))
         }
         TaskValue::Scalar(s) => Ok(MaterializedTaskValue::Scalar(s)),
         TaskValue::Table(t) => Ok(MaterializedTaskValue::Table(t)),
     }
-}
-
-/// Execute a LogicalPlan through the resolver pipeline, then via DataFusion.
-pub async fn execute_plan(
-    ctx: &SessionContext,
-    plan: LogicalPlan,
-    plan_resolvers: &[Arc<dyn PlanResolver>],
-) -> Result<VegaFusionTable> {
-    resolve_plan_pipeline(plan, ctx, plan_resolvers).await
 }
 
 pub async fn decode_inline_datasets(

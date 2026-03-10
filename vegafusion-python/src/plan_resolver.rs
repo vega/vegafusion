@@ -59,7 +59,8 @@ impl PyPlanResolver {
 /// Info extracted from an ExternalTableProvider node in the plan.
 struct ExternalTableInfo {
     schema: SchemaRef,
-    kind: String,
+    protocol: Option<String>,
+    source: Option<String>,
     metadata: Value,
     ref_id: Option<String>,
 }
@@ -80,7 +81,8 @@ fn extract_external_tables(plan: &LogicalPlan) -> HashMap<String, ExternalTableI
                         scan.table_name.table().to_string(),
                         ExternalTableInfo {
                             schema: ext.schema(),
-                            kind: ext.kind().to_string(),
+                            protocol: ext.protocol().map(|s| s.to_string()),
+                            source: ext.source().map(|s| s.to_string()),
                             metadata: ext.metadata().clone(),
                             ref_id,
                         },
@@ -133,12 +135,13 @@ fn build_datasets_dict<'py>(
         // Convert metadata to Python dict
         let py_metadata = pythonize::pythonize(py, &info.metadata)?;
 
-        // Reconstruct ExternalDataset(kind, schema, metadata, data)
+        // Reconstruct ExternalDataset(protocol, schema, metadata, data, source)
         let kwargs = PyDict::new(py);
-        kwargs.set_item("kind", info.kind.as_str())?;
+        kwargs.set_item("protocol", info.protocol.as_deref())?;
         kwargs.set_item("schema", py_schema)?;
         kwargs.set_item("metadata", py_metadata)?;
         kwargs.set_item("data", &data)?;
+        kwargs.set_item("source", info.source.as_deref())?;
         let dataset = dataset_cls.call((), Some(&kwargs))?;
         dict.set_item(table_name, dataset)?;
     }

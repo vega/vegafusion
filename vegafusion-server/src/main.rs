@@ -51,7 +51,7 @@ impl VegaFusionRuntimeGrpc {
                 let indices = &task_graph_values.indices;
                 let inline_datasets = decode_inline_datasets(
                     task_graph_values.inline_datasets,
-                    self.runtime.ctx.as_ref(),
+                    self.runtime.pipeline.ctx(),
                 )
                 .await?;
 
@@ -62,19 +62,16 @@ impl VegaFusionRuntimeGrpc {
                 {
                     Ok(response_values) => {
                         // Materialize all TaskValues before converting to protobuf
-                        let ctx = self.runtime.ctx.clone();
-                        let resolvers = self.runtime.plan_resolvers.clone();
+                        let pipeline = self.runtime.pipeline.clone();
                         let materialized_futures: Vec<_> = response_values
                             .into_iter()
                             .map(|named_value| {
-                                let ctx = ctx.clone();
-                                let resolvers = resolvers.clone();
+                                let pipeline = pipeline.clone();
                                 async move {
                                     let materialized_value =
                                         vegafusion_runtime::task_graph::runtime::materialize_task_value(
                                             named_value.value,
-                                            &ctx,
-                                            &resolvers,
+                                            &pipeline,
                                         )
                                         .await?;
                                     Ok::<_, VegaFusionError>(
@@ -146,7 +143,7 @@ impl VegaFusionRuntimeGrpc {
 
         // Decode inline datasets to VegaFusionDatasets
         let inline_datasets =
-            decode_inline_datasets(request.inline_datasets, self.runtime.ctx.as_ref()).await?;
+            decode_inline_datasets(request.inline_datasets, self.runtime.pipeline.ctx()).await?;
 
         // Parse spec
         let spec: ChartSpec = serde_json::from_str(&request.spec)?;
@@ -178,7 +175,8 @@ impl VegaFusionRuntimeGrpc {
         // Extract and deserialize inline datasets
         let inline_pretransform_datasets = request.inline_datasets;
         let inline_datasets =
-            decode_inline_datasets(inline_pretransform_datasets, self.runtime.ctx.as_ref()).await?;
+            decode_inline_datasets(inline_pretransform_datasets, self.runtime.pipeline.ctx())
+                .await?;
         let opts = request.opts.unwrap();
 
         // Parse spec
@@ -237,7 +235,7 @@ impl VegaFusionRuntimeGrpc {
 
         // Extract and deserialize inline datasets
         let inline_datasets =
-            decode_inline_datasets(request.inline_datasets, self.runtime.ctx.as_ref()).await?;
+            decode_inline_datasets(request.inline_datasets, self.runtime.pipeline.ctx()).await?;
 
         // Parse spec
         let spec_string = request.spec;

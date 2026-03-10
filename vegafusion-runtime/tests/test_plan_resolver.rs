@@ -17,7 +17,8 @@ use vegafusion_core::proto::gen::pretransform::PreTransformSpecOpts;
 use vegafusion_core::runtime::{PlanResolver, ResolutionResult, VegaFusionRuntimeTrait};
 use vegafusion_core::spec::chart::ChartSpec;
 use vegafusion_runtime::data::external_table::ExternalTableProvider;
-use vegafusion_runtime::task_graph::runtime::{execute_plan, VegaFusionRuntime};
+use vegafusion_runtime::data::pipeline::ResolverPipeline;
+use vegafusion_runtime::task_graph::runtime::VegaFusionRuntime;
 
 #[derive(Clone, Debug)]
 struct ResolverEvent {
@@ -172,7 +173,7 @@ fn build_external_scan_plan(table_name: &str) -> LogicalPlan {
     let schema = get_movies_schema();
     let provider = Arc::new(ExternalTableProvider::new(
         schema,
-        "test".to_string(),
+        Some("test".to_string()),
         serde_json::Value::Null,
     ));
     let table_source = provider_as_source(provider);
@@ -553,7 +554,8 @@ async fn test_execute_plan_pipeline_chains_resolvers_in_order() {
     let plan = build_external_scan_plan("movies_chain");
     let ctx = datafusion::prelude::SessionContext::new();
 
-    let table = execute_plan(&ctx, plan, &resolvers).await.unwrap();
+    let pipeline = ResolverPipeline::new(resolvers, Arc::new(ctx));
+    let table = pipeline.resolve(plan).await.unwrap();
     assert_eq!(table_row_count(&table), 10);
     assert_eq!(rewrite_resolver.get_call_count(), 1);
     assert_eq!(inspect_resolver.get_call_count(), 1);
@@ -590,7 +592,8 @@ async fn test_execute_plan_pipeline_short_circuits_after_table_result() {
     let plan = build_external_scan_plan("movies_short_circuit");
     let ctx = datafusion::prelude::SessionContext::new();
 
-    let table = execute_plan(&ctx, plan, &resolvers).await.unwrap();
+    let pipeline = ResolverPipeline::new(resolvers, Arc::new(ctx));
+    let table = pipeline.resolve(plan).await.unwrap();
     assert_eq!(table_row_count(&table), 10);
     assert_eq!(table_resolver.get_call_count(), 1);
     assert_eq!(never_called_resolver.get_call_count(), 0);
@@ -613,7 +616,8 @@ async fn test_execute_plan_pipeline_fails_if_external_not_resolved() {
     let plan = build_external_scan_plan("movies_unresolved");
     let ctx = datafusion::prelude::SessionContext::new();
 
-    let err = execute_plan(&ctx, plan, &resolvers).await.unwrap_err();
+    let pipeline = ResolverPipeline::new(resolvers, Arc::new(ctx));
+    let err = pipeline.resolve(plan).await.unwrap_err();
     let msg = err.to_string();
     assert!(
         msg.contains("cannot be executed directly"),
@@ -933,7 +937,7 @@ mod serialization_tests {
         let schema = get_movies_schema();
         let provider = Arc::new(ExternalTableProvider::new(
             schema,
-            "test".to_string(),
+            Some("test".to_string()),
             serde_json::Value::Null,
         ));
         let table_source = provider_as_source(provider);
@@ -967,7 +971,7 @@ mod serialization_tests {
         let schema = get_movies_schema();
         let provider = Arc::new(ExternalTableProvider::new(
             schema.clone(),
-            "test".to_string(),
+            Some("test".to_string()),
             serde_json::Value::Null,
         ));
         let table_source = provider_as_source(provider);
@@ -1047,7 +1051,7 @@ mod serialization_tests {
         });
         let provider = Arc::new(ExternalTableProvider::new(
             schema.clone(),
-            "test".to_string(),
+            Some("test".to_string()),
             metadata.clone(),
         ));
         let table_source = provider_as_source(provider);
@@ -1070,7 +1074,7 @@ mod serialization_tests {
                 .as_any()
                 .downcast_ref::<ExternalTableProvider>()
                 .expect("Expected ExternalTableProvider");
-            assert_eq!(ext.kind(), "test");
+            assert_eq!(ext.protocol(), Some("test"));
             assert_eq!(ext.metadata(), &metadata);
         } else {
             panic!("Expected TableScan, got {:?}", round_tripped);
@@ -1198,10 +1202,55 @@ async fn test_execute_plan_pipeline_propagates_resolver_errors() {
     let ctx = datafusion::prelude::SessionContext::new();
     let plan = build_external_scan_plan("movies");
 
-    let err = execute_plan(&ctx, plan, &resolvers).await.unwrap_err();
+    let pipeline = ResolverPipeline::new(resolvers, Arc::new(ctx));
+    let err = pipeline.resolve(plan).await.unwrap_err();
     let msg = err.to_string();
     assert!(
         msg.contains("resolver deliberately failed"),
         "Error should contain resolver message, got: {msg}"
+    );
+}
+
+#[tokio::test]
+async fn test_datafusion_resolver_executes_simple_plan() {
+    use vegafusion_runtime::data::datafusion_resolver::DataFusionResolver;
+
+    let ctx = Arc::new(datafusion::prelude::SessionContext::new());
+    let table = create_movies_table();
+    let mem_table = MemTable::try_new(table.schema.clone(), vec![table.batches]).unwrap();
+    ctx.register_table("movies_df_resolver", Arc::new(mem_table))
+        .unwrap();
+
+    let plan = ctx
+        .table("movies_df_resolver")
+        .await
+        .unwrap()
+        .into_unoptimized_plan();
+
+    let resolver = DataFusionResolver::new(ctx);
+    let result = resolver.resolve_plan(plan).await.unwrap();
+    match result {
+        ResolutionResult::Table(t) => assert_eq!(table_row_count(&t), 10),
+        ResolutionResult::Plan(_) => panic!("DataFusionResolver should always return Table"),
+    }
+}
+
+#[tokio::test]
+async fn test_resolver_pipeline_has_user_resolvers() {
+    let ctx = Arc::new(datafusion::prelude::SessionContext::new());
+
+    let empty_pipeline = ResolverPipeline::new(vec![], ctx.clone());
+    assert!(
+        !empty_pipeline.has_user_resolvers(),
+        "Empty pipeline should report no user resolvers"
+    );
+
+    let events = Arc::new(Mutex::new(Vec::new()));
+    let resolver = ScriptedResolver::new("test", ResolverBehavior::PassThroughPlan, events);
+    let resolvers: Vec<Arc<dyn PlanResolver>> = vec![Arc::new(resolver)];
+    let pipeline_with_resolvers = ResolverPipeline::new(resolvers, ctx);
+    assert!(
+        pipeline_with_resolvers.has_user_resolvers(),
+        "Pipeline with resolvers should report has user resolvers"
     );
 }

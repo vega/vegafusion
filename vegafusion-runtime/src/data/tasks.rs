@@ -1,9 +1,9 @@
+use crate::data::pipeline::ResolverPipeline;
 use crate::expression::compiler::compile;
 use crate::expression::compiler::config::CompilationConfig;
 use crate::expression::compiler::utils::ExprHelpers;
 use crate::task_graph::task::TaskCall;
 use std::borrow::Cow;
-use vegafusion_core::runtime::PlanResolver;
 
 use async_trait::async_trait;
 
@@ -59,16 +59,17 @@ use {datafusion::prelude::ParquetReadOptions, vegafusion_common::error::ToExtern
 #[cfg(target_arch = "wasm32")]
 use object_store_wasm::HttpStore;
 
-/// If no plan resolvers are configured, eagerly materialize a `TaskValue::Plan`
+/// If no user resolvers are configured, eagerly materialize a `TaskValue::Plan`
 /// into a `TaskValue::Table` via DataFusion execution. Passthrough otherwise.
 async fn maybe_materialize_plan(
     task_value: TaskValue,
-    plan_resolvers: &[Arc<dyn PlanResolver>],
-    ctx: &SessionContext,
+    pipeline: &ResolverPipeline,
 ) -> Result<TaskValue> {
-    if plan_resolvers.is_empty() {
+    if !pipeline.has_user_resolvers() {
         if let TaskValue::Plan(plan) = task_value {
-            let table = DataFrame::new(ctx.state(), plan).collect_to_table().await?;
+            let table = DataFrame::new(pipeline.ctx().state(), plan)
+                .collect_to_table()
+                .await?;
             return Ok(TaskValue::Table(table));
         }
     }
@@ -79,8 +80,7 @@ pub fn build_compilation_config(
     input_vars: &[InputVariable],
     values: &[TaskValue],
     tz_config: &Option<RuntimeTzConfig>,
-    ctx: Arc<SessionContext>,
-    plan_resolvers: Vec<Arc<dyn PlanResolver>>,
+    pipeline: ResolverPipeline,
 ) -> CompilationConfig {
     // Build compilation config from input_vals
     let mut signal_scope: HashMap<String, ScalarValue> = HashMap::new();
@@ -112,8 +112,7 @@ pub fn build_compilation_config(
         signal_scope,
         data_scope,
         tz_config: *tz_config,
-        ctx,
-        plan_resolvers,
+        pipeline,
         ..Default::default()
     }
 }
@@ -125,17 +124,12 @@ impl TaskCall for DataUrlTask {
         values: &[TaskValue],
         tz_config: &Option<RuntimeTzConfig>,
         inline_datasets: HashMap<String, VegaFusionDataset>,
-        ctx: Arc<SessionContext>,
-        plan_resolvers: Vec<Arc<dyn PlanResolver>>,
+        pipeline: ResolverPipeline,
     ) -> Result<(TaskValue, Vec<TaskValue>)> {
+        let ctx = Arc::new(pipeline.ctx().clone());
         // Build compilation config for url signal (if any) and transforms (if any)
-        let config = build_compilation_config(
-            &self.input_vars(),
-            values,
-            tz_config,
-            ctx.clone(),
-            plan_resolvers.clone(),
-        );
+        let config =
+            build_compilation_config(&self.input_vars(), values, tz_config, pipeline.clone());
 
         // Build url string
         let url = match self.url.as_ref().unwrap() {
@@ -241,7 +235,7 @@ impl TaskCall for DataUrlTask {
         // Return value based on whether inline dataset was used
         let task_value = if let Some(inline_dataset) = inline_dataset_info {
             let task_value = result_df.to_task_value(inline_dataset).await?;
-            maybe_materialize_plan(task_value, &plan_resolvers, &ctx).await?
+            maybe_materialize_plan(task_value, &pipeline).await?
         } else {
             TaskValue::Table(result_df.collect_to_table().await?)
         };
@@ -493,9 +487,9 @@ impl TaskCall for DataValuesTask {
         values: &[TaskValue],
         tz_config: &Option<RuntimeTzConfig>,
         _inline_datasets: HashMap<String, VegaFusionDataset>,
-        ctx: Arc<SessionContext>,
-        plan_resolvers: Vec<Arc<dyn PlanResolver>>,
+        pipeline: ResolverPipeline,
     ) -> Result<(TaskValue, Vec<TaskValue>)> {
+        let ctx = Arc::new(pipeline.ctx().clone());
         // Deserialize data into table
         let values_table = VegaFusionTable::from_ipc_bytes(&self.values)?;
         if values_table.schema.fields.is_empty() {
@@ -527,21 +521,16 @@ impl TaskCall for DataValuesTask {
             .map(|p| !p.transforms.is_empty())
             .unwrap_or(false)
         {
-            let pipeline = self.pipeline.as_ref().unwrap();
+            let transform_pipeline = self.pipeline.as_ref().unwrap();
 
-            let config = build_compilation_config(
-                &self.input_vars(),
-                values,
-                tz_config,
-                ctx.clone(),
-                plan_resolvers.clone(),
-            );
+            let config =
+                build_compilation_config(&self.input_vars(), values, tz_config, pipeline.clone());
 
             // Process datetime columns
             let df = ctx.vegafusion_table(values_table).await?;
             let sql_df = process_datetimes(&parse, df, &config.tz_config).await?;
 
-            let (df, output_values) = pipeline.eval_sql(sql_df, &config).await?;
+            let (df, output_values) = transform_pipeline.eval_sql(sql_df, &config).await?;
             let table = df.drop_index()?.collect_to_table().await?;
             (table, output_values)
         } else {
@@ -567,17 +556,11 @@ impl TaskCall for DataSourceTask {
         values: &[TaskValue],
         tz_config: &Option<RuntimeTzConfig>,
         _inline_datasets: HashMap<String, VegaFusionDataset>,
-        ctx: Arc<SessionContext>,
-        plan_resolvers: Vec<Arc<dyn PlanResolver>>,
+        pipeline: ResolverPipeline,
     ) -> Result<(TaskValue, Vec<TaskValue>)> {
+        let ctx = Arc::new(pipeline.ctx().clone());
         let input_vars = self.input_vars();
-        let mut config = build_compilation_config(
-            &input_vars,
-            values,
-            tz_config,
-            ctx.clone(),
-            plan_resolvers.clone(),
-        );
+        let mut config = build_compilation_config(&input_vars, values, tz_config, pipeline.clone());
 
         // Remove source dataset from config
         let source_dataset = config.data_scope.remove(&self.source).with_context(|| {
@@ -597,8 +580,7 @@ impl TaskCall for DataSourceTask {
             match source_dataset {
                 VegaFusionDataset::Plan { plan } => {
                     let task_value =
-                        maybe_materialize_plan(TaskValue::Plan(plan), &plan_resolvers, &ctx)
-                            .await?;
+                        maybe_materialize_plan(TaskValue::Plan(plan), &pipeline).await?;
                     return Ok((task_value, Vec::new()));
                 }
                 VegaFusionDataset::Table { table, .. } => {
@@ -615,11 +597,11 @@ impl TaskCall for DataSourceTask {
 
         let source_df = source_df.with_index()?;
 
-        let pipeline = self.pipeline.as_ref().unwrap();
-        let (df, output_values) = pipeline.eval_sql(source_df, &config).await?;
+        let transform_pipeline = self.pipeline.as_ref().unwrap();
+        let (df, output_values) = transform_pipeline.eval_sql(source_df, &config).await?;
         let df = df.drop_index()?;
         let task_value = df.to_task_value(&source_dataset).await?;
-        let task_value = maybe_materialize_plan(task_value, &plan_resolvers, &ctx).await?;
+        let task_value = maybe_materialize_plan(task_value, &pipeline).await?;
         Ok((task_value, output_values))
     }
 }

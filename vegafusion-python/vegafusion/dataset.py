@@ -17,12 +17,12 @@ class _DataRef:
 
 
 class ExternalDataset:
-    """An external dataset with a kind label, schema, JSON metadata, and optional data ref.
+    """An external dataset with a protocol label, schema, JSON metadata, and optional data ref.
 
-    The ``kind`` parameter is a short identifier for the data source type
-    (e.g. ``"spark"``, ``"snowflake"``, ``"duckdb"``).  It is propagated
-    through protobuf separately from metadata so that error messages can
-    name the source when no resolver is registered.
+    The ``protocol`` parameter is an optional short identifier for the data
+    source type (e.g. ``"spark"``, ``"snowflake"``, ``"duckdb"``).  It is
+    propagated through protobuf separately from metadata so that error
+    messages can name the source when no resolver is registered.
 
     When ``data`` is provided, it is registered in a class-level
     :class:`weakref.WeakValueDictionary` keyed by a UUID.  The UUID is
@@ -42,15 +42,17 @@ class ExternalDataset:
 
     def __init__(
         self,
-        kind: str,
-        schema: Any,  # noqa: ANN401
+        protocol: str | None = None,
+        schema: Any = None,  # noqa: ANN401
         metadata: dict[str, Any] | None = None,
         data: Any = None,  # noqa: ANN401
+        source: str | None = None,
     ) -> None:
         self._schema: Schema = (
             Schema.from_arrow(schema) if not isinstance(schema, Schema) else schema
         )
-        self._kind = kind
+        self._protocol = protocol
+        self._source = source
         self._metadata: dict[str, Any] = dict(metadata) if metadata else {}
         self._data: Any = data
         self._data_ref: _DataRef | None = None
@@ -72,9 +74,9 @@ class ExternalDataset:
         return data_ref.data if data_ref is not None else None
 
     @property
-    def kind(self) -> str:
-        """Short identifier for the data source type (e.g. ``"spark"``)."""
-        return self._kind
+    def protocol(self) -> str | None:
+        """Optional short identifier for the data source type (e.g. ``"spark"``)."""
+        return self._protocol
 
     @property
     def schema(self) -> Schema:
