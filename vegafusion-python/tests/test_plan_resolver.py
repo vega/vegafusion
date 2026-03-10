@@ -55,7 +55,7 @@ class DeserializingResolver(PlanResolver):
         return self._result_table
 
 
-def _simple_spec(dataset_name: str = "source") -> dict[str, Any]:
+def simple_spec(dataset_name: str = "source") -> dict[str, Any]:
     """A minimal Vega spec that references an inline dataset."""
     return {
         "$schema": "https://vega.github.io/schema/vega/v5.json",
@@ -87,7 +87,7 @@ def test_passthrough_resolver() -> None:
     resolver = PassthroughResolver(result_table=expected_result)
 
     rt = vf.VegaFusionRuntime(plan_resolver=resolver)
-    spec = _simple_spec()
+    spec = simple_spec()
 
     datasets, warnings = rt.pre_transform_datasets(
         spec,
@@ -117,7 +117,7 @@ def test_deserializing_resolver() -> None:
     resolver = DeserializingResolver(result_table=expected_result)
 
     rt = vf.VegaFusionRuntime(plan_resolver=resolver)
-    spec = _simple_spec()
+    spec = simple_spec()
 
     datasets, _warnings = rt.pre_transform_datasets(
         spec,
@@ -330,7 +330,7 @@ def test_resolve_table_resolver() -> None:
     ext = ExternalDataset("test", schema=source_table.schema, data=source_table)
 
     rt = vf.VegaFusionRuntime(plan_resolver=resolver)
-    spec = _simple_spec()
+    spec = simple_spec()
 
     datasets, _warnings = rt.pre_transform_datasets(
         spec,
@@ -403,7 +403,7 @@ def test_resolve_plan_returns_resolved_plan() -> None:
     ext = ExternalDataset("test", schema=source_table.schema, data=source_table)
 
     rt = vf.VegaFusionRuntime(plan_resolver=resolver)
-    spec = _simple_spec()
+    spec = simple_spec()
 
     datasets, _warnings = rt.pre_transform_datasets(
         spec,
@@ -503,7 +503,7 @@ def test_resolve_table_error_propagates() -> None:
     ext = ExternalDataset("test", schema=source_table.schema, data=source_table)
     resolver = FailingResolver()
     rt = vf.VegaFusionRuntime(plan_resolver=resolver)
-    spec = _simple_spec()
+    spec = simple_spec()
 
     with pytest.raises(Exception, match="Simulated resolver failure"):
         rt.pre_transform_datasets(
@@ -574,7 +574,7 @@ def test_unparse_plan_to_sql_from_resolver() -> None:
     ext = ExternalDataset("test", schema=source_table.schema, data=source_table)
 
     rt = vf.VegaFusionRuntime(plan_resolver=resolver)
-    spec = _simple_spec()
+    spec = simple_spec()
 
     rt.pre_transform_datasets(
         spec,
@@ -623,7 +623,7 @@ def test_unparse_plan_to_sql_from_proto_message() -> None:
     ext = ExternalDataset("test", schema=source_table.schema, data=source_table)
 
     rt = vf.VegaFusionRuntime(plan_resolver=resolver)
-    spec = _simple_spec()
+    spec = simple_spec()
 
     rt.pre_transform_datasets(
         spec,
@@ -647,7 +647,7 @@ def test_external_dataset_without_resolver_raises() -> None:
     ext = ExternalDataset("spark", schema=source_table.schema, data=source_table)
 
     rt = vf.VegaFusionRuntime()  # No resolver
-    spec = _simple_spec()
+    spec = simple_spec()
 
     with pytest.raises(ValueError, match="require a plan resolver") as exc_info:
         rt.pre_transform_datasets(
@@ -682,7 +682,7 @@ def test_unparse_invalid_dialect() -> None:
     rt = vf.VegaFusionRuntime(plan_resolver=resolver)
 
     rt.pre_transform_datasets(
-        _simple_spec(),
+        simple_spec(),
         datasets=["filtered"],
         inline_datasets={"source": ext},
         dataset_format="pyarrow",
