@@ -41,7 +41,7 @@ class PlanResolver:
 
     Override one of these (checked in priority order):
 
-    1. ``resolve_table`` — simple per-table data resolution (always returns Plan)
+    1. ``resolve_table`` — provide data for each external table independently
     2. ``resolve_plan_proto`` / ``resolve_plan`` — full control over resolution
 
     For ``resolve_plan``, override either the ``_proto`` variant (raw bytes) or
