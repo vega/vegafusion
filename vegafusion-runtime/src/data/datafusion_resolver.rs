@@ -25,6 +25,10 @@ impl DataFusionResolver {
 
 #[async_trait]
 impl PlanResolver for DataFusionResolver {
+    fn name(&self) -> &str {
+        "DataFusionResolver"
+    }
+
     async fn resolve_plan(&self, plan: LogicalPlan) -> Result<ResolutionResult> {
         let table = DataFrame::new(self.ctx.state(), plan)
             .collect_to_table()

@@ -25,13 +25,20 @@ use vegafusion_runtime::data::external_table::ExternalTableProvider;
 /// `resolve_plan_proto(bytes, datasets)` on the Python side.
 pub struct PyPlanResolver {
     py_resolver: Py<PyAny>,
+    name: String,
     skip_when_no_external_tables: bool,
     thread_safe: bool,
 }
 
 impl PyPlanResolver {
     pub fn new(py_resolver: Py<PyAny>) -> Self {
-        let (skip_when_no_external_tables, thread_safe) = Python::attach(|py| {
+        let (name, skip_when_no_external_tables, thread_safe) = Python::attach(|py| {
+            let name = py_resolver
+                .bind(py)
+                .get_type()
+                .qualname()
+                .map(|q| q.to_string())
+                .unwrap_or_else(|_| "PyPlanResolver".to_string());
             let skip = py_resolver
                 .getattr(py, "skip_when_no_external_tables")
                 .and_then(|v| v.extract::<bool>(py))
@@ -40,11 +47,12 @@ impl PyPlanResolver {
                 .getattr(py, "thread_safe")
                 .and_then(|v| v.extract::<bool>(py))
                 .unwrap_or(true);
-            (skip, safe)
+            (name, skip, safe)
         });
 
         Self {
             py_resolver,
+            name,
             skip_when_no_external_tables,
             thread_safe,
         }
@@ -151,6 +159,10 @@ fn build_datasets_dict<'py>(
 
 #[async_trait]
 impl PlanResolver for PyPlanResolver {
+    fn name(&self) -> &str {
+        &self.name
+    }
+
     async fn resolve_plan(&self, plan: LogicalPlan) -> Result<ResolutionResult> {
         let tables = extract_external_tables(&plan);
 

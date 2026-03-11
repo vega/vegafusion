@@ -106,6 +106,10 @@ impl TreeNodeRewriter for TableRewriter {
 
 #[async_trait]
 impl PlanResolver for ScriptedResolver {
+    fn name(&self) -> &str {
+        &self.id
+    }
+
     async fn resolve_plan(&self, plan: LogicalPlan) -> Result<ResolutionResult> {
         self.call_count.fetch_add(1, Ordering::SeqCst);
 
@@ -802,6 +806,10 @@ async fn test_table_returning_resolver() {
 
     #[async_trait]
     impl PlanResolver for TableResolver {
+        fn name(&self) -> &str {
+            "TableResolver"
+        }
+
         async fn resolve_plan(&self, plan: LogicalPlan) -> Result<ResolutionResult> {
             // Rewrite ExternalTableProvider -> MemTable, then execute locally
             let mut rewriter = TableRewriter {
@@ -1155,6 +1163,10 @@ async fn test_resolver_error_propagation() {
 
     #[async_trait]
     impl PlanResolver for FailingResolver {
+        fn name(&self) -> &str {
+            "FailingResolver"
+        }
+
         async fn resolve_plan(&self, _plan: LogicalPlan) -> Result<ResolutionResult> {
             Err(vegafusion_common::error::VegaFusionError::internal(
                 "resolver deliberately failed",

@@ -11,6 +11,10 @@ struct LoggingResolver;
 
 #[async_trait::async_trait]
 impl PlanResolver for LoggingResolver {
+    fn name(&self) -> &str {
+        "LoggingResolver"
+    }
+
     async fn resolve_plan(&self, plan: LogicalPlan) -> Result<ResolutionResult> {
         println!("Custom resolver received logical plan");
         println!("Plan details:\n{}\n", plan.display_indent());

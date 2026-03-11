@@ -13,5 +13,6 @@ pub enum ResolutionResult {
 
 #[async_trait]
 pub trait PlanResolver: Send + Sync + 'static {
+    fn name(&self) -> &str;
     async fn resolve_plan(&self, plan: LogicalPlan) -> Result<ResolutionResult>;
 }
