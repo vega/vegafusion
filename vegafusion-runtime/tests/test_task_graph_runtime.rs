@@ -1,6 +1,7 @@
 use std::sync::Arc;
 use vegafusion_common::data::scalar::ScalarValue;
 use vegafusion_core::expression::parser::parse;
+use vegafusion_core::planning::plan::PlannerConfig;
 use vegafusion_core::proto::gen::tasks::data_url_task::Url;
 use vegafusion_core::proto::gen::tasks::{
     DataSourceTask, DataUrlTask, NodeValueIndex, Task, TaskGraph, TzConfig, Variable,
@@ -50,6 +51,7 @@ async fn try_it() {
                 batch_size: 1024,
                 format_type: None,
                 pipeline: None,
+                data_base_url: None,
             },
             &tz_config,
         ),
@@ -131,7 +133,13 @@ async fn try_it_from_spec() {
         default_input_tz: None,
     };
     let task_scope = chart.to_task_scope().unwrap();
-    let tasks = chart.to_tasks(&tz_config, &Default::default()).unwrap();
+    let tasks = chart
+        .to_tasks(
+            &tz_config,
+            &Default::default(),
+            PlannerConfig::default().data_base_url,
+        )
+        .unwrap();
 
     println!("task_scope: {task_scope:?}");
     println!("tasks: {tasks:?}");

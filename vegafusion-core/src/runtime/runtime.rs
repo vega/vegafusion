@@ -1,6 +1,7 @@
 use std::{any::Any, collections::HashMap, sync::Arc};
 
 use crate::proto::gen::pretransform::pre_transform_values_warning::WarningType as ValuesWarningType;
+use crate::runtime::{resolve_data_base_url, DataBaseUrlSetting};
 use crate::task_graph::task_value::{MaterializedTaskValue, TaskValue};
 use crate::{
     data::dataset::VegaFusionDataset,
@@ -37,6 +38,14 @@ pub struct PreTransformExtractTable {
 #[async_trait]
 pub trait VegaFusionRuntimeTrait: Send + Sync {
     fn as_any(&self) -> &dyn Any;
+
+    /// Return merged URL capabilities for planning. Default returns DataFusion's built-in
+    /// capabilities. Runtimes with custom resolvers override this to include their capabilities.
+    fn planner_capabilities(&self) -> crate::runtime::MergedCapabilities {
+        crate::runtime::MergedCapabilities::from_resolver_capabilities(&[
+            crate::proto::gen::tasks::ResolverCapabilities::datafusion_defaults(),
+        ])
+    }
 
     async fn query_request(
         &self,
@@ -97,11 +106,19 @@ pub trait VegaFusionRuntimeTrait: Send + Sync {
         preserve_interactivity: bool,
         inline_datasets: &HashMap<String, VegaFusionDataset>,
         keep_variables: Vec<ScopedVariable>,
+        data_base_url: DataBaseUrlSetting,
     ) -> Result<(SpecPlan, Vec<ExportUpdate>)> {
+        let resolved_base =
+            resolve_data_base_url(data_base_url, PlannerConfig::default().data_base_url)?;
+
         // Create spec plan
         let plan = SpecPlan::try_new(
             spec,
-            &PlannerConfig::pre_transformed_spec_config(preserve_interactivity, keep_variables),
+            &PlannerConfig {
+                capabilities: self.planner_capabilities(),
+                data_base_url: resolved_base.clone(),
+                ..PlannerConfig::pre_transformed_spec_config(preserve_interactivity, keep_variables)
+            },
         )?;
 
         // Extract inline dataset fingerprints
@@ -118,7 +135,7 @@ pub trait VegaFusionRuntimeTrait: Send + Sync {
         let task_scope = plan.server_spec.to_task_scope().unwrap();
         let tasks = plan
             .server_spec
-            .to_tasks(&tz_config, &dataset_fingerprints)
+            .to_tasks(&tz_config, &dataset_fingerprints, resolved_base)
             .unwrap();
         let task_graph = TaskGraph::new(tasks, &task_scope).unwrap();
         let task_graph_mapping = task_graph.build_mapping();
@@ -171,6 +188,7 @@ pub trait VegaFusionRuntimeTrait: Send + Sync {
                 options.preserve_interactivity,
                 inline_datasets,
                 keep_variables,
+                DataBaseUrlSetting::from_proto(options.data_base_url.clone()),
             )
             .await?;
 
@@ -205,6 +223,7 @@ pub trait VegaFusionRuntimeTrait: Send + Sync {
                 options.preserve_interactivity,
                 inline_datasets,
                 keep_variables,
+                DataBaseUrlSetting::from_proto(options.data_base_url.clone()),
             )
             .await?;
         let init_arrow = self.materialize_export_updates(init).await?;
@@ -329,6 +348,11 @@ pub trait VegaFusionRuntimeTrait: Send + Sync {
         // if they are not used elsewhere in the spec
         let keep_variables = Vec::from(variables);
 
+        let resolved_base = resolve_data_base_url(
+            DataBaseUrlSetting::from_proto(options.data_base_url.clone()),
+            PlannerConfig::default().data_base_url,
+        )?;
+
         // Create spec plan
         let plan = SpecPlan::try_new(
             spec,
@@ -339,6 +363,8 @@ pub trait VegaFusionRuntimeTrait: Send + Sync {
                 projection_pushdown: false,
                 allow_client_to_server_comms: true,
                 keep_variables,
+                capabilities: self.planner_capabilities(),
+                data_base_url: resolved_base.clone(),
                 ..Default::default()
             },
         )?;
@@ -357,7 +383,7 @@ pub trait VegaFusionRuntimeTrait: Send + Sync {
         let task_scope = plan.server_spec.to_task_scope().unwrap();
         let tasks = plan
             .server_spec
-            .to_tasks(&tz_config, &dataset_fingerprints)?;
+            .to_tasks(&tz_config, &dataset_fingerprints, resolved_base)?;
         let task_graph = TaskGraph::new(tasks, &task_scope).unwrap();
         let task_graph_mapping = task_graph.build_mapping();
 

@@ -75,6 +75,61 @@ class PlanResolver:
     callbacks run on the main thread. Set to False for backends with
     thread-affine connections (e.g. DuckDB in-memory databases)."""
 
+    def capabilities(self) -> dict[str, list[str]]:
+        """Declare URL patterns this resolver supports at planning time.
+
+        Override to advertise additional URL scheme/format support beyond
+        DataFusion's built-in capabilities (http, https, file, s3 schemes
+        with csv, tsv, json, arrow, parquet formats).
+
+        Returns:
+            Dict with optional keys: ``'supported_schemes'``,
+            ``'supported_format_types'``, ``'supported_extensions'``.
+            Values are lists of strings.
+        """
+        return {}
+
+    def scan_url_proto(self, parsed_url: dict[str, Any]) -> bytes | None:
+        """Handle a URL during the scan phase (raw bytes variant).
+
+        The default implementation delegates to :meth:`scan_url` which works
+        with deserialized ``LogicalPlanNode`` messages.
+
+        Args:
+            parsed_url: Dict with keys ``url``, ``scheme``, ``host``, ``path``,
+                ``query_params``, ``extension``, ``format_type``.
+
+        Returns:
+            Serialized ``LogicalPlanNode`` bytes, or None to pass to the next
+            resolver.
+        """
+        result = self.scan_url(parsed_url)
+        if result is None:
+            return None
+        if isinstance(result, bytes):
+            return result
+        # It's a LogicalPlanNode proto message
+        return result.SerializeToString()
+
+    def scan_url(
+        self, parsed_url: dict[str, Any]
+    ) -> LogicalPlanNode | bytes | None:
+        """Handle a URL during the scan phase.
+
+        Override to claim URLs by returning a ``LogicalPlanNode`` or raw bytes.
+        Use :func:`external_table_scan_node` to build ``ExternalTableProvider``
+        plan nodes that will later be resolved by :meth:`resolve_plan`.
+
+        Args:
+            parsed_url: Dict with keys ``url``, ``scheme``, ``host``, ``path``,
+                ``query_params``, ``extension``, ``format_type``.
+
+        Returns:
+            A ``LogicalPlanNode``, raw bytes, or None to pass to the next
+            resolver.
+        """
+        return None
+
     def resolve_table(
         self,
         name: str,
@@ -292,6 +347,51 @@ def inline_table_scan_node(
 
     node = LogicalPlanNode()
     node.ParseFromString(_native(name, schema))
+    return node
+
+
+def external_table_scan_node(
+    table_name: str,
+    schema: Schema,
+    protocol: str | None = None,
+    metadata: dict[str, Any] | None = None,
+    source: str | None = None,
+) -> LogicalPlanNode:
+    """Build a LogicalPlanNode for an external table scan.
+
+    Use this in :meth:`PlanResolver.scan_url` implementations to create
+    ``ExternalTableProvider`` plan nodes that will later be resolved by
+    :meth:`PlanResolver.resolve_plan`.
+
+    Args:
+        table_name: Name for the table in the plan.
+        schema: Arrow schema (arro3.core.Schema) — required for logical planning.
+        protocol: Optional protocol identifier (e.g. ``"spark"``).
+        metadata: Optional JSON-serializable dict of metadata.
+        source: Optional source identifier.
+
+    Returns:
+        A deserialized LogicalPlanNode protobuf message.
+    """
+    from vegafusion._vegafusion import external_table_scan_node as _native
+
+    try:
+        from vegafusion.proto.datafusion_pb2 import (
+            LogicalPlanNode,  # type: ignore[attr-defined]
+        )
+    except ImportError as e:
+        raise ImportError(_PROTOBUF_INSTALL_HINT) from e
+
+    node = LogicalPlanNode()
+    node.ParseFromString(
+        _native(
+            table_name=table_name,
+            schema=schema,
+            protocol=protocol,
+            metadata=metadata,
+            source=source,
+        )
+    )
     return node
 
 

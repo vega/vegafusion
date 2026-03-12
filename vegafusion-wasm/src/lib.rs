@@ -24,9 +24,9 @@ use wasm_bindgen_futures::spawn_local;
 use vegafusion_core::planning::watch::{ExportUpdateJSON, ExportUpdateNamespace, WatchPlan};
 
 use vegafusion_core::proto::gen::services::{
-    query_request, query_result, QueryRequest, QueryResult,
+    query_request, query_result, GetCapabilitiesRequest, QueryRequest, QueryResult,
 };
-use vegafusion_core::runtime::VegaFusionRuntimeTrait;
+use vegafusion_core::runtime::{MergedCapabilities, VegaFusionRuntimeTrait};
 use vegafusion_core::spec::chart::ChartSpec;
 
 use vegafusion_core::chart_state::{ChartState, ChartStateOpts};
@@ -61,10 +61,11 @@ pub struct QueryFnVegaFusionRuntime {
         QueryRequest,
         oneshot::Sender<vegafusion_common::error::Result<Vec<ResponseTaskValue>>>,
     )>,
+    capabilities: MergedCapabilities,
 }
 
 impl QueryFnVegaFusionRuntime {
-    pub fn new(query_fn: js_sys::Function) -> Self {
+    pub fn new(query_fn: js_sys::Function, capabilities: MergedCapabilities) -> Self {
         let (sender, mut receiver) = async_mpsc::channel::<(
             QueryRequest,
             oneshot::Sender<vegafusion_common::error::Result<Vec<ResponseTaskValue>>>,
@@ -148,11 +149,23 @@ impl QueryFnVegaFusionRuntime {
                             .send(Ok(task_graph_value_response.response_values))
                             .unwrap();
                     }
+                    query_result::Response::GetCapabilities(_) => {
+                        // Capabilities responses are handled during initialization,
+                        // not in the normal query loop
+                        response_tx
+                            .send(Err(vegafusion_common::error::VegaFusionError::internal(
+                                "Unexpected GetCapabilities response in query loop".to_string(),
+                            )))
+                            .unwrap();
+                    }
                 }
             }
         });
 
-        QueryFnVegaFusionRuntime { sender }
+        QueryFnVegaFusionRuntime {
+            sender,
+            capabilities,
+        }
     }
 }
 
@@ -160,6 +173,10 @@ impl QueryFnVegaFusionRuntime {
 impl VegaFusionRuntimeTrait for QueryFnVegaFusionRuntime {
     fn as_any(&self) -> &dyn Any {
         self
+    }
+
+    fn planner_capabilities(&self) -> MergedCapabilities {
+        self.capabilities.clone()
     }
 
     async fn query_request(
@@ -399,6 +416,79 @@ impl Default for VegaFusionEmbedConfig {
     }
 }
 
+/// Fetch capabilities from a remote server via the query_fn callback.
+/// Sends a GetCapabilitiesRequest through the existing proto-encoded channel.
+async fn fetch_capabilities_via_query_fn(
+    query_fn: &js_sys::Function,
+) -> Result<MergedCapabilities, JsValue> {
+    use vegafusion_core::proto::gen::tasks::ResolverCapabilities;
+
+    let request = QueryRequest {
+        request: Some(query_request::Request::GetCapabilities(
+            GetCapabilitiesRequest {},
+        )),
+    };
+
+    let mut buf: Vec<u8> = Vec::with_capacity(request.encoded_len());
+    request
+        .encode(&mut buf)
+        .map_err(|e| JsError::new(&format!("Failed to encode capabilities request: {e}")))?;
+
+    let context = JsValue::null();
+    let js_buffer = js_sys::Uint8Array::from(buf.as_slice());
+    let promise = query_fn
+        .call1(&context, &js_buffer)
+        .map_err(|e| {
+            JsError::new(&format!(
+                "Failed to call query_fn for capabilities: {}",
+                js_sys::JSON::stringify(&e).unwrap()
+            ))
+        })?
+        .dyn_into::<Promise>()
+        .map_err(|e| {
+            JsError::new(&format!(
+                "query_fn did not return a promise: {}",
+                js_sys::JSON::stringify(&e).unwrap()
+            ))
+        })?;
+
+    let response = JsFuture::from(promise).await.map_err(|e| {
+        JsError::new(&format!(
+            "Capabilities query failed: {}",
+            js_sys::JSON::stringify(&e).unwrap()
+        ))
+    })?;
+
+    let response_array = response.dyn_into::<js_sys::Uint8Array>().map_err(|e| {
+        JsError::new(&format!(
+            "Capabilities response is not Uint8Array: {}",
+            js_sys::JSON::stringify(&e).unwrap()
+        ))
+    })?;
+
+    let response_bytes = response_array.to_vec();
+    let result = QueryResult::decode(response_bytes.as_slice())
+        .map_err(|e| JsError::new(&format!("Failed to decode capabilities response: {e}")))?;
+
+    match result.response {
+        Some(query_result::Response::GetCapabilities(caps_result)) => {
+            let caps = caps_result
+                .capabilities
+                .unwrap_or_else(ResolverCapabilities::default);
+            Ok(MergedCapabilities::from_resolver_capabilities(&[caps]))
+        }
+        Some(query_result::Response::Error(err)) => {
+            Err(JsError::new(&format!("Server returned error for capabilities: {err:?}")).into())
+        }
+        _ => {
+            // Server doesn't support capabilities — use DataFusion defaults
+            Ok(MergedCapabilities::from_resolver_capabilities(&[
+                ResolverCapabilities::datafusion_defaults(),
+            ]))
+        }
+    }
+}
+
 /// Embed a Vega chart and accelerate with VegaFusion
 /// @param element - The DOM element to embed the visualization into
 /// @param spec - The Vega specification (as string or object)
@@ -446,7 +536,10 @@ pub async fn vegafusion_embed(
                 js_sys::JSON::stringify(&e).unwrap()
             ))
         })?;
-        Box::new(QueryFnVegaFusionRuntime::new(query_fn))
+
+        // Fetch capabilities from the remote server before constructing the runtime
+        let capabilities = fetch_capabilities_via_query_fn(&query_fn).await?;
+        Box::new(QueryFnVegaFusionRuntime::new(query_fn, capabilities))
     };
 
     let chart_state = ChartState::try_new(
@@ -456,6 +549,7 @@ pub async fn vegafusion_embed(
         ChartStateOpts {
             tz_config,
             row_limit: None,
+            data_base_url: Default::default(),
         },
     )
     .await

@@ -10,7 +10,7 @@ use vegafusion_core::{
     data::dataset::VegaFusionDataset,
     planning::{plan::PreTransformSpecWarningSpec, watch::WatchPlan},
     proto::gen::tasks::TzConfig,
-    runtime::VegaFusionRuntimeTrait,
+    runtime::{DataBaseUrlSetting, VegaFusionRuntimeTrait},
     spec::chart::ChartSpec,
 };
 
@@ -37,6 +37,7 @@ impl PyChartState {
             ChartStateOpts {
                 tz_config,
                 row_limit,
+                data_base_url: DataBaseUrlSetting::Default,
             },
         ))?;
         Ok(Self {

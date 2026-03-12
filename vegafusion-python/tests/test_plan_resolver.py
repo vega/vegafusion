@@ -708,3 +708,177 @@ def test_unparse_invalid_dialect() -> None:
 
     assert resolver.error is not None
     assert "Unknown dialect" in str(resolver.error)
+
+
+# ── scan_url tests ──
+
+
+def test_scan_url_called_with_structured_dict() -> None:
+    """scan_url receives a structured dict with parsed URL fields."""
+    from vegafusion.plan_resolver import external_table_scan_node
+
+    received_urls: list[dict[str, Any]] = []
+
+    class UrlCapturingResolver(PlanResolver):
+        def scan_url(self, parsed_url: dict[str, Any]) -> Any:
+            received_urls.append(parsed_url)
+            # Create an ExternalTableProvider plan node
+            schema = pa.schema([("x", pa.int64()), ("y", pa.utf8())])
+            return external_table_scan_node(
+                table_name="captured",
+                schema=schema,
+                protocol="test",
+                metadata={"source_url": parsed_url["url"]},
+            )
+
+        def resolve_table(
+            self,
+            name: str,
+            schema: Any,
+            metadata: dict[str, Any],
+            projected_columns: list[str] | None = None,
+        ) -> pa.Table:
+            return pa.table({"x": [1, 2], "y": ["a", "b"]})
+
+    resolver = UrlCapturingResolver()
+    rt = vf.VegaFusionRuntime(plan_resolver=resolver)
+
+    spec = {
+        "$schema": "https://vega.github.io/schema/vega/v5.json",
+        "data": [
+            {
+                "name": "source",
+                "url": "https://example.com/data.csv?limit=10&format=raw",
+                "format": {"type": "csv"},
+            }
+        ],
+    }
+
+    rt.pre_transform_datasets(spec, datasets=["source"], dataset_format="pyarrow")
+
+    assert len(received_urls) == 1
+    url_dict = received_urls[0]
+    assert url_dict["scheme"] == "https"
+    assert url_dict["host"] == "example.com"
+    assert url_dict["url"].startswith("https://example.com/data.csv")
+    assert url_dict["extension"] == "csv"
+    assert url_dict["format_type"] == "csv"
+    # Query params preserved
+    assert isinstance(url_dict["query_params"], list)
+
+
+def test_scan_url_none_falls_back_to_datafusion() -> None:
+    """scan_url returning None causes DataFusion to handle the URL."""
+
+    class NoOpScanner(PlanResolver):
+        def __init__(self) -> None:
+            self.scan_url_called = False
+
+        def scan_url(self, parsed_url: dict[str, Any]) -> Any:
+            self.scan_url_called = True
+            return None  # Pass to next resolver (DataFusion)
+
+    csv_path = os.path.join(tempfile.gettempdir(), "vf_scan_fallback.csv")
+    table = pa.table({"x": [1, 5, 10]})
+    pcsv.write_csv(table, csv_path)
+
+    resolver = NoOpScanner()
+    rt = vf.VegaFusionRuntime(plan_resolver=resolver)
+
+    spec = {
+        "$schema": "https://vega.github.io/schema/vega/v5.json",
+        "data": [
+            {
+                "name": "source",
+                "url": csv_path,
+                "format": {"type": "csv"},
+            }
+        ],
+    }
+
+    datasets, _warnings = rt.pre_transform_datasets(
+        spec, datasets=["source"], dataset_format="pyarrow"
+    )
+
+    assert resolver.scan_url_called
+    assert len(datasets) == 1
+    assert datasets[0].num_rows == 3
+
+
+def test_capabilities_extends_planner_support() -> None:
+    """capabilities() dict declaring custom scheme lets planner accept it."""
+    from vegafusion.plan_resolver import external_table_scan_node
+
+    class CustomSchemeResolver(PlanResolver):
+        def capabilities(self) -> dict[str, list[str]]:
+            return {"supported_schemes": ["myproto"]}
+
+        def scan_url(self, parsed_url: dict[str, Any]) -> Any:
+            if parsed_url["scheme"] == "myproto":
+                schema = pa.schema([("val", pa.int64())])
+                return external_table_scan_node(
+                    table_name="custom_data",
+                    schema=schema,
+                    protocol="myproto",
+                )
+            return None
+
+        def resolve_table(
+            self,
+            name: str,
+            schema: Any,
+            metadata: dict[str, Any],
+            projected_columns: list[str] | None = None,
+        ) -> pa.Table:
+            return pa.table({"val": [42, 99]})
+
+    resolver = CustomSchemeResolver()
+    rt = vf.VegaFusionRuntime(plan_resolver=resolver)
+
+    spec = {
+        "$schema": "https://vega.github.io/schema/vega/v5.json",
+        "data": [
+            {
+                "name": "source",
+                "url": "myproto://database/table1",
+            }
+        ],
+    }
+
+    datasets, _warnings = rt.pre_transform_datasets(
+        spec, datasets=["source"], dataset_format="pyarrow"
+    )
+
+    assert len(datasets) == 1
+    assert datasets[0].column("val").to_pylist() == [42, 99]
+
+
+def test_scan_url_not_called_without_override() -> None:
+    """Resolver without scan_url override does not trigger Python roundtrip."""
+
+    class SimpleResolver(PlanResolver):
+        """Only overrides resolve_table — should NOT trigger scan_url calls."""
+
+        def resolve_table(
+            self,
+            name: str,
+            schema: Any,
+            metadata: dict[str, Any],
+            projected_columns: list[str] | None = None,
+        ) -> pa.Table:
+            return pa.table({"x": [1, 2, 3]})
+
+    source_table = pa.table({"x": [1, 2, 3]})
+    ext = ExternalDataset(protocol="test", schema=source_table.schema, data=source_table)
+    resolver = SimpleResolver()
+    rt = vf.VegaFusionRuntime(plan_resolver=resolver)
+
+    spec = simple_spec()
+    datasets, _warnings = rt.pre_transform_datasets(
+        spec,
+        datasets=["filtered"],
+        inline_datasets={"source": ext},
+        dataset_format="pyarrow",
+    )
+
+    assert len(datasets) == 1

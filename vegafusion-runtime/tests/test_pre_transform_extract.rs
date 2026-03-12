@@ -34,6 +34,7 @@ mod tests {
                 &Default::default(),
                 &PreTransformExtractOpts {
                     keep_variables: vec![],
+                    data_base_url: None,
                     extract_threshold: 20,
                     preserve_interactivity: false,
                     local_tz: "UTC".to_string(),

@@ -73,6 +73,9 @@ workspace = true
 [dependencies.log]
 workspace = true
 
+[dependencies.url]
+version = "2"
+
 [dependencies.serde]
 workspace = true
 

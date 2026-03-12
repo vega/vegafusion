@@ -55,7 +55,11 @@ async fn test_extract_server_data() {
     println!("client_stubs: {client_stubs:?}");
 
     let tasks = server_spec
-        .to_tasks(&tz_config, &Default::default())
+        .to_tasks(
+            &tz_config,
+            &Default::default(),
+            PlannerConfig::default().data_base_url,
+        )
         .unwrap();
     let graph = Arc::new(TaskGraph::new(tasks, &task_scope).unwrap());
     let mapping = graph.build_mapping();

@@ -10,11 +10,19 @@ service VegaFusionRuntime {
   rpc PreTransformSpec(pretransform.PreTransformSpecRequest) returns (PreTransformSpecResult) {}
   rpc PreTransformValues(pretransform.PreTransformValuesRequest) returns (PreTransformValuesResult) {}
   rpc PreTransformExtract(pretransform.PreTransformExtractRequest) returns (PreTransformExtractResult) {}
+  rpc GetCapabilities(GetCapabilitiesRequest) returns (GetCapabilitiesResult) {}
+}
+
+message GetCapabilitiesRequest {}
+
+message GetCapabilitiesResult {
+  tasks.ResolverCapabilities capabilities = 1;
 }
 
 message QueryRequest {
   oneof request {
     tasks.TaskGraphValueRequest task_graph_values = 1;
+    GetCapabilitiesRequest get_capabilities = 2;
   }
 }
 
@@ -22,6 +30,7 @@ message QueryResult {
   oneof response {
     errors.Error error = 1;
     tasks.TaskGraphValueResponse task_graph_values = 2;
+    GetCapabilitiesResult get_capabilities = 3;
   }
 }
 

@@ -8,7 +8,7 @@ use std::borrow::Cow;
 use async_trait::async_trait;
 
 use datafusion_expr::{lit, Expr};
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 use std::path::Path;
 use std::sync::Arc;
 use vegafusion_core::data::dataset::VegaFusionDataset;
@@ -133,11 +133,16 @@ impl TaskCall for DataUrlTask {
 
         // Build url string
         let url = match self.url.as_ref().unwrap() {
-            Url::String(url) => url.clone(),
+            Url::String(url) => {
+                // Already resolved at plan time by MakeTasksVisitor
+                url.clone()
+            }
             Url::Expr(expr) => {
+                // Signal-based URL — resolve at eval time
                 let compiled = compile(expr, &config, None).await?;
                 let url_scalar = compiled.eval_to_scalar()?;
-                url_scalar.to_scalar_string()?
+                let raw_url = url_scalar.to_scalar_string()?;
+                vegafusion_core::runtime::resolve_url(&raw_url, &self.data_base_url)?
             }
         };
 
@@ -145,19 +150,16 @@ impl TaskCall for DataUrlTask {
         let url_parts: Vec<&str> = url.splitn(2, '#').collect();
         let url = url_parts.first().cloned().unwrap_or(&url).to_string();
 
-        // Handle references to vega default datasets (e.g. "data/us-10m.json")
-        let url = check_builtin_dataset(url);
-
         // Load data from URL
         let parse = self.format_type.as_ref().and_then(|fmt| fmt.parse.clone());
         let file_type = self.format_type.as_ref().and_then(|fmt| fmt.r#type.clone());
 
         // Vega-Lite sets unspecified file types to "json", so we don't want this to take
         // precedence over file extension
-        let file_type = if file_type == Some("json".to_string()) {
+        let format_type = if file_type == Some("json".to_string()) {
             None
         } else {
-            file_type.as_deref()
+            file_type
         };
 
         let inline_name = extract_inline_dataset(&url).map(|name| name.trim().to_string());
@@ -183,32 +185,17 @@ impl TaskCall for DataUrlTask {
                     "No inline dataset named {inline_name}"
                 )));
             }
-        } else if file_type == Some("csv") || (file_type.is_none() && url.ends_with(".csv")) {
-            read_csv(&url, &parse, ctx.clone(), false).await?
-        } else if file_type == Some("tsv") || (file_type.is_none() && url.ends_with(".tsv")) {
-            read_csv(&url, &parse, ctx.clone(), true).await?
-        } else if file_type == Some("json") || (file_type.is_none() && url.ends_with(".json")) {
-            read_json(&url, ctx.clone()).await?
-        } else if file_type == Some("arrow")
-            || (file_type.is_none() && (url.ends_with(".arrow") || url.ends_with(".feather")))
-        {
-            read_arrow(&url, ctx.clone()).await?
-        } else if file_type == Some("parquet")
-            || (file_type.is_none() && (url.ends_with(".parquet")))
-        {
-            cfg_if! {
-                if #[cfg(any(feature = "parquet"))] {
-                    read_parquet(&url, ctx.clone()).await?
-                } else {
+        } else {
+            // Construct ParsedUrl and dispatch to pipeline.scan_url()
+            let parsed_url = build_parsed_url(&url, format_type.as_deref())?;
+            match pipeline.scan_url(&parsed_url).await? {
+                Some(plan) => DataFrame::new(ctx.state(), plan),
+                None => {
                     return Err(VegaFusionError::internal(format!(
-                        "Enable parquet support by enabling the `parquet` feature flag"
-                    )))
+                        "No resolver handled URL: {url}"
+                    )));
                 }
             }
-        } else {
-            return Err(VegaFusionError::internal(format!(
-                "Invalid url file extension {url}"
-            )));
         };
 
         // Ensure there is an ordering column present
@@ -237,106 +224,42 @@ impl TaskCall for DataUrlTask {
             let task_value = result_df.to_task_value(inline_dataset).await?;
             maybe_materialize_plan(task_value, &pipeline).await?
         } else {
-            TaskValue::Table(result_df.collect_to_table().await?)
+            // URL-sourced data: use Plan when user resolvers exist for lazy evaluation
+            let task_value = TaskValue::Plan(result_df.logical_plan().clone());
+            maybe_materialize_plan(task_value, &pipeline).await?
         };
 
         Ok((task_value, output_values))
     }
 }
 
-lazy_static! {
-    static ref BUILT_IN_DATASETS: HashSet<&'static str> = vec![
-        "7zip.png",
-        "airports.csv",
-        "annual-precip.json",
-        "anscombe.json",
-        "barley.json",
-        "birdstrikes.csv",
-        "budget.json",
-        "budgets.json",
-        "burtin.json",
-        "cars.json",
-        "co2-concentration.csv",
-        "countries.json",
-        "crimea.json",
-        "disasters.csv",
-        "driving.json",
-        "earthquakes.json",
-        "ffox.png",
-        "flare-dependencies.json",
-        "flare.json",
-        "flights-10k.json",
-        "flights-200k.arrow",
-        "flights-200k.json",
-        "flights-20k.json",
-        "flights-2k.json",
-        "flights-3m.csv",
-        "flights-5k.json",
-        "flights-airport.csv",
-        "football.json",
-        "gapminder-health-income.csv",
-        "gapminder.json",
-        "gimp.png",
-        "github.csv",
-        "income.json",
-        "iowa-electricity.csv",
-        "jobs.json",
-        "la-riots.csv",
-        "londonBoroughs.json",
-        "londonCentroids.json",
-        "londonTubeLines.json",
-        "lookup_groups.csv",
-        "lookup_people.csv",
-        "miserables.json",
-        "monarchs.json",
-        "movies.json",
-        "normal-2d.json",
-        "obesity.json",
-        "ohlc.json",
-        "penguins.json",
-        "platformer-terrain.json",
-        "points.json",
-        "political-contributions.json",
-        "population_engineers_hurricanes.csv",
-        "population.json",
-        "seattle-weather.csv",
-        "seattle-weather-hourly-normals.csv",
-        "sp500-2000.csv",
-        "sp500.csv",
-        "stocks.csv",
-        "udistrict.json",
-        "unemployment-across-industries.json",
-        "unemployment.tsv",
-        "uniform-2d.json",
-        "us-10m.json",
-        "us-employment.csv",
-        "us-state-capitals.json",
-        "volcano.json",
-        "weather.csv",
-        "weather.json",
-        "wheat.json",
-        "windvectors.csv",
-        "world-110m.json",
-        "zipcodes.csv",
-    ]
-    .into_iter()
-    .collect();
-}
+/// Construct a `ParsedUrl` from a fully-resolved URL string and optional format type.
+fn build_parsed_url(
+    url: &str,
+    format_type: Option<&str>,
+) -> Result<vegafusion_core::runtime::ParsedUrl> {
+    let parsed = url::Url::parse(url)
+        .map_err(|e| VegaFusionError::internal(format!("Failed to parse URL '{url}': {e}")))?;
 
-const DATASET_BASE: &str = "https://raw.githubusercontent.com/vega/vega-datasets";
-const DATASET_TAG: &str = "v2.3.0";
+    let extension = std::path::Path::new(parsed.path())
+        .extension()
+        .and_then(|ext| ext.to_str())
+        .map(|s| s.to_string());
 
-fn check_builtin_dataset(url: String) -> String {
-    if let Some(dataset) = url.strip_prefix("data/") {
-        let path = std::path::Path::new(&url);
-        if !path.exists() && BUILT_IN_DATASETS.contains(dataset) {
-            format!("{DATASET_BASE}/{DATASET_TAG}/data/{dataset}")
-        } else {
-            url
-        }
-    } else {
-        url
-    }
+    let query_params: Vec<(String, String)> = parsed
+        .query_pairs()
+        .map(|(k, v)| (k.to_string(), v.to_string()))
+        .collect();
+
+    Ok(vegafusion_core::runtime::ParsedUrl {
+        url: url.to_string(),
+        scheme: parsed.scheme().to_string(),
+        host: parsed.host_str().map(|s| s.to_string()),
+        path: parsed.path().to_string(),
+        query_params,
+        extension,
+        format_type: format_type.map(|s| s.to_string()),
+    })
 }
 
 /// After processing, all datetime columns are converted to Timestamptz and Date32
@@ -696,7 +619,7 @@ async fn read_csv_with_reqwest(
     ctx.vegafusion_table(table).await
 }
 
-async fn read_csv(
+pub(crate) async fn read_csv(
     url: &str,
     parse: &Option<Parse>,
     ctx: Arc<SessionContext>,
@@ -736,7 +659,7 @@ async fn read_csv(
 }
 
 /// Build final schema by combining the input and inferred schemas
-async fn build_csv_schema(
+pub(crate) async fn build_csv_schema(
     csv_opts: &CsvReadOptions<'_>,
     parse: &Option<Parse>,
     uri: impl Into<String>,
@@ -798,7 +721,7 @@ async fn build_csv_schema(
     Ok(Schema::new(new_fields))
 }
 
-async fn read_json(url: &str, ctx: Arc<SessionContext>) -> Result<DataFrame> {
+pub(crate) async fn read_json(url: &str, ctx: Arc<SessionContext>) -> Result<DataFrame> {
     let value: serde_json::Value =
         if let Some(base_url) = maybe_register_object_stores_for_url(&ctx, url)? {
             // Create single use object store that points directly to file
@@ -864,18 +787,18 @@ async fn read_json(url: &str, ctx: Arc<SessionContext>) -> Result<DataFrame> {
     ctx.vegafusion_table(table).await
 }
 
-async fn read_arrow(url: &str, ctx: Arc<SessionContext>) -> Result<DataFrame> {
+pub(crate) async fn read_arrow(url: &str, ctx: Arc<SessionContext>) -> Result<DataFrame> {
     maybe_register_object_stores_for_url(&ctx, url)?;
     Ok(ctx.read_arrow(url, ArrowReadOptions::default()).await?)
 }
 
 #[cfg(feature = "parquet")]
-async fn read_parquet(url: &str, ctx: Arc<SessionContext>) -> Result<DataFrame> {
+pub(crate) async fn read_parquet(url: &str, ctx: Arc<SessionContext>) -> Result<DataFrame> {
     maybe_register_object_stores_for_url(&ctx, url)?;
     Ok(ctx.read_parquet(url, ParquetReadOptions::default()).await?)
 }
 
-fn maybe_register_object_stores_for_url(
+pub(crate) fn maybe_register_object_stores_for_url(
     ctx: &SessionContext,
     url: &str,
 ) -> Result<Option<ObjectStoreUrl>> {
