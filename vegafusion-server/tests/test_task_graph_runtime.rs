@@ -100,6 +100,7 @@ async fn try_it_from_spec() {
                 &[32.1, 59.6],
             )
         }
+        other => panic!("Unexpected response variant: {other:?}"),
     }
     proc.kill().ok();
 }

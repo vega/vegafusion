@@ -111,9 +111,7 @@ class PlanResolver:
         # It's a LogicalPlanNode proto message
         return result.SerializeToString()
 
-    def scan_url(
-        self, parsed_url: dict[str, Any]
-    ) -> LogicalPlanNode | bytes | None:
+    def scan_url(self, parsed_url: dict[str, Any]) -> LogicalPlanNode | bytes | None:
         """Handle a URL during the scan phase.
 
         Override to claim URLs by returning a ``LogicalPlanNode`` or raw bytes.

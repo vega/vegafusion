@@ -869,7 +869,9 @@ def test_scan_url_not_called_without_override() -> None:
             return pa.table({"x": [1, 2, 3]})
 
     source_table = pa.table({"x": [1, 2, 3]})
-    ext = ExternalDataset(protocol="test", schema=source_table.schema, data=source_table)
+    ext = ExternalDataset(
+        protocol="test", schema=source_table.schema, data=source_table
+    )
     resolver = SimpleResolver()
     rt = vf.VegaFusionRuntime(plan_resolver=resolver)
 
