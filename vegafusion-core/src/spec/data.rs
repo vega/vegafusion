@@ -67,11 +67,15 @@ impl DataSpec {
             }
         }
 
-        // For static URLs, check the scheme is supported by some resolver.
-        // Signal-based URLs can't be checked at plan time (scheme unknown).
+        // For static URLs that already have a scheme, check the scheme is supported
+        // by some resolver. Skip absolute paths and relative URLs — those are resolved
+        // later by resolve_url (absolute paths become file://, relatives use base URL).
         // Internal dataset URLs (table://, vegafusion+dataset://) are always supported.
         if let Some(StringOrSignalSpec::String(url_str)) = &self.url {
-            if !url_str.starts_with("table://") && !url_str.starts_with("vegafusion+dataset://") {
+            if url_str.contains("://")
+                && !url_str.starts_with("table://")
+                && !url_str.starts_with("vegafusion+dataset://")
+            {
                 if let Ok(parsed) = url::Url::parse(url_str) {
                     let scheme = parsed.scheme();
                     if !planner_config
