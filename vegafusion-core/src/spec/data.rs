@@ -55,9 +55,14 @@ impl DataSpec {
         task_scope: &TaskScope,
         scope: &[u32],
     ) -> DependencyNodeSupported {
+        // Check if the URL format is supported by any resolver's capabilities
         if let Some(Some(format_type)) = self.format.as_ref().map(|fmt| fmt.type_.clone()) {
-            if !matches!(format_type.as_str(), "csv" | "tsv" | "arrow" | "json") {
-                // We don't know how to read the data, so full node is unsupported
+            if !planner_config
+                .capabilities
+                .supported_format_types
+                .contains(&format_type)
+            {
+                // No resolver knows how to read this format, so full node is unsupported
                 return DependencyNodeSupported::Unsupported;
             }
         }

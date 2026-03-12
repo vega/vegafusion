@@ -2,6 +2,14 @@ syntax = "proto3";
 package pretransform;
 
 import "tasks.proto";
+import "google/protobuf/empty.proto";
+
+message DataBaseUrlSettingProto {
+  oneof kind {
+    string custom = 1;
+    google.protobuf.Empty disabled = 2;
+  }
+}
 
 /// Pre transform spec messages
 message PreTransformSpecOpts {
@@ -10,6 +18,7 @@ message PreTransformSpecOpts {
   repeated PreTransformVariable keep_variables = 3;
   string local_tz = 4;
   optional string default_input_tz = 5;
+  optional DataBaseUrlSettingProto data_base_url = 6;
 }
 
 message PreTransformSpecRequest {
@@ -52,6 +61,7 @@ message PreTransformValuesOpts {
   optional uint32 row_limit = 1;
   string local_tz = 2;
   optional string default_input_tz = 3;
+  optional DataBaseUrlSettingProto data_base_url = 4;
 }
 
 message PreTransformValuesRequest {
@@ -96,6 +106,7 @@ message PreTransformExtractOpts {
   bool preserve_interactivity = 3;
   int32 extract_threshold = 4;
   repeated PreTransformVariable keep_variables = 5;
+  optional DataBaseUrlSettingProto data_base_url = 6;
 }
 
 message PreTransformExtractWarning {

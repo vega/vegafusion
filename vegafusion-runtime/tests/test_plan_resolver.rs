@@ -14,7 +14,8 @@ use vegafusion_common::datafusion_expr::LogicalPlan;
 use vegafusion_common::error::{Result, VegaFusionError};
 use vegafusion_core::data::dataset::VegaFusionDataset;
 use vegafusion_core::proto::gen::pretransform::PreTransformSpecOpts;
-use vegafusion_core::runtime::{PlanResolver, ResolutionResult, VegaFusionRuntimeTrait};
+use vegafusion_core::proto::gen::tasks::ResolverCapabilities;
+use vegafusion_core::runtime::{ParsedUrl, PlanResolver, ResolutionResult, VegaFusionRuntimeTrait};
 use vegafusion_core::spec::chart::ChartSpec;
 use vegafusion_runtime::data::external_table::ExternalTableProvider;
 use vegafusion_runtime::data::pipeline::ResolverPipeline;
@@ -212,6 +213,7 @@ async fn test_custom_executor_called_in_pre_transform_spec() {
                 default_input_tz: None,
                 row_limit: None,
                 keep_variables: vec![],
+                data_base_url: None,
             },
         )
         .await
@@ -251,6 +253,7 @@ async fn test_custom_executor_called_in_pre_transform_extract() {
                 default_input_tz: None,
                 extract_threshold: 100,
                 keep_variables: vec![],
+                data_base_url: None,
             },
         )
         .await
@@ -297,6 +300,7 @@ async fn test_custom_executor_called_in_pre_transform_values() {
                 local_tz: "UTC".to_string(),
                 default_input_tz: None,
                 row_limit: None,
+                data_base_url: None,
             },
         )
         .await
@@ -411,6 +415,7 @@ async fn test_bin_transform_uses_custom_executor() {
                 default_input_tz: None,
                 row_limit: None,
                 keep_variables: vec![],
+                data_base_url: None,
             },
         )
         .await
@@ -505,6 +510,7 @@ async fn test_mixed_data_only_executes_plans() {
                 default_input_tz: None,
                 row_limit: None,
                 keep_variables: vec![],
+                data_base_url: None,
             },
         )
         .await
@@ -796,6 +802,156 @@ fn get_inline_datasets() -> std::collections::HashMap<String, VegaFusionDataset>
     datasets
 }
 
+// ── scan_url tests ──
+
+/// A resolver that claims custom:// URLs by returning an ExternalTableProvider plan
+struct CustomSchemeScanner {
+    schema: Arc<Schema>,
+}
+
+#[async_trait]
+impl PlanResolver for CustomSchemeScanner {
+    fn name(&self) -> &str {
+        "custom_scheme_scanner"
+    }
+
+    fn capabilities(&self) -> ResolverCapabilities {
+        ResolverCapabilities {
+            supported_schemes: vec!["custom".to_string()],
+            supported_format_types: vec![],
+            supported_extensions: vec![],
+        }
+    }
+
+    async fn scan_url(&self, parsed_url: &ParsedUrl) -> Result<Option<LogicalPlan>> {
+        if parsed_url.scheme == "custom" {
+            let provider = Arc::new(ExternalTableProvider::new(
+                self.schema.clone(),
+                Some("custom".to_string()),
+                serde_json::json!({"url": parsed_url.url}),
+            ));
+            let plan = LogicalPlanBuilder::scan("custom_table", provider_as_source(provider), None)
+                .unwrap()
+                .build()
+                .unwrap();
+            Ok(Some(plan))
+        } else {
+            Ok(None)
+        }
+    }
+
+    async fn resolve_plan(&self, plan: LogicalPlan) -> Result<ResolutionResult> {
+        // Rewrite ExternalTableProvider to MemTable for execution
+        let movies = create_movies_table();
+        let mem_table = Arc::new(
+            MemTable::try_new(movies.schema.clone(), vec![movies.batches.clone()]).unwrap(),
+        ) as Arc<dyn TableProvider>;
+        let mut rewriter = TableRewriter {
+            movies_table: mem_table,
+        };
+        let rewritten = plan.rewrite(&mut rewriter).unwrap().data;
+        Ok(ResolutionResult::Plan(rewritten))
+    }
+}
+
+#[tokio::test]
+async fn test_scan_url_custom_scheme_first_wins() {
+    let schema = get_movies_schema();
+    let scanner = CustomSchemeScanner {
+        schema: schema.clone(),
+    };
+
+    let ctx = Arc::new(datafusion::prelude::SessionContext::new());
+    let pipeline = ResolverPipeline::new(vec![Arc::new(scanner)], ctx);
+
+    let parsed = ParsedUrl {
+        url: "custom://mydb/table1".to_string(),
+        scheme: "custom".to_string(),
+        host: Some("mydb".to_string()),
+        path: "/table1".to_string(),
+        query_params: vec![],
+        extension: None,
+        format_type: None,
+    };
+
+    let result = pipeline.scan_url(&parsed).await.unwrap();
+    assert!(
+        result.is_some(),
+        "Custom scanner should handle custom:// URLs"
+    );
+}
+
+#[tokio::test]
+async fn test_scan_url_unknown_scheme_falls_through() {
+    let ctx = Arc::new(datafusion::prelude::SessionContext::new());
+    // Pipeline with only DataFusionResolver (no user resolvers)
+    let pipeline = ResolverPipeline::new(vec![], ctx);
+
+    let parsed = ParsedUrl {
+        url: "spark://cluster/table1".to_string(),
+        scheme: "spark".to_string(),
+        host: Some("cluster".to_string()),
+        path: "/table1".to_string(),
+        query_params: vec![],
+        extension: None,
+        format_type: None,
+    };
+
+    let result = pipeline.scan_url(&parsed).await.unwrap();
+    assert!(
+        result.is_none(),
+        "DataFusionResolver should return None for unknown schemes"
+    );
+}
+
+#[tokio::test]
+async fn test_has_user_resolvers() {
+    let ctx = Arc::new(datafusion::prelude::SessionContext::new());
+
+    // No user resolvers
+    let pipeline = ResolverPipeline::new(vec![], ctx.clone());
+    assert!(!pipeline.has_user_resolvers());
+
+    // With a user resolver
+    let scanner = CustomSchemeScanner {
+        schema: get_movies_schema(),
+    };
+    let pipeline = ResolverPipeline::new(vec![Arc::new(scanner)], ctx);
+    assert!(pipeline.has_user_resolvers());
+}
+
+#[tokio::test]
+async fn test_merged_capabilities_includes_custom_resolver() {
+    let schema = get_movies_schema();
+    let scanner = CustomSchemeScanner { schema };
+
+    let ctx = Arc::new(datafusion::prelude::SessionContext::new());
+    let pipeline = ResolverPipeline::new(vec![Arc::new(scanner)], ctx);
+
+    let caps = pipeline.merged_capabilities();
+    // DataFusion built-ins
+    assert!(caps.supported_schemes.contains("http"));
+    assert!(caps.supported_schemes.contains("file"));
+    assert!(caps.supported_format_types.contains("csv"));
+    // Custom resolver additions
+    assert!(caps.supported_schemes.contains("custom"));
+    // url_supported checks
+    assert!(caps.url_supported("custom", None, None));
+    assert!(caps.url_supported("https", Some("csv"), None));
+    assert!(!caps.url_supported("spark", None, None));
+}
+
+#[tokio::test]
+async fn test_planner_capabilities_from_runtime() {
+    let schema = get_movies_schema();
+    let scanner = CustomSchemeScanner { schema };
+
+    let runtime = VegaFusionRuntime::new(None, vec![Arc::new(scanner)]);
+    let caps = runtime.planner_capabilities();
+    assert!(caps.supported_schemes.contains("custom"));
+    assert!(caps.supported_schemes.contains("http"));
+}
+
 /// Test a resolver that returns ResolutionResult::Table directly (bypassing DataFusion execution).
 #[tokio::test]
 async fn test_table_returning_resolver() {
@@ -851,6 +1007,7 @@ async fn test_table_returning_resolver() {
                 default_input_tz: None,
                 row_limit: None,
                 keep_variables: vec![],
+                data_base_url: None,
             },
         )
         .await
@@ -918,6 +1075,7 @@ async fn test_no_resolver() {
                 default_input_tz: None,
                 row_limit: None,
                 keep_variables: vec![],
+                data_base_url: None,
             },
         )
         .await
@@ -1189,6 +1347,7 @@ async fn test_resolver_error_propagation() {
                 default_input_tz: None,
                 row_limit: None,
                 keep_variables: vec![],
+                data_base_url: None,
             },
         )
         .await;

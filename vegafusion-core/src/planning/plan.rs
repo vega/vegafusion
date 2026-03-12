@@ -12,6 +12,8 @@ use crate::planning::unsupported_data_warning::add_unsupported_data_warnings;
 use crate::proto::gen::pretransform::{
     pre_transform_spec_warning::WarningType, PlannerWarning, PreTransformSpecWarning,
 };
+use crate::proto::gen::tasks::ResolverCapabilities;
+use crate::runtime::MergedCapabilities;
 use crate::spec::chart::ChartSpec;
 use crate::task_graph::graph::ScopedVariable;
 use serde::{Deserialize, Serialize};
@@ -95,7 +97,17 @@ pub struct PlannerConfig {
     pub strip_description_encoding: bool,
     pub strip_aria_encoding: bool,
     pub strip_tooltip_encoding: bool,
+    /// Merged URL capabilities from all resolvers. Used by DataSpec::supported()
+    /// to decide if a URL-backed dataset is plannable.
+    pub capabilities: MergedCapabilities,
+    /// Base URL for resolving relative data URLs. None means relative paths are an error.
+    /// Some(url) means relative paths are resolved against this URL.
+    pub data_base_url: Option<String>,
 }
+
+/// Default CDN base URL for vega-datasets
+pub const VEGA_DATASETS_CDN_BASE: &str =
+    "https://raw.githubusercontent.com/vega/vega-datasets/v2.3.0/";
 
 impl Default for PlannerConfig {
     fn default() -> Self {
@@ -114,6 +126,10 @@ impl Default for PlannerConfig {
             strip_description_encoding: true,
             strip_aria_encoding: true,
             strip_tooltip_encoding: false,
+            capabilities: MergedCapabilities::from_resolver_capabilities(&[
+                ResolverCapabilities::datafusion_defaults(),
+            ]),
+            data_base_url: Some(VEGA_DATASETS_CDN_BASE.to_string()),
         }
     }
 }

@@ -79,6 +79,10 @@ message DataUrlTask {
   int32 batch_size = 3;
   ScanUrlFormat format_type = 4;
   transforms.TransformPipeline pipeline = 5;
+  // Base URL for resolving relative URLs in Url::Expr tasks at eval time.
+  // Written by MakeTasksVisitor from PlannerConfig.data_base_url.
+  // Absent = no base URL, present = that base URL.
+  optional string data_base_url = 6;
 }
 
 // ## Inline values task
@@ -183,4 +187,10 @@ message InlineDataset {
     InlineDatasetTable table = 1;
     InlineDatasetPlan plan = 2;
   }
+}
+
+message ResolverCapabilities {
+  repeated string supported_schemes = 1;
+  repeated string supported_format_types = 2;
+  repeated string supported_extensions = 3;
 }

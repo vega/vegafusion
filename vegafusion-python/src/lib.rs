@@ -237,6 +237,7 @@ impl PyVegaFusionRuntime {
                         default_input_tz,
                         row_limit,
                         preserve_interactivity,
+                        data_base_url: None,
                         keep_variables: keep_variables
                             .into_iter()
                             .map(|v| PreTransformVariable {
@@ -296,6 +297,7 @@ impl PyVegaFusionRuntime {
                         local_tz,
                         default_input_tz,
                         row_limit,
+                        data_base_url: None,
                     },
                 ))
         })?;
@@ -378,6 +380,7 @@ impl PyVegaFusionRuntime {
                         default_input_tz,
                         preserve_interactivity,
                         extract_threshold: extract_threshold as i32,
+                        data_base_url: None,
                         keep_variables,
                     },
                 ))
@@ -585,6 +588,68 @@ pub fn inline_table_scan_node(name: String, schema: pyo3_arrow::PySchema) -> PyR
     Ok(bytes.to_vec())
 }
 
+/// Build a LogicalPlanNode protobuf (as bytes) for an external table scan.
+///
+/// Use this in `scan_url` implementations to create ExternalTableProvider plan
+/// nodes that will later be resolved by `resolve_plan`.
+///
+/// Args:
+///     table_name: Name for the table in the plan.
+///     schema: Arrow schema (arro3.core.Schema) — required for logical planning.
+///     protocol: Optional protocol identifier (e.g. "spark").
+///     metadata: Optional JSON-serializable dict of metadata.
+///     source: Optional source identifier.
+///
+/// Returns:
+///     bytes: Serialized LogicalPlanNode protobuf.
+#[pyfunction]
+#[pyo3(signature = (table_name, schema, protocol=None, metadata=None, source=None))]
+pub fn external_table_scan_node(
+    table_name: String,
+    schema: pyo3_arrow::PySchema,
+    protocol: Option<String>,
+    metadata: Option<&Bound<'_, pyo3::types::PyAny>>,
+    source: Option<String>,
+) -> PyResult<Vec<u8>> {
+    use datafusion::datasource::provider_as_source;
+    use datafusion_proto::bytes::logical_plan_to_bytes_with_extension_codec;
+    use vegafusion_common::datafusion_expr::LogicalPlanBuilder;
+    use vegafusion_runtime::data::codec::VegaFusionCodec;
+    use vegafusion_runtime::data::external_table::ExternalTableProvider;
+
+    let arrow_schema = schema.into_inner();
+
+    let metadata_value: serde_json::Value = match metadata {
+        Some(obj) => pythonize::depythonize(obj).map_err(|e| {
+            pyo3::exceptions::PyValueError::new_err(format!("Failed to convert metadata dict: {e}"))
+        })?,
+        None => serde_json::Value::Object(serde_json::Map::new()),
+    };
+
+    let provider = Arc::new(
+        ExternalTableProvider::new(arrow_schema, protocol, metadata_value).with_source(source),
+    );
+    let table_source = provider_as_source(provider);
+
+    let plan = LogicalPlanBuilder::scan(&table_name, table_source, None)
+        .map_err(|e| {
+            pyo3::exceptions::PyValueError::new_err(format!("Failed to build scan plan: {e}"))
+        })?
+        .build()
+        .map_err(|e| {
+            pyo3::exceptions::PyValueError::new_err(format!("Failed to build plan: {e}"))
+        })?;
+
+    let codec = VegaFusionCodec::new();
+    let bytes = logical_plan_to_bytes_with_extension_codec(&plan, &codec).map_err(|e| {
+        pyo3::exceptions::PyValueError::new_err(format!(
+            "Failed to serialize external table plan: {e}"
+        ))
+    })?;
+
+    Ok(bytes.to_vec())
+}
+
 /// A Python module implemented in Rust. The name of this function must match
 /// the `lib.name` setting in the `Cargo.toml`, else Python will not be able to
 /// import the module.
@@ -597,6 +662,7 @@ fn _vegafusion(_py: Python, m: &Bound<PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(get_virtual_memory, m)?)?;
     m.add_function(wrap_pyfunction!(get_cpu_count, m)?)?;
     m.add_function(wrap_pyfunction!(inline_table_scan_node, m)?)?;
+    m.add_function(wrap_pyfunction!(external_table_scan_node, m)?)?;
     m.add_function(wrap_pyfunction!(unparse::unparse_plan_to_sql, m)?)?;
     m.add("__version__", env!("CARGO_PKG_VERSION"))?;
     Ok(())
