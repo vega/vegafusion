@@ -62,6 +62,8 @@ pub struct ParsedUrl {
     pub extension: Option<String>,
     /// Explicit format type from Vega spec (overrides extension)
     pub format_type: Option<String>,
+    /// Parse spec from Vega format (e.g., {"date": "date"} for CSV column typing)
+    pub parse: Option<crate::proto::gen::tasks::scan_url_format::Parse>,
 }
 
 /// Merged capabilities from all resolvers, with HashSet fields for O(1) lookup.

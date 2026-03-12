@@ -872,6 +872,7 @@ async fn test_scan_url_custom_scheme_first_wins() {
         query_params: vec![],
         extension: None,
         format_type: None,
+        parse: None,
     };
 
     let result = pipeline.scan_url(&parsed).await.unwrap();
@@ -895,6 +896,7 @@ async fn test_scan_url_unknown_scheme_falls_through() {
         query_params: vec![],
         extension: None,
         format_type: None,
+        parse: None,
     };
 
     let result = pipeline.scan_url(&parsed).await.unwrap();

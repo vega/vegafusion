@@ -63,9 +63,9 @@ impl PlanResolver for DataFusionResolver {
         let ctx = self.ctx.clone();
 
         let df = if file_type == Some("csv") || (file_type.is_none() && ext == Some("csv")) {
-            read_csv(url, &None, ctx, false).await?
+            read_csv(url, &parsed_url.parse, ctx, false).await?
         } else if file_type == Some("tsv") || (file_type.is_none() && ext == Some("tsv")) {
-            read_csv(url, &None, ctx, true).await?
+            read_csv(url, &parsed_url.parse, ctx, true).await?
         } else if file_type == Some("json")
             || (file_type.is_none() && matches!(ext, Some("json") | None))
         {
