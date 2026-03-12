@@ -187,7 +187,7 @@ impl TaskCall for DataUrlTask {
             }
         } else {
             // Construct ParsedUrl and dispatch to pipeline.scan_url()
-            let parsed_url = build_parsed_url(&url, format_type.as_deref())?;
+            let parsed_url = build_parsed_url(&url, format_type.as_deref(), parse.clone())?;
             match pipeline.scan_url(&parsed_url).await? {
                 Some(plan) => DataFrame::new(ctx.state(), plan),
                 None => {
@@ -237,6 +237,7 @@ impl TaskCall for DataUrlTask {
 fn build_parsed_url(
     url: &str,
     format_type: Option<&str>,
+    parse: Option<Parse>,
 ) -> Result<vegafusion_core::runtime::ParsedUrl> {
     let parsed = url::Url::parse(url)
         .map_err(|e| VegaFusionError::internal(format!("Failed to parse URL '{url}': {e}")))?;
@@ -259,6 +260,7 @@ fn build_parsed_url(
         query_params,
         extension,
         format_type: format_type.map(|s| s.to_string()),
+        parse,
     })
 }
 
