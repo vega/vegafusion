@@ -323,18 +323,21 @@ mod tests {
     // ── path_to_file_url ──
 
     #[test]
+    #[cfg(not(target_os = "windows"))]
     fn test_path_to_file_url_unix() {
         let result = path_to_file_url("/tmp/data.csv").unwrap();
         assert_eq!(result, "file:///tmp/data.csv");
     }
 
     #[test]
+    #[cfg(not(target_os = "windows"))]
     fn test_path_to_file_url_spaces() {
         let result = path_to_file_url("/tmp/my data/file.csv").unwrap();
         assert_eq!(result, "file:///tmp/my%20data/file.csv");
     }
 
     #[test]
+    #[cfg(not(target_os = "windows"))]
     fn test_path_to_file_url_hash() {
         let result = path_to_file_url("/tmp/file#1.csv").unwrap();
         assert!(
@@ -358,6 +361,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(not(target_os = "windows"))]
     fn test_normalize_base_url_absolute_path() {
         let result = normalize_base_url("/home/user/data".to_string()).unwrap();
         assert_eq!(result, "file:///home/user/data");
@@ -385,6 +389,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(not(target_os = "windows"))]
     fn test_resolve_url_absolute_path_to_file() {
         let base = Some("https://cdn.example.com/".to_string());
         let result = resolve_url("/tmp/data.csv", &base).unwrap();
@@ -453,6 +458,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(not(target_os = "windows"))]
     fn test_resolve_data_base_url_custom_path() {
         let result = resolve_data_base_url(
             DataBaseUrlSetting::Custom("/home/user/data".to_string()),
