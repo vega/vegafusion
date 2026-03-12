@@ -181,10 +181,13 @@ pub fn is_absolute_path(path: &str) -> bool {
 }
 
 /// Normalize a base URL so it always has a scheme.
-/// Bare absolute paths become file:// URLs; protocol-relative and scheme
-/// URLs are preserved as-is; everything else is rejected.
+/// Bare absolute paths become file:// URLs; protocol-relative URLs get
+/// https: prepended; scheme URLs are preserved as-is; everything else is rejected.
 pub fn normalize_base_url(base: String) -> Result<String> {
-    if has_url_scheme(&base) {
+    if base.starts_with("//") {
+        // Protocol-relative URL — prepend https: so url::Url::parse works
+        Ok(format!("https:{base}"))
+    } else if has_url_scheme(&base) {
         Ok(base)
     } else if is_absolute_path(&base) {
         path_to_file_url(&base)
@@ -197,6 +200,7 @@ pub fn normalize_base_url(base: String) -> Result<String> {
 
 /// Convert an absolute local path to a file:// URL.
 /// Uses url::Url::from_file_path() for correct percent-encoding.
+#[cfg(not(target_arch = "wasm32"))]
 pub fn path_to_file_url(path: &str) -> Result<String> {
     let normalized = path.replace('\\', "/");
     let p = std::path::Path::new(&normalized);
@@ -210,21 +214,39 @@ pub fn path_to_file_url(path: &str) -> Result<String> {
         })
 }
 
+#[cfg(target_arch = "wasm32")]
+pub fn path_to_file_url(path: &str) -> Result<String> {
+    let normalized = path.replace('\\', "/");
+    Ok(format!("file://{normalized}"))
+}
+
 /// Resolve a spec URL against a base URL. This is the shared function used by
 /// both plan-time resolution (MakeTasksVisitor for Url::String) and eval-time
 /// resolution (DataUrlTask::eval for Url::Expr).
 pub fn resolve_url(url: &str, data_base_url: &Option<String>) -> Result<String> {
     // Future: This is the natural place for a URL permissions layer
-    if has_url_scheme(url) {
+    if url.starts_with("//") {
+        // Protocol-relative URL — prepend https: so downstream parsers work
+        Ok(format!("https:{url}"))
+    } else if has_url_scheme(url) {
         Ok(url.to_string())
     } else if is_absolute_path(url) {
         path_to_file_url(url)
     } else {
-        // Relative path — resolve against base URL
+        // Relative path — resolve against base URL using RFC 3986 joining
         match data_base_url {
             Some(base) => {
-                let separator = if base.ends_with('/') { "" } else { "/" };
-                Ok(format!("{base}{separator}{url}"))
+                let base_url = url::Url::parse(base).map_err(|e| {
+                    vegafusion_common::error::VegaFusionError::specification(format!(
+                        "Invalid base URL '{base}': {e}"
+                    ))
+                })?;
+                let resolved = base_url.join(url).map_err(|e| {
+                    vegafusion_common::error::VegaFusionError::specification(format!(
+                        "Cannot resolve '{url}' against base '{base}': {e}"
+                    ))
+                })?;
+                Ok(resolved.to_string())
             }
             None => Err(vegafusion_common::error::VegaFusionError::specification(
                 format!("Relative URL with no base URL configured: {url}"),
@@ -330,7 +352,7 @@ mod tests {
     #[test]
     fn test_normalize_base_url_protocol_relative() {
         let result = normalize_base_url("//example.com/data/".to_string()).unwrap();
-        assert_eq!(result, "//example.com/data/");
+        assert_eq!(result, "https://example.com/data/");
     }
 
     #[test]
@@ -379,9 +401,18 @@ mod tests {
 
     #[test]
     fn test_resolve_url_relative_without_trailing_slash() {
+        // Per RFC 3986, joining against a base without trailing slash replaces
+        // the last path segment: "data" is replaced by "cars.json"
         let base = Some("https://example.com/data".to_string());
         let result = resolve_url("cars.json", &base).unwrap();
-        assert_eq!(result, "https://example.com/data/cars.json");
+        assert_eq!(result, "https://example.com/cars.json");
+    }
+
+    #[test]
+    fn test_resolve_url_relative_parent_traversal() {
+        let base = Some("https://example.com/data/v2/".to_string());
+        let result = resolve_url("../v1/cars.json", &base).unwrap();
+        assert_eq!(result, "https://example.com/data/v1/cars.json");
     }
 
     #[test]

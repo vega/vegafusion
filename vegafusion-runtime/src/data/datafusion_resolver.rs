@@ -41,10 +41,13 @@ impl PlanResolver for DataFusionResolver {
     }
 
     async fn scan_url(&self, parsed_url: &ParsedUrl) -> Result<Option<LogicalPlan>> {
-        // Only handle known schemes
-        match parsed_url.scheme.as_str() {
-            "http" | "https" | "s3" | "file" => {}
-            _ => return Ok(None),
+        // Only handle schemes declared in our capabilities
+        if !self
+            .capabilities()
+            .supported_schemes
+            .contains(&parsed_url.scheme)
+        {
+            return Ok(None);
         }
 
         // Determine file type: format_type takes precedence over extension.

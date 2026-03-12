@@ -67,6 +67,24 @@ impl DataSpec {
             }
         }
 
+        // For static URLs, check the scheme is supported by some resolver.
+        // Signal-based URLs can't be checked at plan time (scheme unknown).
+        // Internal dataset URLs (table://, vegafusion+dataset://) are always supported.
+        if let Some(StringOrSignalSpec::String(url_str)) = &self.url {
+            if !url_str.starts_with("table://") && !url_str.starts_with("vegafusion+dataset://") {
+                if let Ok(parsed) = url::Url::parse(url_str) {
+                    let scheme = parsed.scheme();
+                    if !planner_config
+                        .capabilities
+                        .supported_schemes
+                        .contains(scheme)
+                    {
+                        return DependencyNodeSupported::Unsupported;
+                    }
+                }
+            }
+        }
+
         // Check if inline values array is supported
         if let Some(values) = &self.values {
             if !planner_config.extract_inline_data {

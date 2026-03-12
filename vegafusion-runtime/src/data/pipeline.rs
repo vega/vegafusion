@@ -3,7 +3,7 @@ use std::sync::Arc;
 use datafusion::prelude::SessionContext;
 use vegafusion_common::data::table::VegaFusionTable;
 use vegafusion_common::datafusion_expr::LogicalPlan;
-use vegafusion_common::error::Result;
+use vegafusion_common::error::{Result, VegaFusionError};
 use vegafusion_core::proto::gen::tasks::ResolverCapabilities;
 use vegafusion_core::runtime::{MergedCapabilities, ParsedUrl, PlanResolver, ResolutionResult};
 
@@ -88,6 +88,8 @@ impl ResolverPipeline {
                 ResolutionResult::Plan(p) => current = p,
             }
         }
-        unreachable!("DataFusionResolver (last in chain) always returns Table")
+        Err(VegaFusionError::internal(
+            "No resolver produced a final table",
+        ))
     }
 }
