@@ -145,8 +145,26 @@ pub fn resolve_data_base_url(
 
 /// Returns true if the string is already a URL (has a scheme) or is
 /// scheme-relative (starts with //).
+///
+/// Per RFC 3986, a scheme is `[a-zA-Z][a-zA-Z0-9+.-]*:`. We check that
+/// `://` appears only after a valid scheme prefix, so relative references
+/// like `fetch?target=http://evil.com` are not misclassified as absolute.
 pub fn has_url_scheme(s: &str) -> bool {
-    s.contains("://") || s.starts_with("//")
+    if s.starts_with("//") {
+        return true;
+    }
+    if let Some(pos) = s.find("://") {
+        let prefix = &s[..pos];
+        let mut chars = prefix.chars();
+        match chars.next() {
+            Some(c) if c.is_ascii_alphabetic() => {
+                chars.all(|c| c.is_ascii_alphanumeric() || matches!(c, '+' | '-' | '.'))
+            }
+            _ => false,
+        }
+    } else {
+        false
+    }
 }
 
 /// Returns true if `path` is an absolute filesystem path.
@@ -274,6 +292,18 @@ mod tests {
     #[test]
     fn test_has_url_scheme_relative() {
         assert!(!has_url_scheme("data/cars.json"));
+    }
+
+    #[test]
+    fn test_has_url_scheme_embedded_scheme_in_query() {
+        // Relative reference with "://" in a query parameter — must not be
+        // misclassified as an absolute URL.
+        assert!(!has_url_scheme("fetch?target=http://evil.com/data"));
+    }
+
+    #[test]
+    fn test_has_url_scheme_embedded_scheme_in_path() {
+        assert!(!has_url_scheme("foo/http://bar"));
     }
 
     // ── is_absolute_path ──
@@ -414,6 +444,15 @@ mod tests {
     fn test_resolve_url_relative_no_base_errors() {
         let result = resolve_url("data/cars.json", &None);
         assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_resolve_url_relative_with_embedded_scheme() {
+        // A relative reference that contains "://" in a query parameter should
+        // be joined against the base URL, not treated as absolute.
+        let base = Some("https://proxy.com/".to_string());
+        let result = resolve_url("fetch?target=http://evil.com/data", &base).unwrap();
+        assert_eq!(result, "https://proxy.com/fetch?target=http://evil.com/data");
     }
 
     // ── resolve_data_base_url ──

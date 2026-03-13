@@ -72,7 +72,7 @@ impl DataSpec {
         // later by resolve_url (absolute paths become file://, relatives use base URL).
         // Internal dataset URLs (table://, vegafusion+dataset://) are always supported.
         if let Some(StringOrSignalSpec::String(url_str)) = &self.url {
-            if url_str.contains("://")
+            if crate::runtime::has_url_scheme(url_str)
                 && !url_str.starts_with("table://")
                 && !url_str.starts_with("vegafusion+dataset://")
             {
