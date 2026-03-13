@@ -29,7 +29,7 @@ pub fn process_inline_datasets(
                         && inline_dataset.hasattr("metadata")?
                     {
                         // Handle ExternalDataset with .scheme, .schema, .metadata
-                        let scheme: Option<String> = inline_dataset.getattr("scheme")?.extract()?;
+                        let scheme: String = inline_dataset.getattr("scheme")?.extract()?;
                         let pyschema = inline_dataset.getattr("schema")?.extract::<PySchema>()?;
                         let schema = pyschema.into_inner();
                         let metadata_obj = inline_dataset.getattr("metadata")?;
@@ -41,7 +41,7 @@ pub fn process_inline_datasets(
                             })?;
 
                         let provider =
-                            Arc::new(ExternalTableProvider::new(schema, scheme, metadata));
+                            Arc::new(ExternalTableProvider::new(scheme, schema, metadata));
                         let table_source = provider_as_source(provider);
                         let logical_plan =
                             LogicalPlanBuilder::scan(name.to_string(), table_source, None)

@@ -22,17 +22,17 @@ use vegafusion_common::arrow::datatypes::SchemaRef;
 /// Optionally carries arbitrary JSON metadata in [`Self::metadata`],
 /// which is serialized into `custom_table_data` by [`super::codec::VegaFusionCodec`].
 pub struct ExternalTableProvider {
+    scheme: String,
     schema: SchemaRef,
-    scheme: Option<String>,
     source: Option<String>,
     metadata: Value,
 }
 
 impl ExternalTableProvider {
-    pub fn new(schema: SchemaRef, scheme: Option<String>, metadata: Value) -> Self {
+    pub fn new(scheme: String, schema: SchemaRef, metadata: Value) -> Self {
         Self {
-            schema,
             scheme,
+            schema,
             source: None,
             metadata,
         }
@@ -43,8 +43,8 @@ impl ExternalTableProvider {
         self
     }
 
-    pub fn scheme(&self) -> Option<&str> {
-        self.scheme.as_deref()
+    pub fn scheme(&self) -> &str {
+        &self.scheme
     }
 
     pub fn source(&self) -> Option<&str> {
@@ -88,7 +88,7 @@ impl TableProvider for ExternalTableProvider {
         _filters: &[Expr],
         _limit: Option<usize>,
     ) -> Result<Arc<dyn ExecutionPlan>> {
-        let scheme = self.scheme().unwrap_or("unknown");
+        let scheme = self.scheme();
         plan_err!(
             "ExternalTableProvider (scheme: {scheme}) cannot be executed directly. \
              This table represents an external data source that must be resolved \

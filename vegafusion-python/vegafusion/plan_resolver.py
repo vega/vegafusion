@@ -131,8 +131,8 @@ class PlanResolver:
     def resolve_table(
         self,
         name: str,
+        scheme: str,
         schema: Schema,
-        scheme: str | None = None,
         metadata: dict[str, Any] | None = None,
         projected_columns: list[str] | None = None,
     ) -> Table:
@@ -142,9 +142,9 @@ class PlanResolver:
 
         Args:
             name: Table name from the plan.
-            schema: Full schema of the external table.
-            scheme: Optional URL scheme identifier (e.g. ``"spark"``,
+            scheme: URL scheme identifier (e.g. ``"spark"``,
                 ``"snowflake"``).
+            schema: Full schema of the external table.
             metadata: JSON metadata dict from ExternalTableProvider.
             projected_columns: Column names DataFusion actually needs.
                 None if no projection (all columns needed).
@@ -236,8 +236,8 @@ class PlanResolver:
 
                 table_data = self.resolve_table(
                     name=table_name,
-                    schema=dataset.schema,
                     scheme=dataset.scheme,
+                    schema=dataset.schema,
                     metadata=metadata,
                     projected_columns=projected_columns,
                 )
@@ -354,8 +354,8 @@ def inline_table_scan_node(
 
 def external_table_scan_node(
     table_name: str,
+    scheme: str,
     schema: Schema,
-    scheme: str | None = None,
     metadata: dict[str, Any] | None = None,
     source: str | None = None,
 ) -> LogicalPlanNode:
@@ -367,8 +367,8 @@ def external_table_scan_node(
 
     Args:
         table_name: Name for the table in the plan.
+        scheme: Scheme identifier (e.g. ``"spark"``).
         schema: Arrow schema (arro3.core.Schema) — required for logical planning.
-        scheme: Optional scheme identifier (e.g. ``"spark"``).
         metadata: Optional JSON-serializable dict of metadata.
         source: Optional source identifier.
 
@@ -388,8 +388,8 @@ def external_table_scan_node(
     node.ParseFromString(
         _native(
             table_name=table_name,
-            schema=schema,
             scheme=scheme,
+            schema=schema,
             metadata=metadata,
             source=source,
         )

@@ -596,19 +596,19 @@ pub fn inline_table_scan_node(name: String, schema: pyo3_arrow::PySchema) -> PyR
 ///
 /// Args:
 ///     table_name: Name for the table in the plan.
+///     scheme: Scheme identifier (e.g. "spark").
 ///     schema: Arrow schema (arro3.core.Schema) — required for logical planning.
-///     scheme: Optional scheme identifier (e.g. "spark").
 ///     metadata: Optional JSON-serializable dict of metadata.
 ///     source: Optional source identifier.
 ///
 /// Returns:
 ///     bytes: Serialized LogicalPlanNode protobuf.
 #[pyfunction]
-#[pyo3(signature = (table_name, schema, scheme=None, metadata=None, source=None))]
+#[pyo3(signature = (table_name, scheme, schema, metadata=None, source=None))]
 pub fn external_table_scan_node(
     table_name: String,
+    scheme: String,
     schema: pyo3_arrow::PySchema,
-    scheme: Option<String>,
     metadata: Option<&Bound<'_, pyo3::types::PyAny>>,
     source: Option<String>,
 ) -> PyResult<Vec<u8>> {
@@ -628,7 +628,7 @@ pub fn external_table_scan_node(
     };
 
     let provider = Arc::new(
-        ExternalTableProvider::new(arrow_schema, scheme, metadata_value).with_source(source),
+        ExternalTableProvider::new(scheme, arrow_schema, metadata_value).with_source(source),
     );
     let table_source = provider_as_source(provider);
 

@@ -19,10 +19,10 @@ class _DataRef:
 class ExternalDataset:
     """External dataset with scheme, schema, metadata, and optional data ref.
 
-    The ``scheme`` parameter is an optional short identifier for the data
-    source type (e.g. ``"spark"``, ``"snowflake"``, ``"duckdb"``).  It is
-    propagated through protobuf separately from metadata so that error
-    messages can name the source when no resolver is registered.
+    The ``scheme`` parameter identifies the data source type
+    (e.g. ``"spark"``, ``"snowflake"``, ``"duckdb"``).  It is propagated
+    through protobuf separately from metadata so that error messages can
+    name the source when no resolver is registered.
 
     When ``data`` is provided, it is registered in a class-level
     :class:`weakref.WeakValueDictionary` keyed by a UUID.  The UUID is
@@ -42,8 +42,8 @@ class ExternalDataset:
 
     def __init__(
         self,
-        scheme: str | None = None,
-        schema: Any = None,  # noqa: ANN401
+        scheme: str,
+        schema: Any,  # noqa: ANN401
         metadata: dict[str, Any] | None = None,
         data: Any = None,  # noqa: ANN401
         source: str | None = None,
@@ -74,8 +74,8 @@ class ExternalDataset:
         return data_ref.data if data_ref is not None else None
 
     @property
-    def scheme(self) -> str | None:
-        """Optional short identifier for the data source type (e.g. ``"spark"``)."""
+    def scheme(self) -> str:
+        """Short identifier for the data source type (e.g. ``"spark"``)."""
         return self._scheme
 
     @property

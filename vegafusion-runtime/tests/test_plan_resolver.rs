@@ -178,8 +178,8 @@ fn table_row_count(table: &VegaFusionTable) -> usize {
 fn build_external_scan_plan(table_name: &str) -> LogicalPlan {
     let schema = get_movies_schema();
     let provider = Arc::new(ExternalTableProvider::new(
+        "test".to_string(),
         schema,
-        Some("test".to_string()),
         serde_json::Value::Null,
     ));
     let table_source = provider_as_source(provider);
@@ -827,8 +827,8 @@ impl PlanResolver for CustomSchemeScanner {
     async fn scan_url(&self, parsed_url: &ParsedUrl) -> Result<Option<LogicalPlan>> {
         if parsed_url.scheme == "custom" {
             let provider = Arc::new(ExternalTableProvider::new(
+                "custom".to_string(),
                 self.schema.clone(),
-                Some("custom".to_string()),
                 serde_json::json!({"url": parsed_url.url}),
             ));
             let plan = LogicalPlanBuilder::scan("custom_table", provider_as_source(provider), None)
@@ -1105,8 +1105,8 @@ mod serialization_tests {
     async fn test_external_table_proto_round_trip() {
         let schema = get_movies_schema();
         let provider = Arc::new(ExternalTableProvider::new(
+            "test".to_string(),
             schema,
-            Some("test".to_string()),
             serde_json::Value::Null,
         ));
         let table_source = provider_as_source(provider);
@@ -1139,8 +1139,8 @@ mod serialization_tests {
     async fn test_external_table_raw_proto_inspection() {
         let schema = get_movies_schema();
         let provider = Arc::new(ExternalTableProvider::new(
+            "test".to_string(),
             schema.clone(),
-            Some("test".to_string()),
             serde_json::Value::Null,
         ));
         let table_source = provider_as_source(provider);
@@ -1219,8 +1219,8 @@ mod serialization_tests {
             "filters": [{"col": "year", "op": ">", "val": 2000}],
         });
         let provider = Arc::new(ExternalTableProvider::new(
+            "test".to_string(),
             schema.clone(),
-            Some("test".to_string()),
             metadata.clone(),
         ));
         let table_source = provider_as_source(provider);
@@ -1243,7 +1243,7 @@ mod serialization_tests {
                 .as_any()
                 .downcast_ref::<ExternalTableProvider>()
                 .expect("Expected ExternalTableProvider");
-            assert_eq!(ext.scheme(), Some("test"));
+            assert_eq!(ext.scheme(), "test");
             assert_eq!(ext.metadata(), &metadata);
         } else {
             panic!("Expected TableScan, got {:?}", round_tripped);

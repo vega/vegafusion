@@ -317,8 +317,8 @@ def test_resolve_table_resolver() -> None:
         def resolve_table(
             self,
             name: str,
+            scheme: str,
             schema: Any,
-            scheme: str | None = None,
             metadata: dict[str, Any] | None = None,
             projected_columns: list[str] | None = None,
         ) -> pa.Table:
@@ -441,8 +441,8 @@ def test_multiple_external_tables() -> None:
         def resolve_table(
             self,
             name: str,
+            scheme: str,
             schema: Any,
-            scheme: str | None = None,
             metadata: dict[str, Any] | None = None,
             projected_columns: list[str] | None = None,
         ) -> pa.Table:
@@ -504,8 +504,8 @@ def test_resolve_table_error_propagates() -> None:
         def resolve_table(
             self,
             name: str,
+            scheme: str,
             schema: Any,
-            scheme: str | None = None,
             metadata: dict[str, Any] | None = None,
             projected_columns: list[str] | None = None,
         ) -> pa.Table:
@@ -737,8 +737,8 @@ def test_scan_url_called_with_structured_dict() -> None:
         def resolve_table(
             self,
             name: str,
+            scheme: str,
             schema: Any,
-            scheme: str | None = None,
             metadata: dict[str, Any] | None = None,
             projected_columns: list[str] | None = None,
         ) -> pa.Table:
@@ -830,8 +830,8 @@ def test_capabilities_extends_planner_support() -> None:
         def resolve_table(
             self,
             name: str,
+            scheme: str,
             schema: Any,
-            scheme: str | None = None,
             metadata: dict[str, Any] | None = None,
             projected_columns: list[str] | None = None,
         ) -> pa.Table:
@@ -867,8 +867,8 @@ def test_scan_url_not_called_without_override() -> None:
         def resolve_table(
             self,
             name: str,
+            scheme: str,
             schema: Any,
-            scheme: str | None = None,
             metadata: dict[str, Any] | None = None,
             projected_columns: list[str] | None = None,
         ) -> pa.Table:
