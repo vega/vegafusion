@@ -1,8 +1,9 @@
 use std::sync::Arc;
 use vegafusion_common::datafusion_expr::LogicalPlan;
 use vegafusion_common::error::Result;
-use vegafusion_core::runtime::{PlanResolver, ResolutionResult, VegaFusionRuntimeTrait};
+use vegafusion_core::runtime::{ResolutionResult, VegaFusionRuntimeTrait};
 use vegafusion_core::spec::chart::ChartSpec;
+use vegafusion_runtime::data::plan_resolver::PlanResolver;
 use vegafusion_runtime::task_graph::runtime::VegaFusionRuntime;
 
 /// A custom resolver that logs plan resolution and passes through to DataFusion

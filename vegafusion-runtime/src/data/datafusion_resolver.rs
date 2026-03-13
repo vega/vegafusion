@@ -8,7 +8,9 @@ use vegafusion_common::error::Result;
 #[cfg(not(feature = "parquet"))]
 use vegafusion_common::error::VegaFusionError;
 use vegafusion_core::proto::gen::tasks::ResolverCapabilities;
-use vegafusion_core::runtime::{ParsedUrl, PlanResolver, ResolutionResult};
+use vegafusion_core::runtime::{ParsedUrl, ResolutionResult};
+
+use super::plan_resolver::PlanResolver;
 
 use super::tasks::{read_arrow, read_csv, read_json};
 use super::util::DataFrameUtils;

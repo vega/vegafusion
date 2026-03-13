@@ -16,9 +16,10 @@ use vegafusion_common::data::table::VegaFusionTable;
 use vegafusion_common::datafusion_expr::LogicalPlan;
 use vegafusion_common::error::{Result, VegaFusionError};
 use vegafusion_core::proto::gen::tasks::ResolverCapabilities;
-use vegafusion_core::runtime::{ParsedUrl, PlanResolver, ResolutionResult};
+use vegafusion_core::runtime::{ParsedUrl, ResolutionResult};
 use vegafusion_runtime::data::codec::VegaFusionCodec;
 use vegafusion_runtime::data::external_table::ExternalTableProvider;
+use vegafusion_runtime::data::plan_resolver::PlanResolver;
 
 /// A `PlanResolver` that delegates to a Python object.
 ///

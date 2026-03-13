@@ -1,4 +1,5 @@
 use crate::data::pipeline::ResolverPipeline;
+use crate::data::plan_resolver::PlanResolver;
 use crate::datafusion::context::make_datafusion_context;
 use crate::task_graph::cache::VegaFusionCache;
 use crate::task_graph::task::TaskCall;
@@ -18,7 +19,6 @@ use vegafusion_core::proto::gen::tasks::inline_dataset::Dataset;
 use vegafusion_core::proto::gen::tasks::{
     task::TaskKind, InlineDataset, InlineDatasetTable, NodeValueIndex, TaskGraph,
 };
-use vegafusion_core::runtime::PlanResolver;
 use vegafusion_core::runtime::VegaFusionRuntimeTrait;
 use vegafusion_core::task_graph::task_value::{MaterializedTaskValue, NamedTaskValue, TaskValue};
 

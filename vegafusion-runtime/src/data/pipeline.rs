@@ -5,9 +5,10 @@ use vegafusion_common::data::table::VegaFusionTable;
 use vegafusion_common::datafusion_expr::LogicalPlan;
 use vegafusion_common::error::{Result, VegaFusionError};
 use vegafusion_core::proto::gen::tasks::ResolverCapabilities;
-use vegafusion_core::runtime::{MergedCapabilities, ParsedUrl, PlanResolver, ResolutionResult};
+use vegafusion_core::runtime::{MergedCapabilities, ParsedUrl, ResolutionResult};
 
 use super::datafusion_resolver::DataFusionResolver;
+use super::plan_resolver::PlanResolver;
 
 /// Chains resolvers with a terminal `DataFusionResolver`.
 ///
