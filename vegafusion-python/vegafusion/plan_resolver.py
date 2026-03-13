@@ -351,7 +351,7 @@ def inline_table_scan_node(
 def external_table_scan_node(
     table_name: str,
     schema: Schema,
-    protocol: str | None = None,
+    scheme: str | None = None,
     metadata: dict[str, Any] | None = None,
     source: str | None = None,
 ) -> LogicalPlanNode:
@@ -364,7 +364,7 @@ def external_table_scan_node(
     Args:
         table_name: Name for the table in the plan.
         schema: Arrow schema (arro3.core.Schema) — required for logical planning.
-        protocol: Optional protocol identifier (e.g. ``"spark"``).
+        scheme: Optional scheme identifier (e.g. ``"spark"``).
         metadata: Optional JSON-serializable dict of metadata.
         source: Optional source identifier.
 
@@ -385,7 +385,7 @@ def external_table_scan_node(
         _native(
             table_name=table_name,
             schema=schema,
-            protocol=protocol,
+            scheme=scheme,
             metadata=metadata,
             source=source,
         )

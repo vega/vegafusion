@@ -164,7 +164,7 @@ pub fn resolve_data_base_url(
 }
 
 /// Returns true if the string is already a URL (has a scheme) or is
-/// protocol-relative (starts with //).
+/// scheme-relative (starts with //).
 pub fn has_url_scheme(s: &str) -> bool {
     s.contains("://") || s.starts_with("//")
 }
@@ -183,7 +183,7 @@ pub fn is_absolute_path(path: &str) -> bool {
 }
 
 /// Normalize a base URL so it always has a scheme.
-/// Bare absolute paths become file:// URLs; protocol-relative URLs get
+/// Bare absolute paths become file:// URLs; scheme-relative URLs get
 /// https: prepended; scheme URLs are preserved as-is; everything else is rejected.
 pub fn normalize_base_url(base: String) -> Result<String> {
     if base.starts_with("//") {
@@ -274,7 +274,7 @@ mod tests {
     }
 
     #[test]
-    fn test_has_url_scheme_protocol_relative() {
+    fn test_has_url_scheme_scheme_relative() {
         assert!(has_url_scheme("//example.com/data.csv"));
     }
 
@@ -355,7 +355,7 @@ mod tests {
     }
 
     #[test]
-    fn test_normalize_base_url_protocol_relative() {
+    fn test_normalize_base_url_scheme_relative() {
         let result = normalize_base_url("//example.com/data/".to_string()).unwrap();
         assert_eq!(result, "https://example.com/data/");
     }

@@ -1242,7 +1242,7 @@ mod serialization_tests {
                 .as_any()
                 .downcast_ref::<ExternalTableProvider>()
                 .expect("Expected ExternalTableProvider");
-            assert_eq!(ext.protocol(), Some("test"));
+            assert_eq!(ext.scheme(), Some("test"));
             assert_eq!(ext.metadata(), &metadata);
         } else {
             panic!("Expected TableScan, got {:?}", round_tripped);

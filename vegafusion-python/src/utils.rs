@@ -24,13 +24,12 @@ pub fn process_inline_datasets(
                 .iter()
                 .map(|(name, inline_dataset)| {
                     let inline_dataset = inline_dataset;
-                    let dataset = if inline_dataset.hasattr("protocol")?
+                    let dataset = if inline_dataset.hasattr("scheme")?
                         && inline_dataset.hasattr("schema")?
                         && inline_dataset.hasattr("metadata")?
                     {
-                        // Handle ExternalDataset with .protocol, .schema, .metadata
-                        let protocol: Option<String> =
-                            inline_dataset.getattr("protocol")?.extract()?;
+                        // Handle ExternalDataset with .scheme, .schema, .metadata
+                        let scheme: Option<String> = inline_dataset.getattr("scheme")?.extract()?;
                         let pyschema = inline_dataset.getattr("schema")?.extract::<PySchema>()?;
                         let schema = pyschema.into_inner();
                         let metadata_obj = inline_dataset.getattr("metadata")?;
@@ -42,7 +41,7 @@ pub fn process_inline_datasets(
                             })?;
 
                         let provider =
-                            Arc::new(ExternalTableProvider::new(schema, protocol, metadata));
+                            Arc::new(ExternalTableProvider::new(schema, scheme, metadata));
                         let table_source = provider_as_source(provider);
                         let logical_plan =
                             LogicalPlanBuilder::scan(name.to_string(), table_source, None)

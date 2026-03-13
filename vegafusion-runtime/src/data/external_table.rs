@@ -23,16 +23,16 @@ use vegafusion_common::arrow::datatypes::SchemaRef;
 /// which is serialized into `custom_table_data` by [`super::codec::VegaFusionCodec`].
 pub struct ExternalTableProvider {
     schema: SchemaRef,
-    protocol: Option<String>,
+    scheme: Option<String>,
     source: Option<String>,
     metadata: Value,
 }
 
 impl ExternalTableProvider {
-    pub fn new(schema: SchemaRef, protocol: Option<String>, metadata: Value) -> Self {
+    pub fn new(schema: SchemaRef, scheme: Option<String>, metadata: Value) -> Self {
         Self {
             schema,
-            protocol,
+            scheme,
             source: None,
             metadata,
         }
@@ -43,8 +43,8 @@ impl ExternalTableProvider {
         self
     }
 
-    pub fn protocol(&self) -> Option<&str> {
-        self.protocol.as_deref()
+    pub fn scheme(&self) -> Option<&str> {
+        self.scheme.as_deref()
     }
 
     pub fn source(&self) -> Option<&str> {
@@ -59,7 +59,7 @@ impl ExternalTableProvider {
 impl Debug for ExternalTableProvider {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("ExternalTableProvider")
-            .field("protocol", &self.protocol)
+            .field("scheme", &self.scheme)
             .field("source", &self.source)
             .field("schema", &self.schema)
             .field("metadata", &self.metadata)
@@ -88,9 +88,9 @@ impl TableProvider for ExternalTableProvider {
         _filters: &[Expr],
         _limit: Option<usize>,
     ) -> Result<Arc<dyn ExecutionPlan>> {
-        let protocol = self.protocol().unwrap_or("unknown");
+        let scheme = self.scheme().unwrap_or("unknown");
         plan_err!(
-            "ExternalTableProvider (protocol: {protocol}) cannot be executed directly. \
+            "ExternalTableProvider (scheme: {scheme}) cannot be executed directly. \
              This table represents an external data source that must be resolved \
              before execution. Set a PlanResolver on the VegaFusionRuntime to \
              handle external table references."

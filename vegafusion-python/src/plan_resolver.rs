@@ -90,7 +90,7 @@ impl PyPlanResolver {
 /// Info extracted from an ExternalTableProvider node in the plan.
 struct ExternalTableInfo {
     schema: SchemaRef,
-    protocol: Option<String>,
+    scheme: Option<String>,
     source: Option<String>,
     metadata: Value,
     ref_id: Option<String>,
@@ -112,7 +112,7 @@ fn extract_external_tables(plan: &LogicalPlan) -> HashMap<String, ExternalTableI
                         scan.table_name.table().to_string(),
                         ExternalTableInfo {
                             schema: ext.schema(),
-                            protocol: ext.protocol().map(|s| s.to_string()),
+                            scheme: ext.scheme().map(|s| s.to_string()),
                             source: ext.source().map(|s| s.to_string()),
                             metadata: ext.metadata().clone(),
                             ref_id,
@@ -166,9 +166,9 @@ fn build_datasets_dict<'py>(
         // Convert metadata to Python dict
         let py_metadata = pythonize::pythonize(py, &info.metadata)?;
 
-        // Reconstruct ExternalDataset(protocol, schema, metadata, data, source)
+        // Reconstruct ExternalDataset(scheme, schema, metadata, data, source)
         let kwargs = PyDict::new(py);
-        kwargs.set_item("protocol", info.protocol.as_deref())?;
+        kwargs.set_item("scheme", info.scheme.as_deref())?;
         kwargs.set_item("schema", py_schema)?;
         kwargs.set_item("metadata", py_metadata)?;
         kwargs.set_item("data", &data)?;

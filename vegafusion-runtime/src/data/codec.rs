@@ -76,8 +76,8 @@ impl LogicalExtensionCodec for VegaFusionCodec {
 
         match envelope.get("type").and_then(|t| t.as_str()) {
             Some("external") => {
-                let protocol = envelope
-                    .get("protocol")
+                let scheme = envelope
+                    .get("scheme")
                     .and_then(|v| v.as_str())
                     .map(|s| s.to_string());
                 let source = envelope
@@ -86,7 +86,7 @@ impl LogicalExtensionCodec for VegaFusionCodec {
                     .map(|s| s.to_string());
                 let metadata = envelope.get("metadata").cloned().unwrap_or(Value::Null);
                 Ok(Arc::new(
-                    ExternalTableProvider::new(schema, protocol, metadata).with_source(source),
+                    ExternalTableProvider::new(schema, scheme, metadata).with_source(source),
                 ))
             }
             Some("inline") => {
@@ -134,7 +134,7 @@ impl LogicalExtensionCodec for VegaFusionCodec {
         if let Some(ext) = node.as_any().downcast_ref::<ExternalTableProvider>() {
             let mut envelope = serde_json::json!({
                 "type": "external",
-                "protocol": ext.protocol(),
+                "scheme": ext.scheme(),
                 "metadata": ext.metadata(),
             });
             if let Some(source) = ext.source() {
