@@ -1,4 +1,6 @@
 mod chart_state;
+mod plan_resolver;
+mod unparse;
 mod utils;
 use lazy_static::lazy_static;
 use pyo3::exceptions::PyValueError;
@@ -30,7 +32,7 @@ use vegafusion_core::task_graph::graph::ScopedVariable;
 use vegafusion_core::task_graph::task_value::MaterializedTaskValue;
 use vegafusion_runtime::tokio_runtime::TOKIO_THREAD_STACK_SIZE;
 
-use vegafusion_core::runtime::{PlanExecutor, VegaFusionRuntimeTrait};
+use vegafusion_core::runtime::{PlanResolver, VegaFusionRuntimeTrait};
 use vegafusion_runtime::task_graph::cache::VegaFusionCache;
 
 use crate::chart_state::PyChartState;
@@ -58,29 +60,37 @@ struct PyVegaFusionRuntime {
 }
 
 impl PyVegaFusionRuntime {
-    fn build_with_executor(
+    fn build_with_resolvers(
         max_capacity: Option<usize>,
         memory_limit: Option<usize>,
         worker_threads: Option<i32>,
-        rust_executor: Option<Arc<dyn PlanExecutor>>,
+        resolvers: Vec<Arc<dyn PlanResolver>>,
+        use_current_thread: bool,
     ) -> PyResult<Self> {
         initialize_logging();
 
-        let mut builder = tokio::runtime::Builder::new_multi_thread();
-        if let Some(worker_threads) = worker_threads {
-            builder.worker_threads(worker_threads.max(1) as usize);
-        }
-
-        let tokio_runtime_connection = builder
-            .enable_all()
-            .thread_stack_size(TOKIO_THREAD_STACK_SIZE)
-            .build()
-            .external("Failed to create Tokio thread pool")?;
+        let tokio_runtime_connection = if use_current_thread {
+            tokio::runtime::Builder::new_current_thread()
+                .enable_all()
+                .thread_stack_size(TOKIO_THREAD_STACK_SIZE)
+                .build()
+                .external("Failed to create Tokio current-thread runtime")?
+        } else {
+            let mut builder = tokio::runtime::Builder::new_multi_thread();
+            if let Some(worker_threads) = worker_threads {
+                builder.worker_threads(worker_threads.max(1) as usize);
+            }
+            builder
+                .enable_all()
+                .thread_stack_size(TOKIO_THREAD_STACK_SIZE)
+                .build()
+                .external("Failed to create Tokio thread pool")?
+        };
 
         Ok(Self {
             runtime: Arc::new(VegaFusionRuntime::new(
                 Some(VegaFusionCache::new(max_capacity, memory_limit)),
-                rust_executor,
+                resolvers,
             )),
             tokio_runtime: Arc::new(tokio_runtime_connection),
         })
@@ -96,7 +106,42 @@ impl PyVegaFusionRuntime {
         memory_limit: Option<usize>,
         worker_threads: Option<i32>,
     ) -> PyResult<Self> {
-        Self::build_with_executor(max_capacity, memory_limit, worker_threads, None)
+        Self::build_with_resolvers(
+            max_capacity,
+            memory_limit,
+            worker_threads,
+            Vec::new(),
+            false,
+        )
+    }
+
+    #[staticmethod]
+    #[pyo3(signature = (py_resolvers, max_capacity=None, memory_limit=None, worker_threads=None))]
+    pub fn new_with_resolvers(
+        py_resolvers: Vec<Py<PyAny>>,
+        max_capacity: Option<usize>,
+        memory_limit: Option<usize>,
+        worker_threads: Option<i32>,
+    ) -> PyResult<Self> {
+        let py_resolvers: Vec<crate::plan_resolver::PyPlanResolver> = py_resolvers
+            .into_iter()
+            .map(crate::plan_resolver::PyPlanResolver::new)
+            .collect();
+
+        // Use current-thread runtime if any resolver requires thread affinity
+        let use_current_thread = py_resolvers.iter().any(|r| !r.thread_safe());
+
+        let resolvers: Vec<Arc<dyn PlanResolver>> = py_resolvers
+            .into_iter()
+            .map(|r| Arc::new(r) as Arc<dyn PlanResolver>)
+            .collect();
+        Self::build_with_resolvers(
+            max_capacity,
+            memory_limit,
+            worker_threads,
+            resolvers,
+            use_current_thread,
+        )
     }
 
     #[staticmethod]
@@ -497,6 +542,49 @@ pub fn build_pre_transform_spec_plan(
     })
 }
 
+/// Build a LogicalPlanNode protobuf (as bytes) for an inline table scan.
+///
+/// Use this in `resolve_plan` implementations to replace a subtree that the
+/// resolver has already executed with a leaf node referencing sidecar Arrow data.
+///
+/// Args:
+///     name: Key that will match an entry in ResolvedPlan.datasets.
+///     schema: Arrow schema of the sidecar table (arro3.core.Schema).
+///
+/// Returns:
+///     bytes: Serialized LogicalPlanNode protobuf.
+#[pyfunction]
+#[pyo3(signature = (name, schema))]
+pub fn inline_table_scan_node(name: String, schema: pyo3_arrow::PySchema) -> PyResult<Vec<u8>> {
+    use datafusion::datasource::provider_as_source;
+    use datafusion_proto::bytes::logical_plan_to_bytes_with_extension_codec;
+    use vegafusion_common::datafusion_expr::LogicalPlanBuilder;
+    use vegafusion_runtime::data::codec::VegaFusionCodec;
+    use vegafusion_runtime::data::inline_table::InlineTableProvider;
+
+    let arrow_schema = schema.into_inner();
+    let provider = Arc::new(InlineTableProvider::new(arrow_schema, name.clone()));
+    let table_source = provider_as_source(provider);
+
+    let plan = LogicalPlanBuilder::scan(&name, table_source, None)
+        .map_err(|e| {
+            pyo3::exceptions::PyValueError::new_err(format!("Failed to build scan plan: {e}"))
+        })?
+        .build()
+        .map_err(|e| {
+            pyo3::exceptions::PyValueError::new_err(format!("Failed to build plan: {e}"))
+        })?;
+
+    let codec = VegaFusionCodec::new();
+    let bytes = logical_plan_to_bytes_with_extension_codec(&plan, &codec).map_err(|e| {
+        pyo3::exceptions::PyValueError::new_err(format!(
+            "Failed to serialize inline table plan: {e}"
+        ))
+    })?;
+
+    Ok(bytes.to_vec())
+}
+
 /// A Python module implemented in Rust. The name of this function must match
 /// the `lib.name` setting in the `Cargo.toml`, else Python will not be able to
 /// import the module.
@@ -508,6 +596,8 @@ fn _vegafusion(_py: Python, m: &Bound<PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(build_pre_transform_spec_plan, m)?)?;
     m.add_function(wrap_pyfunction!(get_virtual_memory, m)?)?;
     m.add_function(wrap_pyfunction!(get_cpu_count, m)?)?;
+    m.add_function(wrap_pyfunction!(inline_table_scan_node, m)?)?;
+    m.add_function(wrap_pyfunction!(unparse::unparse_plan_to_sql, m)?)?;
     m.add("__version__", env!("CARGO_PKG_VERSION"))?;
     Ok(())
 }

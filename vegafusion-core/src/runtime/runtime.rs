@@ -56,7 +56,7 @@ pub trait VegaFusionRuntimeTrait: Send + Sync {
                 TaskValue::Table(t) => MaterializedTaskValue::Table(t),
                 TaskValue::Plan(_) => {
                     return Err(VegaFusionError::internal(
-                        "Cannot materialize LogicalPlan in this runtime. Use a runtime with a PlanExecutor.",
+                        "Cannot materialize LogicalPlan in this runtime. Use a runtime with a PlanResolver.",
                     ))
                 }
             });

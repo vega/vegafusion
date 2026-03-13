@@ -1,0 +1,5 @@
+Downloaded from: https://raw.githubusercontent.com/apache/datafusion/52.1.0/
+DataFusion version: 52.1.0
+Files:
+  datafusion.proto
+  datafusion/proto-common/proto/datafusion_common.proto

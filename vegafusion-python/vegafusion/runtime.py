@@ -13,7 +13,7 @@ from typing import (
 
 # Delay narwhals import to avoid eager pandas import
 # We'll import narwhals inside functions to avoid eager pandas import
-from arro3.core import Schema, Table
+from arro3.core import Table
 
 from vegafusion._vegafusion import get_cpu_count, get_virtual_memory
 from vegafusion.transformer import DataFrameLike
@@ -33,6 +33,8 @@ if TYPE_CHECKING:
         PyChartStateGrpc,
         PyVegaFusionRuntime,
     )
+    from vegafusion.dataset import ExternalDataset
+    from vegafusion.plan_resolver import PlanResolver
 
 
 # This type isn't defined in the grpcio package, so let's at least name it
@@ -184,12 +186,27 @@ class ChartState:
         return cast(dict[str, Any], self._chart_state.get_client_spec())
 
 
+def _normalize_resolvers(
+    value: PlanResolver | list[PlanResolver] | tuple[PlanResolver, ...] | None,
+) -> list[PlanResolver]:
+    """Convert a single resolver, list, or None into a list."""
+    if value is None:
+        return []
+    if isinstance(value, (list, tuple)):
+        return list(value)
+    return [value]
+
+
 class VegaFusionRuntime:
     def __init__(
         self,
         cache_capacity: int = 64,
         memory_limit: int | None = None,
         worker_threads: int | None = None,
+        plan_resolver: PlanResolver
+        | list[PlanResolver]
+        | tuple[PlanResolver, ...]
+        | None = None,
     ) -> None:
         """
         Initialize a VegaFusionRuntime.
@@ -198,12 +215,18 @@ class VegaFusionRuntime:
             cache_capacity: Cache capacity.
             memory_limit: Memory limit.
             worker_threads: Number of worker threads.
+            plan_resolver: Optional custom plan resolver(s) for resolving
+                external table references in DataFusion logical plans.
+                Can be a single resolver or a list of resolvers that form
+                a pipeline (executed in order; short-circuits on first
+                Table result).
         """
         self._runtime = None
         self._grpc_url: str | None = None
         self._cache_capacity = cache_capacity
         self._memory_limit = memory_limit
         self._worker_threads = worker_threads
+        self._plan_resolvers = _normalize_resolvers(plan_resolver)
 
     @property
     def runtime(self) -> PyVegaFusionRuntime:
@@ -222,11 +245,19 @@ class VegaFusionRuntime:
             if self.worker_threads is None:
                 self.worker_threads = get_cpu_count()
 
-            self._runtime = PyVegaFusionRuntime.new_embedded(
-                self.cache_capacity,
-                self.memory_limit,
-                self.worker_threads,
-            )
+            if self._plan_resolvers:
+                self._runtime = PyVegaFusionRuntime.new_with_resolvers(
+                    self._plan_resolvers,
+                    self.cache_capacity,
+                    self.memory_limit,
+                    self.worker_threads,
+                )
+            else:
+                self._runtime = PyVegaFusionRuntime.new_embedded(
+                    self.cache_capacity,
+                    self.memory_limit,
+                    self.worker_threads,
+                )
         return self._runtime
 
     def grpc_connect(self, url: str) -> None:
@@ -236,6 +267,13 @@ class VegaFusionRuntime:
         Args:
             url: URL of a running VegaFusion server
         """
+        if self._plan_resolvers:
+            raise ValueError(
+                "Cannot use grpc_connect with custom plan resolvers. "
+                "Plan resolvers run locally and are not supported "
+                "with remote gRPC runtimes."
+            )
+
         from vegafusion._vegafusion import PyVegaFusionRuntime
 
         self._grpc_url = url
@@ -255,15 +293,17 @@ class VegaFusionRuntime:
         self,
         inline_datasets: dict[str, Any] | None = None,
         inline_dataset_usage: dict[str, list[str]] | None = None,
-    ) -> dict[str, Table | Schema]:
+    ) -> dict[str, Table | ExternalDataset]:
         """
         Import or register inline datasets.
 
         Args:
             inline_datasets: A dictionary from dataset names to pandas DataFrames,
-                pyarrow Tables, or pyarrow Schemas. Inline datasets may be referenced
-                by the input specification using the following url syntax
-                'vegafusion+dataset://{dataset_name}' or 'table://{dataset_name}'.
+                pyarrow Tables, or ExternalDataset instances.
+                Inline datasets may be referenced by the input specification using
+                the following url syntax 'vegafusion+dataset://{dataset_name}' or
+                'table://{dataset_name}'. ExternalDataset entries are resolved by
+                the configured plan resolver(s) at execution time.
             inline_dataset_usage: Columns that are referenced by datasets. If no
                 entry is found, then all columns should be included.
         """
@@ -273,15 +313,19 @@ class VegaFusionRuntime:
             pd = sys.modules.get("pandas", None)
             pa = sys.modules.get("pyarrow", None)
 
+        from vegafusion.dataset import ExternalDataset
+
         inline_datasets = inline_datasets or {}
         inline_dataset_usage = inline_dataset_usage or {}
-        imported_inline_datasets: dict[str, Table | Schema] = {}
+        imported_inline_datasets: dict[str, Table | ExternalDataset] = {}
+        # Keep strong references to ExternalDataset objects so their
+        # WeakValueDictionary entries survive until the call completes.
+        external_dataset_refs: list[ExternalDataset] = []
         for name, value in inline_datasets.items():
             columns = inline_dataset_usage.get(name)
-            if (pa is not None and isinstance(value, pa.Schema)) or hasattr(
-                value, "__arrow_c_schema__"
-            ):
-                imported_inline_datasets[name] = Schema.from_arrow(value)
+            if isinstance(value, ExternalDataset):
+                imported_inline_datasets[name] = value
+                external_dataset_refs.append(value)
             elif pd is not None and pa is not None and isinstance(value, pd.DataFrame):
                 # rename to help mypy
                 inner_value: pd.DataFrame = value
@@ -349,6 +393,22 @@ class VegaFusionRuntime:
                     else:
                         raise
 
+        # Validate: ExternalDatasets require a plan resolver
+        if external_dataset_refs and not self._plan_resolvers:
+            details = [
+                f"  - {name!r} (protocol={value.protocol!r})"
+                for name, value in inline_datasets.items()
+                if isinstance(value, ExternalDataset)
+            ]
+            raise ValueError(
+                "The following ExternalDataset(s) require a plan resolver "
+                "to execute:\n"
+                + "\n".join(details)
+                + "\n\nSet runtime.plan_resolver before calling this method.\n\n"
+                "Example:\n"
+                "  vf.runtime.plan_resolver = MyResolver()\n"
+            )
+
         return imported_inline_datasets
 
     def pre_transform_spec(
@@ -385,8 +445,8 @@ class VegaFusionRuntime:
                 transformations are applied even if they break the original interactive
                 behavior of the chart.
             inline_datasets: A dict from dataset names to pandas DataFrames, pyarrow
-                Tables, or pyarrow Schemas. Inline datasets may be referenced by the
-                input specification using the following url syntax
+                Tables, or ExternalDataset instances. Inline datasets may be referenced
+                by the input specification using the following url syntax
                 'vegafusion+dataset://{dataset_name}' or 'table://{dataset_name}'.
             keep_signals: Signals from the input spec that must be included in the
                 pre-transformed spec, even if they are no longer referenced.
@@ -463,8 +523,8 @@ class VegaFusionRuntime:
                 rows and a RowLimitExceeded warning will be included in the ChartState's
                 warnings list.
             inline_datasets: A dict from dataset names to pandas DataFrames, pyarrow
-                Tables, or pyarrow Schemas. Inline datasets may be referenced by the
-                input specification using the following url syntax
+                Tables, or ExternalDataset instances. Inline datasets may be referenced
+                by the input specification using the following url syntax
                 'vegafusion+dataset://{dataset_name}' or 'table://{dataset_name}'.
         Returns:
             ChartState
@@ -516,8 +576,8 @@ class VegaFusionRuntime:
                 rows and a RowLimitExceeded warning will be included in the resulting
                 warnings list.
             inline_datasets: A dict from dataset names to pandas DataFrames, pyarrow
-                Tables, or pyarrow Schemas. Inline datasets may be referenced by the
-                input specification using the following url syntax
+                Tables, or ExternalDataset instances. Inline datasets may be referenced
+                by the input specification using the following url syntax
                 'vegafusion+dataset://{dataset_name}' or 'table://{dataset_name}'.
             trim_unused_columns: If True, unused columns are removed from returned
                 datasets.
@@ -680,9 +740,9 @@ class VegaFusionRuntime:
                 * ``"arrow-ipc"``: bytes in arrow IPC format
                 * ``"arrow-ipc-base64"``: base64 encoded arrow IPC format
             inline_datasets: A dict from dataset names to pandas DataFrames, pyarrow
-                Tables, or pyarrow Schemas. Inline datasets may be referenced by the input specification
-                using the following url syntax 'vegafusion+dataset://{dataset_name}' or
-                'table://{dataset_name}'.
+                Tables, or ExternalDataset instances. Inline datasets may be referenced
+                by the input specification using the following url syntax
+                'vegafusion+dataset://{dataset_name}' or 'table://{dataset_name}'.
             keep_signals: Signals from the input spec that must be included in the
                 pre-transformed spec, even if they are no longer referenced.
                 A list with elements that are either:
@@ -821,6 +881,29 @@ class VegaFusionRuntime:
         """
         if value != self._cache_capacity:
             self._cache_capacity = value
+            self.reset()
+
+    @property
+    def plan_resolver(self) -> PlanResolver | tuple[PlanResolver, ...] | None:
+        if not self._plan_resolvers:
+            return None
+        if len(self._plan_resolvers) == 1:
+            return self._plan_resolvers[0]
+        return tuple(self._plan_resolvers)
+
+    @plan_resolver.setter
+    def plan_resolver(
+        self, value: PlanResolver | list[PlanResolver] | tuple[PlanResolver, ...] | None
+    ) -> None:
+        new_resolvers = _normalize_resolvers(value)
+        if new_resolvers and self._grpc_url is not None:
+            raise ValueError(
+                "Cannot use plan resolvers with a gRPC runtime. "
+                "Plan resolvers run locally and are not supported "
+                "with remote gRPC runtimes."
+            )
+        if new_resolvers != self._plan_resolvers:
+            self._plan_resolvers = new_resolvers
             self.reset()
 
     def reset(self) -> None:

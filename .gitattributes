@@ -1,0 +1,9 @@
+# Lock files
+pixi.lock linguist-generated=true
+Cargo.lock linguist-generated=true
+
+# Downloaded proto files
+vegafusion-python/proto/**/*.proto linguist-generated=true
+
+# Generated Python protobuf code
+vegafusion-python/vegafusion/proto/**/*_pb2.py linguist-generated=true

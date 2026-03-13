@@ -1,5 +1,5 @@
+use crate::data::pipeline::ResolverPipeline;
 use crate::datafusion::context::make_datafusion_context;
-use crate::plan_executor::DataFusionPlanExecutor;
 use crate::task_graph::cache::VegaFusionCache;
 use crate::task_graph::task::TaskCall;
 use crate::task_graph::timezone::RuntimeTzConfig;
@@ -18,13 +18,16 @@ use vegafusion_core::proto::gen::tasks::inline_dataset::Dataset;
 use vegafusion_core::proto::gen::tasks::{
     task::TaskKind, InlineDataset, InlineDatasetTable, NodeValueIndex, TaskGraph,
 };
-use vegafusion_core::runtime::PlanExecutor;
+use vegafusion_core::runtime::PlanResolver;
 use vegafusion_core::runtime::VegaFusionRuntimeTrait;
 use vegafusion_core::task_graph::task_value::{MaterializedTaskValue, NamedTaskValue, TaskValue};
 
 #[cfg(feature = "proto")]
 use {
-    datafusion_proto::bytes::{logical_plan_from_bytes, logical_plan_to_bytes},
+    crate::data::codec::VegaFusionCodec,
+    datafusion_proto::bytes::{
+        logical_plan_from_bytes_with_extension_codec, logical_plan_to_bytes_with_extension_codec,
+    },
     vegafusion_core::proto::gen::tasks::InlineDatasetPlan,
 };
 
@@ -33,22 +36,15 @@ type CacheValue = (TaskValue, Vec<TaskValue>);
 #[derive(Clone)]
 pub struct VegaFusionRuntime {
     pub cache: VegaFusionCache,
-    pub ctx: Arc<SessionContext>,
-    pub plan_executor: Arc<dyn PlanExecutor>,
+    pub pipeline: ResolverPipeline,
 }
 
 impl VegaFusionRuntime {
-    pub fn new(
-        cache: Option<VegaFusionCache>,
-        plan_executor: Option<Arc<dyn PlanExecutor>>,
-    ) -> Self {
+    pub fn new(cache: Option<VegaFusionCache>, plan_resolvers: Vec<Arc<dyn PlanResolver>>) -> Self {
         let ctx = Arc::new(make_datafusion_context());
-        let plan_executor =
-            plan_executor.unwrap_or_else(|| Arc::new(DataFusionPlanExecutor::new(ctx.clone())));
         Self {
             cache: cache.unwrap_or_else(|| VegaFusionCache::new(Some(32), None)),
-            plan_executor,
-            ctx,
+            pipeline: ResolverPipeline::new(plan_resolvers, ctx),
         }
     }
 
@@ -60,14 +56,13 @@ impl VegaFusionRuntime {
     ) -> Result<TaskValue> {
         // We shouldn't panic inside get_or_compute_node_value, but since this may be used
         // in a server context, wrap in catch_unwind just in case.
-        let executor = self.plan_executor.clone();
+        let pipeline = self.pipeline.clone();
         let node_value = AssertUnwindSafe(get_or_compute_node_value(
             task_graph,
             node_value_index.node_index as usize,
             self.cache.clone(),
             inline_datasets,
-            self.ctx.clone(),
-            executor,
+            pipeline,
         ))
         .catch_unwind()
         .await;
@@ -89,7 +84,7 @@ impl VegaFusionRuntime {
 
 impl Default for VegaFusionRuntime {
     fn default() -> Self {
-        Self::new(None, None)
+        Self::new(None, Vec::new())
     }
 }
 
@@ -103,10 +98,10 @@ impl VegaFusionRuntimeTrait for VegaFusionRuntime {
         &self,
         values: Vec<TaskValue>,
     ) -> Result<Vec<MaterializedTaskValue>> {
-        let executor = self.plan_executor.clone();
+        let pipeline = self.pipeline.clone();
         futures_util::future::try_join_all(values.into_iter().map(|value| {
-            let exec = executor.clone();
-            async move { value.to_materialized(exec).await }
+            let pipeline = pipeline.clone();
+            async move { materialize_task_value(value, &pipeline).await }
         }))
         .await
     }
@@ -169,8 +164,7 @@ async fn get_or_compute_node_value(
     node_index: usize,
     cache: VegaFusionCache,
     inline_datasets: HashMap<String, VegaFusionDataset>,
-    ctx: Arc<SessionContext>,
-    plan_executor: Arc<dyn PlanExecutor>,
+    pipeline: ResolverPipeline,
 ) -> Result<CacheValue> {
     // Get the cache key for requested node
     let node = task_graph.node(node_index).unwrap();
@@ -202,8 +196,7 @@ async fn get_or_compute_node_value(
                     input_node_index,
                     cloned_cache.clone(),
                     inline_datasets.clone(),
-                    ctx.clone(),
-                    plan_executor.clone(),
+                    pipeline.clone(),
                 );
 
                 cfg_if! {
@@ -251,18 +244,27 @@ async fn get_or_compute_node_value(
                 })
                 .collect::<Result<Vec<_>>>()?;
 
-            task.eval(
-                &input_values,
-                &tz_config,
-                inline_datasets,
-                ctx,
-                plan_executor,
-            )
-            .await
+            task.eval(&input_values, &tz_config, inline_datasets, pipeline)
+                .await
         };
 
         // get or construct from cache
         cache.get_or_try_insert_with(cache_key, fut).await
+    }
+}
+
+/// Materialize a TaskValue, resolving any LogicalPlan via the pipeline.
+pub async fn materialize_task_value(
+    value: TaskValue,
+    pipeline: &ResolverPipeline,
+) -> Result<MaterializedTaskValue> {
+    match value {
+        TaskValue::Plan(plan) => {
+            let table = pipeline.resolve(plan).await?;
+            Ok(MaterializedTaskValue::Table(table))
+        }
+        TaskValue::Scalar(s) => Ok(MaterializedTaskValue::Scalar(s)),
+        TaskValue::Table(t) => Ok(MaterializedTaskValue::Table(t)),
     }
 }
 
@@ -279,7 +281,11 @@ pub async fn decode_inline_datasets(
             }
             #[cfg(feature = "proto")]
             Dataset::Plan(plan) => {
-                let logical_plan = logical_plan_from_bytes(&plan.plan, &ctx.task_ctx())?;
+                let logical_plan = logical_plan_from_bytes_with_extension_codec(
+                    &plan.plan,
+                    &ctx.task_ctx(),
+                    &VegaFusionCodec::new(),
+                )?;
                 let dataset = VegaFusionDataset::from_plan(logical_plan);
                 (plan.name.clone(), dataset)
             }
@@ -310,7 +316,11 @@ pub fn encode_inline_datasets(
                 VegaFusionDataset::Plan { plan } => InlineDataset {
                     dataset: Some(Dataset::Plan(InlineDatasetPlan {
                         name: name.clone(),
-                        plan: logical_plan_to_bytes(plan)?.to_vec(),
+                        plan: logical_plan_to_bytes_with_extension_codec(
+                            plan,
+                            &VegaFusionCodec::new(),
+                        )?
+                        .to_vec(),
                     })),
                 },
                 #[cfg(not(feature = "proto"))]

@@ -127,6 +127,10 @@ jobs:
       - name: Type check
         run: |
           pixi run type-check-py
+      - name: Verify generated proto files are up to date
+        run: |
+          pixi run gen-proto-py
+          git diff --exit-code vegafusion-python/vegafusion/proto/
 
   # Use maturin action to build linux wheels within proper manylinux compatible containers
   # (This is why we don't use the pixi "build-py" action)
@@ -334,10 +338,10 @@ jobs:
           python -m pip install vegafusion-*macosx_11_*_arm64.whl
 
           # Optional dependencies
-          python -m pip install pyarrow pandas polars "duckdb>=1.0" vl-convert-python "pandas>=2.2"
+          python -m pip install pyarrow pandas polars "duckdb>=1.0" vl-convert-python "pandas>=2.2" "protobuf==5.29.3"
 
           # Test dependencies
-          python -m pip install pytest altair vega-datasets scikit-image
+          python -m pip install pytest altair vega-datasets scikit-image inline-snapshot
 
       - name: Test vegafusion
         working-directory: vegafusion-python/
@@ -368,10 +372,10 @@ jobs:
           python -m pip install $vegafusion
 
           # Optional dependencies
-          python -m pip install pyarrow pandas "numpy<2" polars[timezone] "duckdb>=1.0" vl-convert-python 
+          python -m pip install pyarrow pandas "numpy<2" polars[timezone] "duckdb>=1.0" vl-convert-python "protobuf==5.29.3"
 
           # Test dependencies
-          python -m pip install pytest altair vega-datasets scikit-image
+          python -m pip install pytest altair vega-datasets scikit-image inline-snapshot
       - name: Test vegafusion
         working-directory: vegafusion-python/
         run: pytest --ignore=tests/test_jupyter_widget.py

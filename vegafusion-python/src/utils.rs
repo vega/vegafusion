@@ -1,7 +1,6 @@
 use std::collections::HashMap;
 use std::sync::Arc;
 
-use datafusion::datasource::empty::EmptyTable;
 use datafusion::datasource::provider_as_source;
 use pyo3::exceptions::PyValueError as PyValErr;
 use pyo3::prelude::*;
@@ -13,6 +12,7 @@ use vegafusion_common::data::table::VegaFusionTable;
 use vegafusion_common::datafusion_expr::LogicalPlanBuilder;
 use vegafusion_core::data::dataset::VegaFusionDataset;
 use vegafusion_core::spec::chart::ChartSpec;
+use vegafusion_runtime::data::external_table::ExternalTableProvider;
 
 /// Convert optional inline datasets provided from Python into VegaFusion datasets.
 pub fn process_inline_datasets(
@@ -24,35 +24,46 @@ pub fn process_inline_datasets(
                 .iter()
                 .map(|(name, inline_dataset)| {
                     let inline_dataset = inline_dataset;
-                    let dataset = if inline_dataset.hasattr("__arrow_c_stream__")? {
-                        // Import via Arrow PyCapsule Interface
-                        let (table, hash) =
-                            VegaFusionTable::from_pyarrow_with_hash(py, &inline_dataset)?;
-                        VegaFusionDataset::from_table(table, Some(hash))?
-                    } else if let Ok(pyschema) = inline_dataset.extract::<PySchema>() {
-                        // Handle PyArrow Schema as VegaFusionDataset::Plan
+                    let dataset = if inline_dataset.hasattr("protocol")?
+                        && inline_dataset.hasattr("schema")?
+                        && inline_dataset.hasattr("metadata")?
+                    {
+                        // Handle ExternalDataset with .protocol, .schema, .metadata
+                        let protocol: Option<String> =
+                            inline_dataset.getattr("protocol")?.extract()?;
+                        let pyschema = inline_dataset.getattr("schema")?.extract::<PySchema>()?;
                         let schema = pyschema.into_inner();
+                        let metadata_obj = inline_dataset.getattr("metadata")?;
+                        let metadata: serde_json::Value =
+                            depythonize(&metadata_obj).map_err(|e| {
+                                PyValErr::new_err(format!(
+                                    "Failed to deserialize metadata dict: {e}"
+                                ))
+                            })?;
 
-                        // Build an empty table provider with the given schema and scan it
-                        let provider = Arc::new(EmptyTable::new(schema.clone()));
+                        let provider =
+                            Arc::new(ExternalTableProvider::new(schema, protocol, metadata));
                         let table_source = provider_as_source(provider);
                         let logical_plan =
                             LogicalPlanBuilder::scan(name.to_string(), table_source, None)
                                 .map_err(|e| {
                                     PyValErr::new_err(format!(
-                                        "Failed to build logical plan from schema: {}",
-                                        e
+                                        "Failed to build logical plan from ExternalDataset: {e}"
                                     ))
                                 })?
                                 .build()
                                 .map_err(|e| {
                                     PyValErr::new_err(format!(
-                                        "Failed to finalize logical plan from schema: {}",
-                                        e
+                                        "Failed to finalize logical plan from ExternalDataset: {e}"
                                     ))
                                 })?;
 
                         VegaFusionDataset::from_plan(logical_plan)
+                    } else if inline_dataset.hasattr("__arrow_c_stream__")? {
+                        // Import via Arrow PyCapsule Interface
+                        let (table, hash) =
+                            VegaFusionTable::from_pyarrow_with_hash(py, &inline_dataset)?;
+                        VegaFusionDataset::from_table(table, Some(hash))?
                     } else {
                         // Assume PyArrow Table
                         // We convert to ipc bytes for two reasons:

@@ -3,7 +3,9 @@ from importlib.metadata import version as _original_version
 from typing import cast
 
 from ._vegafusion import __version__
+from .dataset import ExternalDataset
 from .local_tz import get_local_tz, set_local_tz
+from .plan_resolver import PlanResolver
 from .runtime import VegaFusionRuntime, runtime
 from .utils import get_column_usage
 
@@ -25,6 +27,8 @@ importlib.metadata.version = patched_version
 __all__ = [
     "runtime",
     "VegaFusionRuntime",
+    "ExternalDataset",
+    "PlanResolver",
     "set_local_tz",
     "get_local_tz",
     "get_column_usage",

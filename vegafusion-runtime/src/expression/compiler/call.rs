@@ -151,7 +151,7 @@ pub async fn compile_call(
                                 // This allows lazy evaluation of data transformations - plans are only
                                 // executed when the data is actually needed by an expression.
                                 VegaFusionDataset::Plan { plan } => {
-                                    config.plan_executor.execute_plan(plan.clone()).await?
+                                    config.pipeline.resolve(plan.clone()).await?
                                 }
                             };
                             let tz_config = config

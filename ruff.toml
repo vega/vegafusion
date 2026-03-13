@@ -6,7 +6,10 @@ include = [
   "vegafusion-python/checks/**/*.py",
   "examples/python-examples/**/*.py",
 ]
-exclude = ["vegafusion-python/tests/altair_mocks/**/*.py"]
+exclude = [
+  "vegafusion-python/tests/altair_mocks/**/*.py",
+  "vegafusion-python/vegafusion/proto/**/*_pb2.py",
+]
 target-version = "py39"
 
 [lint]

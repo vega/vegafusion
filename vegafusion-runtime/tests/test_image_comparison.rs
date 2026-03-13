@@ -1470,10 +1470,12 @@ async fn check_spec_sequence(
             .await
             .expect("Failed to get node value");
 
-        let materialized_value = value
-            .to_materialized(runtime.plan_executor.clone())
-            .await
-            .unwrap();
+        let materialized_value = vegafusion_runtime::task_graph::runtime::materialize_task_value(
+            value,
+            &runtime.pipeline,
+        )
+        .await
+        .unwrap();
         init.push(ExportUpdateJSON {
             namespace: ExportUpdateNamespace::try_from(var.0.namespace()).unwrap(),
             name: var.0.name.clone(),

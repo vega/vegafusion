@@ -1,2 +1,8 @@
+#[cfg(feature = "proto")]
+pub mod codec;
+pub mod datafusion_resolver;
+pub mod external_table;
+pub mod inline_table;
+pub mod pipeline;
 pub mod tasks;
 pub mod util;

@@ -1,64 +1,42 @@
-use datafusion::prelude::SessionContext;
 use std::sync::Arc;
-use vegafusion_common::data::table::VegaFusionTable;
 use vegafusion_common::datafusion_expr::LogicalPlan;
 use vegafusion_common::error::Result;
-use vegafusion_core::runtime::{PlanExecutor, VegaFusionRuntimeTrait};
+use vegafusion_core::runtime::{PlanResolver, ResolutionResult, VegaFusionRuntimeTrait};
 use vegafusion_core::spec::chart::ChartSpec;
-use vegafusion_runtime::datafusion::context::make_datafusion_context;
-use vegafusion_runtime::plan_executor::DataFusionPlanExecutor;
 use vegafusion_runtime::task_graph::runtime::VegaFusionRuntime;
 
-/// A custom executor that logs plan execution and forwards to DataFusion
+/// A custom resolver that logs plan resolution and passes through to DataFusion
 #[derive(Clone)]
-struct LoggingExecutor {
-    fallback: Arc<DataFusionPlanExecutor>,
-}
-
-impl LoggingExecutor {
-    fn new(ctx: Arc<SessionContext>) -> Self {
-        Self {
-            fallback: Arc::new(DataFusionPlanExecutor::new(ctx)),
-        }
-    }
-}
+struct LoggingResolver;
 
 #[async_trait::async_trait]
-impl PlanExecutor for LoggingExecutor {
+impl PlanResolver for LoggingResolver {
     fn name(&self) -> &str {
-        "LoggingExecutor"
+        "LoggingResolver"
     }
 
-    async fn execute_plan(&self, plan: LogicalPlan) -> Result<VegaFusionTable> {
-        println!("Custom executor received logical plan");
+    async fn resolve_plan(&self, plan: LogicalPlan) -> Result<ResolutionResult> {
+        println!("Custom resolver received logical plan");
         println!("Plan details:\n{}\n", plan.display_indent());
 
-        // Forward to DataFusion for actual execution
-        let result = self.fallback.execute_plan(plan).await?;
-
-        println!(
-            "Custom executor executed plan, returned {} rows\n",
-            result.num_rows()
-        );
-
-        Ok(result)
+        // Return the plan unchanged — DataFusion will execute it
+        Ok(ResolutionResult::Plan(plan))
     }
 }
 
-/// This example demonstrates how to use a custom plan executor with VegaFusion.
-/// The custom executor logs each plan execution before forwarding to DataFusion.
+/// This example demonstrates how to use a custom plan resolver with VegaFusion.
+/// The custom resolver logs each plan before letting DataFusion execute it.
 #[tokio::main]
 async fn main() {
     let spec = get_spec();
 
-    // Create a custom executor
-    let ctx = Arc::new(make_datafusion_context());
-    let custom_executor = Arc::new(LoggingExecutor::new(ctx)) as Arc<dyn PlanExecutor>;
+    // Create a custom resolver
+    let custom_resolver = Arc::new(LoggingResolver) as Arc<dyn PlanResolver>;
 
-    // Create runtime with custom executor
-    let runtime = VegaFusionRuntime::new(None, Some(custom_executor));
+    // Create runtime with custom resolver
+    let runtime = VegaFusionRuntime::new(None, vec![custom_resolver]);
 
-    println!("Starting pre-transform with custom executor\n");
+    println!("Starting pre-transform with custom resolver\n");
 
     let (_transformed_spec, warnings) = runtime
         .pre_transform_spec(
@@ -76,7 +54,7 @@ fn get_spec() -> ChartSpec {
     let spec_str = r##"
     {
       "$schema": "https://vega.github.io/schema/vega/v5.json",
-      "description": "A histogram demonstrating custom executor usage",
+      "description": "A histogram demonstrating custom resolver usage",
       "width": 400,
       "height": 200,
       "padding": 5,
@@ -86,14 +64,14 @@ fn get_spec() -> ChartSpec {
           "url": "data/movies.json",
           "transform": [
             {
-              "type": "extent", 
+              "type": "extent",
               "field": "IMDB Rating",
               "signal": "extent"
             },
             {
-              "type": "bin", 
+              "type": "bin",
               "signal": "bins",
-              "field": "IMDB Rating", 
+              "field": "IMDB Rating",
               "extent": {"signal": "extent"},
               "maxbins": 10
             },
