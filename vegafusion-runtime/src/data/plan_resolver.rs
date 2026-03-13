@@ -44,6 +44,7 @@ pub trait PlanResolver: Send + Sync + 'static {
     /// # Arguments
     /// * `name` - table name from the plan
     /// * `schema` - full Arrow schema of the external table
+    /// * `scheme` - optional URL scheme identifier (e.g. `"spark"`, `"snowflake"`)
     /// * `metadata` - JSON metadata from ExternalTableProvider
     /// * `projected_columns` - column names DataFusion actually needs,
     ///   or `None` if all columns are needed
@@ -51,6 +52,7 @@ pub trait PlanResolver: Send + Sync + 'static {
         &self,
         _name: &str,
         _schema: SchemaRef,
+        _scheme: Option<&str>,
         _metadata: &serde_json::Value,
         _projected_columns: Option<Vec<String>>,
     ) -> Result<VegaFusionTable> {
@@ -82,6 +84,7 @@ pub trait PlanResolver: Send + Sync + 'static {
                 .resolve_table(
                     table_name,
                     info.schema.clone(),
+                    info.scheme.as_deref(),
                     &info.metadata,
                     info.projected_columns.clone(),
                 )
@@ -107,6 +110,7 @@ pub trait PlanResolver: Send + Sync + 'static {
 /// Info extracted from an ExternalTableProvider node in a LogicalPlan.
 struct ExternalTableInfo {
     schema: SchemaRef,
+    scheme: Option<String>,
     metadata: serde_json::Value,
     projected_columns: Option<Vec<String>>,
 }
@@ -129,6 +133,7 @@ fn extract_external_tables(plan: &LogicalPlan) -> HashMap<String, ExternalTableI
                         scan.table_name.table().to_string(),
                         ExternalTableInfo {
                             schema: ext.schema(),
+                            scheme: ext.scheme().map(|s| s.to_string()),
                             metadata: ext.metadata().clone(),
                             projected_columns,
                         },

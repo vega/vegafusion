@@ -132,7 +132,8 @@ class PlanResolver:
         self,
         name: str,
         schema: Schema,
-        metadata: dict[str, Any],
+        scheme: str | None = None,
+        metadata: dict[str, Any] | None = None,
         projected_columns: list[str] | None = None,
     ) -> Table:
         """Provide data for an external table reference.
@@ -142,6 +143,8 @@ class PlanResolver:
         Args:
             name: Table name from the plan.
             schema: Full schema of the external table.
+            scheme: Optional URL scheme identifier (e.g. ``"spark"``,
+                ``"snowflake"``).
             metadata: JSON metadata dict from ExternalTableProvider.
             projected_columns: Column names DataFusion actually needs.
                 None if no projection (all columns needed).
@@ -234,6 +237,7 @@ class PlanResolver:
                 table_data = self.resolve_table(
                     name=table_name,
                     schema=dataset.schema,
+                    scheme=dataset.scheme,
                     metadata=metadata,
                     projected_columns=projected_columns,
                 )

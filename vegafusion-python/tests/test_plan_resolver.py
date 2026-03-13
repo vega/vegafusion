@@ -318,7 +318,8 @@ def test_resolve_table_resolver() -> None:
             self,
             name: str,
             schema: Any,
-            metadata: dict[str, Any],
+            scheme: str | None = None,
+            metadata: dict[str, Any] | None = None,
             projected_columns: list[str] | None = None,
         ) -> pa.Table:
             self.resolve_calls.append(
@@ -441,7 +442,8 @@ def test_multiple_external_tables() -> None:
             self,
             name: str,
             schema: Any,
-            metadata: dict[str, Any],
+            scheme: str | None = None,
+            metadata: dict[str, Any] | None = None,
             projected_columns: list[str] | None = None,
         ) -> pa.Table:
             self.resolved_names.append(name)
@@ -503,7 +505,8 @@ def test_resolve_table_error_propagates() -> None:
             self,
             name: str,
             schema: Any,
-            metadata: dict[str, Any],
+            scheme: str | None = None,
+            metadata: dict[str, Any] | None = None,
             projected_columns: list[str] | None = None,
         ) -> pa.Table:
             raise ValueError("Simulated resolver failure")
@@ -735,7 +738,8 @@ def test_scan_url_called_with_structured_dict() -> None:
             self,
             name: str,
             schema: Any,
-            metadata: dict[str, Any],
+            scheme: str | None = None,
+            metadata: dict[str, Any] | None = None,
             projected_columns: list[str] | None = None,
         ) -> pa.Table:
             return pa.table({"x": [1, 2], "y": ["a", "b"]})
@@ -827,7 +831,8 @@ def test_capabilities_extends_planner_support() -> None:
             self,
             name: str,
             schema: Any,
-            metadata: dict[str, Any],
+            scheme: str | None = None,
+            metadata: dict[str, Any] | None = None,
             projected_columns: list[str] | None = None,
         ) -> pa.Table:
             return pa.table({"val": [42, 99]})
@@ -863,7 +868,8 @@ def test_scan_url_not_called_without_override() -> None:
             self,
             name: str,
             schema: Any,
-            metadata: dict[str, Any],
+            scheme: str | None = None,
+            metadata: dict[str, Any] | None = None,
             projected_columns: list[str] | None = None,
         ) -> pa.Table:
             return pa.table({"x": [1, 2, 3]})
