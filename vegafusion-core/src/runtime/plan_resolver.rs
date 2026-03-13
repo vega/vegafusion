@@ -196,6 +196,14 @@ pub fn path_to_file_url(path: &str) -> Result<String> {
         })
 }
 
+/// Browser-wasm fallback: `url::Url::from_file_path` is unavailable on
+/// `wasm32-unknown-unknown` (not compiled for that target in the `url` crate),
+/// and `std::path` absolute-path semantics on that target do not recognize
+/// POSIX-like virtual paths such as `/foo`.
+///
+/// We therefore synthesize a `file:` URL for the restricted path forms we
+/// expect here. Unlike `Url::from_file_path`, this does **not** percent-encode
+/// reserved characters, so inputs must not contain `#`, `?`, etc.
 #[cfg(target_arch = "wasm32")]
 pub fn path_to_file_url(path: &str) -> Result<String> {
     let normalized = path.replace('\\', "/");
