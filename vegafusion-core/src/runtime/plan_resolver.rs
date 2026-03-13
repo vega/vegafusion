@@ -1,6 +1,5 @@
 use crate::proto::gen::pretransform::DataBaseUrlSettingProto;
 use crate::proto::gen::tasks::ResolverCapabilities;
-use async_trait::async_trait;
 use std::collections::HashSet;
 use vegafusion_common::data::table::VegaFusionTable;
 use vegafusion_common::datafusion_expr::LogicalPlan;
@@ -128,25 +127,6 @@ impl ResolverCapabilities {
                 .collect(),
         }
     }
-}
-
-#[async_trait]
-pub trait PlanResolver: Send + Sync + 'static {
-    fn name(&self) -> &str;
-
-    /// Declare what URL patterns this resolver supports at planning time.
-    /// Returns empty capabilities by default (no additional URL support).
-    fn capabilities(&self) -> ResolverCapabilities {
-        ResolverCapabilities::default()
-    }
-
-    /// Given a parsed URL, optionally return a LogicalPlan to handle it.
-    /// Return Ok(None) to pass the URL to the next resolver in the chain.
-    async fn scan_url(&self, _parsed_url: &ParsedUrl) -> Result<Option<LogicalPlan>> {
-        Ok(None)
-    }
-
-    async fn resolve_plan(&self, plan: LogicalPlan) -> Result<ResolutionResult>;
 }
 
 /// Map a DataBaseUrlSetting (from public API) to the two-state Option<String>

@@ -15,10 +15,11 @@ use vegafusion_common::error::{Result, VegaFusionError};
 use vegafusion_core::data::dataset::VegaFusionDataset;
 use vegafusion_core::proto::gen::pretransform::PreTransformSpecOpts;
 use vegafusion_core::proto::gen::tasks::ResolverCapabilities;
-use vegafusion_core::runtime::{ParsedUrl, PlanResolver, ResolutionResult, VegaFusionRuntimeTrait};
+use vegafusion_core::runtime::{ParsedUrl, ResolutionResult, VegaFusionRuntimeTrait};
 use vegafusion_core::spec::chart::ChartSpec;
 use vegafusion_runtime::data::external_table::ExternalTableProvider;
 use vegafusion_runtime::data::pipeline::ResolverPipeline;
+use vegafusion_runtime::data::plan_resolver::PlanResolver;
 use vegafusion_runtime::task_graph::runtime::VegaFusionRuntime;
 
 #[derive(Clone, Debug)]

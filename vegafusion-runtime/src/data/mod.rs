@@ -4,5 +4,6 @@ pub mod datafusion_resolver;
 pub mod external_table;
 pub mod inline_table;
 pub mod pipeline;
+pub mod plan_resolver;
 pub mod tasks;
 pub mod util;
