@@ -7,6 +7,7 @@ VegaFusion's PlanResolver lets you register custom URL schemes so that
 data references like "mydata://database/sales" in a Vega spec are resolved
 by your own Python code rather than fetched over HTTP.
 """
+
 import json
 from typing import Any
 
@@ -60,10 +61,12 @@ class SalesDataResolver(PlanResolver):
         metadata: dict[str, Any] | None = None,
         projected_columns: list[str] | None = None,
     ) -> pa.Table:
-        return pa.table({
-            "product": ["Widget", "Gadget", "Gizmo"],
-            "revenue": [1200, 3400, 560],
-        })
+        return pa.table(
+            {
+                "product": ["Widget", "Gadget", "Gizmo"],
+                "revenue": [1200, 3400, 560],
+            }
+        )
 
 
 def make_spec() -> dict[str, Any]:

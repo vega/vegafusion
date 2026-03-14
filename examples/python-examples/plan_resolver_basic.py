@@ -12,7 +12,9 @@ from vegafusion import ExternalDataset, PlanResolver
 
 def main() -> None:
     source_table = pa.table({"x": [1, 5, 10], "y": ["a", "b", "c"]})
-    ext = ExternalDataset(scheme="custom", schema=source_table.schema, data=source_table)
+    ext = ExternalDataset(
+        scheme="custom", schema=source_table.schema, data=source_table
+    )
     resolver = TableResolver(source_table)
     rt = vf.VegaFusionRuntime(plan_resolver=resolver)
 
