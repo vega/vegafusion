@@ -55,10 +55,37 @@ impl DataSpec {
         task_scope: &TaskScope,
         scope: &[u32],
     ) -> DependencyNodeSupported {
+        // Check if the URL format is supported by any resolver's capabilities
         if let Some(Some(format_type)) = self.format.as_ref().map(|fmt| fmt.type_.clone()) {
-            if !matches!(format_type.as_str(), "csv" | "tsv" | "arrow" | "json") {
-                // We don't know how to read the data, so full node is unsupported
+            if !planner_config
+                .capabilities
+                .supported_format_types
+                .contains(&format_type)
+            {
+                // No resolver knows how to read this format, so full node is unsupported
                 return DependencyNodeSupported::Unsupported;
+            }
+        }
+
+        // For static URLs that already have a scheme, check the scheme is supported
+        // by some resolver. Skip absolute paths and relative URLs — those are resolved
+        // later by resolve_url (absolute paths become file://, relatives use base URL).
+        // Internal dataset URLs (table://, vegafusion+dataset://) are always supported.
+        if let Some(StringOrSignalSpec::String(url_str)) = &self.url {
+            if crate::runtime::has_url_scheme(url_str)
+                && !url_str.starts_with("table://")
+                && !url_str.starts_with("vegafusion+dataset://")
+            {
+                if let Ok(parsed) = url::Url::parse(url_str) {
+                    let scheme = parsed.scheme();
+                    if !planner_config
+                        .capabilities
+                        .supported_schemes
+                        .contains(scheme)
+                    {
+                        return DependencyNodeSupported::Unsupported;
+                    }
+                }
             }
         }
 

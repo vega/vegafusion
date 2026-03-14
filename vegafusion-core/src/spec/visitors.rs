@@ -5,6 +5,7 @@ use crate::proto::gen::tasks::{
     ScanUrlFormat, Task, TzConfig, Variable, VariableNamespace,
 };
 use crate::proto::gen::transforms::TransformPipeline;
+use crate::runtime::resolve_url;
 use crate::spec::chart::{ChartSpec, ChartVisitor};
 use crate::spec::data::{DataFormatParseSpec, DataSpec};
 use crate::spec::mark::{MarkFacetSpec, MarkSpec};
@@ -108,14 +109,20 @@ pub struct MakeTasksVisitor<'a> {
     pub tasks: Vec<Task>,
     pub tz_config: TzConfig,
     pub dataset_fingerprints: &'a HashMap<String, String>,
+    pub data_base_url: Option<String>,
 }
 
 impl<'a> MakeTasksVisitor<'a> {
-    pub fn new(tz_config: &TzConfig, dataset_fingerprints: &'a HashMap<String, String>) -> Self {
+    pub fn new(
+        tz_config: &TzConfig,
+        dataset_fingerprints: &'a HashMap<String, String>,
+        data_base_url: Option<String>,
+    ) -> Self {
         Self {
             tasks: Default::default(),
             tz_config: tz_config.clone(),
             dataset_fingerprints,
+            data_base_url,
         }
     }
 }
@@ -165,27 +172,33 @@ impl ChartVisitor for MakeTasksVisitor<'_> {
         };
 
         let task = if let Some(url) = &data.url {
-            let mut proto_url = match url {
-                StringOrSignalSpec::String(url) => Url::String(url.clone()),
+            let (proto_url, task_data_base_url) = match url {
+                StringOrSignalSpec::String(url) => {
+                    // Resolve URL at plan time (base URL, file:// normalization)
+                    let resolved = resolve_url(url, &self.data_base_url)?;
+                    let mut proto_url = Url::String(resolved);
+
+                    // Append fingerprint to URL that references an inline dataset
+                    if let Url::String(url_str) = &proto_url {
+                        if let Some(inline_name) = extract_inline_dataset(url_str) {
+                            let inline_name = inline_name.trim().to_string();
+                            if let Some(fingerprint) = self.dataset_fingerprints.get(&inline_name) {
+                                proto_url = Url::String(format!("{url_str}#{fingerprint}"));
+                            } else {
+                                let fingerprint = random::<u64>();
+                                proto_url = Url::String(format!("{url_str}#{fingerprint}"));
+                            }
+                        }
+                    }
+                    (proto_url, None)
+                }
                 StringOrSignalSpec::Signal(expr) => {
+                    // Signal-based URL: resolved at eval time.
+                    // Store data_base_url in the task so the remote server has it.
                     let url_expr = parse(&expr.signal)?;
-                    Url::Expr(url_expr)
+                    (Url::Expr(url_expr), self.data_base_url.clone())
                 }
             };
-
-            // Append fingerprint to URL that references an inline dataset
-            if let Url::String(url) = &proto_url {
-                if let Some(inline_name) = extract_inline_dataset(url) {
-                    let inline_name = inline_name.trim().to_string();
-                    if let Some(fingerprint) = self.dataset_fingerprints.get(&inline_name) {
-                        proto_url = Url::String(format!("{url}#{fingerprint}"));
-                    } else {
-                        // Unknown fingerprint, use random id to break cache
-                        let fingerprint = random::<u64>();
-                        proto_url = Url::String(format!("{url}#{fingerprint}"));
-                    }
-                }
-            }
 
             Task::new_data_url(
                 data_var,
@@ -195,6 +208,7 @@ impl ChartVisitor for MakeTasksVisitor<'_> {
                     format_type,
                     pipeline,
                     url: Some(proto_url),
+                    data_base_url: task_data_base_url,
                 },
                 &self.tz_config,
             )

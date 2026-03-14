@@ -2,7 +2,7 @@ use crate::{
     data::dataset::VegaFusionDataset,
     planning::{
         apply_pre_transform::apply_pre_transform_datasets,
-        plan::SpecPlan,
+        plan::{PlannerConfig, SpecPlan},
         stitch::CommPlan,
         watch::{ExportUpdate, ExportUpdateJSON, ExportUpdateNamespace},
     },
@@ -10,7 +10,7 @@ use crate::{
         pretransform::PreTransformSpecWarning,
         tasks::{NodeValueIndex, TaskGraph, TzConfig, Variable},
     },
-    runtime::VegaFusionRuntimeTrait,
+    runtime::{DataBaseUrlSetting, VegaFusionRuntimeTrait},
     spec::chart::ChartSpec,
     task_graph::{graph::ScopedVariable, task_value::TaskValue},
 };
@@ -28,6 +28,7 @@ use vegafusion_common::{
 pub struct ChartStateOpts {
     pub tz_config: TzConfig,
     pub row_limit: Option<u32>,
+    pub data_base_url: DataBaseUrlSetting,
 }
 
 impl Default for ChartStateOpts {
@@ -38,6 +39,7 @@ impl Default for ChartStateOpts {
                 default_input_tz: None,
             },
             row_limit: None,
+            data_base_url: DataBaseUrlSetting::Default,
         }
     }
 }
@@ -66,7 +68,18 @@ impl ChartState {
             .map(|(k, ds)| (k.clone(), ds.fingerprint()))
             .collect::<HashMap<_, _>>();
 
-        let plan = SpecPlan::try_new(&spec, &Default::default())?;
+        let resolved_base = crate::runtime::resolve_data_base_url(
+            opts.data_base_url.clone(),
+            PlannerConfig::default().data_base_url,
+        )?;
+        let plan = SpecPlan::try_new(
+            &spec,
+            &PlannerConfig {
+                capabilities: runtime.planner_capabilities(),
+                data_base_url: resolved_base.clone(),
+                ..Default::default()
+            },
+        )?;
 
         let task_scope = plan
             .server_spec
@@ -74,7 +87,7 @@ impl ChartState {
             .with_context(|| "Failed to create task scope for server spec")?;
         let tasks = plan
             .server_spec
-            .to_tasks(&opts.tz_config, &dataset_fingerprints)
+            .to_tasks(&opts.tz_config, &dataset_fingerprints, resolved_base)
             .unwrap();
         let task_graph = TaskGraph::new(tasks, &task_scope).unwrap();
         let task_graph_mapping = task_graph.build_mapping();

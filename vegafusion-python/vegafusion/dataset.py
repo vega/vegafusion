@@ -17,12 +17,12 @@ class _DataRef:
 
 
 class ExternalDataset:
-    """External dataset with protocol, schema, metadata, and optional data ref.
+    """External dataset with scheme, schema, metadata, and optional data ref.
 
-    The ``protocol`` parameter is an optional short identifier for the data
-    source type (e.g. ``"spark"``, ``"snowflake"``, ``"duckdb"``).  It is
-    propagated through protobuf separately from metadata so that error
-    messages can name the source when no resolver is registered.
+    The ``scheme`` parameter identifies the data source type
+    (e.g. ``"spark"``, ``"snowflake"``, ``"duckdb"``).  It is propagated
+    through protobuf separately from metadata so that error messages can
+    name the source when no resolver is registered.
 
     When ``data`` is provided, it is registered in a class-level
     :class:`weakref.WeakValueDictionary` keyed by a UUID.  The UUID is
@@ -42,8 +42,8 @@ class ExternalDataset:
 
     def __init__(
         self,
-        protocol: str | None = None,
-        schema: Any = None,  # noqa: ANN401
+        scheme: str,
+        schema: Any,  # noqa: ANN401
         metadata: dict[str, Any] | None = None,
         data: Any = None,  # noqa: ANN401
         source: str | None = None,
@@ -51,7 +51,7 @@ class ExternalDataset:
         self._schema: Schema = (
             Schema.from_arrow(schema) if not isinstance(schema, Schema) else schema
         )
-        self._protocol = protocol
+        self._scheme = scheme
         self._source = source
         self._metadata: dict[str, Any] = dict(metadata) if metadata else {}
         self._data: Any = data
@@ -74,18 +74,21 @@ class ExternalDataset:
         return data_ref.data if data_ref is not None else None
 
     @property
-    def protocol(self) -> str | None:
-        """Optional short identifier for the data source type (e.g. ``"spark"``)."""
-        return self._protocol
+    def scheme(self) -> str:
+        """Short identifier for the data source type (e.g. ``"spark"``)."""
+        return self._scheme
 
     @property
     def schema(self) -> Schema:
+        """Arrow schema of the external table (``arro3.core.Schema``)."""
         return self._schema
 
     @property
     def metadata(self) -> dict[str, Any]:
+        """JSON-serializable metadata dict propagated through the plan."""
         return self._metadata
 
     @property
     def data(self) -> Any:  # noqa: ANN401
+        """The opaque data object, or ``None`` if not provided."""
         return self._data

@@ -3,11 +3,11 @@ use vegafusion_core::{
     proto::gen::{
         services::{
             query_request, query_result, vega_fusion_runtime_client::VegaFusionRuntimeClient,
-            QueryRequest,
+            GetCapabilitiesRequest, QueryRequest,
         },
         tasks::{NodeValueIndex, TaskGraph, TaskGraphValueRequest},
     },
-    runtime::VegaFusionRuntimeTrait,
+    runtime::{MergedCapabilities, VegaFusionRuntimeTrait},
     task_graph::task_value::NamedTaskValue,
 };
 
@@ -21,12 +21,17 @@ use vegafusion_common::error::{Result, VegaFusionError};
 #[derive(Clone)]
 pub struct GrpcVegaFusionRuntime {
     client: Arc<Mutex<VegaFusionRuntimeClient<tonic::transport::Channel>>>,
+    capabilities: MergedCapabilities,
 }
 
 #[async_trait]
 impl VegaFusionRuntimeTrait for GrpcVegaFusionRuntime {
     fn as_any(&self) -> &dyn Any {
         self
+    }
+
+    fn planner_capabilities(&self) -> MergedCapabilities {
+        self.capabilities.clone()
     }
 
     async fn query_request(
@@ -66,9 +71,19 @@ impl VegaFusionRuntimeTrait for GrpcVegaFusionRuntime {
 
 impl GrpcVegaFusionRuntime {
     pub async fn try_new(channel: tonic::transport::Channel) -> Result<Self> {
-        let client = VegaFusionRuntimeClient::new(channel);
+        let mut client = VegaFusionRuntimeClient::new(channel);
+
+        // Fetch capabilities from the server at construction time
+        let caps_response = client
+            .get_capabilities(GetCapabilitiesRequest {})
+            .await
+            .map_err(|e| VegaFusionError::internal(format!("Failed to get capabilities: {e}")))?;
+        let caps = caps_response.into_inner().capabilities.unwrap_or_default();
+        let capabilities = MergedCapabilities::from_resolver_capabilities(&[caps]);
+
         Ok(Self {
             client: Arc::new(Mutex::new(client)),
+            capabilities,
         })
     }
 }

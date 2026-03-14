@@ -37,3 +37,5 @@ See [inline_datasets.py](https://github.com/vega/vegafusion/tree/main/examples/p
 In Rust, `inline_datasets` should be a `HashMap<String, VegaFusionDataset>` from dataset names (e.g. `movies` in the example above) to `VegaFusionDataset` instances. `VegaFusionDataset` is an enum that may be either a `VegaFusionTable` (which is a thin wrapper around Arrow RecordBatches), or a DataFusion [`LocalPlan`](https://docs.rs/datafusion/latest/datafusion/logical_expr/enum.LogicalPlan.html) (which represents an arbitrary DataFusion query).
 
 See [inline_datasets.rs](https://github.com/vega/vegafusion/tree/main/examples/rust-examples/examples/inline_datasets.rs) for a complete example using a `VegaFusionTable`, and see [inline_datasets_plan.rs](https://github.com/vega/vegafusion/tree/main/examples/rust-examples/examples/inline_datasets_plan.rs) for a complete example using a DataFusion ``LogicalPlan``.
+
+For more advanced data source integration (custom URL schemes, SQL transpilation, remote execution), see [Plan Resolver](./plan_resolver.md).

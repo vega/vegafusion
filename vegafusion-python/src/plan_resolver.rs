@@ -15,9 +15,11 @@ use vegafusion_common::arrow::record_batch::RecordBatch;
 use vegafusion_common::data::table::VegaFusionTable;
 use vegafusion_common::datafusion_expr::LogicalPlan;
 use vegafusion_common::error::{Result, VegaFusionError};
-use vegafusion_core::runtime::{PlanResolver, ResolutionResult};
+use vegafusion_core::proto::gen::tasks::ResolverCapabilities;
+use vegafusion_core::runtime::{ParsedUrl, ResolutionResult};
 use vegafusion_runtime::data::codec::VegaFusionCodec;
 use vegafusion_runtime::data::external_table::ExternalTableProvider;
+use vegafusion_runtime::data::plan_resolver::PlanResolver;
 
 /// A `PlanResolver` that delegates to a Python object.
 ///
@@ -28,33 +30,39 @@ pub struct PyPlanResolver {
     name: String,
     skip_when_no_external_tables: bool,
     thread_safe: bool,
+    has_scan_url_override: bool,
 }
 
 impl PyPlanResolver {
     pub fn new(py_resolver: Py<PyAny>) -> Self {
-        let (name, skip_when_no_external_tables, thread_safe) = Python::attach(|py| {
-            let name = py_resolver
-                .bind(py)
-                .get_type()
-                .qualname()
-                .map(|q| q.to_string())
-                .unwrap_or_else(|_| "PyPlanResolver".to_string());
-            let skip = py_resolver
-                .getattr(py, "skip_when_no_external_tables")
-                .and_then(|v| v.extract::<bool>(py))
-                .unwrap_or(true);
-            let safe = py_resolver
-                .getattr(py, "thread_safe")
-                .and_then(|v| v.extract::<bool>(py))
-                .unwrap_or(true);
-            (name, skip, safe)
-        });
+        let (name, skip_when_no_external_tables, thread_safe, has_scan_url_override) =
+            Python::attach(|py| {
+                let name = py_resolver
+                    .bind(py)
+                    .get_type()
+                    .qualname()
+                    .map(|q| q.to_string())
+                    .unwrap_or_else(|_| "PyPlanResolver".to_string());
+                let skip = py_resolver
+                    .getattr(py, "skip_when_no_external_tables")
+                    .and_then(|v| v.extract::<bool>(py))
+                    .unwrap_or(true);
+                let safe = py_resolver
+                    .getattr(py, "thread_safe")
+                    .and_then(|v| v.extract::<bool>(py))
+                    .unwrap_or(true);
+                // Check if the Python class overrides scan_url or scan_url_proto
+                let has_scan_url = Self::check_method_override(py, &py_resolver, "scan_url")
+                    || Self::check_method_override(py, &py_resolver, "scan_url_proto");
+                (name, skip, safe, has_scan_url)
+            });
 
         Self {
             py_resolver,
             name,
             skip_when_no_external_tables,
             thread_safe,
+            has_scan_url_override,
         }
     }
 
@@ -62,12 +70,28 @@ impl PyPlanResolver {
     pub fn thread_safe(&self) -> bool {
         self.thread_safe
     }
+
+    /// Check if a Python method is overridden from the base class.
+    fn check_method_override(py: Python, obj: &Py<PyAny>, method_name: &str) -> bool {
+        // Get the method from the instance's class and compare to the base PlanResolver class
+        let result: PyResult<bool> = (|| {
+            let bound = obj.bind(py);
+            let cls = bound.get_type();
+            let base_cls = py
+                .import("vegafusion.plan_resolver")?
+                .getattr("PlanResolver")?;
+            let cls_method = cls.getattr(method_name)?;
+            let base_method = base_cls.getattr(method_name)?;
+            Ok(!cls_method.is(&base_method))
+        })();
+        result.unwrap_or(false)
+    }
 }
 
 /// Info extracted from an ExternalTableProvider node in the plan.
 struct ExternalTableInfo {
+    scheme: String,
     schema: SchemaRef,
-    protocol: Option<String>,
     source: Option<String>,
     metadata: Value,
     ref_id: Option<String>,
@@ -88,8 +112,8 @@ fn extract_external_tables(plan: &LogicalPlan) -> HashMap<String, ExternalTableI
                     tables.insert(
                         scan.table_name.table().to_string(),
                         ExternalTableInfo {
+                            scheme: ext.scheme().to_string(),
                             schema: ext.schema(),
-                            protocol: ext.protocol().map(|s| s.to_string()),
                             source: ext.source().map(|s| s.to_string()),
                             metadata: ext.metadata().clone(),
                             ref_id,
@@ -143,9 +167,9 @@ fn build_datasets_dict<'py>(
         // Convert metadata to Python dict
         let py_metadata = pythonize::pythonize(py, &info.metadata)?;
 
-        // Reconstruct ExternalDataset(protocol, schema, metadata, data, source)
+        // Reconstruct ExternalDataset(scheme, schema, metadata, data, source)
         let kwargs = PyDict::new(py);
-        kwargs.set_item("protocol", info.protocol.as_deref())?;
+        kwargs.set_item("scheme", &info.scheme)?;
         kwargs.set_item("schema", py_schema)?;
         kwargs.set_item("metadata", py_metadata)?;
         kwargs.set_item("data", &data)?;
@@ -161,6 +185,102 @@ fn build_datasets_dict<'py>(
 impl PlanResolver for PyPlanResolver {
     fn name(&self) -> &str {
         &self.name
+    }
+
+    fn capabilities(&self) -> ResolverCapabilities {
+        Python::attach(|py| {
+            let result: PyResult<ResolverCapabilities> = (|| {
+                let dict = self.py_resolver.call_method0(py, "capabilities")?;
+                let dict_ref = dict.bind(py);
+
+                let extract_list = |key: &str| -> PyResult<Vec<String>> {
+                    match dict_ref.get_item(key) {
+                        Ok(val) => val.extract(),
+                        Err(_) => Ok(Vec::new()),
+                    }
+                };
+
+                let supports_arrow_tables = match dict_ref.get_item("supports_arrow_tables") {
+                    Ok(val) => val.extract().unwrap_or(false),
+                    Err(_) => false,
+                };
+
+                Ok(ResolverCapabilities {
+                    supported_schemes: extract_list("supported_schemes")?,
+                    supported_format_types: extract_list("supported_format_types")?,
+                    supported_extensions: extract_list("supported_extensions")?,
+                    supports_arrow_tables,
+                })
+            })();
+            result.unwrap_or_default()
+        })
+    }
+
+    async fn scan_url(&self, parsed_url: &ParsedUrl) -> Result<Option<LogicalPlan>> {
+        if !self.has_scan_url_override {
+            return Ok(None);
+        }
+
+        Python::attach(|py| {
+            // Serialize ParsedUrl to a Python dict
+            let dict = PyDict::new(py);
+            dict.set_item("url", &parsed_url.url)
+                .map_err(|e| VegaFusionError::internal(format!("Failed to set url: {e}")))?;
+            dict.set_item("scheme", &parsed_url.scheme)
+                .map_err(|e| VegaFusionError::internal(format!("Failed to set scheme: {e}")))?;
+            dict.set_item("host", parsed_url.host.as_deref())
+                .map_err(|e| VegaFusionError::internal(format!("Failed to set host: {e}")))?;
+            dict.set_item("path", &parsed_url.path)
+                .map_err(|e| VegaFusionError::internal(format!("Failed to set path: {e}")))?;
+            // query_params as list of [key, value] pairs
+            let params: Vec<(&str, &str)> = parsed_url
+                .query_params
+                .iter()
+                .map(|(k, v)| (k.as_str(), v.as_str()))
+                .collect();
+            dict.set_item("query_params", params).map_err(|e| {
+                VegaFusionError::internal(format!("Failed to set query_params: {e}"))
+            })?;
+            dict.set_item("extension", parsed_url.extension.as_deref())
+                .map_err(|e| VegaFusionError::internal(format!("Failed to set extension: {e}")))?;
+            dict.set_item("format_type", parsed_url.format_type.as_deref())
+                .map_err(|e| {
+                    VegaFusionError::internal(format!("Failed to set format_type: {e}"))
+                })?;
+
+            let result = self
+                .py_resolver
+                .call_method1(py, "scan_url_proto", (&dict,))
+                .map_err(|e| {
+                    VegaFusionError::internal(format!("Python scan_url_proto failed: {e}"))
+                })?;
+
+            let result_ref = result.bind(py);
+
+            if result_ref.is_none() {
+                return Ok(None);
+            }
+
+            // Result is bytes — deserialize into LogicalPlan
+            let plan_bytes: Vec<u8> = result_ref.extract().map_err(|e| {
+                VegaFusionError::internal(format!(
+                    "scan_url_proto must return bytes or None, got: {e}"
+                ))
+            })?;
+
+            let ctx = vegafusion_runtime::datafusion::context::make_datafusion_context();
+            let codec = VegaFusionCodec::new();
+            let plan = datafusion_proto::bytes::logical_plan_from_bytes_with_extension_codec(
+                &plan_bytes,
+                &ctx.task_ctx(),
+                &codec,
+            )
+            .map_err(|e| {
+                VegaFusionError::internal(format!("Failed to deserialize scan_url plan: {e}"))
+            })?;
+
+            Ok(Some(plan))
+        })
     }
 
     async fn resolve_plan(&self, plan: LogicalPlan) -> Result<ResolutionResult> {

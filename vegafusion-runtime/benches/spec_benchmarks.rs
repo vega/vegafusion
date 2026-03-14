@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use std::fs;
 use std::sync::Arc;
-use vegafusion_core::planning::plan::SpecPlan;
+use vegafusion_core::planning::plan::{PlannerConfig, SpecPlan};
 use vegafusion_core::planning::watch::ExportUpdateBatch;
 use vegafusion_core::proto::gen::services::query_request::Request;
 use vegafusion_core::proto::gen::services::QueryRequest;
@@ -46,7 +46,11 @@ async fn eval_spec_get_variable(full_spec: ChartSpec, var: &ScopedVariable) -> V
     let task_scope = spec_plan.server_spec.to_task_scope().unwrap();
     let tasks = spec_plan
         .server_spec
-        .to_tasks(&tz_config, &Default::default())
+        .to_tasks(
+            &tz_config,
+            &Default::default(),
+            PlannerConfig::default().data_base_url,
+        )
         .unwrap();
     let task_graph = TaskGraph::new(tasks, &task_scope).unwrap();
     let task_graph_mapping = task_graph.build_mapping();
@@ -97,7 +101,11 @@ async fn eval_spec_sequence(full_spec: ChartSpec, full_updates: Vec<ExportUpdate
     // Build task graph
     let tasks = spec_plan
         .server_spec
-        .to_tasks(&tz_config, &Default::default())
+        .to_tasks(
+            &tz_config,
+            &Default::default(),
+            PlannerConfig::default().data_base_url,
+        )
         .unwrap();
     let mut task_graph = TaskGraph::new(tasks, &task_scope).unwrap();
     let task_graph_mapping = task_graph.build_mapping();
