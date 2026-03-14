@@ -80,12 +80,15 @@ class ExternalDataset:
 
     @property
     def schema(self) -> Schema:
+        """Arrow schema of the external table (``arro3.core.Schema``)."""
         return self._schema
 
     @property
     def metadata(self) -> dict[str, Any]:
+        """JSON-serializable metadata dict propagated through the plan."""
         return self._metadata
 
     @property
     def data(self) -> Any:  # noqa: ANN401
+        """The opaque data object, or ``None`` if not provided."""
         return self._data

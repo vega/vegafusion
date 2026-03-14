@@ -15,8 +15,26 @@ use vegafusion_core::runtime::{ParsedUrl, ResolutionResult};
 
 use super::external_table::ExternalTableProvider;
 
+/// Trait for custom data source integration with VegaFusion.
+///
+/// Resolvers participate in a two-phase pipeline:
+///
+/// 1. **Planning phase**: [`capabilities`](Self::capabilities) declares supported
+///    URL schemes/formats, and [`scan_url`](Self::scan_url) converts URLs into
+///    `LogicalPlan` nodes (typically `ExternalTableProvider` markers).
+///
+/// 2. **Execution phase**: [`resolve_table`](Self::resolve_table) or
+///    [`resolve_plan`](Self::resolve_plan) provides data for external table
+///    references or rewrites the plan for remote execution.
+///
+/// Override one of (simplest first):
+/// - [`resolve_table`](Self::resolve_table): per-table data provider, called
+///   by the default `resolve_plan` for each `ExternalTableProvider` node.
+/// - [`resolve_plan`](Self::resolve_plan): receives the entire plan. Overriding
+///   this supersedes `resolve_table` since the runtime calls `resolve_plan` directly.
 #[async_trait]
 pub trait PlanResolver: Send + Sync + 'static {
+    /// Human-readable name for logging and error messages.
     fn name(&self) -> &str;
 
     /// Declare what URL patterns this resolver supports at planning time.

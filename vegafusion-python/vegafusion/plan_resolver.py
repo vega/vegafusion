@@ -46,10 +46,15 @@ ResolutionResult = Union[Table, ResolvedPlan]
 class PlanResolver:
     """Base class for plan resolvers.
 
-    Override one of these (checked in priority order):
+    Override one of these (simplest first):
 
-    1. ``resolve_table`` — provide data for each external table independently
-    2. ``resolve_plan_proto`` / ``resolve_plan`` — full control over resolution
+    - ``resolve_table``: return data for each external table independently.
+      The default ``resolve_plan`` walks the plan and calls this for every
+      ``ExternalTableProvider`` node.
+    - ``resolve_plan_proto`` / ``resolve_plan``: receive the entire logical
+      plan. Overriding this supersedes ``resolve_table`` since the runtime
+      calls ``resolve_plan`` directly; ``resolve_table`` is only reached
+      via the default implementation.
 
     For ``resolve_plan``, override either the ``_proto`` variant (raw bytes) or
     the non-``_proto`` variant (deserialized ``LogicalPlanNode``). The ``_proto``
@@ -75,7 +80,7 @@ class PlanResolver:
     callbacks run on the main thread. Set to False for backends with
     thread-affine connections (e.g. DuckDB in-memory databases)."""
 
-    def capabilities(self) -> dict[str, list[str]]:
+    def capabilities(self) -> dict[str, Any]:
         """Declare URL patterns this resolver supports at planning time.
 
         Override to advertise additional URL scheme/format support beyond
@@ -83,9 +88,13 @@ class PlanResolver:
         with csv, tsv, json, arrow, parquet formats).
 
         Returns:
-            Dict with optional keys: ``'supported_schemes'``,
-            ``'supported_format_types'``, ``'supported_extensions'``.
-            Values are lists of strings.
+            Dict with optional keys:
+
+            - ``'supported_schemes'``: list of URL schemes (e.g. ``["spark", "snowflake"]``)
+            - ``'supported_format_types'``: list of format types (e.g. ``["csv", "parquet"]``)
+            - ``'supported_extensions'``: list of file extensions (e.g. ``[".csv", ".parquet"]``)
+            - ``'supports_arrow_tables'``: bool (default ``False``). When ``True``,
+              the runtime eagerly materializes plans into Arrow tables.
         """
         return {}
 
@@ -162,7 +171,20 @@ class PlanResolver:
         """Resolve a plan given raw protobuf bytes.
 
         The default implementation deserializes into a
-        LogicalPlanNode and calls resolve_plan().
+        ``LogicalPlanNode`` and delegates to :meth:`resolve_plan`.
+
+        Override this (instead of ``resolve_plan``) when you only need
+        the serialized bytes, e.g. to pass them directly to
+        :func:`unparse_to_sql` without a deserialization round-trip.
+
+        Args:
+            plan_bytes: Serialized ``LogicalPlanNode`` protobuf bytes.
+            datasets: Dict mapping table names to :class:`ExternalDataset`
+                instances for every ``ExternalTableProvider`` in the plan.
+
+        Returns:
+            An Arrow-compatible table (full execution) or a
+            :class:`ResolvedPlan` (plan rewriting with sidecar data).
         """
         try:
             from vegafusion.proto.datafusion_pb2 import (
@@ -189,12 +211,24 @@ class PlanResolver:
         logical_plan: LogicalPlanNode,
         datasets: dict[str, ExternalDataset],
     ) -> ResolutionResult:
-        """Resolve a plan given a deserialized LogicalPlanNode.
+        """Resolve a plan given a deserialized ``LogicalPlanNode``.
 
-        The default implementation walks the plan tree looking for
-        CustomTableScanNode nodes that correspond to ExternalTableProvider
-        entries. For each, it calls resolve_table() and replaces the node
-        with an inline_table_scan_node.
+        The default implementation walks the plan tree, finds
+        ``ExternalTableProvider`` nodes, calls :meth:`resolve_table` for
+        each, and replaces them with :func:`inline_table_scan_node` markers.
+
+        Override this for full control over plan rewriting, e.g.
+        to transpile the plan to SQL and execute it remotely.
+
+        Args:
+            logical_plan: Deserialized ``LogicalPlanNode`` protobuf message.
+            datasets: Dict mapping table names to :class:`ExternalDataset`
+                instances for every ``ExternalTableProvider`` in the plan.
+
+        Returns:
+            An Arrow-compatible table (for full execution by the resolver)
+            or a :class:`ResolvedPlan` (rewritten plan with sidecar Arrow
+            data for DataFusion to execute).
         """
         sidecar: dict[str, Table] = {}
         self._resolve_external_tables(logical_plan, datasets, sidecar)
