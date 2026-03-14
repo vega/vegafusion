@@ -193,4 +193,9 @@ message ResolverCapabilities {
   repeated string supported_schemes = 1;
   repeated string supported_format_types = 2;
   repeated string supported_extensions = 3;
+  // Whether this resolver can efficiently consume in-memory Arrow tables.
+  // When true, the runtime may eagerly materialize LogicalPlans into tables.
+  // When false (proto3 default), the runtime keeps data as lazy plans so the
+  // resolver can intercept and redirect execution (e.g. to Spark).
+  bool supports_arrow_tables = 4;
 }

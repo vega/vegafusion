@@ -200,10 +200,16 @@ impl PlanResolver for PyPlanResolver {
                     }
                 };
 
+                let supports_arrow_tables = match dict_ref.get_item("supports_arrow_tables") {
+                    Ok(val) => val.extract().unwrap_or(false),
+                    Err(_) => false,
+                };
+
                 Ok(ResolverCapabilities {
                     supported_schemes: extract_list("supported_schemes")?,
                     supported_format_types: extract_list("supported_format_types")?,
                     supported_extensions: extract_list("supported_extensions")?,
+                    supports_arrow_tables,
                 })
             })();
             result.unwrap_or_default()

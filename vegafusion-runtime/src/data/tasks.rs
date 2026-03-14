@@ -59,19 +59,21 @@ use {datafusion::prelude::ParquetReadOptions, vegafusion_common::error::ToExtern
 #[cfg(target_arch = "wasm32")]
 use object_store_wasm::HttpStore;
 
-/// If no user resolvers are configured, eagerly materialize a `TaskValue::Plan`
-/// into a `TaskValue::Table` via DataFusion execution. Passthrough otherwise.
+/// Eagerly materialize a `TaskValue::Plan` into a `TaskValue::Table` when safe:
+/// either all resolvers support Arrow tables, or the plan has no external table
+/// nodes that a resolver would need to intercept. Otherwise keep it lazy.
 async fn maybe_materialize_plan(
     task_value: TaskValue,
     pipeline: &ResolverPipeline,
 ) -> Result<TaskValue> {
-    if !pipeline.has_user_resolvers() {
-        if let TaskValue::Plan(plan) = task_value {
+    if let TaskValue::Plan(plan) = task_value {
+        if pipeline.should_materialize(&plan) {
             let table = DataFrame::new(pipeline.ctx().state(), plan)
                 .collect_to_table()
                 .await?;
             return Ok(TaskValue::Table(table));
         }
+        return Ok(TaskValue::Plan(plan));
     }
     Ok(task_value)
 }

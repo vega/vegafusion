@@ -72,6 +72,11 @@ pub struct MergedCapabilities {
     pub supported_schemes: HashSet<String>,
     pub supported_format_types: HashSet<String>,
     pub supported_extensions: HashSet<String>,
+    /// True when every resolver in the pipeline can efficiently consume
+    /// in-memory Arrow tables. When true, the runtime may eagerly materialize
+    /// LogicalPlans into tables. When false, data is kept as lazy plans so
+    /// resolvers that need plan-level access (e.g. Spark) can intercept them.
+    pub all_support_arrow_tables: bool,
 }
 
 impl MergedCapabilities {
@@ -88,6 +93,7 @@ impl MergedCapabilities {
                 .supported_extensions
                 .extend(cap.supported_extensions.iter().cloned());
         }
+        merged.all_support_arrow_tables = caps.iter().all(|c| c.supports_arrow_tables);
         merged
     }
 
@@ -125,6 +131,7 @@ impl ResolverCapabilities {
                 .into_iter()
                 .map(String::from)
                 .collect(),
+            supports_arrow_tables: true,
         }
     }
 }
@@ -452,7 +459,10 @@ mod tests {
         // be joined against the base URL, not treated as absolute.
         let base = Some("https://proxy.com/".to_string());
         let result = resolve_url("fetch?target=http://evil.com/data", &base).unwrap();
-        assert_eq!(result, "https://proxy.com/fetch?target=http://evil.com/data");
+        assert_eq!(
+            result,
+            "https://proxy.com/fetch?target=http://evil.com/data"
+        );
     }
 
     // ── resolve_data_base_url ──
@@ -515,12 +525,23 @@ mod tests {
             supported_schemes: vec!["spark".to_string()],
             supported_format_types: vec!["delta".to_string()],
             supported_extensions: vec![],
+            supports_arrow_tables: false,
         };
         let merged = MergedCapabilities::from_resolver_capabilities(&[df_caps, custom_caps]);
         assert!(merged.supported_schemes.contains("http"));
         assert!(merged.supported_schemes.contains("spark"));
         assert!(merged.supported_format_types.contains("csv"));
         assert!(merged.supported_format_types.contains("delta"));
+        // DataFusion supports arrow but the custom resolver does not
+        assert!(!merged.all_support_arrow_tables);
+    }
+
+    #[test]
+    fn test_merged_capabilities_all_support_arrow() {
+        let caps = MergedCapabilities::from_resolver_capabilities(&[
+            ResolverCapabilities::datafusion_defaults(),
+        ]);
+        assert!(caps.all_support_arrow_tables);
     }
 
     #[test]

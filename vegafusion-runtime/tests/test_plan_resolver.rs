@@ -821,6 +821,7 @@ impl PlanResolver for CustomSchemeScanner {
             supported_schemes: vec!["custom".to_string()],
             supported_format_types: vec![],
             supported_extensions: vec![],
+            supports_arrow_tables: false,
         }
     }
 
@@ -908,19 +909,40 @@ async fn test_scan_url_unknown_scheme_falls_through() {
 }
 
 #[tokio::test]
-async fn test_has_user_resolvers() {
+async fn test_should_materialize() {
     let ctx = Arc::new(datafusion::prelude::SessionContext::new());
+    let schema = get_movies_schema();
 
-    // No user resolvers
+    // A plan with no external tables (just an empty MemTable)
+    let empty_batch = RecordBatch::new_empty(schema.clone());
+    let mem_table = MemTable::try_new(schema.clone(), vec![vec![empty_batch]]).unwrap();
+    let plain_plan =
+        LogicalPlanBuilder::scan("plain", provider_as_source(Arc::new(mem_table)), None)
+            .unwrap()
+            .build()
+            .unwrap();
+
+    // A plan with an ExternalTableProvider
+    let ext_provider =
+        ExternalTableProvider::new("custom".to_string(), schema.clone(), serde_json::json!({}));
+    let external_plan =
+        LogicalPlanBuilder::scan("ext", provider_as_source(Arc::new(ext_provider)), None)
+            .unwrap()
+            .build()
+            .unwrap();
+
+    // DataFusion-only: all support arrow → always materialize
     let pipeline = ResolverPipeline::new(vec![], ctx.clone());
-    assert!(!pipeline.has_user_resolvers());
+    assert!(pipeline.should_materialize(&plain_plan));
+    assert!(pipeline.should_materialize(&external_plan));
 
-    // With a user resolver
+    // With a non-arrow resolver: materialize plain plans, not external ones
     let scanner = CustomSchemeScanner {
-        schema: get_movies_schema(),
+        schema: schema.clone(),
     };
     let pipeline = ResolverPipeline::new(vec![Arc::new(scanner)], ctx);
-    assert!(pipeline.has_user_resolvers());
+    assert!(pipeline.should_materialize(&plain_plan));
+    assert!(!pipeline.should_materialize(&external_plan));
 }
 
 #[tokio::test]
@@ -1410,21 +1432,48 @@ async fn test_datafusion_resolver_executes_simple_plan() {
 }
 
 #[tokio::test]
-async fn test_resolver_pipeline_has_user_resolvers() {
+async fn test_resolver_pipeline_should_materialize() {
     let ctx = Arc::new(datafusion::prelude::SessionContext::new());
+    let schema = get_movies_schema();
 
+    // Plan with no external tables
+    let empty_batch = RecordBatch::new_empty(schema.clone());
+    let mem_table = MemTable::try_new(schema.clone(), vec![vec![empty_batch]]).unwrap();
+    let plain_plan =
+        LogicalPlanBuilder::scan("plain", provider_as_source(Arc::new(mem_table)), None)
+            .unwrap()
+            .build()
+            .unwrap();
+
+    // Plan with an external table
+    let ext = ExternalTableProvider::new("test".to_string(), schema, serde_json::json!({}));
+    let external_plan = LogicalPlanBuilder::scan("ext", provider_as_source(Arc::new(ext)), None)
+        .unwrap()
+        .build()
+        .unwrap();
+
+    // DataFusion-only: always materialize
     let empty_pipeline = ResolverPipeline::new(vec![], ctx.clone());
     assert!(
-        !empty_pipeline.has_user_resolvers(),
-        "Empty pipeline should report no user resolvers"
+        empty_pipeline.should_materialize(&plain_plan),
+        "DataFusion-only pipeline should materialize plain plans"
+    );
+    assert!(
+        empty_pipeline.should_materialize(&external_plan),
+        "DataFusion-only pipeline should materialize even external plans"
     );
 
+    // With non-arrow resolver: materialize plain, not external
     let events = Arc::new(Mutex::new(Vec::new()));
     let resolver = ScriptedResolver::new("test", ResolverBehavior::PassThroughPlan, events);
     let resolvers: Vec<Arc<dyn PlanResolver>> = vec![Arc::new(resolver)];
     let pipeline_with_resolvers = ResolverPipeline::new(resolvers, ctx);
     assert!(
-        pipeline_with_resolvers.has_user_resolvers(),
-        "Pipeline with resolvers should report has user resolvers"
+        pipeline_with_resolvers.should_materialize(&plain_plan),
+        "Non-arrow pipeline should still materialize plans with no external tables"
+    );
+    assert!(
+        !pipeline_with_resolvers.should_materialize(&external_plan),
+        "Non-arrow pipeline should not materialize plans with external tables"
     );
 }
