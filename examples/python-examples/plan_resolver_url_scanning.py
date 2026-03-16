@@ -8,6 +8,8 @@ data references like "mydata://database/sales" in a Vega spec are resolved
 by your own Python code rather than fetched over HTTP.
 """
 
+from __future__ import annotations
+
 import json
 from typing import Any
 

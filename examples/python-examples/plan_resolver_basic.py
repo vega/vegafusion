@@ -1,6 +1,8 @@
 # Demonstrates the simplest PlanResolver pattern: override resolve_table to provide
 # data for an ExternalDataset. No protobuf dependency needed.
 
+from __future__ import annotations
+
 import json
 from typing import Any
 
