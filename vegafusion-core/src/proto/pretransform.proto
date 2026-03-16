@@ -4,6 +4,8 @@ package pretransform;
 import "tasks.proto";
 import "google/protobuf/empty.proto";
 
+// Three states: field absent = use default CDN, custom = use this URL,
+// disabled = no base URL (relative paths error).
 message DataBaseUrlSettingProto {
   oneof kind {
     string custom = 1;
