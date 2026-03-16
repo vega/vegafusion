@@ -90,9 +90,12 @@ class PlanResolver:
         Returns:
             Dict with optional keys:
 
-            - ``'supported_schemes'``: list of URL schemes (e.g. ``["spark", "snowflake"]``)
-            - ``'supported_format_types'``: list of format types (e.g. ``["csv", "parquet"]``)
-            - ``'supported_extensions'``: list of file extensions (e.g. ``[".csv", ".parquet"]``)
+            - ``'supported_schemes'``: list of URL schemes
+              (e.g. ``["spark", "snowflake"]``)
+            - ``'supported_format_types'``: list of format types
+              (e.g. ``["csv", "parquet"]``)
+            - ``'supported_extensions'``: list of file extensions
+              (e.g. ``[".csv", ".parquet"]``)
             - ``'supports_arrow_tables'``: bool (default ``False``). When ``True``,
               the runtime eagerly materializes plans into Arrow tables.
         """

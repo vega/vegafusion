@@ -1,6 +1,8 @@
 use crate::proto::gen::pretransform::DataBaseUrlSettingProto;
 use crate::proto::gen::tasks::ResolverCapabilities;
+use regex::Regex;
 use std::collections::HashSet;
+use std::sync::LazyLock;
 use vegafusion_common::data::table::VegaFusionTable;
 use vegafusion_common::datafusion_expr::LogicalPlan;
 use vegafusion_common::error::Result;
@@ -149,28 +151,13 @@ pub fn resolve_data_base_url(
     }
 }
 
-/// Returns true if the string is already a URL (has a scheme) or is
-/// scheme-relative (starts with //).
-///
-/// Per RFC 3986, a scheme is `[a-zA-Z][a-zA-Z0-9+.-]*:`. We check that
-/// `://` appears only after a valid scheme prefix, so relative references
-/// like `fetch?target=http://evil.com` are not misclassified as absolute.
+static URL_SCHEME_RE: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r"^(//|[a-zA-Z][a-zA-Z0-9+.\-]*://)").unwrap());
+
+/// Returns true if the string is already a URL (has a scheme per RFC 3986)
+/// or is scheme-relative (starts with //).
 pub fn has_url_scheme(s: &str) -> bool {
-    if s.starts_with("//") {
-        return true;
-    }
-    if let Some(pos) = s.find("://") {
-        let prefix = &s[..pos];
-        let mut chars = prefix.chars();
-        match chars.next() {
-            Some(c) if c.is_ascii_alphabetic() => {
-                chars.all(|c| c.is_ascii_alphanumeric() || matches!(c, '+' | '-' | '.'))
-            }
-            _ => false,
-        }
-    } else {
-        false
-    }
+    URL_SCHEME_RE.is_match(s)
 }
 
 /// Returns true if `path` is an absolute filesystem path.
