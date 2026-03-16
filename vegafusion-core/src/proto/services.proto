@@ -19,6 +19,9 @@ message GetCapabilitiesResult {
   tasks.ResolverCapabilities capabilities = 1;
 }
 
+// Multiplexed envelope used by the WASM runtime's query_fn callback,
+// including gRPC-Web mode. Bundles task graph queries and capability
+// requests into one message so a single JS function can handle both.
 message QueryRequest {
   oneof request {
     tasks.TaskGraphValueRequest task_graph_values = 1;
