@@ -49,12 +49,23 @@ impl DataSpec {
         signals.into_iter().sorted().collect()
     }
 
+    /// Formats that VegaFusion can read server-side. Anything else (e.g. topojson)
+    /// stays client-side for Vega JS to handle.
+    const SUPPORTED_FORMATS: &'static [&'static str] = &["csv", "tsv", "json", "arrow", "parquet"];
+
     pub fn supported(
         &self,
         planner_config: &PlannerConfig,
         task_scope: &TaskScope,
         scope: &[u32],
     ) -> DependencyNodeSupported {
+        // Check if the URL format is one VegaFusion can read
+        if let Some(Some(format_type)) = self.format.as_ref().map(|fmt| fmt.type_.clone()) {
+            if !Self::SUPPORTED_FORMATS.contains(&format_type.as_str()) {
+                return DependencyNodeSupported::Unsupported;
+            }
+        }
+
         // Check if inline values array is supported
         if let Some(values) = &self.values {
             if !planner_config.extract_inline_data {
