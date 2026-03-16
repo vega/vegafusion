@@ -170,8 +170,6 @@ pub fn resolve_url(url: &str, data_base_url: &Option<String>) -> Result<String> 
 mod tests {
     use super::*;
 
-    // ── has_url_scheme ──
-
     #[test]
     fn test_has_url_scheme_https() {
         assert!(has_url_scheme("https://example.com/data.csv"));
@@ -209,8 +207,6 @@ mod tests {
         assert!(!has_url_scheme("foo/http://bar"));
     }
 
-    // ── is_absolute_path ──
-
     #[test]
     fn test_is_absolute_path_unix() {
         assert!(is_absolute_path("/tmp/data.csv"));
@@ -241,8 +237,6 @@ mod tests {
         assert!(!is_absolute_path("relative/path"));
     }
 
-    // ── path_to_file_url ──
-
     #[test]
     #[cfg(not(target_os = "windows"))]
     fn test_path_to_file_url_unix() {
@@ -266,8 +260,6 @@ mod tests {
             "Hash should be percent-encoded: {result}"
         );
     }
-
-    // ── normalize_base_url ──
 
     #[test]
     fn test_normalize_base_url_scheme() {
@@ -299,8 +291,6 @@ mod tests {
         let result = normalize_base_url("a:b".to_string());
         assert!(result.is_err());
     }
-
-    // ── resolve_url ──
 
     #[test]
     fn test_resolve_url_scheme_passthrough() {
@@ -360,8 +350,6 @@ mod tests {
             "https://proxy.com/fetch?target=http://evil.com/data"
         );
     }
-
-    // ── resolve_data_base_url ──
 
     #[test]
     fn test_resolve_data_base_url_default() {

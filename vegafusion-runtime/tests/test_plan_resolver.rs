@@ -797,8 +797,6 @@ fn get_inline_datasets() -> std::collections::HashMap<String, VegaFusionDataset>
     datasets
 }
 
-// ── scan_url tests ──
-
 /// A resolver that claims custom:// URLs by returning an ExternalTableProvider plan
 struct CustomSchemeScanner {
     schema: Arc<Schema>,
