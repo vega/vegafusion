@@ -13,14 +13,13 @@ pub enum ResolutionResult {
     Plan(LogicalPlan),
 }
 
-/// Explicit representation of the data_base_url setting at public API boundaries.
-/// This avoids overloading Option<String> with an empty-string sentinel.
+/// Three-state base URL setting for public API boundaries.
 #[derive(Clone, Debug, Default)]
 pub enum DataBaseUrlSetting {
     /// Use the default CDN base URL (vega-datasets)
     #[default]
     Default,
-    /// Disable base URL — relative paths produce an error
+    /// Disable base URL; relative paths produce an error
     Disabled,
     /// Use a custom base URL (scheme URL or absolute path)
     Custom(String),
@@ -65,8 +64,8 @@ pub struct ParsedUrl {
     pub parse: Option<crate::proto::gen::tasks::scan_url_format::Parse>,
 }
 
-/// Merged capabilities from all resolvers, with HashSet fields for O(1) lookup.
-/// Built by unioning the ResolverCapabilities from each resolver in the pipeline.
+/// Merged capabilities from all resolvers, built by unioning the
+/// ResolverCapabilities from each resolver in the pipeline.
 #[derive(Clone, Debug, Default)]
 pub struct MergedCapabilities {
     pub supported_schemes: HashSet<String>,
@@ -75,7 +74,7 @@ pub struct MergedCapabilities {
     /// True when every resolver in the pipeline can efficiently consume
     /// in-memory Arrow tables. When true, the runtime may eagerly materialize
     /// LogicalPlans into tables. When false, data is kept as lazy plans so
-    /// resolvers that need plan-level access (e.g. Spark) can intercept them.
+    /// resolvers that need plan-level access can intercept them.
     pub all_support_arrow_tables: bool,
 }
 
