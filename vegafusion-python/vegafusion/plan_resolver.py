@@ -80,26 +80,11 @@ class PlanResolver:
     callbacks run on the main thread. Set to False for backends with
     thread-affine connections (e.g. DuckDB in-memory databases)."""
 
-    def capabilities(self) -> dict[str, Any]:
-        """Declare URL patterns this resolver supports at planning time.
-
-        Override to advertise additional URL scheme/format support beyond
-        DataFusion's built-in capabilities (http, https, file, s3 schemes
-        with csv, tsv, json, arrow, parquet formats).
-
-        Returns:
-            Dict with optional keys:
-
-            - ``'supported_schemes'``: list of URL schemes
-              (e.g. ``["spark", "snowflake"]``)
-            - ``'supported_format_types'``: list of format types
-              (e.g. ``["csv", "parquet"]``)
-            - ``'supported_extensions'``: list of file extensions
-              (e.g. ``[".csv", ".parquet"]``)
-            - ``'supports_arrow_tables'``: bool (default ``False``). When ``True``,
-              the runtime eagerly materializes plans into Arrow tables.
-        """
-        return {}
+    supports_arrow_tables: bool = False
+    """Whether this resolver can efficiently consume in-memory Arrow tables.
+    When all resolvers in the pipeline return True, the runtime may eagerly
+    materialize LogicalPlans into tables. When False, data is kept as lazy
+    plans so resolvers that need plan-level access can intercept them."""
 
     def scan_url_proto(self, parsed_url: dict[str, Any]) -> bytes | None:
         """Handle a URL during the scan phase (raw bytes variant).

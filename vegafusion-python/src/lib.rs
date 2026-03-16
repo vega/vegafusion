@@ -238,7 +238,6 @@ impl PyVegaFusionRuntime {
                         default_input_tz,
                         row_limit,
                         preserve_interactivity,
-                        data_base_url: None,
                         keep_variables: keep_variables
                             .into_iter()
                             .map(|v| PreTransformVariable {
@@ -298,7 +297,6 @@ impl PyVegaFusionRuntime {
                         local_tz,
                         default_input_tz,
                         row_limit,
-                        data_base_url: None,
                     },
                 ))
         })?;
@@ -381,7 +379,6 @@ impl PyVegaFusionRuntime {
                         default_input_tz,
                         preserve_interactivity,
                         extract_threshold: extract_threshold as i32,
-                        data_base_url: None,
                         keep_variables,
                     },
                 ))

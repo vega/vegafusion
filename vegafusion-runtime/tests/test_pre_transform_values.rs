@@ -50,7 +50,6 @@ mod tests {
                     row_limit: None,
                     local_tz: "UTC".to_string(),
                     default_input_tz: None,
-                    data_base_url: None,
                 },
             )
             .await
@@ -100,7 +99,6 @@ mod tests {
                     row_limit: Some(3),
                     local_tz: "UTC".to_string(),
                     default_input_tz: None,
-                    data_base_url: None,
                 },
             )
             .await
@@ -151,7 +149,6 @@ mod tests {
                     row_limit: None,
                     local_tz: "UTC".to_string(),
                     default_input_tz: None,
-                    data_base_url: None,
                 },
             )
             .await;
@@ -176,7 +173,6 @@ mod tests {
                     row_limit: None,
                     local_tz: "UTC".to_string(),
                     default_input_tz: None,
-                    data_base_url: None,
                 },
             )
             .await;
@@ -220,7 +216,6 @@ mod tests {
                     row_limit: None,
                     local_tz: "UTC".to_string(),
                     default_input_tz: None,
-                    data_base_url: None,
                 },
             )
             .await
@@ -267,7 +262,6 @@ mod tests {
                     row_limit: None,
                     local_tz: "UTC".to_string(),
                     default_input_tz: None,
-                    data_base_url: None,
                 },
             )
             .await
@@ -318,7 +312,6 @@ mod tests {
                     row_limit: None,
                     local_tz: "UTC".to_string(),
                     default_input_tz: None,
-                    data_base_url: None,
                 },
             )
             .await
@@ -400,7 +393,6 @@ mod tests {
                         row_limit: None,
                         local_tz: "UTC".to_string(),
                         default_input_tz: None,
-                        data_base_url: None,
                     },
                 )
                 .await
@@ -460,7 +452,6 @@ mod tests {
                     row_limit: None,
                     local_tz: "UTC".to_string(),
                     default_input_tz: None,
-                    data_base_url: None,
                 },
             )
             .await

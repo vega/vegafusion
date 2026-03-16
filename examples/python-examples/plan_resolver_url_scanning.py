@@ -1,7 +1,7 @@
 # Requires: pip install vegafusion[plan-resolver]
 """
 Demonstrates the URL scanning pattern for custom URL schemes:
-capabilities() + scan_url() + resolve_table()
+scan_url() + resolve_table()
 
 VegaFusion's PlanResolver lets you register custom URL schemes so that
 data references like "mydata://database/sales" in a Vega spec are resolved
@@ -41,9 +41,6 @@ def main():
 
 class SalesDataResolver(PlanResolver):
     """Resolves URLs with the 'mydata' scheme using in-memory data."""
-
-    def capabilities(self) -> dict[str, list[str]]:
-        return {"supported_schemes": ["mydata"]}
 
     def scan_url(self, parsed_url: dict[str, Any]) -> Any:
         if parsed_url["scheme"] == "mydata":

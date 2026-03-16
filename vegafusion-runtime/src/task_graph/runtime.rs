@@ -94,10 +94,6 @@ impl VegaFusionRuntimeTrait for VegaFusionRuntime {
         self
     }
 
-    fn planner_capabilities(&self) -> vegafusion_core::runtime::MergedCapabilities {
-        self.pipeline.merged_capabilities()
-    }
-
     async fn materialize_task_values(
         &self,
         values: Vec<TaskValue>,

@@ -5,7 +5,6 @@ use crate::proto::gen::tasks::{
     ScanUrlFormat, Task, TzConfig, Variable, VariableNamespace,
 };
 use crate::proto::gen::transforms::TransformPipeline;
-use crate::runtime::resolve_url;
 use crate::spec::chart::{ChartSpec, ChartVisitor};
 use crate::spec::data::{DataFormatParseSpec, DataSpec};
 use crate::spec::mark::{MarkFacetSpec, MarkSpec};
@@ -172,11 +171,10 @@ impl ChartVisitor for MakeTasksVisitor<'_> {
         };
 
         let task = if let Some(url) = &data.url {
-            let (proto_url, task_data_base_url) = match url {
+            let proto_url = match url {
                 StringOrSignalSpec::String(url) => {
-                    // Resolve URL at plan time (base URL, file:// normalization)
-                    let resolved = resolve_url(url, &self.data_base_url)?;
-                    let mut proto_url = Url::String(resolved);
+                    // Store raw URL string — resolution happens at eval time
+                    let mut proto_url = Url::String(url.clone());
 
                     // Append fingerprint to URL that references an inline dataset
                     if let Url::String(url_str) = &proto_url {
@@ -190,13 +188,11 @@ impl ChartVisitor for MakeTasksVisitor<'_> {
                             }
                         }
                     }
-                    (proto_url, None)
+                    proto_url
                 }
                 StringOrSignalSpec::Signal(expr) => {
-                    // Signal-based URL: resolved at eval time.
-                    // Store data_base_url in the task so the remote server has it.
                     let url_expr = parse(&expr.signal)?;
-                    (Url::Expr(url_expr), self.data_base_url.clone())
+                    Url::Expr(url_expr)
                 }
             };
 
@@ -208,7 +204,7 @@ impl ChartVisitor for MakeTasksVisitor<'_> {
                     format_type,
                     pipeline,
                     url: Some(proto_url),
-                    data_base_url: task_data_base_url,
+                    data_base_url: self.data_base_url.clone(),
                 },
                 &self.tz_config,
             )

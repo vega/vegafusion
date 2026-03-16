@@ -1,7 +1,4 @@
-use crate::proto::gen::pretransform::DataBaseUrlSettingProto;
-use crate::proto::gen::tasks::ResolverCapabilities;
 use regex::Regex;
-use std::collections::HashSet;
 use std::sync::LazyLock;
 use vegafusion_common::data::table::VegaFusionTable;
 use vegafusion_common::datafusion_expr::LogicalPlan;
@@ -27,22 +24,6 @@ pub enum DataBaseUrlSetting {
     Custom(String),
 }
 
-impl DataBaseUrlSetting {
-    /// Convert from the proto representation.
-    /// Field absent → Default (use CDN), custom → Custom, disabled → Disabled.
-    pub fn from_proto(proto: Option<DataBaseUrlSettingProto>) -> Self {
-        use crate::proto::gen::pretransform::data_base_url_setting_proto::Kind;
-        match proto {
-            None => DataBaseUrlSetting::Default,
-            Some(p) => match p.kind {
-                Some(Kind::Custom(s)) => DataBaseUrlSetting::Custom(s),
-                Some(Kind::Disabled(_)) => DataBaseUrlSetting::Disabled,
-                None => DataBaseUrlSetting::Default,
-            },
-        }
-    }
-}
-
 /// Parsed URL representation passed to resolvers during the scan phase.
 /// All fields are populated from the fully-resolved URL (after base URL
 /// resolution and hash-stripping). Resolvers pattern-match on these fields
@@ -64,77 +45,6 @@ pub struct ParsedUrl {
     pub format_type: Option<String>,
     /// Parse spec from Vega format (e.g., {"date": "date"} for CSV column typing)
     pub parse: Option<crate::proto::gen::tasks::scan_url_format::Parse>,
-}
-
-/// Merged capabilities from all resolvers, built by unioning the
-/// ResolverCapabilities from each resolver in the pipeline.
-#[derive(Clone, Debug, Default)]
-pub struct MergedCapabilities {
-    pub supported_schemes: HashSet<String>,
-    pub supported_format_types: HashSet<String>,
-    pub supported_extensions: HashSet<String>,
-    /// True when every resolver in the pipeline can efficiently consume
-    /// in-memory Arrow tables. When true, the runtime may eagerly materialize
-    /// LogicalPlans into tables. When false, data is kept as lazy plans so
-    /// resolvers that need plan-level access can intercept them.
-    pub all_support_arrow_tables: bool,
-}
-
-impl MergedCapabilities {
-    pub fn from_resolver_capabilities(caps: &[ResolverCapabilities]) -> Self {
-        let mut merged = Self::default();
-        for cap in caps {
-            merged
-                .supported_schemes
-                .extend(cap.supported_schemes.iter().cloned());
-            merged
-                .supported_format_types
-                .extend(cap.supported_format_types.iter().cloned());
-            merged
-                .supported_extensions
-                .extend(cap.supported_extensions.iter().cloned());
-        }
-        merged.all_support_arrow_tables = caps.iter().all(|c| c.supports_arrow_tables);
-        merged
-    }
-
-    /// Check if a URL with the given scheme and format info is supported by any resolver.
-    pub fn url_supported(
-        &self,
-        scheme: &str,
-        format_type: Option<&str>,
-        extension: Option<&str>,
-    ) -> bool {
-        let scheme_ok = self.supported_schemes.contains(scheme);
-        let format_ok = match (format_type, extension) {
-            (Some(fmt), _) => self.supported_format_types.contains(fmt),
-            (None, Some(ext)) => self.supported_extensions.contains(ext),
-            (None, None) => true,
-        };
-        scheme_ok && format_ok
-    }
-}
-
-impl ResolverCapabilities {
-    /// Built-in DataFusion URL capabilities: file, http, https, s3 schemes
-    /// with csv, tsv, json, arrow, parquet formats.
-    pub fn datafusion_defaults() -> Self {
-        Self {
-            supported_schemes: vec!["http", "https", "s3", "file"]
-                .into_iter()
-                .map(String::from)
-                .collect(),
-            supported_format_types: vec!["csv", "tsv", "json", "arrow", "parquet"]
-                .into_iter()
-                .map(String::from)
-                .collect(),
-            supported_extensions: vec!["csv", "tsv", "json", "arrow", "feather", "parquet"]
-                .into_iter()
-                .map(String::from)
-                .collect(),
-            supports_arrow_tables: true,
-        }
-    }
 }
 
 /// Map a DataBaseUrlSetting (from public API) to the two-state Option<String>
@@ -489,56 +399,5 @@ mod tests {
         )
         .unwrap();
         assert_eq!(result, Some("file:///home/user/data".to_string()));
-    }
-
-    // ── MergedCapabilities ──
-
-    #[test]
-    fn test_merged_capabilities_from_defaults() {
-        let caps = MergedCapabilities::from_resolver_capabilities(&[
-            ResolverCapabilities::datafusion_defaults(),
-        ]);
-        assert!(caps.supported_schemes.contains("http"));
-        assert!(caps.supported_schemes.contains("file"));
-        assert!(caps.supported_format_types.contains("csv"));
-        assert!(caps.supported_extensions.contains("parquet"));
-    }
-
-    #[test]
-    fn test_merged_capabilities_union() {
-        let df_caps = ResolverCapabilities::datafusion_defaults();
-        let custom_caps = ResolverCapabilities {
-            supported_schemes: vec!["spark".to_string()],
-            supported_format_types: vec!["delta".to_string()],
-            supported_extensions: vec![],
-            supports_arrow_tables: false,
-        };
-        let merged = MergedCapabilities::from_resolver_capabilities(&[df_caps, custom_caps]);
-        assert!(merged.supported_schemes.contains("http"));
-        assert!(merged.supported_schemes.contains("spark"));
-        assert!(merged.supported_format_types.contains("csv"));
-        assert!(merged.supported_format_types.contains("delta"));
-        // DataFusion supports arrow but the custom resolver does not
-        assert!(!merged.all_support_arrow_tables);
-    }
-
-    #[test]
-    fn test_merged_capabilities_all_support_arrow() {
-        let caps = MergedCapabilities::from_resolver_capabilities(&[
-            ResolverCapabilities::datafusion_defaults(),
-        ]);
-        assert!(caps.all_support_arrow_tables);
-    }
-
-    #[test]
-    fn test_url_supported_scheme_and_format() {
-        let caps = MergedCapabilities::from_resolver_capabilities(&[
-            ResolverCapabilities::datafusion_defaults(),
-        ]);
-        assert!(caps.url_supported("https", Some("csv"), None));
-        assert!(caps.url_supported("file", None, Some("parquet")));
-        assert!(caps.url_supported("http", None, None)); // no format = ok
-        assert!(!caps.url_supported("spark", Some("csv"), None)); // unknown scheme
-        assert!(!caps.url_supported("https", Some("delta"), None)); // unknown format
     }
 }

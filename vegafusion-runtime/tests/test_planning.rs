@@ -58,7 +58,7 @@ async fn test_extract_server_data() {
         .to_tasks(
             &tz_config,
             &Default::default(),
-            PlannerConfig::default().data_base_url,
+            Some(vegafusion_core::planning::plan::VEGA_DATASETS_CDN_BASE.to_string()),
         )
         .unwrap();
     let graph = Arc::new(TaskGraph::new(tasks, &task_scope).unwrap());

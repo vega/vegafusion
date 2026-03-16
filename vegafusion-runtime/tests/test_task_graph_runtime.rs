@@ -1,7 +1,6 @@
 use std::sync::Arc;
 use vegafusion_common::data::scalar::ScalarValue;
 use vegafusion_core::expression::parser::parse;
-use vegafusion_core::planning::plan::PlannerConfig;
 use vegafusion_core::proto::gen::tasks::data_url_task::Url;
 use vegafusion_core::proto::gen::tasks::{
     DataSourceTask, DataUrlTask, NodeValueIndex, Task, TaskGraph, TzConfig, Variable,
@@ -137,7 +136,7 @@ async fn try_it_from_spec() {
         .to_tasks(
             &tz_config,
             &Default::default(),
-            PlannerConfig::default().data_base_url,
+            Some(vegafusion_core::planning::plan::VEGA_DATASETS_CDN_BASE.to_string()),
         )
         .unwrap();
 

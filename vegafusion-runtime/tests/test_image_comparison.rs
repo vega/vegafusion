@@ -1445,7 +1445,7 @@ async fn check_spec_sequence(
         .to_tasks(
             &tz_config,
             &Default::default(),
-            PlannerConfig::default().data_base_url,
+            Some(vegafusion_core::planning::plan::VEGA_DATASETS_CDN_BASE.to_string()),
         )
         .unwrap();
     let mut task_graph = TaskGraph::new(tasks, &task_scope).unwrap();

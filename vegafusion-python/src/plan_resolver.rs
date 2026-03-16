@@ -15,7 +15,6 @@ use vegafusion_common::arrow::record_batch::RecordBatch;
 use vegafusion_common::data::table::VegaFusionTable;
 use vegafusion_common::datafusion_expr::LogicalPlan;
 use vegafusion_common::error::{Result, VegaFusionError};
-use vegafusion_core::proto::gen::tasks::ResolverCapabilities;
 use vegafusion_core::runtime::{ParsedUrl, ResolutionResult};
 use vegafusion_runtime::data::codec::VegaFusionCodec;
 use vegafusion_runtime::data::external_table::ExternalTableProvider;
@@ -187,32 +186,12 @@ impl PlanResolver for PyPlanResolver {
         &self.name
     }
 
-    fn capabilities(&self) -> ResolverCapabilities {
+    fn supports_arrow_tables(&self) -> bool {
         Python::attach(|py| {
-            let result: PyResult<ResolverCapabilities> = (|| {
-                let dict = self.py_resolver.call_method0(py, "capabilities")?;
-                let dict_ref = dict.bind(py);
-
-                let extract_list = |key: &str| -> PyResult<Vec<String>> {
-                    match dict_ref.get_item(key) {
-                        Ok(val) => val.extract(),
-                        Err(_) => Ok(Vec::new()),
-                    }
-                };
-
-                let supports_arrow_tables = match dict_ref.get_item("supports_arrow_tables") {
-                    Ok(val) => val.extract().unwrap_or(false),
-                    Err(_) => false,
-                };
-
-                Ok(ResolverCapabilities {
-                    supported_schemes: extract_list("supported_schemes")?,
-                    supported_format_types: extract_list("supported_format_types")?,
-                    supported_extensions: extract_list("supported_extensions")?,
-                    supports_arrow_tables,
-                })
-            })();
-            result.unwrap_or_default()
+            self.py_resolver
+                .getattr(py, "supports_arrow_tables")
+                .and_then(|v| v.extract::<bool>(py))
+                .unwrap_or(false)
         })
     }
 

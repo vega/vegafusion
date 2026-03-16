@@ -9,9 +9,8 @@ use vegafusion_core::proto::gen::services::vega_fusion_runtime_server::{
 };
 use vegafusion_core::proto::gen::services::{
     pre_transform_extract_result, pre_transform_spec_result, pre_transform_values_result,
-    query_request, query_result, GetCapabilitiesRequest, GetCapabilitiesResult,
-    PreTransformExtractResult, PreTransformSpecResult, PreTransformValuesResult, QueryRequest,
-    QueryResult,
+    query_request, query_result, PreTransformExtractResult, PreTransformSpecResult,
+    PreTransformValuesResult, QueryRequest, QueryResult,
 };
 use vegafusion_core::proto::gen::tasks::TaskGraphValueResponse;
 use vegafusion_core::proto::gen::tasks::{
@@ -123,16 +122,6 @@ impl VegaFusionRuntimeGrpc {
                     }
                 }
             }
-            Some(query_request::Request::GetCapabilities(_)) => {
-                let caps = self.runtime.pipeline.merged_resolver_capabilities();
-                Ok(QueryResult {
-                    response: Some(query_result::Response::GetCapabilities(
-                        GetCapabilitiesResult {
-                            capabilities: Some(caps),
-                        },
-                    )),
-                })
-            }
             _ => Err(VegaFusionError::internal(
                 "Invalid VegaFusionRuntimeRequest request",
             )),
@@ -150,7 +139,6 @@ impl VegaFusionRuntimeGrpc {
             keep_variables: vec![],
             local_tz: "UTC".to_string(),
             default_input_tz: None,
-            data_base_url: None,
         });
 
         // Decode inline datasets to VegaFusionDatasets
@@ -237,7 +225,6 @@ impl VegaFusionRuntimeGrpc {
                 row_limit: None,
                 local_tz: "UTC".to_string(),
                 default_input_tz: None,
-                data_base_url: None,
             });
 
         let variables: Vec<ScopedVariable> = request
@@ -334,16 +321,6 @@ impl TonicVegaFusionRuntime for VegaFusionRuntimeGrpc {
             Ok(result) => Ok(Response::new(result)),
             Err(err) => Err(Status::unknown(err.to_string())),
         }
-    }
-
-    async fn get_capabilities(
-        &self,
-        _request: Request<GetCapabilitiesRequest>,
-    ) -> Result<Response<GetCapabilitiesResult>, Status> {
-        let caps = self.runtime.pipeline.merged_resolver_capabilities();
-        Ok(Response::new(GetCapabilitiesResult {
-            capabilities: Some(caps),
-        }))
     }
 }
 

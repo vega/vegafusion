@@ -70,16 +70,9 @@ impl ChartState {
 
         let resolved_base = crate::runtime::resolve_data_base_url(
             opts.data_base_url.clone(),
-            PlannerConfig::default().data_base_url,
+            Some(crate::planning::plan::VEGA_DATASETS_CDN_BASE.to_string()),
         )?;
-        let plan = SpecPlan::try_new(
-            &spec,
-            &PlannerConfig {
-                capabilities: runtime.planner_capabilities(),
-                data_base_url: resolved_base.clone(),
-                ..Default::default()
-            },
-        )?;
+        let plan = SpecPlan::try_new(&spec, &PlannerConfig::default())?;
 
         let task_scope = plan
             .server_spec

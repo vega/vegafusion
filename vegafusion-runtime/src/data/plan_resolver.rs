@@ -10,7 +10,6 @@ use vegafusion_common::arrow::datatypes::SchemaRef;
 use vegafusion_common::data::table::VegaFusionTable;
 use vegafusion_common::datafusion_expr::LogicalPlan;
 use vegafusion_common::error::{Result, VegaFusionError};
-use vegafusion_core::proto::gen::tasks::ResolverCapabilities;
 use vegafusion_core::runtime::{ParsedUrl, ResolutionResult};
 
 use super::external_table::ExternalTableProvider;
@@ -37,10 +36,12 @@ pub trait PlanResolver: Send + Sync + 'static {
     /// Human-readable name for logging and error messages.
     fn name(&self) -> &str;
 
-    /// Declare what URL patterns this resolver supports at planning time.
-    /// Returns empty capabilities by default (no additional URL support).
-    fn capabilities(&self) -> ResolverCapabilities {
-        ResolverCapabilities::default()
+    /// Whether this resolver can efficiently consume in-memory Arrow tables.
+    /// When all resolvers in the pipeline return true, the runtime may eagerly
+    /// materialize LogicalPlans into tables. When false, data is kept as lazy
+    /// plans so resolvers that need plan-level access can intercept them.
+    fn supports_arrow_tables(&self) -> bool {
+        false
     }
 
     /// Given a parsed URL, optionally return a LogicalPlan to handle it.

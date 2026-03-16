@@ -45,15 +45,12 @@ VegaFusion calls `resolve_table` to get the data, then applies Vega transforms (
 
 See [plan_resolver_basic.py](https://github.com/vega/vegafusion/tree/main/examples/python-examples/plan_resolver_basic.py) for a complete example.
 
-### capabilities + scan_url
+### scan_url
 
-For custom URL schemes in Vega specs (e.g. `"url": "mydata://database/sales"`), override `capabilities()` and `scan_url()`:
+For custom URL schemes in Vega specs (e.g. `"url": "mydata://database/sales"`), override `scan_url()`:
 
 ```python
 class SalesResolver(PlanResolver):
-    def capabilities(self):
-        return {"supported_schemes": ["mydata"]}
-
     def scan_url(self, parsed_url):
         if parsed_url["scheme"] == "mydata":
             schema = pa.schema([("product", pa.utf8()), ("revenue", pa.int64())])
@@ -67,7 +64,7 @@ class SalesResolver(PlanResolver):
         return pa.table({"product": ["Widget", "Gadget"], "revenue": [1200, 3400]})
 ```
 
-`capabilities()` tells the planner that `mydata://` URLs are supported. `scan_url()` creates an `ExternalTableProvider` plan node, and `resolve_table()` provides the data at execution time.
+`scan_url()` creates an `ExternalTableProvider` plan node for URLs your resolver handles, and `resolve_table()` provides the data at execution time.
 
 See [plan_resolver_url_scanning.py](https://github.com/vega/vegafusion/tree/main/examples/python-examples/plan_resolver_url_scanning.py) for a complete example.
 
@@ -89,7 +86,7 @@ Supported SQL dialects: `"default"`, `"postgres"`, `"mysql"`, `"sqlite"`, `"duck
 
 See [plan_resolver_sql.py](https://github.com/vega/vegafusion/tree/main/examples/python-examples/plan_resolver_sql.py) for a complete example.
 
-`PlanResolver` cannot be used with `grpc_connect()` (resolvers run in-process). Set `thread_safe = False` for backends with thread-affine connections (e.g. DuckDB). Set `skip_when_no_external_tables = False` to receive all plans (e.g. for logging). The `capabilities()` dict also accepts `supports_arrow_tables: True` to let the runtime eagerly materialize plans into Arrow tables.
+`PlanResolver` cannot be used with `grpc_connect()` (resolvers run in-process). Set `thread_safe = False` for backends with thread-affine connections (e.g. DuckDB). Set `skip_when_no_external_tables = False` to receive all plans (e.g. for logging). Set `supports_arrow_tables = True` to let the runtime eagerly materialize plans into Arrow tables.
 
 ### API Reference
 

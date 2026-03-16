@@ -184,9 +184,3 @@ message InlineDataset {
   }
 }
 
-message ResolverCapabilities {
-  repeated string supported_schemes = 1;
-  repeated string supported_format_types = 2;
-  repeated string supported_extensions = 3;
-  bool supports_arrow_tables = 4;
-}

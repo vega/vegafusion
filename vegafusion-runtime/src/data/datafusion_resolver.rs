@@ -7,7 +7,6 @@ use vegafusion_common::datafusion_expr::LogicalPlan;
 use vegafusion_common::error::Result;
 #[cfg(not(feature = "parquet"))]
 use vegafusion_common::error::VegaFusionError;
-use vegafusion_core::proto::gen::tasks::ResolverCapabilities;
 use vegafusion_core::runtime::{ParsedUrl, ResolutionResult};
 
 use super::plan_resolver::PlanResolver;
@@ -38,17 +37,14 @@ impl PlanResolver for DataFusionResolver {
         "DataFusionResolver"
     }
 
-    fn capabilities(&self) -> ResolverCapabilities {
-        ResolverCapabilities::datafusion_defaults()
+    fn supports_arrow_tables(&self) -> bool {
+        true
     }
 
     async fn scan_url(&self, parsed_url: &ParsedUrl) -> Result<Option<LogicalPlan>> {
-        // Only handle schemes declared in our capabilities
-        if !self
-            .capabilities()
-            .supported_schemes
-            .contains(&parsed_url.scheme)
-        {
+        // Only handle schemes that DataFusion supports natively
+        const SUPPORTED_SCHEMES: &[&str] = &["http", "https", "file", "s3"];
+        if !SUPPORTED_SCHEMES.contains(&parsed_url.scheme.as_str()) {
             return Ok(None);
         }
 

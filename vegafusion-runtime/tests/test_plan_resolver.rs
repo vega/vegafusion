@@ -14,7 +14,6 @@ use vegafusion_common::datafusion_expr::LogicalPlan;
 use vegafusion_common::error::{Result, VegaFusionError};
 use vegafusion_core::data::dataset::VegaFusionDataset;
 use vegafusion_core::proto::gen::pretransform::PreTransformSpecOpts;
-use vegafusion_core::proto::gen::tasks::ResolverCapabilities;
 use vegafusion_core::runtime::{ParsedUrl, ResolutionResult, VegaFusionRuntimeTrait};
 use vegafusion_core::spec::chart::ChartSpec;
 use vegafusion_runtime::data::external_table::ExternalTableProvider;
@@ -214,7 +213,6 @@ async fn test_custom_executor_called_in_pre_transform_spec() {
                 default_input_tz: None,
                 row_limit: None,
                 keep_variables: vec![],
-                data_base_url: None,
             },
         )
         .await
@@ -254,7 +252,6 @@ async fn test_custom_executor_called_in_pre_transform_extract() {
                 default_input_tz: None,
                 extract_threshold: 100,
                 keep_variables: vec![],
-                data_base_url: None,
             },
         )
         .await
@@ -301,7 +298,6 @@ async fn test_custom_executor_called_in_pre_transform_values() {
                 local_tz: "UTC".to_string(),
                 default_input_tz: None,
                 row_limit: None,
-                data_base_url: None,
             },
         )
         .await
@@ -416,7 +412,6 @@ async fn test_bin_transform_uses_custom_executor() {
                 default_input_tz: None,
                 row_limit: None,
                 keep_variables: vec![],
-                data_base_url: None,
             },
         )
         .await
@@ -511,7 +506,6 @@ async fn test_mixed_data_only_executes_plans() {
                 default_input_tz: None,
                 row_limit: None,
                 keep_variables: vec![],
-                data_base_url: None,
             },
         )
         .await
@@ -816,15 +810,6 @@ impl PlanResolver for CustomSchemeScanner {
         "custom_scheme_scanner"
     }
 
-    fn capabilities(&self) -> ResolverCapabilities {
-        ResolverCapabilities {
-            supported_schemes: vec!["custom".to_string()],
-            supported_format_types: vec![],
-            supported_extensions: vec![],
-            supports_arrow_tables: false,
-        }
-    }
-
     async fn scan_url(&self, parsed_url: &ParsedUrl) -> Result<Option<LogicalPlan>> {
         if parsed_url.scheme == "custom" {
             let provider = Arc::new(ExternalTableProvider::new(
@@ -945,38 +930,6 @@ async fn test_should_materialize() {
     assert!(!pipeline.should_materialize(&external_plan));
 }
 
-#[tokio::test]
-async fn test_merged_capabilities_includes_custom_resolver() {
-    let schema = get_movies_schema();
-    let scanner = CustomSchemeScanner { schema };
-
-    let ctx = Arc::new(datafusion::prelude::SessionContext::new());
-    let pipeline = ResolverPipeline::new(vec![Arc::new(scanner)], ctx);
-
-    let caps = pipeline.merged_capabilities();
-    // DataFusion built-ins
-    assert!(caps.supported_schemes.contains("http"));
-    assert!(caps.supported_schemes.contains("file"));
-    assert!(caps.supported_format_types.contains("csv"));
-    // Custom resolver additions
-    assert!(caps.supported_schemes.contains("custom"));
-    // url_supported checks
-    assert!(caps.url_supported("custom", None, None));
-    assert!(caps.url_supported("https", Some("csv"), None));
-    assert!(!caps.url_supported("spark", None, None));
-}
-
-#[tokio::test]
-async fn test_planner_capabilities_from_runtime() {
-    let schema = get_movies_schema();
-    let scanner = CustomSchemeScanner { schema };
-
-    let runtime = VegaFusionRuntime::new(None, vec![Arc::new(scanner)]);
-    let caps = runtime.planner_capabilities();
-    assert!(caps.supported_schemes.contains("custom"));
-    assert!(caps.supported_schemes.contains("http"));
-}
-
 /// Test a resolver that returns ResolutionResult::Table directly (bypassing DataFusion execution).
 #[tokio::test]
 async fn test_table_returning_resolver() {
@@ -1032,7 +985,6 @@ async fn test_table_returning_resolver() {
                 default_input_tz: None,
                 row_limit: None,
                 keep_variables: vec![],
-                data_base_url: None,
             },
         )
         .await
@@ -1100,7 +1052,6 @@ async fn test_no_resolver() {
                 default_input_tz: None,
                 row_limit: None,
                 keep_variables: vec![],
-                data_base_url: None,
             },
         )
         .await
@@ -1372,7 +1323,6 @@ async fn test_resolver_error_propagation() {
                 default_input_tz: None,
                 row_limit: None,
                 keep_variables: vec![],
-                data_base_url: None,
             },
         )
         .await;

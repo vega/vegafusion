@@ -39,14 +39,6 @@ pub struct PreTransformExtractTable {
 pub trait VegaFusionRuntimeTrait: Send + Sync {
     fn as_any(&self) -> &dyn Any;
 
-    /// Return merged URL capabilities for planning. Default returns DataFusion's built-in
-    /// capabilities. Runtimes with custom resolvers override this to include their capabilities.
-    fn planner_capabilities(&self) -> crate::runtime::MergedCapabilities {
-        crate::runtime::MergedCapabilities::from_resolver_capabilities(&[
-            crate::proto::gen::tasks::ResolverCapabilities::datafusion_defaults(),
-        ])
-    }
-
     async fn query_request(
         &self,
         task_graph: Arc<TaskGraph>,
@@ -108,17 +100,15 @@ pub trait VegaFusionRuntimeTrait: Send + Sync {
         keep_variables: Vec<ScopedVariable>,
         data_base_url: DataBaseUrlSetting,
     ) -> Result<(SpecPlan, Vec<ExportUpdate>)> {
-        let resolved_base =
-            resolve_data_base_url(data_base_url, PlannerConfig::default().data_base_url)?;
+        let resolved_base = resolve_data_base_url(
+            data_base_url,
+            Some(crate::planning::plan::VEGA_DATASETS_CDN_BASE.to_string()),
+        )?;
 
         // Create spec plan
         let plan = SpecPlan::try_new(
             spec,
-            &PlannerConfig {
-                capabilities: self.planner_capabilities(),
-                data_base_url: resolved_base.clone(),
-                ..PlannerConfig::pre_transformed_spec_config(preserve_interactivity, keep_variables)
-            },
+            &PlannerConfig::pre_transformed_spec_config(preserve_interactivity, keep_variables),
         )?;
 
         // Extract inline dataset fingerprints
@@ -188,7 +178,7 @@ pub trait VegaFusionRuntimeTrait: Send + Sync {
                 options.preserve_interactivity,
                 inline_datasets,
                 keep_variables,
-                DataBaseUrlSetting::from_proto(options.data_base_url.clone()),
+                DataBaseUrlSetting::Default,
             )
             .await?;
 
@@ -223,7 +213,7 @@ pub trait VegaFusionRuntimeTrait: Send + Sync {
                 options.preserve_interactivity,
                 inline_datasets,
                 keep_variables,
-                DataBaseUrlSetting::from_proto(options.data_base_url.clone()),
+                DataBaseUrlSetting::Default,
             )
             .await?;
         let init_arrow = self.materialize_export_updates(init).await?;
@@ -349,8 +339,8 @@ pub trait VegaFusionRuntimeTrait: Send + Sync {
         let keep_variables = Vec::from(variables);
 
         let resolved_base = resolve_data_base_url(
-            DataBaseUrlSetting::from_proto(options.data_base_url.clone()),
-            PlannerConfig::default().data_base_url,
+            DataBaseUrlSetting::Default,
+            Some(crate::planning::plan::VEGA_DATASETS_CDN_BASE.to_string()),
         )?;
 
         // Create spec plan
@@ -363,8 +353,6 @@ pub trait VegaFusionRuntimeTrait: Send + Sync {
                 projection_pushdown: false,
                 allow_client_to_server_comms: true,
                 keep_variables,
-                capabilities: self.planner_capabilities(),
-                data_base_url: resolved_base.clone(),
                 ..Default::default()
             },
         )?;

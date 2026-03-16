@@ -7,8 +7,7 @@ use datafusion_expr::LogicalPlan as DFLogicalPlan;
 use vegafusion_common::data::table::VegaFusionTable;
 use vegafusion_common::datafusion_expr::LogicalPlan;
 use vegafusion_common::error::{Result, VegaFusionError};
-use vegafusion_core::proto::gen::tasks::ResolverCapabilities;
-use vegafusion_core::runtime::{MergedCapabilities, ParsedUrl, ResolutionResult};
+use vegafusion_core::runtime::{ParsedUrl, ResolutionResult};
 
 use super::datafusion_resolver::DataFusionResolver;
 use super::external_table::ExternalTableProvider;
@@ -49,7 +48,7 @@ impl ResolverPipeline {
     /// Keeps the plan lazy otherwise, so resolvers that need plan-level
     /// access (e.g. a Spark connector) can intercept external tables.
     pub fn should_materialize(&self, plan: &LogicalPlan) -> bool {
-        if self.merged_capabilities().all_support_arrow_tables {
+        if self.resolvers.iter().all(|r| r.supports_arrow_tables()) {
             return true;
         }
         !has_external_table_scans(plan)
@@ -68,29 +67,6 @@ impl ResolverPipeline {
             }
         }
         Ok(None)
-    }
-
-    /// Merge capabilities from all resolvers into a single set for planner lookups.
-    pub fn merged_capabilities(&self) -> MergedCapabilities {
-        MergedCapabilities::from_resolver_capabilities(
-            &self
-                .resolvers
-                .iter()
-                .map(|r| r.capabilities())
-                .collect::<Vec<_>>(),
-        )
-    }
-
-    /// Return a single merged `ResolverCapabilities` proto (union of all resolvers).
-    /// Useful for serializing capabilities over gRPC/WASM.
-    pub fn merged_resolver_capabilities(&self) -> ResolverCapabilities {
-        let merged = self.merged_capabilities();
-        ResolverCapabilities {
-            supported_schemes: merged.supported_schemes.into_iter().collect(),
-            supported_format_types: merged.supported_format_types.into_iter().collect(),
-            supported_extensions: merged.supported_extensions.into_iter().collect(),
-            supports_arrow_tables: merged.all_support_arrow_tables,
-        }
     }
 
     /// Resolve a `LogicalPlan` to a `VegaFusionTable`.

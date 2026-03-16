@@ -133,14 +133,10 @@ impl TaskCall for DataUrlTask {
         let config =
             build_compilation_config(&self.input_vars(), values, tz_config, pipeline.clone());
 
-        // Build url string
+        // Build url string — resolve at eval time for both static and signal URLs
         let url = match self.url.as_ref().unwrap() {
-            Url::String(url) => {
-                // Already resolved at plan time by MakeTasksVisitor
-                url.clone()
-            }
+            Url::String(url) => vegafusion_core::runtime::resolve_url(url, &self.data_base_url)?,
             Url::Expr(expr) => {
-                // Signal-based URL — resolve at eval time
                 let compiled = compile(expr, &config, None).await?;
                 let url_scalar = compiled.eval_to_scalar()?;
                 let raw_url = url_scalar.to_scalar_string()?;

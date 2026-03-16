@@ -1,6 +1,5 @@
 use std::time::Duration;
 use vegafusion_common::data::scalar::ScalarValueHelpers;
-use vegafusion_core::planning::plan::PlannerConfig;
 use vegafusion_core::proto::gen::services::query_result::Response;
 use vegafusion_core::proto::gen::services::vega_fusion_runtime_client::VegaFusionRuntimeClient;
 use vegafusion_core::proto::gen::services::{query_request, QueryRequest};
@@ -55,7 +54,7 @@ async fn try_it_from_spec() {
         .to_tasks(
             &tz_config,
             &Default::default(),
-            PlannerConfig::default().data_base_url,
+            Some(vegafusion_core::planning::plan::VEGA_DATASETS_CDN_BASE.to_string()),
         )
         .unwrap();
 
@@ -100,7 +99,6 @@ async fn try_it_from_spec() {
                 &[32.1, 59.6],
             )
         }
-        other => panic!("Unexpected response variant: {other:?}"),
     }
     proc.kill().ok();
 }

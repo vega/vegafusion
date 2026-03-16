@@ -791,14 +791,11 @@ def test_scan_url_none_falls_back_to_datafusion() -> None:
     assert datasets[0].num_rows == 3
 
 
-def test_capabilities_extends_planner_support() -> None:
-    """capabilities() dict declaring custom scheme lets planner accept it."""
+def test_custom_scheme_via_scan_url() -> None:
+    """Custom scheme URLs are handled via scan_url at runtime."""
     from vegafusion.plan_resolver import external_table_scan_node
 
     class CustomSchemeResolver(PlanResolver):
-        def capabilities(self) -> dict[str, list[str]]:
-            return {"supported_schemes": ["myproto"]}
-
         def scan_url(self, parsed_url: dict[str, Any]) -> Any:
             if parsed_url["scheme"] == "myproto":
                 schema = pa.schema([("val", pa.int64())])

@@ -38,7 +38,6 @@ mod tests {
                     local_tz: "UTC".to_string(),
                     default_input_tz: None,
                     preserve_interactivity: true,
-                    data_base_url: None,
                 },
             )
             .await
@@ -66,7 +65,6 @@ mod tests {
                     local_tz: "UTC".to_string(),
                     default_input_tz: None,
                     preserve_interactivity: true,
-                    data_base_url: None,
                 },
             )
             .await
@@ -95,7 +93,6 @@ mod tests {
                     local_tz: "UTC".to_string(),
                     default_input_tz: None,
                     preserve_interactivity: true,
-                    data_base_url: None,
                 },
             )
             .await;
