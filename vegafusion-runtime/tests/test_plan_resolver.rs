@@ -559,7 +559,7 @@ async fn test_execute_plan_pipeline_chains_resolvers_in_order() {
     let plan = build_external_scan_plan("movies_chain");
     let ctx = datafusion::prelude::SessionContext::new();
 
-    let pipeline = ResolverPipeline::new(resolvers, Arc::new(ctx), None);
+    let pipeline = ResolverPipeline::new(resolvers, Arc::new(ctx));
     let table = pipeline.resolve(plan).await.unwrap();
     assert_eq!(table_row_count(&table), 10);
     assert_eq!(rewrite_resolver.get_call_count(), 1);
@@ -597,7 +597,7 @@ async fn test_execute_plan_pipeline_short_circuits_after_table_result() {
     let plan = build_external_scan_plan("movies_short_circuit");
     let ctx = datafusion::prelude::SessionContext::new();
 
-    let pipeline = ResolverPipeline::new(resolvers, Arc::new(ctx), None);
+    let pipeline = ResolverPipeline::new(resolvers, Arc::new(ctx));
     let table = pipeline.resolve(plan).await.unwrap();
     assert_eq!(table_row_count(&table), 10);
     assert_eq!(table_resolver.get_call_count(), 1);
@@ -621,7 +621,7 @@ async fn test_execute_plan_pipeline_fails_if_external_not_resolved() {
     let plan = build_external_scan_plan("movies_unresolved");
     let ctx = datafusion::prelude::SessionContext::new();
 
-    let pipeline = ResolverPipeline::new(resolvers, Arc::new(ctx), None);
+    let pipeline = ResolverPipeline::new(resolvers, Arc::new(ctx));
     let err = pipeline.resolve(plan).await.unwrap_err();
     let msg = err.to_string();
     assert!(
@@ -847,7 +847,7 @@ async fn test_scan_url_custom_scheme_first_wins() {
     };
 
     let ctx = Arc::new(datafusion::prelude::SessionContext::new());
-    let pipeline = ResolverPipeline::new(vec![Arc::new(scanner)], ctx, None);
+    let pipeline = ResolverPipeline::new(vec![Arc::new(scanner)], ctx);
 
     let parsed = ParsedUrl {
         url: "custom://mydb/table1".to_string(),
@@ -871,7 +871,7 @@ async fn test_scan_url_custom_scheme_first_wins() {
 async fn test_scan_url_unknown_scheme_falls_through() {
     let ctx = Arc::new(datafusion::prelude::SessionContext::new());
     // Pipeline with only DataFusionResolver (no user resolvers)
-    let pipeline = ResolverPipeline::new(vec![], ctx, None);
+    let pipeline = ResolverPipeline::new(vec![], ctx);
 
     let parsed = ParsedUrl {
         url: "spark://cluster/table1".to_string(),
@@ -915,7 +915,7 @@ async fn test_should_materialize() {
             .unwrap();
 
     // DataFusion-only: all support arrow → always materialize
-    let pipeline = ResolverPipeline::new(vec![], ctx.clone(), None);
+    let pipeline = ResolverPipeline::new(vec![], ctx.clone());
     assert!(pipeline.should_materialize(&plain_plan));
     assert!(pipeline.should_materialize(&external_plan));
 
@@ -923,7 +923,7 @@ async fn test_should_materialize() {
     let scanner = CustomSchemeScanner {
         schema: schema.clone(),
     };
-    let pipeline = ResolverPipeline::new(vec![Arc::new(scanner)], ctx, None);
+    let pipeline = ResolverPipeline::new(vec![Arc::new(scanner)], ctx);
     assert!(pipeline.should_materialize(&plain_plan));
     assert!(!pipeline.should_materialize(&external_plan));
 }
@@ -1346,7 +1346,7 @@ async fn test_execute_plan_pipeline_propagates_resolver_errors() {
     let ctx = datafusion::prelude::SessionContext::new();
     let plan = build_external_scan_plan("movies");
 
-    let pipeline = ResolverPipeline::new(resolvers, Arc::new(ctx), None);
+    let pipeline = ResolverPipeline::new(resolvers, Arc::new(ctx));
     let err = pipeline.resolve(plan).await.unwrap_err();
     let msg = err.to_string();
     assert!(
@@ -1401,7 +1401,7 @@ async fn test_resolver_pipeline_should_materialize() {
         .unwrap();
 
     // DataFusion-only: always materialize
-    let empty_pipeline = ResolverPipeline::new(vec![], ctx.clone(), None);
+    let empty_pipeline = ResolverPipeline::new(vec![], ctx.clone());
     assert!(
         empty_pipeline.should_materialize(&plain_plan),
         "DataFusion-only pipeline should materialize plain plans"
@@ -1415,7 +1415,7 @@ async fn test_resolver_pipeline_should_materialize() {
     let events = Arc::new(Mutex::new(Vec::new()));
     let resolver = ScriptedResolver::new("test", ResolverBehavior::PassThroughPlan, events);
     let resolvers: Vec<Arc<dyn PlanResolver>> = vec![Arc::new(resolver)];
-    let pipeline_with_resolvers = ResolverPipeline::new(resolvers, ctx, None);
+    let pipeline_with_resolvers = ResolverPipeline::new(resolvers, ctx);
     assert!(
         pipeline_with_resolvers.should_materialize(&plain_plan),
         "Non-arrow pipeline should still materialize plans with no external tables"

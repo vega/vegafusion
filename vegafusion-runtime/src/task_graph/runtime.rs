@@ -2,7 +2,7 @@ use crate::data::pipeline::ResolverPipeline;
 use crate::data::plan_resolver::PlanResolver;
 use crate::datafusion::context::make_datafusion_context;
 use crate::task_graph::cache::VegaFusionCache;
-use crate::task_graph::task::TaskCall;
+use crate::task_graph::task::{TaskCall, TaskContext};
 use crate::task_graph::timezone::RuntimeTzConfig;
 use async_recursion::async_recursion;
 use cfg_if::cfg_if;
@@ -39,6 +39,7 @@ use crate::data::pipeline::{resolve_data_base_url, DataBaseUrlSetting};
 pub struct VegaFusionRuntime {
     pub cache: VegaFusionCache,
     pub pipeline: ResolverPipeline,
+    pub data_base_url: Option<String>,
 }
 
 impl VegaFusionRuntime {
@@ -47,7 +48,8 @@ impl VegaFusionRuntime {
         let data_base_url = resolve_data_base_url(&DataBaseUrlSetting::Default).unwrap_or_default();
         Self {
             cache: cache.unwrap_or_else(|| VegaFusionCache::new(Some(32), None)),
-            pipeline: ResolverPipeline::new(plan_resolvers, ctx, data_base_url),
+            pipeline: ResolverPipeline::new(plan_resolvers, ctx),
+            data_base_url,
         }
     }
 
@@ -60,7 +62,8 @@ impl VegaFusionRuntime {
         let data_base_url = resolve_data_base_url(&data_base_url_setting)?;
         Ok(Self {
             cache: cache.unwrap_or_else(|| VegaFusionCache::new(Some(32), None)),
-            pipeline: ResolverPipeline::new(plan_resolvers, ctx, data_base_url),
+            pipeline: ResolverPipeline::new(plan_resolvers, ctx),
+            data_base_url,
         })
     }
 
@@ -72,13 +75,17 @@ impl VegaFusionRuntime {
     ) -> Result<TaskValue> {
         // We shouldn't panic inside get_or_compute_node_value, but since this may be used
         // in a server context, wrap in catch_unwind just in case.
-        let pipeline = self.pipeline.clone();
+        let task_ctx = TaskContext {
+            tz_config: None, // overridden per-task from task.tz_config
+            inline_datasets,
+            pipeline: self.pipeline.clone(),
+            data_base_url: self.data_base_url.clone(),
+        };
         let node_value = AssertUnwindSafe(get_or_compute_node_value(
             task_graph,
             node_value_index.node_index as usize,
             self.cache.clone(),
-            inline_datasets,
-            pipeline,
+            task_ctx,
         ))
         .catch_unwind()
         .await;
@@ -179,8 +186,7 @@ async fn get_or_compute_node_value(
     task_graph: Arc<TaskGraph>,
     node_index: usize,
     cache: VegaFusionCache,
-    inline_datasets: HashMap<String, VegaFusionDataset>,
-    pipeline: ResolverPipeline,
+    task_ctx: TaskContext,
 ) -> Result<CacheValue> {
     // Get the cache key for requested node
     let node = task_graph.node(node_index).unwrap();
@@ -211,8 +217,7 @@ async fn get_or_compute_node_value(
                     task_graph.clone(),
                     input_node_index,
                     cloned_cache.clone(),
-                    inline_datasets.clone(),
-                    pipeline.clone(),
+                    task_ctx.clone(),
                 );
 
                 cfg_if! {
@@ -260,8 +265,12 @@ async fn get_or_compute_node_value(
                 })
                 .collect::<Result<Vec<_>>>()?;
 
-            task.eval(&input_values, &tz_config, inline_datasets, pipeline)
-                .await
+            // Override tz_config from task
+            let task_ctx = TaskContext {
+                tz_config,
+                ..task_ctx
+            };
+            task.eval(&input_values, &task_ctx).await
         };
 
         // get or construct from cache

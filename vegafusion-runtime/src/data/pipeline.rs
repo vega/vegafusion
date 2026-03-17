@@ -52,27 +52,16 @@ pub fn resolve_data_base_url(setting: &DataBaseUrlSetting) -> Result<Option<Stri
 pub struct ResolverPipeline {
     resolvers: Arc<Vec<Arc<dyn PlanResolver>>>,
     ctx: Arc<SessionContext>,
-    data_base_url: Option<String>,
 }
 
 impl ResolverPipeline {
-    pub fn new(
-        user_resolvers: Vec<Arc<dyn PlanResolver>>,
-        ctx: Arc<SessionContext>,
-        data_base_url: Option<String>,
-    ) -> Self {
+    pub fn new(user_resolvers: Vec<Arc<dyn PlanResolver>>, ctx: Arc<SessionContext>) -> Self {
         let mut resolvers: Vec<Arc<dyn PlanResolver>> = user_resolvers;
         resolvers.push(Arc::new(DataFusionResolver::new(ctx.clone())));
         Self {
             resolvers: Arc::new(resolvers),
             ctx,
-            data_base_url,
         }
-    }
-
-    /// The resolved data base URL, used for resolving relative URLs at eval time.
-    pub fn data_base_url(&self) -> &Option<String> {
-        &self.data_base_url
     }
 
     /// Whether the runtime should eagerly materialize a `LogicalPlan` into

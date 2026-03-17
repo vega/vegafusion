@@ -2,7 +2,7 @@ use crate::data::pipeline::ResolverPipeline;
 use crate::expression::compiler::compile;
 use crate::expression::compiler::config::CompilationConfig;
 use crate::expression::compiler::utils::ExprHelpers;
-use crate::task_graph::task::TaskCall;
+use crate::task_graph::task::{TaskCall, TaskContext};
 use std::borrow::Cow;
 
 use async_trait::async_trait;
@@ -124,25 +124,25 @@ impl TaskCall for DataUrlTask {
     async fn eval(
         &self,
         values: &[TaskValue],
-        tz_config: &Option<RuntimeTzConfig>,
-        inline_datasets: HashMap<String, VegaFusionDataset>,
-        pipeline: ResolverPipeline,
+        ctx: &TaskContext,
     ) -> Result<(TaskValue, Vec<TaskValue>)> {
-        let ctx = Arc::new(pipeline.ctx().clone());
+        let session_ctx = Arc::new(ctx.pipeline.ctx().clone());
         // Build compilation config for url signal (if any) and transforms (if any)
-        let config =
-            build_compilation_config(&self.input_vars(), values, tz_config, pipeline.clone());
+        let config = build_compilation_config(
+            &self.input_vars(),
+            values,
+            &ctx.tz_config,
+            ctx.pipeline.clone(),
+        );
 
         // Build url string — resolve at eval time for both static and signal URLs
         let url = match self.url.as_ref().unwrap() {
-            Url::String(url) => {
-                vegafusion_core::runtime::resolve_url(url, pipeline.data_base_url())?
-            }
+            Url::String(url) => vegafusion_core::runtime::resolve_url(url, &ctx.data_base_url)?,
             Url::Expr(expr) => {
                 let compiled = compile(expr, &config, None).await?;
                 let url_scalar = compiled.eval_to_scalar()?;
                 let raw_url = url_scalar.to_scalar_string()?;
-                vegafusion_core::runtime::resolve_url(&raw_url, pipeline.data_base_url())?
+                vegafusion_core::runtime::resolve_url(&raw_url, &ctx.data_base_url)?
             }
         };
 
@@ -165,20 +165,20 @@ impl TaskCall for DataUrlTask {
         let inline_name = extract_inline_dataset(&url).map(|name| name.trim().to_string());
         let inline_dataset_info: Option<&VegaFusionDataset> = inline_name
             .as_ref()
-            .and_then(|name| inline_datasets.get(name));
+            .and_then(|name| ctx.inline_datasets.get(name));
 
         let df = if let Some(inline_name) = &inline_name {
             if let Some(inline_dataset) = inline_dataset_info {
                 match inline_dataset {
                     VegaFusionDataset::Table { table, .. } => {
                         let table = table.clone().with_ordering()?;
-                        ctx.vegafusion_table(table).await?
+                        session_ctx.vegafusion_table(table).await?
                     }
                     VegaFusionDataset::Plan { plan } => {
-                        DataFrame::new(ctx.state(), plan.clone()).with_index()?
+                        DataFrame::new(session_ctx.state(), plan.clone()).with_index()?
                     }
                 }
-            } else if let Ok(df) = ctx.table(inline_name).await {
+            } else if let Ok(df) = session_ctx.table(inline_name).await {
                 df
             } else {
                 return Err(VegaFusionError::internal(format!(
@@ -188,8 +188,8 @@ impl TaskCall for DataUrlTask {
         } else {
             // Construct ParsedUrl and dispatch to pipeline.scan_url()
             let parsed_url = build_parsed_url(&url, format_type.as_deref(), parse.clone())?;
-            match pipeline.scan_url(&parsed_url).await? {
-                Some(plan) => DataFrame::new(ctx.state(), plan),
+            match ctx.pipeline.scan_url(&parsed_url).await? {
+                Some(plan) => DataFrame::new(session_ctx.state(), plan),
                 None => {
                     return Err(VegaFusionError::internal(format!(
                         "No resolver handled URL: {url}"
@@ -222,11 +222,11 @@ impl TaskCall for DataUrlTask {
         // Return value based on whether inline dataset was used
         let task_value = if let Some(inline_dataset) = inline_dataset_info {
             let task_value = result_df.to_task_value(inline_dataset).await?;
-            maybe_materialize_plan(task_value, &pipeline).await?
+            maybe_materialize_plan(task_value, &ctx.pipeline).await?
         } else {
             // URL-sourced data: use Plan when user resolvers exist for lazy evaluation
             let task_value = TaskValue::Plan(result_df.logical_plan().clone());
-            maybe_materialize_plan(task_value, &pipeline).await?
+            maybe_materialize_plan(task_value, &ctx.pipeline).await?
         };
 
         Ok((task_value, output_values))
@@ -410,11 +410,9 @@ impl TaskCall for DataValuesTask {
     async fn eval(
         &self,
         values: &[TaskValue],
-        tz_config: &Option<RuntimeTzConfig>,
-        _inline_datasets: HashMap<String, VegaFusionDataset>,
-        pipeline: ResolverPipeline,
+        ctx: &TaskContext,
     ) -> Result<(TaskValue, Vec<TaskValue>)> {
-        let ctx = Arc::new(pipeline.ctx().clone());
+        let session_ctx = Arc::new(ctx.pipeline.ctx().clone());
         // Deserialize data into table
         let values_table = VegaFusionTable::from_ipc_bytes(&self.values)?;
         if values_table.schema.fields.is_empty() {
@@ -448,11 +446,15 @@ impl TaskCall for DataValuesTask {
         {
             let transform_pipeline = self.pipeline.as_ref().unwrap();
 
-            let config =
-                build_compilation_config(&self.input_vars(), values, tz_config, pipeline.clone());
+            let config = build_compilation_config(
+                &self.input_vars(),
+                values,
+                &ctx.tz_config,
+                ctx.pipeline.clone(),
+            );
 
             // Process datetime columns
-            let df = ctx.vegafusion_table(values_table).await?;
+            let df = session_ctx.vegafusion_table(values_table).await?;
             let sql_df = process_datetimes(&parse, df, &config.tz_config).await?;
 
             let (df, output_values) = transform_pipeline.eval_sql(sql_df, &config).await?;
@@ -460,8 +462,8 @@ impl TaskCall for DataValuesTask {
             (table, output_values)
         } else {
             // No transforms
-            let values_df = ctx.vegafusion_table(values_table).await?;
-            let values_df: DataFrame = process_datetimes(&parse, values_df, tz_config).await?;
+            let values_df = session_ctx.vegafusion_table(values_table).await?;
+            let values_df: DataFrame = process_datetimes(&parse, values_df, &ctx.tz_config).await?;
             (
                 values_df.drop_index()?.collect_to_table().await?,
                 Vec::new(),
@@ -479,13 +481,12 @@ impl TaskCall for DataSourceTask {
     async fn eval(
         &self,
         values: &[TaskValue],
-        tz_config: &Option<RuntimeTzConfig>,
-        _inline_datasets: HashMap<String, VegaFusionDataset>,
-        pipeline: ResolverPipeline,
+        ctx: &TaskContext,
     ) -> Result<(TaskValue, Vec<TaskValue>)> {
-        let ctx = Arc::new(pipeline.ctx().clone());
+        let session_ctx = Arc::new(ctx.pipeline.ctx().clone());
         let input_vars = self.input_vars();
-        let mut config = build_compilation_config(&input_vars, values, tz_config, pipeline.clone());
+        let mut config =
+            build_compilation_config(&input_vars, values, &ctx.tz_config, ctx.pipeline.clone());
 
         // Remove source dataset from config
         let source_dataset = config.data_scope.remove(&self.source).with_context(|| {
@@ -505,7 +506,7 @@ impl TaskCall for DataSourceTask {
             match source_dataset {
                 VegaFusionDataset::Plan { plan } => {
                     let task_value =
-                        maybe_materialize_plan(TaskValue::Plan(plan), &pipeline).await?;
+                        maybe_materialize_plan(TaskValue::Plan(plan), &ctx.pipeline).await?;
                     return Ok((task_value, Vec::new()));
                 }
                 VegaFusionDataset::Table { table, .. } => {
@@ -516,8 +517,10 @@ impl TaskCall for DataSourceTask {
         }
 
         let source_df = match &source_dataset {
-            VegaFusionDataset::Table { table, .. } => ctx.vegafusion_table(table.clone()).await?,
-            VegaFusionDataset::Plan { plan } => DataFrame::new(ctx.state(), plan.clone()),
+            VegaFusionDataset::Table { table, .. } => {
+                session_ctx.vegafusion_table(table.clone()).await?
+            }
+            VegaFusionDataset::Plan { plan } => DataFrame::new(session_ctx.state(), plan.clone()),
         };
 
         let source_df = source_df.with_index()?;
@@ -526,7 +529,7 @@ impl TaskCall for DataSourceTask {
         let (df, output_values) = transform_pipeline.eval_sql(source_df, &config).await?;
         let df = df.drop_index()?;
         let task_value = df.to_task_value(&source_dataset).await?;
-        let task_value = maybe_materialize_plan(task_value, &pipeline).await?;
+        let task_value = maybe_materialize_plan(task_value, &ctx.pipeline).await?;
         Ok((task_value, output_values))
     }
 }

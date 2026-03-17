@@ -1,13 +1,9 @@
-use crate::data::pipeline::ResolverPipeline;
 use crate::data::tasks::build_compilation_config;
 use crate::expression::compiler::compile;
 use crate::expression::compiler::utils::ExprHelpers;
-use crate::task_graph::task::TaskCall;
+use crate::task_graph::task::{TaskCall, TaskContext};
 use async_trait::async_trait;
-use std::collections::HashMap;
-use vegafusion_core::data::dataset::VegaFusionDataset;
 
-use crate::task_graph::timezone::RuntimeTzConfig;
 use vegafusion_core::error::Result;
 use vegafusion_core::proto::gen::tasks::SignalTask;
 use vegafusion_core::task_graph::task::TaskDependencies;
@@ -18,11 +14,14 @@ impl TaskCall for SignalTask {
     async fn eval(
         &self,
         values: &[TaskValue],
-        tz_config: &Option<RuntimeTzConfig>,
-        _inline_datasets: HashMap<String, VegaFusionDataset>,
-        pipeline: ResolverPipeline,
+        ctx: &TaskContext,
     ) -> Result<(TaskValue, Vec<TaskValue>)> {
-        let config = build_compilation_config(&self.input_vars(), values, tz_config, pipeline);
+        let config = build_compilation_config(
+            &self.input_vars(),
+            values,
+            &ctx.tz_config,
+            ctx.pipeline.clone(),
+        );
         let expression = self.expr.as_ref().unwrap();
         let expr = compile(expression, &config, None).await?;
         let value = expr.eval_to_scalar()?;
