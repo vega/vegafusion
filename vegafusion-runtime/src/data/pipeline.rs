@@ -7,11 +7,38 @@ use datafusion_expr::LogicalPlan as DFLogicalPlan;
 use vegafusion_common::data::table::VegaFusionTable;
 use vegafusion_common::datafusion_expr::LogicalPlan;
 use vegafusion_common::error::{Result, VegaFusionError};
+use vegafusion_core::data::url::normalize_base_url;
 use vegafusion_core::runtime::{ParsedUrl, ResolutionResult};
 
 use super::datafusion_resolver::DataFusionResolver;
 use super::external_table::ExternalTableProvider;
 use super::plan_resolver::PlanResolver;
+
+/// CDN base URL for vega-datasets, used as the default data_base_url.
+pub const VEGA_DATASETS_CDN_BASE: &str =
+    "https://raw.githubusercontent.com/vega/vega-datasets/v2.3.0/";
+
+/// Three-state base URL setting for public API boundaries.
+#[derive(Clone, Debug, Default)]
+pub enum DataBaseUrlSetting {
+    /// Use the default CDN base URL (vega-datasets)
+    #[default]
+    Default,
+    /// Disable base URL; relative paths produce an error
+    Disabled,
+    /// Use a custom base URL (scheme URL or absolute path)
+    Custom(String),
+}
+
+/// Map a `DataBaseUrlSetting` to the two-state `Option<String>` used internally.
+/// Custom base URLs are normalized (bare absolute paths become file:// URLs).
+pub fn resolve_data_base_url(setting: &DataBaseUrlSetting) -> Result<Option<String>> {
+    match setting {
+        DataBaseUrlSetting::Default => Ok(Some(VEGA_DATASETS_CDN_BASE.to_string())),
+        DataBaseUrlSetting::Disabled => Ok(None),
+        DataBaseUrlSetting::Custom(s) => Ok(Some(normalize_base_url(s.clone())?)),
+    }
+}
 
 /// Chains resolvers with a terminal `DataFusionResolver`.
 ///
@@ -25,16 +52,27 @@ use super::plan_resolver::PlanResolver;
 pub struct ResolverPipeline {
     resolvers: Arc<Vec<Arc<dyn PlanResolver>>>,
     ctx: Arc<SessionContext>,
+    data_base_url: Option<String>,
 }
 
 impl ResolverPipeline {
-    pub fn new(user_resolvers: Vec<Arc<dyn PlanResolver>>, ctx: Arc<SessionContext>) -> Self {
+    pub fn new(
+        user_resolvers: Vec<Arc<dyn PlanResolver>>,
+        ctx: Arc<SessionContext>,
+        data_base_url: Option<String>,
+    ) -> Self {
         let mut resolvers: Vec<Arc<dyn PlanResolver>> = user_resolvers;
         resolvers.push(Arc::new(DataFusionResolver::new(ctx.clone())));
         Self {
             resolvers: Arc::new(resolvers),
             ctx,
+            data_base_url,
         }
+    }
+
+    /// The resolved data base URL, used for resolving relative URLs at eval time.
+    pub fn data_base_url(&self) -> &Option<String> {
+        &self.data_base_url
     }
 
     /// Whether the runtime should eagerly materialize a `LogicalPlan` into

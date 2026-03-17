@@ -457,7 +457,6 @@ pub async fn vegafusion_embed(
         ChartStateOpts {
             tz_config,
             row_limit: None,
-            data_base_url: Default::default(),
         },
     )
     .await

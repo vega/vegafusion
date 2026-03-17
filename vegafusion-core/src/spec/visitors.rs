@@ -108,20 +108,14 @@ pub struct MakeTasksVisitor<'a> {
     pub tasks: Vec<Task>,
     pub tz_config: TzConfig,
     pub dataset_fingerprints: &'a HashMap<String, String>,
-    pub data_base_url: Option<String>,
 }
 
 impl<'a> MakeTasksVisitor<'a> {
-    pub fn new(
-        tz_config: &TzConfig,
-        dataset_fingerprints: &'a HashMap<String, String>,
-        data_base_url: Option<String>,
-    ) -> Self {
+    pub fn new(tz_config: &TzConfig, dataset_fingerprints: &'a HashMap<String, String>) -> Self {
         Self {
             tasks: Default::default(),
             tz_config: tz_config.clone(),
             dataset_fingerprints,
-            data_base_url,
         }
     }
 }
@@ -204,7 +198,6 @@ impl ChartVisitor for MakeTasksVisitor<'_> {
                     format_type,
                     pipeline,
                     url: Some(proto_url),
-                    data_base_url: self.data_base_url.clone(),
                 },
                 &self.tz_config,
             )

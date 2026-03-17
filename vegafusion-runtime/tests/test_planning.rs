@@ -55,11 +55,7 @@ async fn test_extract_server_data() {
     println!("client_stubs: {client_stubs:?}");
 
     let tasks = server_spec
-        .to_tasks(
-            &tz_config,
-            &Default::default(),
-            Some(vegafusion_core::planning::plan::VEGA_DATASETS_CDN_BASE.to_string()),
-        )
+        .to_tasks(&tz_config, &Default::default())
         .unwrap();
     let graph = Arc::new(TaskGraph::new(tasks, &task_scope).unwrap());
     let mapping = graph.build_mapping();

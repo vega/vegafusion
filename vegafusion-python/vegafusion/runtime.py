@@ -207,6 +207,7 @@ class VegaFusionRuntime:
         | list[PlanResolver]
         | tuple[PlanResolver, ...]
         | None = None,
+        data_base_url: str | bool | None = None,
     ) -> None:
         """
         Initialize a VegaFusionRuntime.
@@ -220,6 +221,11 @@ class VegaFusionRuntime:
                 Can be a single resolver or a list of resolvers that form
                 a pipeline (executed in order; short-circuits on first
                 Table result).
+            data_base_url: Base URL for resolving relative data URLs.
+                - None or True: use the default CDN
+                  (https://raw.githubusercontent.com/vega/vega-datasets/v2.3.0/)
+                - str: custom base URL (scheme URL or absolute path)
+                - False: disabled; relative paths produce an error
         """
         self._runtime = None
         self._grpc_url: str | None = None
@@ -227,6 +233,7 @@ class VegaFusionRuntime:
         self._memory_limit = memory_limit
         self._worker_threads = worker_threads
         self._plan_resolvers = _normalize_resolvers(plan_resolver)
+        self._data_base_url = data_base_url
 
     @property
     def runtime(self) -> PyVegaFusionRuntime:
@@ -251,12 +258,14 @@ class VegaFusionRuntime:
                     self.cache_capacity,
                     self.memory_limit,
                     self.worker_threads,
+                    data_base_url=self._data_base_url,
                 )
             else:
                 self._runtime = PyVegaFusionRuntime.new_embedded(
                     self.cache_capacity,
                     self.memory_limit,
                     self.worker_threads,
+                    data_base_url=self._data_base_url,
                 )
         return self._runtime
 
@@ -881,6 +890,31 @@ class VegaFusionRuntime:
         """
         if value != self._cache_capacity:
             self._cache_capacity = value
+            self.reset()
+
+    @property
+    def data_base_url(self) -> str | bool | None:
+        """
+        Get the data base URL setting.
+
+        Returns:
+            The current data_base_url setting.
+        """
+        return self._data_base_url
+
+    @data_base_url.setter
+    def data_base_url(self, value: str | bool | None) -> None:
+        """
+        Set the data base URL and restart the runtime.
+
+        Args:
+            value: Base URL for resolving relative data URLs.
+                - None or True: use the default CDN
+                - str: custom base URL
+                - False: disabled
+        """
+        if value != self._data_base_url:
+            self._data_base_url = value
             self.reset()
 
     @property

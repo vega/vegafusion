@@ -97,10 +97,6 @@ pub struct PlannerConfig {
     pub strip_tooltip_encoding: bool,
 }
 
-/// Default CDN base URL for vega-datasets
-pub const VEGA_DATASETS_CDN_BASE: &str =
-    "https://raw.githubusercontent.com/vega/vega-datasets/v2.3.0/";
-
 impl Default for PlannerConfig {
     fn default() -> Self {
         Self {

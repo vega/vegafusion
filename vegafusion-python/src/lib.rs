@@ -67,8 +67,11 @@ impl PyVegaFusionRuntime {
         worker_threads: Option<i32>,
         resolvers: Vec<Arc<dyn PlanResolver>>,
         use_current_thread: bool,
+        data_base_url: Option<&Bound<PyAny>>,
     ) -> PyResult<Self> {
         initialize_logging();
+
+        let data_base_url_setting = parse_data_base_url(data_base_url)?;
 
         let tokio_runtime_connection = if use_current_thread {
             tokio::runtime::Builder::new_current_thread()
@@ -89,23 +92,54 @@ impl PyVegaFusionRuntime {
         };
 
         Ok(Self {
-            runtime: Arc::new(VegaFusionRuntime::new(
+            runtime: Arc::new(VegaFusionRuntime::new_with_data_base_url(
                 Some(VegaFusionCache::new(max_capacity, memory_limit)),
                 resolvers,
-            )),
+                data_base_url_setting,
+            )?),
             tokio_runtime: Arc::new(tokio_runtime_connection),
         })
+    }
+}
+
+/// Parse Python `data_base_url` argument into `DataBaseUrlSetting`.
+///
+/// - `None` or `True` -> `DataBaseUrlSetting::Default` (CDN)
+/// - `str`            -> `DataBaseUrlSetting::Custom(s)`
+/// - `False`          -> `DataBaseUrlSetting::Disabled`
+fn parse_data_base_url(
+    value: Option<&Bound<PyAny>>,
+) -> PyResult<vegafusion_runtime::data::pipeline::DataBaseUrlSetting> {
+    use vegafusion_runtime::data::pipeline::DataBaseUrlSetting;
+    match value {
+        None => Ok(DataBaseUrlSetting::Default),
+        Some(obj) => {
+            if let Ok(b) = obj.extract::<bool>() {
+                if b {
+                    Ok(DataBaseUrlSetting::Default)
+                } else {
+                    Ok(DataBaseUrlSetting::Disabled)
+                }
+            } else if let Ok(s) = obj.extract::<String>() {
+                Ok(DataBaseUrlSetting::Custom(s))
+            } else {
+                Err(PyValueError::new_err(
+                    "data_base_url must be a str, bool, or None",
+                ))
+            }
+        }
     }
 }
 
 #[pymethods]
 impl PyVegaFusionRuntime {
     #[staticmethod]
-    #[pyo3(signature = (max_capacity=None, memory_limit=None, worker_threads=None))]
+    #[pyo3(signature = (max_capacity=None, memory_limit=None, worker_threads=None, data_base_url=None))]
     pub fn new_embedded(
         max_capacity: Option<usize>,
         memory_limit: Option<usize>,
         worker_threads: Option<i32>,
+        data_base_url: Option<&Bound<PyAny>>,
     ) -> PyResult<Self> {
         Self::build_with_resolvers(
             max_capacity,
@@ -113,16 +147,18 @@ impl PyVegaFusionRuntime {
             worker_threads,
             Vec::new(),
             false,
+            data_base_url,
         )
     }
 
     #[staticmethod]
-    #[pyo3(signature = (py_resolvers, max_capacity=None, memory_limit=None, worker_threads=None))]
+    #[pyo3(signature = (py_resolvers, max_capacity=None, memory_limit=None, worker_threads=None, data_base_url=None))]
     pub fn new_with_resolvers(
         py_resolvers: Vec<Py<PyAny>>,
         max_capacity: Option<usize>,
         memory_limit: Option<usize>,
         worker_threads: Option<i32>,
+        data_base_url: Option<&Bound<PyAny>>,
     ) -> PyResult<Self> {
         let py_resolvers: Vec<crate::plan_resolver::PyPlanResolver> = py_resolvers
             .into_iter()
@@ -142,6 +178,7 @@ impl PyVegaFusionRuntime {
             worker_threads,
             resolvers,
             use_current_thread,
+            data_base_url,
         )
     }
 

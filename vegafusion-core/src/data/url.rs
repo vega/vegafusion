@@ -12,18 +12,6 @@ pub enum ResolutionResult {
     Plan(LogicalPlan),
 }
 
-/// Three-state base URL setting for public API boundaries.
-#[derive(Clone, Debug, Default)]
-pub enum DataBaseUrlSetting {
-    /// Use the default CDN base URL (vega-datasets)
-    #[default]
-    Default,
-    /// Disable base URL; relative paths produce an error
-    Disabled,
-    /// Use a custom base URL (scheme URL or absolute path)
-    Custom(String),
-}
-
 /// Parsed URL representation passed to resolvers during the scan phase.
 /// All fields are populated from the fully-resolved URL (after base URL
 /// resolution and hash-stripping). Resolvers pattern-match on these fields
@@ -45,20 +33,6 @@ pub struct ParsedUrl {
     pub format_type: Option<String>,
     /// Parse spec from Vega format (e.g., {"date": "date"} for CSV column typing)
     pub parse: Option<crate::proto::gen::tasks::scan_url_format::Parse>,
-}
-
-/// Map a DataBaseUrlSetting (from public API) to the two-state Option<String>
-/// used by PlannerConfig. Custom base URLs are normalized (bare absolute paths
-/// become file:// URLs).
-pub fn resolve_data_base_url(
-    api_value: DataBaseUrlSetting,
-    default: Option<String>,
-) -> Result<Option<String>> {
-    match api_value {
-        DataBaseUrlSetting::Default => Ok(default),
-        DataBaseUrlSetting::Disabled => Ok(None),
-        DataBaseUrlSetting::Custom(s) => Ok(Some(normalize_base_url(s)?)),
-    }
 }
 
 static URL_SCHEME_RE: LazyLock<Regex> =
@@ -349,43 +323,5 @@ mod tests {
             result,
             "https://proxy.com/fetch?target=http://evil.com/data"
         );
-    }
-
-    #[test]
-    fn test_resolve_data_base_url_default() {
-        let default = Some("https://cdn.example.com/".to_string());
-        let result = resolve_data_base_url(DataBaseUrlSetting::Default, default.clone()).unwrap();
-        assert_eq!(result, default);
-    }
-
-    #[test]
-    fn test_resolve_data_base_url_disabled() {
-        let result = resolve_data_base_url(
-            DataBaseUrlSetting::Disabled,
-            Some("https://cdn.example.com/".to_string()),
-        )
-        .unwrap();
-        assert_eq!(result, None);
-    }
-
-    #[test]
-    fn test_resolve_data_base_url_custom() {
-        let result = resolve_data_base_url(
-            DataBaseUrlSetting::Custom("https://my-server.com/data/".to_string()),
-            Some("https://cdn.example.com/".to_string()),
-        )
-        .unwrap();
-        assert_eq!(result, Some("https://my-server.com/data/".to_string()));
-    }
-
-    #[test]
-    #[cfg(not(target_os = "windows"))]
-    fn test_resolve_data_base_url_custom_path() {
-        let result = resolve_data_base_url(
-            DataBaseUrlSetting::Custom("/home/user/data".to_string()),
-            None,
-        )
-        .unwrap();
-        assert_eq!(result, Some("file:///home/user/data".to_string()));
     }
 }

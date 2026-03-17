@@ -28,7 +28,7 @@ impl Default for CompilationConfig {
             callable_scope: default_callables(),
             constants: default_constants(),
             tz_config: None,
-            pipeline: ResolverPipeline::new(Vec::new(), ctx),
+            pipeline: ResolverPipeline::new(Vec::new(), ctx, None),
         }
     }
 }

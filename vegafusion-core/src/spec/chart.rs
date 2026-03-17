@@ -150,9 +150,8 @@ impl ChartSpec {
         &self,
         tz_config: &TzConfig,
         dataset_fingerprints: &HashMap<String, String>,
-        data_base_url: Option<String>,
     ) -> Result<Vec<Task>> {
-        let mut visitor = MakeTasksVisitor::new(tz_config, dataset_fingerprints, data_base_url);
+        let mut visitor = MakeTasksVisitor::new(tz_config, dataset_fingerprints);
         self.walk(&mut visitor)?;
         Ok(visitor.tasks)
     }

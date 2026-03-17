@@ -33,6 +33,8 @@ use {
 
 type CacheValue = (TaskValue, Vec<TaskValue>);
 
+use crate::data::pipeline::{resolve_data_base_url, DataBaseUrlSetting};
+
 #[derive(Clone)]
 pub struct VegaFusionRuntime {
     pub cache: VegaFusionCache,
@@ -42,10 +44,24 @@ pub struct VegaFusionRuntime {
 impl VegaFusionRuntime {
     pub fn new(cache: Option<VegaFusionCache>, plan_resolvers: Vec<Arc<dyn PlanResolver>>) -> Self {
         let ctx = Arc::new(make_datafusion_context());
+        let data_base_url = resolve_data_base_url(&DataBaseUrlSetting::Default).unwrap_or_default();
         Self {
             cache: cache.unwrap_or_else(|| VegaFusionCache::new(Some(32), None)),
-            pipeline: ResolverPipeline::new(plan_resolvers, ctx),
+            pipeline: ResolverPipeline::new(plan_resolvers, ctx, data_base_url),
         }
+    }
+
+    pub fn new_with_data_base_url(
+        cache: Option<VegaFusionCache>,
+        plan_resolvers: Vec<Arc<dyn PlanResolver>>,
+        data_base_url_setting: DataBaseUrlSetting,
+    ) -> vegafusion_core::error::Result<Self> {
+        let ctx = Arc::new(make_datafusion_context());
+        let data_base_url = resolve_data_base_url(&data_base_url_setting)?;
+        Ok(Self {
+            cache: cache.unwrap_or_else(|| VegaFusionCache::new(Some(32), None)),
+            pipeline: ResolverPipeline::new(plan_resolvers, ctx, data_base_url),
+        })
     }
 
     pub async fn get_node_value(

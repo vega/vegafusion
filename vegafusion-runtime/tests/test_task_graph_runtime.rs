@@ -50,7 +50,6 @@ async fn try_it() {
                 batch_size: 1024,
                 format_type: None,
                 pipeline: None,
-                data_base_url: None,
             },
             &tz_config,
         ),
@@ -132,13 +131,7 @@ async fn try_it_from_spec() {
         default_input_tz: None,
     };
     let task_scope = chart.to_task_scope().unwrap();
-    let tasks = chart
-        .to_tasks(
-            &tz_config,
-            &Default::default(),
-            Some(vegafusion_core::planning::plan::VEGA_DATASETS_CDN_BASE.to_string()),
-        )
-        .unwrap();
+    let tasks = chart.to_tasks(&tz_config, &Default::default()).unwrap();
 
     println!("task_scope: {task_scope:?}");
     println!("tasks: {tasks:?}");

@@ -1,7 +1,6 @@
 use std::{any::Any, collections::HashMap, sync::Arc};
 
 use crate::proto::gen::pretransform::pre_transform_values_warning::WarningType as ValuesWarningType;
-use crate::runtime::{resolve_data_base_url, DataBaseUrlSetting};
 use crate::task_graph::task_value::{MaterializedTaskValue, TaskValue};
 use crate::{
     data::dataset::VegaFusionDataset,
@@ -98,13 +97,7 @@ pub trait VegaFusionRuntimeTrait: Send + Sync {
         preserve_interactivity: bool,
         inline_datasets: &HashMap<String, VegaFusionDataset>,
         keep_variables: Vec<ScopedVariable>,
-        data_base_url: DataBaseUrlSetting,
     ) -> Result<(SpecPlan, Vec<ExportUpdate>)> {
-        let resolved_base = resolve_data_base_url(
-            data_base_url,
-            Some(crate::planning::plan::VEGA_DATASETS_CDN_BASE.to_string()),
-        )?;
-
         // Create spec plan
         let plan = SpecPlan::try_new(
             spec,
@@ -125,7 +118,7 @@ pub trait VegaFusionRuntimeTrait: Send + Sync {
         let task_scope = plan.server_spec.to_task_scope().unwrap();
         let tasks = plan
             .server_spec
-            .to_tasks(&tz_config, &dataset_fingerprints, resolved_base)
+            .to_tasks(&tz_config, &dataset_fingerprints)
             .unwrap();
         let task_graph = TaskGraph::new(tasks, &task_scope).unwrap();
         let task_graph_mapping = task_graph.build_mapping();
@@ -178,7 +171,6 @@ pub trait VegaFusionRuntimeTrait: Send + Sync {
                 options.preserve_interactivity,
                 inline_datasets,
                 keep_variables,
-                DataBaseUrlSetting::Default,
             )
             .await?;
 
@@ -213,7 +205,6 @@ pub trait VegaFusionRuntimeTrait: Send + Sync {
                 options.preserve_interactivity,
                 inline_datasets,
                 keep_variables,
-                DataBaseUrlSetting::Default,
             )
             .await?;
         let init_arrow = self.materialize_export_updates(init).await?;
@@ -338,11 +329,6 @@ pub trait VegaFusionRuntimeTrait: Send + Sync {
         // if they are not used elsewhere in the spec
         let keep_variables = Vec::from(variables);
 
-        let resolved_base = resolve_data_base_url(
-            DataBaseUrlSetting::Default,
-            Some(crate::planning::plan::VEGA_DATASETS_CDN_BASE.to_string()),
-        )?;
-
         // Create spec plan
         let plan = SpecPlan::try_new(
             spec,
@@ -371,7 +357,7 @@ pub trait VegaFusionRuntimeTrait: Send + Sync {
         let task_scope = plan.server_spec.to_task_scope().unwrap();
         let tasks = plan
             .server_spec
-            .to_tasks(&tz_config, &dataset_fingerprints, resolved_base)?;
+            .to_tasks(&tz_config, &dataset_fingerprints)?;
         let task_graph = TaskGraph::new(tasks, &task_scope).unwrap();
         let task_graph_mapping = task_graph.build_mapping();
 

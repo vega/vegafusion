@@ -10,7 +10,7 @@ use crate::{
         pretransform::PreTransformSpecWarning,
         tasks::{NodeValueIndex, TaskGraph, TzConfig, Variable},
     },
-    runtime::{DataBaseUrlSetting, VegaFusionRuntimeTrait},
+    runtime::VegaFusionRuntimeTrait,
     spec::chart::ChartSpec,
     task_graph::{graph::ScopedVariable, task_value::TaskValue},
 };
@@ -28,7 +28,6 @@ use vegafusion_common::{
 pub struct ChartStateOpts {
     pub tz_config: TzConfig,
     pub row_limit: Option<u32>,
-    pub data_base_url: DataBaseUrlSetting,
 }
 
 impl Default for ChartStateOpts {
@@ -39,7 +38,6 @@ impl Default for ChartStateOpts {
                 default_input_tz: None,
             },
             row_limit: None,
-            data_base_url: DataBaseUrlSetting::Default,
         }
     }
 }
@@ -68,10 +66,6 @@ impl ChartState {
             .map(|(k, ds)| (k.clone(), ds.fingerprint()))
             .collect::<HashMap<_, _>>();
 
-        let resolved_base = crate::runtime::resolve_data_base_url(
-            opts.data_base_url.clone(),
-            Some(crate::planning::plan::VEGA_DATASETS_CDN_BASE.to_string()),
-        )?;
         let plan = SpecPlan::try_new(&spec, &PlannerConfig::default())?;
 
         let task_scope = plan
@@ -80,7 +74,7 @@ impl ChartState {
             .with_context(|| "Failed to create task scope for server spec")?;
         let tasks = plan
             .server_spec
-            .to_tasks(&opts.tz_config, &dataset_fingerprints, resolved_base)
+            .to_tasks(&opts.tz_config, &dataset_fingerprints)
             .unwrap();
         let task_graph = TaskGraph::new(tasks, &task_scope).unwrap();
         let task_graph_mapping = task_graph.build_mapping();

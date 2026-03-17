@@ -37,7 +37,6 @@ mod tests {
                     default_input_tz: None,
                 },
                 row_limit: None,
-                data_base_url: Default::default(),
             },
         )
         .await
