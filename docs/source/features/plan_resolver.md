@@ -27,7 +27,7 @@ class TableResolver(PlanResolver):
         self._table = table
 
     def resolve_table(self, name, scheme, schema, metadata=None,
-                      projected_columns=None):
+                      projected_columns=None, filters=None):
         return self._table
 
 source = pa.table({"x": [1, 5, 10], "y": ["a", "b", "c"]})
@@ -42,8 +42,6 @@ datasets, _ = rt.pre_transform_datasets(
 ```
 
 VegaFusion calls `resolve_table` to get the data, then applies Vega transforms (filter, aggregate, etc.) via DataFusion. No protobuf dependency is needed.
-
-See [plan_resolver_basic.py](https://github.com/vega/vegafusion/tree/main/examples/python-examples/plan_resolver_basic.py) for a complete example.
 
 ### scan_url
 
@@ -60,7 +58,7 @@ class SalesResolver(PlanResolver):
         return None  # pass to next resolver
 
     def resolve_table(self, name, scheme, schema, metadata=None,
-                      projected_columns=None):
+                      projected_columns=None, filters=None):
         return pa.table({"product": ["Widget", "Gadget"], "revenue": [1200, 3400]})
 ```
 
@@ -101,11 +99,11 @@ See [plan_resolver_sql.py](https://github.com/vega/vegafusion/tree/main/examples
 
 .. autofunction:: vegafusion.plan_resolver.unparse_to_sql
 
+.. autofunction:: vegafusion.plan_resolver.unparse_expr_to_sql
+
 .. autofunction:: vegafusion.plan_resolver.inline_table_scan_node
 ```
 
 ## Rust
 
-The `PlanResolver` trait in `vegafusion-runtime` provides the same two-phase architecture (scan_url at planning time, resolve_table/resolve_plan at execution time).
-
-See [custom_resolver.rs](https://github.com/vega/vegafusion/tree/main/examples/rust-examples/examples/custom_resolver.rs) for a working example, and the [vegafusion-runtime docs on docs.rs](https://docs.rs/vegafusion-runtime/) for the full API.
+The `PlanResolver` trait in `vegafusion-runtime` provides the same two-phase architecture (scan_url at planning time, resolve_table/resolve_plan at execution time). See the [vegafusion-runtime docs on docs.rs](https://docs.rs/vegafusion-runtime/) for the full API.
