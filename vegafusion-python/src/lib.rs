@@ -699,6 +699,7 @@ fn _vegafusion(_py: Python, m: &Bound<PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(inline_table_scan_node, m)?)?;
     m.add_function(wrap_pyfunction!(external_table_scan_node, m)?)?;
     m.add_function(wrap_pyfunction!(unparse::unparse_plan_to_sql, m)?)?;
+    m.add_function(wrap_pyfunction!(unparse::unparse_expr_to_sql, m)?)?;
     m.add("__version__", env!("CARGO_PKG_VERSION"))?;
     Ok(())
 }

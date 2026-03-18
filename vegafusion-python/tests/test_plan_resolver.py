@@ -317,6 +317,7 @@ def test_resolve_table_resolver() -> None:
             schema: Any,
             metadata: dict[str, Any] | None = None,
             projected_columns: list[str] | None = None,
+            filters: list[Any] | None = None,
         ) -> pa.Table:
             self.resolve_calls.append(
                 {
@@ -437,6 +438,7 @@ def test_multiple_external_tables() -> None:
             schema: Any,
             metadata: dict[str, Any] | None = None,
             projected_columns: list[str] | None = None,
+            filters: list[Any] | None = None,
         ) -> pa.Table:
             self.resolved_names.append(name)
             if name == "source_a":
@@ -500,6 +502,7 @@ def test_resolve_table_error_propagates() -> None:
             schema: Any,
             metadata: dict[str, Any] | None = None,
             projected_columns: list[str] | None = None,
+            filters: list[Any] | None = None,
         ) -> pa.Table:
             raise ValueError("Simulated resolver failure")
 
@@ -723,6 +726,7 @@ def test_scan_url_called_with_structured_dict() -> None:
             schema: Any,
             metadata: dict[str, Any] | None = None,
             projected_columns: list[str] | None = None,
+            filters: list[Any] | None = None,
         ) -> pa.Table:
             return pa.table({"x": [1, 2], "y": ["a", "b"]})
 
@@ -813,6 +817,7 @@ def test_custom_scheme_via_scan_url() -> None:
             schema: Any,
             metadata: dict[str, Any] | None = None,
             projected_columns: list[str] | None = None,
+            filters: list[Any] | None = None,
         ) -> pa.Table:
             return pa.table({"val": [42, 99]})
 
@@ -850,6 +855,7 @@ def test_scan_url_not_called_without_override() -> None:
             schema: Any,
             metadata: dict[str, Any] | None = None,
             projected_columns: list[str] | None = None,
+            filters: list[Any] | None = None,
         ) -> pa.Table:
             return pa.table({"x": [1, 2, 3]})
 
@@ -867,3 +873,96 @@ def test_scan_url_not_called_without_override() -> None:
     )
 
     assert len(datasets) == 1
+
+
+def test_resolve_table_accepts_filters_param() -> None:
+    """resolve_table with filters kwarg doesn't crash (filters may be empty)."""
+    from vegafusion.plan_resolver import external_table_scan_node
+
+    class FilterAcceptingResolver(PlanResolver):
+        def scan_url(self, parsed_url: dict[str, Any]) -> Any:
+            if parsed_url["scheme"] == "myproto":
+                schema = pa.schema([("val", pa.int64())])
+                return external_table_scan_node(
+                    table_name="data",
+                    schema=schema,
+                    scheme="myproto",
+                )
+            return None
+
+        def resolve_table(
+            self,
+            name: str,
+            scheme: str,
+            schema: Any,
+            metadata: dict[str, Any] | None = None,
+            projected_columns: list[str] | None = None,
+            filters: list[Any] | None = None,
+        ) -> pa.Table:
+            # filters may be None or empty — just verify it's accepted
+            return pa.table({"val": [42, 99]})
+
+    resolver = FilterAcceptingResolver()
+    rt = vf.VegaFusionRuntime(plan_resolver=resolver)
+
+    spec = {
+        "$schema": "https://vega.github.io/schema/vega/v5.json",
+        "data": [{"name": "source", "url": "myproto://db/table"}],
+    }
+
+    datasets, _warnings = rt.pre_transform_datasets(
+        spec,
+        datasets=["source"],
+        dataset_format="pyarrow",
+    )
+    assert len(datasets) == 1
+    assert datasets[0].column("val").to_pylist() == [42, 99]
+
+
+def test_unparse_expr_to_sql() -> None:
+    """unparse_expr_to_sql converts proto expressions to SQL strings."""
+    from vegafusion.plan_resolver import unparse_expr_to_sql
+    from vegafusion.proto.datafusion_pb2 import (
+        BinaryExprNode,
+        LogicalExprNode,
+    )
+    from vegafusion.proto.datafusion.proto_common.proto.datafusion_common_pb2 import (
+        Column as ColumnProto,
+        ScalarValue,
+    )
+
+    # Build proto for: x > 3
+    col_x = LogicalExprNode(column=ColumnProto(name="x"))
+    lit_3 = LogicalExprNode(
+        literal=ScalarValue(int64_value=3),
+    )
+    gt_expr = LogicalExprNode(
+        binary_expr=BinaryExprNode(
+            operands=[col_x, lit_3],
+            op="Gt",
+        )
+    )
+
+    # Build proto for: y = 'hello'
+    col_y = LogicalExprNode(column=ColumnProto(name="y"))
+    lit_hello = LogicalExprNode(
+        literal=ScalarValue(utf8_value="hello"),
+    )
+    eq_expr = LogicalExprNode(
+        binary_expr=BinaryExprNode(
+            operands=[col_y, lit_hello],
+            op="Eq",
+        )
+    )
+
+    # Single expression
+    sql_single = unparse_expr_to_sql(gt_expr)
+    assert sql_single == snapshot("(x > 3)")
+
+    # Multiple expressions joined with AND
+    sql_multi = unparse_expr_to_sql([gt_expr, eq_expr])
+    assert sql_multi == snapshot("((x > 3) AND (y = 'hello'))")
+
+    # With postgres dialect
+    sql_pg = unparse_expr_to_sql([gt_expr, eq_expr], dialect="postgres")
+    assert sql_pg == snapshot('(("x" > 3) AND ("y" = \'hello\'))')

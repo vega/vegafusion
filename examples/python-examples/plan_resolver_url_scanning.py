@@ -59,6 +59,7 @@ class SalesDataResolver(PlanResolver):
         schema: Any,
         metadata: dict[str, Any] | None = None,
         projected_columns: list[str] | None = None,
+        filters: list[Any] | None = None,
     ) -> pa.Table:
         return pa.table(
             {

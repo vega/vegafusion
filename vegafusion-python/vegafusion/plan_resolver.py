@@ -12,13 +12,14 @@ logger = logging.getLogger(__name__)
 _PROTOBUF_INSTALL_HINT = (
     "The 'protobuf' package is required for plan-level resolvers "
     "(resolve_plan / resolve_plan_proto) and related utilities "
-    "(inline_table_scan_node, unparse_to_sql). "
+    "(inline_table_scan_node, unparse_to_sql, unparse_expr_to_sql). "
     "Install it with: pip install vegafusion[plan-resolver]"
 )
 
 if TYPE_CHECKING:
     from vegafusion.dataset import ExternalDataset
     from vegafusion.proto.datafusion_pb2 import (
+        LogicalExprNode,  # type: ignore[attr-defined]
         LogicalPlanNode,  # type: ignore[attr-defined]
     )
 
@@ -132,6 +133,7 @@ class PlanResolver:
         schema: Schema,
         metadata: dict[str, Any] | None = None,
         projected_columns: list[str] | None = None,
+        filters: list[Any] | None = None,
     ) -> Table:
         """Provide data for an external table reference.
 
@@ -145,6 +147,12 @@ class PlanResolver:
             metadata: JSON metadata dict from ExternalTableProvider.
             projected_columns: Column names DataFusion actually needs.
                 None if no projection (all columns needed).
+            filters: Pushed-down filter predicates from DataFusion as
+                ``LogicalExprNode`` protobuf messages, already split into
+                a conjunction (individual expressions from AND). These are
+                hints — resolvers may apply some, all, or none. DataFusion
+                re-applies all filters on the output regardless. Use
+                :func:`unparse_expr_to_sql` to convert to SQL strings.
 
         Returns:
             An Arrow-compatible table (arro3, PyArrow, etc.).
@@ -256,12 +264,15 @@ class PlanResolver:
                             table_name,
                         )
 
+                filters = list(inner.filters) if inner.filters else None
+
                 table_data = self.resolve_table(
                     name=table_name,
                     scheme=dataset.scheme,
                     schema=dataset.schema,
                     metadata=metadata,
                     projected_columns=projected_columns,
+                    filters=filters,
                 )
 
                 replacement = inline_table_scan_node(
@@ -441,3 +452,39 @@ def unparse_to_sql(
     if not isinstance(plan, bytes):
         plan = plan.SerializeToString()
     return str(_native(plan, dialect))
+
+
+def unparse_expr_to_sql(
+    exprs: LogicalExprNode | bytes | list[LogicalExprNode | bytes],
+    dialect: str = "default",
+) -> str:
+    """Convert filter expression(s) to a SQL string.
+
+    Accepts a single ``LogicalExprNode`` protobuf message or a list of them.
+    Multiple expressions are joined with ``AND``.
+
+    This is useful for converting the ``filters`` parameter of
+    :meth:`PlanResolver.resolve_table` into a SQL WHERE clause that can
+    be passed to external data sources.
+
+    Args:
+        exprs: A single ``LogicalExprNode`` or a list of them.
+        dialect: SQL dialect. One of ``"default"``, ``"postgres"``,
+            ``"mysql"``, ``"sqlite"``, ``"duckdb"``, ``"bigquery"``.
+
+    Returns:
+        The SQL string representation of the expression(s).
+    """
+    from vegafusion._vegafusion import unparse_expr_to_sql as _native
+
+    if not isinstance(exprs, list):
+        exprs = [exprs]
+
+    expr_bytes = []
+    for expr in exprs:
+        if isinstance(expr, bytes):
+            expr_bytes.append(expr)
+        else:
+            expr_bytes.append(expr.SerializeToString())
+
+    return str(_native(expr_bytes, dialect))

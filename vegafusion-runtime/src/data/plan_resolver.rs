@@ -5,7 +5,7 @@ use async_trait::async_trait;
 use datafusion::catalog::TableProvider;
 use datafusion::datasource::{provider_as_source, source_as_provider, MemTable};
 use datafusion_common::tree_node::{Transformed, TreeNode, TreeNodeRewriter};
-use datafusion_expr::LogicalPlan as DFLogicalPlan;
+use datafusion_expr::{Expr, LogicalPlan as DFLogicalPlan};
 use vegafusion_common::arrow::datatypes::SchemaRef;
 use vegafusion_common::data::table::VegaFusionTable;
 use vegafusion_common::datafusion_expr::LogicalPlan;
@@ -67,6 +67,9 @@ pub trait PlanResolver: Send + Sync + 'static {
     /// * `metadata` - JSON metadata from ExternalTableProvider
     /// * `projected_columns` - column names DataFusion actually needs,
     ///   or `None` if all columns are needed
+    /// * `filters` - pushed-down filter predicates from DataFusion, already
+    ///   split into a conjunction. These are hints — resolvers may apply
+    ///   some, all, or none. DataFusion re-applies all filters regardless.
     async fn resolve_table(
         &self,
         _name: &str,
@@ -74,6 +77,7 @@ pub trait PlanResolver: Send + Sync + 'static {
         _schema: SchemaRef,
         _metadata: &serde_json::Value,
         _projected_columns: Option<Vec<String>>,
+        _filters: &[Expr],
     ) -> Result<VegaFusionTable> {
         Err(VegaFusionError::internal(
             "resolve_table not implemented — override resolve_table or resolve_plan",
@@ -106,6 +110,7 @@ pub trait PlanResolver: Send + Sync + 'static {
                     info.schema.clone(),
                     &info.metadata,
                     info.projected_columns.clone(),
+                    &info.filters,
                 )
                 .await?;
             let mem_table =
@@ -132,9 +137,14 @@ struct ExternalTableInfo {
     schema: SchemaRef,
     metadata: serde_json::Value,
     projected_columns: Option<Vec<String>>,
+    filters: Vec<Expr>,
 }
 
 /// Walk a LogicalPlan and collect ExternalTableProvider info for each table scan.
+///
+/// Filters come from `scan.filters` on the `TableScan`, which are populated
+/// when DataFusion's optimizer pushes filter predicates down to the scan.
+/// `ExternalTableProvider` reports `Inexact` for all filters to enable this.
 fn extract_external_tables(plan: &LogicalPlan) -> HashMap<String, ExternalTableInfo> {
     let mut tables = HashMap::new();
     let _ = plan.apply(|node| {
@@ -155,6 +165,7 @@ fn extract_external_tables(plan: &LogicalPlan) -> HashMap<String, ExternalTableI
                             schema: ext.schema(),
                             metadata: ext.metadata().clone(),
                             projected_columns,
+                            filters: scan.filters.clone(),
                         },
                     );
                 }

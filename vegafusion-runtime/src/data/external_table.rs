@@ -8,7 +8,7 @@ use datafusion::catalog::TableProvider;
 use datafusion::datasource::TableType;
 use datafusion::physical_plan::ExecutionPlan;
 use datafusion_common::{plan_err, Result};
-use datafusion_expr::Expr;
+use datafusion_expr::{Expr, TableProviderFilterPushDown};
 use serde_json::Value;
 use vegafusion_common::arrow::datatypes::SchemaRef;
 
@@ -79,6 +79,16 @@ impl TableProvider for ExternalTableProvider {
 
     fn table_type(&self) -> TableType {
         TableType::Base
+    }
+
+    fn supports_filters_pushdown(
+        &self,
+        filters: &[&Expr],
+    ) -> Result<Vec<TableProviderFilterPushDown>> {
+        // Report Inexact so DataFusion pushes filters into the TableScan
+        // (where resolve_table can access them) while still re-applying
+        // them on the output for correctness.
+        Ok(vec![TableProviderFilterPushDown::Inexact; filters.len()])
     }
 
     async fn scan(
