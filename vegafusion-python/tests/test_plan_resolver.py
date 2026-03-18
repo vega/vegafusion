@@ -872,14 +872,17 @@ def test_scan_url_not_called_without_override() -> None:
     assert len(datasets) == 1
 
 
-def test_resolve_table_accepts_filters_param() -> None:
-    """resolve_table with filters kwarg doesn't crash (filters may be empty)."""
+def test_resolve_table_with_filter_transform() -> None:
+    """resolve_table works with a Vega filter transform; filter is applied after resolution."""
     from vegafusion.plan_resolver import external_table_scan_node
 
-    class FilterAcceptingResolver(PlanResolver):
+    class FilterCapturingResolver(PlanResolver):
+        def __init__(self) -> None:
+            self.captured_filters: list[Any] = []
+
         def scan_url(self, parsed_url: dict[str, Any]) -> Any:
             if parsed_url["scheme"] == "myproto":
-                schema = pa.schema([("val", pa.int64())])
+                schema = pa.schema([("x", pa.int64()), ("y", pa.utf8())])
                 return external_table_scan_node(
                     table_name="data",
                     schema=schema,
@@ -896,15 +899,21 @@ def test_resolve_table_accepts_filters_param() -> None:
             projected_columns: list[str] | None = None,
             filters: list[Any] | None = None,
         ) -> pa.Table:
-            # filters may be None or empty — just verify it's accepted
-            return pa.table({"val": [42, 99]})
+            self.captured_filters.extend(filters or [])
+            return pa.table({"x": [1, 5, 10], "y": ["a", "b", "c"]})
 
-    resolver = FilterAcceptingResolver()
+    resolver = FilterCapturingResolver()
     rt = vf.VegaFusionRuntime(plan_resolver=resolver)
 
     spec = {
         "$schema": "https://vega.github.io/schema/vega/v5.json",
-        "data": [{"name": "source", "url": "myproto://db/table"}],
+        "data": [
+            {
+                "name": "source",
+                "url": "myproto://db/table",
+                "transform": [{"type": "filter", "expr": "datum.x > 3"}],
+            }
+        ],
     }
 
     datasets, _warnings = rt.pre_transform_datasets(
@@ -912,8 +921,17 @@ def test_resolve_table_accepts_filters_param() -> None:
         datasets=["source"],
         dataset_format="pyarrow",
     )
+
     assert len(datasets) == 1
-    assert datasets[0].column("val").to_pylist() == [42, 99]
+    # Filter is applied by DataFusion after resolve_table returns
+    result = datasets[0]
+    assert result.column("x").to_pylist() == [5, 10]
+
+    # TODO: filters should be pushed down to resolve_table so resolvers can
+    # optimize data loading. Currently blocked because VegaFusion's _vf_order
+    # window sits between the scan and user filters, preventing DataFusion's
+    # PushDownFilter from reaching the ExternalTableProvider.
+    assert resolver.captured_filters == []
 
 
 def test_unparse_expr_to_sql() -> None:
