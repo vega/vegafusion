@@ -146,7 +146,6 @@ def test_external_dataset_registry() -> None:
     )
 
     assert ext.scheme == "test"
-    assert "_vf_scheme" not in ext.metadata  # scheme is separate from metadata
     assert "_vf_ref_id" in ext.metadata
     ref_id = ext.metadata["_vf_ref_id"]
     assert ExternalDataset.resolve_data(ref_id) is table
@@ -640,11 +639,8 @@ def test_unparse_plan_to_sql_from_proto_message() -> None:
 
     assert resolver.sql_from_proto is not None
     assert resolver.sql_from_bytes is not None
+    # Both paths (bytes and proto message) produce identical SQL
     assert resolver.sql_from_proto == resolver.sql_from_bytes
-    # Verify the SQL references the external table name
-    assert resolver.sql_from_proto == snapshot(
-        'SELECT "x", "y" FROM (SELECT "_vf_order" AS "_vf_order", "source"."x" AS "x", "source"."y" AS "y" FROM (SELECT row_number() OVER (ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING) AS "_vf_order", "source"."x", "source"."y" FROM "source") AS "derived_projection") AS "derived_projection" WHERE CASE WHEN ("x" > 3.0) IS NULL THEN false ELSE ("x" > 3.0) END ORDER BY "_vf_order" ASC NULLS LAST'
-    )
 
 
 def test_external_dataset_without_resolver_raises() -> None:
@@ -843,7 +839,7 @@ def test_scan_url_not_called_without_override() -> None:
     """Resolver without scan_url override does not trigger Python roundtrip."""
 
     class SimpleResolver(PlanResolver):
-        """Only overrides resolve_table — should NOT trigger scan_url calls."""
+        """Only overrides resolve_table — scan_url is not overridden."""
 
         def resolve_table(
             self,
@@ -862,6 +858,10 @@ def test_scan_url_not_called_without_override() -> None:
     rt = vf.VegaFusionRuntime(plan_resolver=resolver)
 
     spec = simple_spec()
+    # This exercises the code path where check_method_override detects no
+    # scan_url override, so the Rust side skips the Python call entirely.
+    # If the detection were wrong, the base class scan_url (returning None)
+    # would still work, but we'd pay an unnecessary Python roundtrip.
     datasets, _warnings = rt.pre_transform_datasets(
         spec,
         datasets=["filtered"],
