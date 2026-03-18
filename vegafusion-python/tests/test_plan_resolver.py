@@ -698,9 +698,6 @@ def test_unparse_invalid_dialect() -> None:
     assert "Unknown dialect" in str(resolver.error)
 
 
-# ── scan_url tests ──
-
-
 def test_scan_url_called_with_structured_dict() -> None:
     """scan_url receives a structured dict with parsed URL fields."""
     from vegafusion.plan_resolver import external_table_scan_node

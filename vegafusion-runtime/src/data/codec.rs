@@ -83,14 +83,10 @@ impl LogicalExtensionCodec for VegaFusionCodec {
                         )
                     })?
                     .to_string();
-                let source = envelope
-                    .get("source")
-                    .and_then(|v| v.as_str())
-                    .map(|s| s.to_string());
                 let metadata = envelope.get("metadata").cloned().unwrap_or(Value::Null);
-                Ok(Arc::new(
-                    ExternalTableProvider::new(scheme, schema, metadata).with_source(source),
-                ))
+                Ok(Arc::new(ExternalTableProvider::new(
+                    scheme, schema, metadata,
+                )))
             }
             Some("inline") => {
                 let name = envelope
@@ -133,14 +129,11 @@ impl LogicalExtensionCodec for VegaFusionCodec {
         buf: &mut Vec<u8>,
     ) -> Result<()> {
         if let Some(ext) = node.as_any().downcast_ref::<ExternalTableProvider>() {
-            let mut envelope = serde_json::json!({
+            let envelope = serde_json::json!({
                 "type": "external",
                 "scheme": ext.scheme(),
                 "metadata": ext.metadata(),
             });
-            if let Some(source) = ext.source() {
-                envelope["source"] = serde_json::Value::String(source.to_string());
-            }
             let json_bytes = serde_json::to_vec(&envelope).map_err(|e| {
                 DataFusionError::Plan(format!(
                     "Failed to encode ExternalTableProvider envelope: {e}"

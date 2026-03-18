@@ -7,7 +7,9 @@ use vegafusion_common::datafusion_expr::LogicalPlan;
 use vegafusion_common::error::Result;
 #[cfg(not(feature = "parquet"))]
 use vegafusion_common::error::VegaFusionError;
-use vegafusion_core::runtime::{ParsedUrl, ResolutionResult};
+use vegafusion_core::runtime::ParsedUrl;
+
+use super::plan_resolver::ResolutionResult;
 
 use super::plan_resolver::PlanResolver;
 

@@ -77,7 +77,6 @@ message DataUrlTask {
   int32 batch_size = 3;
   ScanUrlFormat format_type = 4;
   transforms.TransformPipeline pipeline = 5;
-  reserved 6;
 }
 
 // ## Inline values task

@@ -46,13 +46,11 @@ class ExternalDataset:
         schema: Any,  # noqa: ANN401
         metadata: dict[str, Any] | None = None,
         data: Any = None,  # noqa: ANN401
-        source: str | None = None,
     ) -> None:
         self._schema: Schema = (
             Schema.from_arrow(schema) if not isinstance(schema, Schema) else schema
         )
         self._scheme = scheme
-        self._source = source
         self._metadata: dict[str, Any] = dict(metadata) if metadata else {}
         self._data: Any = data
         self._data_ref: _DataRef | None = None

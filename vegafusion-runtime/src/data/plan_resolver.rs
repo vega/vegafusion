@@ -10,19 +10,26 @@ use vegafusion_common::arrow::datatypes::SchemaRef;
 use vegafusion_common::data::table::VegaFusionTable;
 use vegafusion_common::datafusion_expr::LogicalPlan;
 use vegafusion_common::error::{Result, VegaFusionError};
-use vegafusion_core::runtime::{ParsedUrl, ResolutionResult};
+use vegafusion_core::runtime::ParsedUrl;
 
 use super::external_table::ExternalTableProvider;
+
+pub enum ResolutionResult {
+    /// Resolver fully materialized the plan
+    Table(VegaFusionTable),
+    /// Resolver produced a rewritten plan for the next resolver to handle,
+    /// or for DataFusion to execute if this is the last resolver
+    Plan(LogicalPlan),
+}
 
 /// Trait for custom data source integration with VegaFusion.
 ///
 /// Resolvers participate in a two-phase pipeline:
 ///
-/// 1. **Planning phase**: [`capabilities`](Self::capabilities) declares supported
-///    URL schemes/formats, and [`scan_url`](Self::scan_url) converts URLs into
+/// 1. **URL scanning**: [`scan_url`](Self::scan_url) converts URLs into
 ///    `LogicalPlan` nodes (typically `ExternalTableProvider` markers).
 ///
-/// 2. **Execution phase**: [`resolve_table`](Self::resolve_table) or
+/// 2. **Execution**: [`resolve_table`](Self::resolve_table) or
 ///    [`resolve_plan`](Self::resolve_plan) provides data for external table
 ///    references or rewrites the plan for remote execution.
 ///

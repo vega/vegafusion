@@ -390,7 +390,6 @@ def external_table_scan_node(
     scheme: str,
     schema: Schema,
     metadata: dict[str, Any] | None = None,
-    source: str | None = None,
 ) -> LogicalPlanNode:
     """Build a LogicalPlanNode for an external table scan.
 
@@ -403,7 +402,6 @@ def external_table_scan_node(
         scheme: Scheme identifier (e.g. ``"spark"``).
         schema: Arrow schema (arro3.core.Schema) — required for logical planning.
         metadata: Optional JSON-serializable dict of metadata.
-        source: Optional source identifier.
 
     Returns:
         A deserialized LogicalPlanNode protobuf message.
@@ -424,7 +422,6 @@ def external_table_scan_node(
             scheme=scheme,
             schema=schema,
             metadata=metadata,
-            source=source,
         )
     )
     return node

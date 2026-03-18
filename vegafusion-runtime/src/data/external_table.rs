@@ -24,7 +24,6 @@ use vegafusion_common::arrow::datatypes::SchemaRef;
 pub struct ExternalTableProvider {
     scheme: String,
     schema: SchemaRef,
-    source: Option<String>,
     metadata: Value,
 }
 
@@ -33,22 +32,12 @@ impl ExternalTableProvider {
         Self {
             scheme,
             schema,
-            source: None,
             metadata,
         }
     }
 
-    pub fn with_source(mut self, source: Option<String>) -> Self {
-        self.source = source;
-        self
-    }
-
     pub fn scheme(&self) -> &str {
         &self.scheme
-    }
-
-    pub fn source(&self) -> Option<&str> {
-        self.source.as_deref()
     }
 
     pub fn metadata(&self) -> &Value {
@@ -60,7 +49,6 @@ impl Debug for ExternalTableProvider {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("ExternalTableProvider")
             .field("scheme", &self.scheme)
-            .field("source", &self.source)
             .field("schema", &self.schema)
             .field("metadata", &self.metadata)
             .finish()

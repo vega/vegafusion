@@ -15,10 +15,11 @@ use vegafusion_common::arrow::record_batch::RecordBatch;
 use vegafusion_common::data::table::VegaFusionTable;
 use vegafusion_common::datafusion_expr::LogicalPlan;
 use vegafusion_common::error::{Result, VegaFusionError};
-use vegafusion_core::runtime::{ParsedUrl, ResolutionResult};
+use vegafusion_core::runtime::ParsedUrl;
 use vegafusion_runtime::data::codec::VegaFusionCodec;
 use vegafusion_runtime::data::external_table::ExternalTableProvider;
 use vegafusion_runtime::data::plan_resolver::PlanResolver;
+use vegafusion_runtime::data::plan_resolver::ResolutionResult;
 
 /// A `PlanResolver` that delegates to a Python object.
 ///
@@ -91,7 +92,6 @@ impl PyPlanResolver {
 struct ExternalTableInfo {
     scheme: String,
     schema: SchemaRef,
-    source: Option<String>,
     metadata: Value,
     ref_id: Option<String>,
 }
@@ -113,7 +113,6 @@ fn extract_external_tables(plan: &LogicalPlan) -> HashMap<String, ExternalTableI
                         ExternalTableInfo {
                             scheme: ext.scheme().to_string(),
                             schema: ext.schema(),
-                            source: ext.source().map(|s| s.to_string()),
                             metadata: ext.metadata().clone(),
                             ref_id,
                         },
@@ -166,13 +165,12 @@ fn build_datasets_dict<'py>(
         // Convert metadata to Python dict
         let py_metadata = pythonize::pythonize(py, &info.metadata)?;
 
-        // Reconstruct ExternalDataset(scheme, schema, metadata, data, source)
+        // Reconstruct ExternalDataset(scheme, schema, metadata, data)
         let kwargs = PyDict::new(py);
         kwargs.set_item("scheme", &info.scheme)?;
         kwargs.set_item("schema", py_schema)?;
         kwargs.set_item("metadata", py_metadata)?;
         kwargs.set_item("data", &data)?;
-        kwargs.set_item("source", info.source.as_deref())?;
         let dataset = dataset_cls.call((), Some(&kwargs))?;
         dict.set_item(table_name, dataset)?;
     }

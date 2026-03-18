@@ -19,7 +19,9 @@ use vegafusion_core::proto::gen::tasks::{
 use vegafusion_core::runtime::VegaFusionRuntimeTrait;
 use vegafusion_core::spec::chart::ChartSpec;
 use vegafusion_core::task_graph::graph::ScopedVariable;
-use vegafusion_runtime::task_graph::runtime::{decode_inline_datasets, VegaFusionRuntime};
+use vegafusion_runtime::task_graph::runtime::{
+    decode_inline_datasets, VegaFusionRuntime, VegaFusionRuntimeOpts,
+};
 
 use clap::Parser;
 use regex::Regex;
@@ -374,10 +376,11 @@ fn main() -> Result<(), VegaFusionError> {
         .build()
         .expect("Failed to create tokio runtime");
 
-    let tg_runtime = VegaFusionRuntime::new(
-        Some(VegaFusionCache::new(Some(args.capacity), memory_limit)),
-        Vec::new(),
-    );
+    let tg_runtime = VegaFusionRuntime::new(VegaFusionRuntimeOpts {
+        cache: Some(VegaFusionCache::new(Some(args.capacity), memory_limit)),
+        ..Default::default()
+    })
+    .expect("Failed to create VegaFusionRuntime");
 
     tokio_runtime.block_on(async move {
         grpc_server(grpc_address, tg_runtime.clone(), args.web)

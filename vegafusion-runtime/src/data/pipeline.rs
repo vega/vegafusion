@@ -8,7 +8,9 @@ use vegafusion_common::data::table::VegaFusionTable;
 use vegafusion_common::datafusion_expr::LogicalPlan;
 use vegafusion_common::error::{Result, VegaFusionError};
 use vegafusion_core::data::url::normalize_base_url;
-use vegafusion_core::runtime::{ParsedUrl, ResolutionResult};
+use vegafusion_core::runtime::ParsedUrl;
+
+use super::plan_resolver::ResolutionResult;
 
 use super::datafusion_resolver::DataFusionResolver;
 use super::external_table::ExternalTableProvider;

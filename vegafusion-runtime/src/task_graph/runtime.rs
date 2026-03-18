@@ -35,6 +35,22 @@ type CacheValue = (TaskValue, Vec<TaskValue>);
 
 use crate::data::pipeline::{resolve_data_base_url, DataBaseUrlSetting};
 
+pub struct VegaFusionRuntimeOpts {
+    pub plan_resolvers: Vec<Arc<dyn PlanResolver>>,
+    pub data_base_url: DataBaseUrlSetting,
+    pub cache: Option<VegaFusionCache>,
+}
+
+impl Default for VegaFusionRuntimeOpts {
+    fn default() -> Self {
+        Self {
+            plan_resolvers: Vec::new(),
+            data_base_url: DataBaseUrlSetting::Default,
+            cache: None,
+        }
+    }
+}
+
 #[derive(Clone)]
 pub struct VegaFusionRuntime {
     pub cache: VegaFusionCache,
@@ -43,26 +59,14 @@ pub struct VegaFusionRuntime {
 }
 
 impl VegaFusionRuntime {
-    pub fn new(cache: Option<VegaFusionCache>, plan_resolvers: Vec<Arc<dyn PlanResolver>>) -> Self {
+    pub fn new(opts: VegaFusionRuntimeOpts) -> vegafusion_core::error::Result<Self> {
         let ctx = Arc::new(make_datafusion_context());
-        let data_base_url = resolve_data_base_url(&DataBaseUrlSetting::Default).unwrap_or_default();
-        Self {
-            cache: cache.unwrap_or_else(|| VegaFusionCache::new(Some(32), None)),
-            pipeline: ResolverPipeline::new(plan_resolvers, ctx),
-            data_base_url,
-        }
-    }
-
-    pub fn new_with_data_base_url(
-        cache: Option<VegaFusionCache>,
-        plan_resolvers: Vec<Arc<dyn PlanResolver>>,
-        data_base_url_setting: DataBaseUrlSetting,
-    ) -> vegafusion_core::error::Result<Self> {
-        let ctx = Arc::new(make_datafusion_context());
-        let data_base_url = resolve_data_base_url(&data_base_url_setting)?;
+        let data_base_url = resolve_data_base_url(&opts.data_base_url)?;
         Ok(Self {
-            cache: cache.unwrap_or_else(|| VegaFusionCache::new(Some(32), None)),
-            pipeline: ResolverPipeline::new(plan_resolvers, ctx),
+            cache: opts
+                .cache
+                .unwrap_or_else(|| VegaFusionCache::new(Some(32), None)),
+            pipeline: ResolverPipeline::new(opts.plan_resolvers, ctx),
             data_base_url,
         })
     }
@@ -107,7 +111,7 @@ impl VegaFusionRuntime {
 
 impl Default for VegaFusionRuntime {
     fn default() -> Self {
-        Self::new(None, Vec::new())
+        Self::new(VegaFusionRuntimeOpts::default()).expect("default opts should not fail")
     }
 }
 

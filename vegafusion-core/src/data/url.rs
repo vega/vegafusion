@@ -1,16 +1,6 @@
 use regex::Regex;
 use std::sync::LazyLock;
-use vegafusion_common::data::table::VegaFusionTable;
-use vegafusion_common::datafusion_expr::LogicalPlan;
 use vegafusion_common::error::Result;
-
-pub enum ResolutionResult {
-    /// Resolver fully materialized the plan
-    Table(VegaFusionTable),
-    /// Resolver produced a rewritten plan for the next resolver to handle,
-    /// or for DataFusion to execute if this is the last resolver
-    Plan(LogicalPlan),
-}
 
 /// Parsed URL representation passed to resolvers during the scan phase.
 /// All fields are populated from the fully-resolved URL (after base URL

@@ -1,10 +1,11 @@
 use std::sync::Arc;
 use vegafusion_common::datafusion_expr::LogicalPlan;
 use vegafusion_common::error::Result;
-use vegafusion_core::runtime::{ResolutionResult, VegaFusionRuntimeTrait};
+use vegafusion_core::runtime::VegaFusionRuntimeTrait;
 use vegafusion_core::spec::chart::ChartSpec;
 use vegafusion_runtime::data::plan_resolver::PlanResolver;
-use vegafusion_runtime::task_graph::runtime::VegaFusionRuntime;
+use vegafusion_runtime::data::plan_resolver::ResolutionResult;
+use vegafusion_runtime::task_graph::runtime::{VegaFusionRuntime, VegaFusionRuntimeOpts};
 
 /// A custom resolver that logs plan resolution and passes through to DataFusion
 #[derive(Clone)]
@@ -35,7 +36,11 @@ async fn main() {
     let custom_resolver = Arc::new(LoggingResolver) as Arc<dyn PlanResolver>;
 
     // Create runtime with custom resolver
-    let runtime = VegaFusionRuntime::new(None, vec![custom_resolver]);
+    let runtime = VegaFusionRuntime::new(VegaFusionRuntimeOpts {
+        plan_resolvers: vec![custom_resolver],
+        ..Default::default()
+    })
+    .unwrap();
 
     println!("Starting pre-transform with custom resolver\n");
 

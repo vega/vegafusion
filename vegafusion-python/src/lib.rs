@@ -20,7 +20,7 @@ use vegafusion_core::proto::gen::pretransform::{
 use vegafusion_core::proto::gen::tasks::{TzConfig, Variable};
 use vegafusion_runtime::task_graph::GrpcVegaFusionRuntime;
 
-use vegafusion_runtime::task_graph::runtime::VegaFusionRuntime;
+use vegafusion_runtime::task_graph::runtime::{VegaFusionRuntime, VegaFusionRuntimeOpts};
 
 use env_logger::{Builder, Target};
 use serde_json::json;
@@ -92,11 +92,11 @@ impl PyVegaFusionRuntime {
         };
 
         Ok(Self {
-            runtime: Arc::new(VegaFusionRuntime::new_with_data_base_url(
-                Some(VegaFusionCache::new(max_capacity, memory_limit)),
-                resolvers,
-                data_base_url_setting,
-            )?),
+            runtime: Arc::new(VegaFusionRuntime::new(VegaFusionRuntimeOpts {
+                cache: Some(VegaFusionCache::new(max_capacity, memory_limit)),
+                plan_resolvers: resolvers,
+                data_base_url: data_base_url_setting,
+            })?),
             tokio_runtime: Arc::new(tokio_runtime_connection),
         })
     }
@@ -633,18 +633,16 @@ pub fn inline_table_scan_node(name: String, schema: pyo3_arrow::PySchema) -> PyR
 ///     scheme: Scheme identifier (e.g. "spark").
 ///     schema: Arrow schema (arro3.core.Schema) — required for logical planning.
 ///     metadata: Optional JSON-serializable dict of metadata.
-///     source: Optional source identifier.
 ///
 /// Returns:
 ///     bytes: Serialized LogicalPlanNode protobuf.
 #[pyfunction]
-#[pyo3(signature = (table_name, scheme, schema, metadata=None, source=None))]
+#[pyo3(signature = (table_name, scheme, schema, metadata=None))]
 pub fn external_table_scan_node(
     table_name: String,
     scheme: String,
     schema: pyo3_arrow::PySchema,
     metadata: Option<&Bound<'_, pyo3::types::PyAny>>,
-    source: Option<String>,
 ) -> PyResult<Vec<u8>> {
     use datafusion::datasource::provider_as_source;
     use datafusion_proto::bytes::logical_plan_to_bytes_with_extension_codec;
@@ -661,9 +659,11 @@ pub fn external_table_scan_node(
         None => serde_json::Value::Object(serde_json::Map::new()),
     };
 
-    let provider = Arc::new(
-        ExternalTableProvider::new(scheme, arrow_schema, metadata_value).with_source(source),
-    );
+    let provider = Arc::new(ExternalTableProvider::new(
+        scheme,
+        arrow_schema,
+        metadata_value,
+    ));
     let table_source = provider_as_source(provider);
 
     let plan = LogicalPlanBuilder::scan(&table_name, table_source, None)
