@@ -5,7 +5,7 @@ PlanResolver lets you connect custom data sources to VegaFusion. Use it when dat
 :::{note}
 `resolve_table`, `resolve_plan_proto` (bytes variant), and `unparse_to_sql` with bytes require no additional dependencies beyond `vegafusion`.
 
-`scan_url`, `resolve_plan` (deserialized `LogicalPlanNode`), `external_table_scan_node`, and `inline_table_scan_node` require the protobuf package:
+`external_table_scan_node`, `inline_table_scan_node`, and `resolve_plan` (deserialized `LogicalPlanNode` variant) require the protobuf package:
 
 ```
 pip install vegafusion[plan-resolver]
@@ -16,66 +16,103 @@ pip install vegafusion[plan-resolver]
 
 Override one of these methods on `PlanResolver` (simplest first):
 
-- `resolve_table`: return data for each external table independently. The default `resolve_plan` walks the plan and calls this for every external table.
-- `resolve_plan` / `resolve_plan_proto`: receive the entire logical plan. Overriding this supersedes `resolve_table` since the runtime calls `resolve_plan` directly; `resolve_table` is only reached via the default implementation.
+- `resolve_table`: return an Arrow table for a single external data source. VegaFusion handles the rest — it applies Vega transforms (filter, aggregate, etc.) via DataFusion after your resolver provides the data.
+- `resolve_plan` / `resolve_plan_proto`: evaluate an entire logical plan, or the parts your backend supports. Use this to transpile the plan to SQL and execute it remotely, or to push supported operations to your query engine while letting DataFusion handle the rest.
 
-### resolve_table
+### scan_url + resolve_table
+
+For custom URL schemes in Vega specs (e.g. `"url": "mydb://warehouse/sales"`), override `scan_url()` and `resolve_table()`:
 
 ```python
-class TableResolver(PlanResolver):
-    def __init__(self, table):
-        self._table = table
+import vegafusion as vf
+from vegafusion import PlanResolver
+from vegafusion.plan_resolver import external_table_scan_node
+
+class MyResolver(PlanResolver):
+    def scan_url(self, parsed_url):
+        if parsed_url["scheme"] != "mydb":
+            return None  # pass to next resolver
+
+        # Look up the table schema from your data source.
+        # This is called at planning time, so avoid loading data here.
+        schema = get_table_schema(parsed_url["path"])
+
+        return external_table_scan_node(
+            table_name=parsed_url["url"],
+            schema=schema,
+            scheme="mydb",
+            metadata={"path": parsed_url["path"]},
+        )
 
     def resolve_table(self, name, scheme, schema, metadata=None,
                       projected_columns=None, filters=None):
-        return self._table
+        # Called at execution time — load the actual data.
+        # projected_columns lists only the columns DataFusion needs,
+        # so you can avoid reading unnecessary columns.
+        return load_table(metadata["path"], columns=projected_columns)
+```
 
-source = pa.table({"x": [1, 5, 10], "y": ["a", "b", "c"]})
-ext = ExternalDataset(scheme="custom", schema=source.schema, data=source)
-resolver = TableResolver(source)
+`scan_url()` is called at planning time — it inspects the URL and returns an `ExternalTableProvider` plan node with the table's schema. `resolve_table()` is called at execution time to provide the actual data.
 
-rt = vf.VegaFusionRuntime(plan_resolver=resolver)
+Use `data_base_url` on the runtime to set a base path for relative URLs in Vega specs:
+
+```python
+resolver = MyResolver()
+rt = vf.VegaFusionRuntime(
+    plan_resolver=resolver,
+    data_base_url="mydb://warehouse/",
+)
+
+# Vega spec with "url": "sales" resolves to "mydb://warehouse/sales"
+```
+
+See [plan_resolver_url_scanning.py](https://github.com/vega/vegafusion/tree/main/examples/python-examples/plan_resolver_url_scanning.py) for a complete example.
+
+### resolve_table only
+
+If data comes from `ExternalDataset` inline datasets (not URLs), you only need `resolve_table`:
+
+```python
+import vegafusion as vf
+from vegafusion import ExternalDataset, PlanResolver
+
+class MyResolver(PlanResolver):
+    def resolve_table(self, name, scheme, schema, metadata=None,
+                      projected_columns=None, filters=None):
+        # Look up data by name from your data source
+        df = my_database.query(name, columns=projected_columns)
+        return df.to_arrow()
+
+ext = ExternalDataset(scheme="mydb", schema=table.schema, data=table)
+rt = vf.VegaFusionRuntime(plan_resolver=MyResolver())
 datasets, _ = rt.pre_transform_datasets(
-    spec, datasets=["filtered"],
+    spec, datasets=["result"],
     inline_datasets={"source": ext}, dataset_format="pyarrow",
 )
 ```
 
-VegaFusion calls `resolve_table` to get the data, then applies Vega transforms (filter, aggregate, etc.) via DataFusion. No protobuf dependency is needed.
-
-### scan_url
-
-For custom URL schemes in Vega specs (e.g. `"url": "mydata://database/sales"`), override `scan_url()`:
-
-```python
-class SalesResolver(PlanResolver):
-    def scan_url(self, parsed_url):
-        if parsed_url["scheme"] == "mydata":
-            schema = pa.schema([("product", pa.utf8()), ("revenue", pa.int64())])
-            return external_table_scan_node(
-                table_name="sales_data", schema=schema, scheme="mydata",
-            )
-        return None  # pass to next resolver
-
-    def resolve_table(self, name, scheme, schema, metadata=None,
-                      projected_columns=None, filters=None):
-        return pa.table({"product": ["Widget", "Gadget"], "revenue": [1200, 3400]})
-```
-
-`scan_url()` creates an `ExternalTableProvider` plan node for URLs your resolver handles, and `resolve_table()` provides the data at execution time.
-
-See [plan_resolver_url_scanning.py](https://github.com/vega/vegafusion/tree/main/examples/python-examples/plan_resolver_url_scanning.py) for a complete example.
+No protobuf dependency is needed for this pattern.
 
 ### resolve_plan + unparse_to_sql
 
-Override `resolve_plan_proto` to receive the serialized logical plan. Use `unparse_to_sql()` to convert it to SQL:
+Override `resolve_plan_proto` to receive the full logical plan and transpile it to SQL for remote execution:
 
 ```python
+from vegafusion import PlanResolver
+from vegafusion.plan_resolver import unparse_to_sql
+
 class SqlResolver(PlanResolver):
+    def __init__(self, connection):
+        self._conn = connection
+
     def resolve_plan_proto(self, plan_bytes, datasets):
-        sql = unparse_to_sql(plan_bytes, dialect="postgres")
-        # Execute SQL against your database and return the result
-        return execute_query(sql)
+        # Convert the DataFusion logical plan to a SQL string
+        sql = unparse_to_sql(plan_bytes, dialect="default")
+
+        # Execute the SQL against your database
+        cursor = self._conn.cursor()
+        cursor.execute(sql)
+        return cursor.fetch_arrow_all()
 ```
 
 `resolve_plan_proto` receives protobuf bytes that can be passed directly to `unparse_to_sql()` without deserialization. To inspect or modify the plan tree, use `resolve_plan()` instead (it receives a deserialized `LogicalPlanNode`).
@@ -84,7 +121,13 @@ Supported SQL dialects: `"default"`, `"postgres"`, `"mysql"`, `"sqlite"`, `"duck
 
 See [plan_resolver_sql.py](https://github.com/vega/vegafusion/tree/main/examples/python-examples/plan_resolver_sql.py) for a complete example.
 
-`PlanResolver` cannot be used with `grpc_connect()` (resolvers run in-process). Set `thread_safe = False` for backends with thread-affine connections (e.g. DuckDB). Set `skip_when_no_external_tables = False` to receive all plans (e.g. for logging). Set `supports_arrow_tables = True` to let the runtime eagerly materialize plans into Arrow tables.
+### Configuration
+
+`PlanResolver` cannot be used with `grpc_connect()` (resolvers run in-process). Class-level attributes control resolver behavior:
+
+- `thread_safe` (default `True`) — set to `False` for backends with thread-affine connections (e.g. DuckDB)
+- `skip_when_no_external_tables` (default `True`) — set to `False` to receive all plans, not just those with external tables (e.g. for logging)
+- `supports_arrow_tables` (default `False`) — set to `True` to let the runtime eagerly materialize plans into Arrow tables
 
 ### API Reference
 
