@@ -1,6 +1,6 @@
 # Demonstrates SQL transpilation using resolve_plan_proto() + unparse_to_sql().
-# The resolver receives a serialized logical plan, converts it to SQL, and returns
-# a result table. In a real application you would execute the SQL against a database.
+# The resolver receives a serialized logical plan, converts it to SQL, and prints it.
+# In a real application you would execute the SQL against a database.
 
 import json
 from typing import Any
@@ -16,7 +16,7 @@ def main() -> None:
     source_table = pa.table({"x": [1, 5, 10], "y": ["a", "b", "c"]})
     ext = ExternalDataset(scheme="table", schema=source_table.schema, data=source_table)
 
-    resolver = SqlTranspileResolver(source_table=source_table)
+    resolver = SqlTranspileResolver()
     rt = vf.VegaFusionRuntime(plan_resolver=resolver)
 
     spec = get_spec()
@@ -44,8 +44,7 @@ def main() -> None:
 class SqlTranspileResolver(PlanResolver):
     """Converts the logical plan to Postgres-dialect SQL."""
 
-    def __init__(self, source_table: pa.Table) -> None:
-        self.source_table = source_table
+    def __init__(self) -> None:
         self.captured_sql: str | None = None
 
     def resolve_plan_proto(
@@ -53,7 +52,10 @@ class SqlTranspileResolver(PlanResolver):
     ) -> pa.Table:
         sql = unparse_to_sql(plan_bytes, dialect="postgres")
         self.captured_sql = sql
-        # In a real scenario you would execute `sql` against a database.
+
+        # In a real resolver, you would execute `sql` against your database
+        # and return the result as an Arrow table. Here we return hardcoded
+        # data matching the expected query result for demonstration.
         return pa.table({"x": [5, 10], "y": ["b", "c"]})
 
 

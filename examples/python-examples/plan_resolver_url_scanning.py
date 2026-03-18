@@ -35,7 +35,7 @@ def main():
     assert table.column("product").to_pylist() == ["Widget", "Gadget", "Gizmo"]
     assert table.column("revenue").to_pylist() == [1200, 3400, 560]
     print("Result table:")
-    print(table.to_pandas().to_string(index=False))
+    print(table)
     print("\nAll assertions passed.")
 
 
@@ -46,7 +46,9 @@ class SalesDataResolver(PlanResolver):
         if parsed_url["scheme"] == "mydata":
             schema = pa.schema([("product", pa.utf8()), ("revenue", pa.int64())])
             return external_table_scan_node(
-                table_name="sales_data",
+                # Use the full URL as the table name so multiple URLs
+                # produce distinct plan nodes
+                table_name=parsed_url["url"],
                 schema=schema,
                 scheme="mydata",
             )
@@ -61,6 +63,8 @@ class SalesDataResolver(PlanResolver):
         projected_columns: list[str] | None = None,
         filters: list[Any] | None = None,
     ) -> pa.Table:
+        # In a real resolver, use `name` or `metadata` to look up data
+        # from your data source. Here we return a fixed table.
         return pa.table(
             {
                 "product": ["Widget", "Gadget", "Gizmo"],
