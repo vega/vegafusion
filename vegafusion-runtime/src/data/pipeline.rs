@@ -16,13 +16,13 @@ use super::datafusion_resolver::DataFusionResolver;
 use super::external_table::ExternalTableProvider;
 use super::plan_resolver::PlanResolver;
 
-/// CDN base URL for vega-datasets, used as the default data_base_url.
+/// CDN base URL for vega-datasets, used as the default base_url.
 pub const VEGA_DATASETS_CDN_BASE: &str =
     "https://raw.githubusercontent.com/vega/vega-datasets/v2.3.0/";
 
 /// Three-state base URL setting for public API boundaries.
 #[derive(Clone, Debug, Default)]
-pub enum DataBaseUrlSetting {
+pub enum BaseUrlSetting {
     /// Use the default CDN base URL (vega-datasets)
     #[default]
     Default,
@@ -32,13 +32,13 @@ pub enum DataBaseUrlSetting {
     Custom(String),
 }
 
-/// Map a `DataBaseUrlSetting` to the two-state `Option<String>` used internally.
+/// Map a `BaseUrlSetting` to the two-state `Option<String>` used internally.
 /// Custom base URLs are normalized (bare absolute paths become file:// URLs).
-pub fn resolve_data_base_url(setting: &DataBaseUrlSetting) -> Result<Option<String>> {
+pub fn resolve_base_url(setting: &BaseUrlSetting) -> Result<Option<String>> {
     match setting {
-        DataBaseUrlSetting::Default => Ok(Some(VEGA_DATASETS_CDN_BASE.to_string())),
-        DataBaseUrlSetting::Disabled => Ok(None),
-        DataBaseUrlSetting::Custom(s) => Ok(Some(normalize_base_url(s.clone())?)),
+        BaseUrlSetting::Default => Ok(Some(VEGA_DATASETS_CDN_BASE.to_string())),
+        BaseUrlSetting::Disabled => Ok(None),
+        BaseUrlSetting::Custom(s) => Ok(Some(normalize_base_url(s.clone())?)),
     }
 }
 

@@ -87,6 +87,9 @@ optional = true
 workspace = true
 optional = true
 
+[dev-dependencies.tempfile]
+workspace = true
+
 [lints.clippy]
 module_inception = "allow"
 

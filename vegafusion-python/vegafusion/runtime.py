@@ -207,7 +207,8 @@ class VegaFusionRuntime:
         | list[PlanResolver]
         | tuple[PlanResolver, ...]
         | None = None,
-        data_base_url: str | bool | None = None,
+        base_url: str | bool | None = None,
+        allowed_base_urls: list[str] | None = None,
     ) -> None:
         """
         Initialize a VegaFusionRuntime.
@@ -221,11 +222,17 @@ class VegaFusionRuntime:
                 Can be a single resolver or a list of resolvers that form
                 a pipeline (executed in order; short-circuits on first
                 Table result).
-            data_base_url: Base URL for resolving relative data URLs.
+            base_url: Base URL for resolving relative data URLs.
                 - None or True: use the default CDN
                   (https://raw.githubusercontent.com/vega/vega-datasets/v2.3.0/)
                 - str: custom base URL (scheme URL or absolute path)
                 - False: disabled; relative paths produce an error
+            allowed_base_urls: Optional allowlist for external data access.
+                - None: unrestricted for embedded VegaFusion runtimes
+                - []: deny all external data access
+                - list[str]: allow matching URL/path patterns only
+                Policy checks apply to the initial resolved URL only; redirect
+                destinations are not re-checked after a fetch begins.
         """
         self._runtime = None
         self._grpc_url: str | None = None
@@ -233,7 +240,18 @@ class VegaFusionRuntime:
         self._memory_limit = memory_limit
         self._worker_threads = worker_threads
         self._plan_resolvers = _normalize_resolvers(plan_resolver)
-        self._data_base_url = data_base_url
+        self._base_url = base_url
+        self._allowed_base_urls = allowed_base_urls
+
+    def _has_non_default_url_policy(self) -> bool:
+        return self._base_url not in (None, True) or self._allowed_base_urls is not None
+
+    def _ensure_not_using_grpc_for_url_policy_change(self) -> None:
+        if self._grpc_url is not None:
+            raise ValueError(
+                "Cannot change base_url or allowed_base_urls while using a gRPC runtime. "
+                "Configure these on the vegafusion-server process instead."
+            )
 
     @property
     def runtime(self) -> PyVegaFusionRuntime:
@@ -247,6 +265,10 @@ class VegaFusionRuntime:
             # Try to initialize a VegaFusion runtime
             from vegafusion._vegafusion import PyVegaFusionRuntime
 
+            if self._grpc_url is not None:
+                self._runtime = PyVegaFusionRuntime.new_grpc(self._grpc_url)
+                return self._runtime
+
             if self.memory_limit is None:
                 self.memory_limit = get_virtual_memory() // 2
             if self.worker_threads is None:
@@ -258,14 +280,16 @@ class VegaFusionRuntime:
                     self.cache_capacity,
                     self.memory_limit,
                     self.worker_threads,
-                    data_base_url=self._data_base_url,
+                    base_url=self._base_url,
+                    allowed_base_urls=self._allowed_base_urls,
                 )
             else:
                 self._runtime = PyVegaFusionRuntime.new_embedded(
                     self.cache_capacity,
                     self.memory_limit,
                     self.worker_threads,
-                    data_base_url=self._data_base_url,
+                    base_url=self._base_url,
+                    allowed_base_urls=self._allowed_base_urls,
                 )
         return self._runtime
 
@@ -281,6 +305,11 @@ class VegaFusionRuntime:
                 "Cannot use grpc_connect with custom plan resolvers. "
                 "Plan resolvers run locally and are not supported "
                 "with remote gRPC runtimes."
+            )
+        if self._has_non_default_url_policy():
+            raise ValueError(
+                "Cannot use grpc_connect with local base_url or allowed_base_urls settings. "
+                "Configure URL policy on the vegafusion-server process instead."
             )
 
         from vegafusion._vegafusion import PyVegaFusionRuntime
@@ -893,19 +922,19 @@ class VegaFusionRuntime:
             self.reset()
 
     @property
-    def data_base_url(self) -> str | bool | None:
+    def base_url(self) -> str | bool | None:
         """
-        Get the data base URL setting.
+        Get the base URL setting.
 
         Returns:
-            The current data_base_url setting.
+            The current base_url setting.
         """
-        return self._data_base_url
+        return self._base_url
 
-    @data_base_url.setter
-    def data_base_url(self, value: str | bool | None) -> None:
+    @base_url.setter
+    def base_url(self, value: str | bool | None) -> None:
         """
-        Set the data base URL and restart the runtime.
+        Set the base URL and restart the runtime.
 
         Args:
             value: Base URL for resolving relative data URLs.
@@ -913,8 +942,33 @@ class VegaFusionRuntime:
                 - str: custom base URL
                 - False: disabled
         """
-        if value != self._data_base_url:
-            self._data_base_url = value
+        if value != self._base_url:
+            self._ensure_not_using_grpc_for_url_policy_change()
+            self._base_url = value
+            self.reset()
+
+    @property
+    def allowed_base_urls(self) -> list[str] | None:
+        """
+        Get the allowed_base_urls setting.
+
+        Returns:
+            The current allowed_base_urls setting.
+        """
+        return self._allowed_base_urls
+
+    @allowed_base_urls.setter
+    def allowed_base_urls(self, value: list[str] | None) -> None:
+        """
+        Set the external data allowlist and restart the runtime.
+
+        Args:
+            value: None for unrestricted embedded access, [] to deny all external
+                access, or a list of URL/path patterns to allow.
+        """
+        if value != self._allowed_base_urls:
+            self._ensure_not_using_grpc_for_url_policy_change()
+            self._allowed_base_urls = value
             self.reset()
 
     @property

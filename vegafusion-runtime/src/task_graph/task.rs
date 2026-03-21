@@ -7,6 +7,7 @@ use vegafusion_core::data::dataset::VegaFusionDataset;
 use vegafusion_core::error::Result;
 use vegafusion_core::proto::gen::tasks::task::TaskKind;
 use vegafusion_core::proto::gen::tasks::Task;
+use vegafusion_core::runtime::AllowedBaseUrlPattern;
 use vegafusion_core::task_graph::task_value::TaskValue;
 
 /// Ambient context available to all tasks during evaluation.
@@ -15,7 +16,8 @@ pub struct TaskContext {
     pub tz_config: Option<RuntimeTzConfig>,
     pub inline_datasets: HashMap<String, VegaFusionDataset>,
     pub pipeline: ResolverPipeline,
-    pub data_base_url: Option<String>,
+    pub base_url: Option<String>,
+    pub allowed_base_urls: Option<Vec<AllowedBaseUrlPattern>>,
 }
 
 #[async_trait]

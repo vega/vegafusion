@@ -19,6 +19,7 @@ use vegafusion_core::proto::gen::tasks::inline_dataset::Dataset;
 use vegafusion_core::proto::gen::tasks::{
     task::TaskKind, InlineDataset, InlineDatasetTable, NodeValueIndex, TaskGraph,
 };
+use vegafusion_core::runtime::{normalize_allowed_base_urls, AllowedBaseUrlPattern};
 use vegafusion_core::runtime::VegaFusionRuntimeTrait;
 use vegafusion_core::task_graph::task_value::{MaterializedTaskValue, NamedTaskValue, TaskValue};
 
@@ -33,11 +34,12 @@ use {
 
 type CacheValue = (TaskValue, Vec<TaskValue>);
 
-use crate::data::pipeline::{resolve_data_base_url, DataBaseUrlSetting};
+use crate::data::pipeline::{resolve_base_url, BaseUrlSetting};
 
 pub struct VegaFusionRuntimeOpts {
     pub plan_resolvers: Vec<Arc<dyn PlanResolver>>,
-    pub data_base_url: DataBaseUrlSetting,
+    pub base_url: BaseUrlSetting,
+    pub allowed_base_urls: Option<Vec<String>>,
     pub cache: Option<VegaFusionCache>,
 }
 
@@ -45,7 +47,8 @@ impl Default for VegaFusionRuntimeOpts {
     fn default() -> Self {
         Self {
             plan_resolvers: Vec::new(),
-            data_base_url: DataBaseUrlSetting::Default,
+            base_url: BaseUrlSetting::Default,
+            allowed_base_urls: None,
             cache: None,
         }
     }
@@ -55,19 +58,22 @@ impl Default for VegaFusionRuntimeOpts {
 pub struct VegaFusionRuntime {
     pub cache: VegaFusionCache,
     pub pipeline: ResolverPipeline,
-    pub data_base_url: Option<String>,
+    pub base_url: Option<String>,
+    pub allowed_base_urls: Option<Vec<AllowedBaseUrlPattern>>,
 }
 
 impl VegaFusionRuntime {
     pub fn new(opts: VegaFusionRuntimeOpts) -> vegafusion_core::error::Result<Self> {
         let ctx = Arc::new(make_datafusion_context());
-        let data_base_url = resolve_data_base_url(&opts.data_base_url)?;
+        let base_url = resolve_base_url(&opts.base_url)?;
+        let allowed_base_urls = normalize_allowed_base_urls(opts.allowed_base_urls)?;
         Ok(Self {
             cache: opts
                 .cache
                 .unwrap_or_else(|| VegaFusionCache::new(Some(32), None)),
             pipeline: ResolverPipeline::new(opts.plan_resolvers, ctx),
-            data_base_url,
+            base_url,
+            allowed_base_urls,
         })
     }
 
@@ -83,7 +89,8 @@ impl VegaFusionRuntime {
             tz_config: None, // overridden per-task from task.tz_config
             inline_datasets,
             pipeline: self.pipeline.clone(),
-            data_base_url: self.data_base_url.clone(),
+            base_url: self.base_url.clone(),
+            allowed_base_urls: self.allowed_base_urls.clone(),
         };
         let node_value = AssertUnwindSafe(get_or_compute_node_value(
             task_graph,

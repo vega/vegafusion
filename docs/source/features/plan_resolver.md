@@ -54,13 +54,13 @@ class MyResolver(PlanResolver):
 
 `scan_url()` is called at planning time — it inspects the URL and returns an `ExternalTableProvider` plan node with the table's schema. `resolve_table()` is called at execution time to provide the actual data.
 
-Use `data_base_url` on the runtime to set a base path for relative URLs in Vega specs:
+Use `base_url` on the runtime to set a base path for relative URLs in Vega specs:
 
 ```python
 resolver = MyResolver()
 rt = vf.VegaFusionRuntime(
     plan_resolver=resolver,
-    data_base_url="mydb://warehouse/",
+    base_url="mydb://warehouse/",
 )
 
 # Vega spec with "url": "sales" resolves to "mydb://warehouse/sales"
