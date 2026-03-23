@@ -741,7 +741,10 @@ pub(crate) async fn build_csv_schema(
     Ok(Schema::new(new_fields))
 }
 
-async fn read_json_via_store_or_file(url: &str, ctx: Arc<SessionContext>) -> Result<serde_json::Value> {
+async fn read_json_via_store_or_file(
+    url: &str,
+    ctx: Arc<SessionContext>,
+) -> Result<serde_json::Value> {
     if let Some(base_url) = maybe_register_object_stores_for_url(&ctx, url)? {
         // Create single use object store that points directly to file
         let store = ctx.runtime_env().object_store(&base_url)?;
@@ -795,29 +798,20 @@ async fn read_json_via_store_or_file(url: &str, ctx: Arc<SessionContext>) -> Res
     }
 }
 
-pub(crate) async fn read_json(
-    url: &str,
-    ctx: Arc<SessionContext>,
-) -> Result<DataFrame> {
+pub(crate) async fn read_json(url: &str, ctx: Arc<SessionContext>) -> Result<DataFrame> {
     let value: serde_json::Value = read_json_via_store_or_file(url, ctx.clone()).await?;
 
     let table = VegaFusionTable::from_json(&value)?.with_ordering()?;
     ctx.vegafusion_table(table).await
 }
 
-pub(crate) async fn read_arrow(
-    url: &str,
-    ctx: Arc<SessionContext>,
-) -> Result<DataFrame> {
+pub(crate) async fn read_arrow(url: &str, ctx: Arc<SessionContext>) -> Result<DataFrame> {
     maybe_register_object_stores_for_url(&ctx, url)?;
     Ok(ctx.read_arrow(url, ArrowReadOptions::default()).await?)
 }
 
 #[cfg(feature = "parquet")]
-pub(crate) async fn read_parquet(
-    url: &str,
-    ctx: Arc<SessionContext>,
-) -> Result<DataFrame> {
+pub(crate) async fn read_parquet(url: &str, ctx: Arc<SessionContext>) -> Result<DataFrame> {
     maybe_register_object_stores_for_url(&ctx, url)?;
     Ok(ctx.read_parquet(url, ParquetReadOptions::default()).await?)
 }

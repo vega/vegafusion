@@ -19,8 +19,8 @@ use vegafusion_core::proto::gen::tasks::inline_dataset::Dataset;
 use vegafusion_core::proto::gen::tasks::{
     task::TaskKind, InlineDataset, InlineDatasetTable, NodeValueIndex, TaskGraph,
 };
-use vegafusion_core::runtime::{normalize_allowed_base_urls, AllowedBaseUrlPattern};
 use vegafusion_core::runtime::VegaFusionRuntimeTrait;
+use vegafusion_core::runtime::{normalize_allowed_base_urls, AllowedBaseUrlPattern};
 use vegafusion_core::task_graph::task_value::{MaterializedTaskValue, NamedTaskValue, TaskValue};
 
 #[cfg(feature = "proto")]

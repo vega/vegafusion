@@ -122,7 +122,12 @@ pub fn path_to_file_url(path: &str) -> Result<String> {
     let p = std::path::Path::new(&normalized);
     url::Url::from_file_path(p)
         .map(|u| u.to_string())
-        .map_err(|_| VegaFusionError::specification(format!("Cannot convert path to file URL: {}", p.display())))
+        .map_err(|_| {
+            VegaFusionError::specification(format!(
+                "Cannot convert path to file URL: {}",
+                p.display()
+            ))
+        })
 }
 
 /// Browser-wasm fallback: `url::Url::from_file_path` is unavailable on
@@ -143,9 +148,9 @@ pub fn path_to_file_url(path: &str) -> Result<String> {
 pub fn file_url_to_path(url: &str) -> Result<PathBuf> {
     let parsed = url::Url::parse(url)
         .map_err(|e| VegaFusionError::specification(format!("Invalid file URL '{url}': {e}")))?;
-    parsed
-        .to_file_path()
-        .map_err(|_| VegaFusionError::specification(format!("Cannot convert file URL to path: {url}")))
+    parsed.to_file_path().map_err(|_| {
+        VegaFusionError::specification(format!("Cannot convert file URL to path: {url}"))
+    })
 }
 
 #[cfg(target_arch = "wasm32")]
@@ -157,9 +162,19 @@ pub fn file_url_to_path(url: &str) -> Result<PathBuf> {
 
 #[cfg(not(target_arch = "wasm32"))]
 fn portable_canonicalize(path: &Path) -> Result<PathBuf> {
-    fs::canonicalize(path).map_err(|e| {
+    let canonical = fs::canonicalize(path).map_err(|e| {
         VegaFusionError::specification(format!("Failed to resolve path {}: {e}", path.display()))
-    })
+    })?;
+    // On Windows, fs::canonicalize returns extended-length paths (\\?\C:\...)
+    // which break prefix matching. Strip the prefix for consistent comparisons.
+    #[cfg(target_os = "windows")]
+    {
+        let s = canonical.to_string_lossy();
+        if let Some(stripped) = s.strip_prefix(r"\\?\") {
+            return Ok(PathBuf::from(stripped));
+        }
+    }
+    Ok(canonical)
 }
 
 #[cfg(target_arch = "wasm32")]
@@ -233,16 +248,8 @@ pub fn normalize_allowed_base_url(allowed_base_url: &str) -> Result<AllowedBaseU
     }
 
     if let Some(captures) = WILDCARD_HOST_RE.captures(allowed_base_url) {
-        let scheme = captures
-            .get(1)
-            .unwrap()
-            .as_str()
-            .to_ascii_lowercase();
-        let host_suffix = captures
-            .get(2)
-            .unwrap()
-            .as_str()
-            .to_ascii_lowercase();
+        let scheme = captures.get(1).unwrap().as_str().to_ascii_lowercase();
+        let host_suffix = captures.get(2).unwrap().as_str().to_ascii_lowercase();
         if host_suffix.is_empty() || host_suffix.contains('@') || host_suffix.contains(':') {
             return Err(VegaFusionError::specification(format!(
                 "Invalid wildcard host pattern in allowed_base_urls: {allowed_base_url}"
@@ -372,9 +379,7 @@ pub fn resolve_url(url: &str, base_url: &Option<String>) -> Result<String> {
         match base_url {
             Some(base) => {
                 let base_url = url::Url::parse(base).map_err(|e| {
-                    VegaFusionError::specification(format!(
-                        "Invalid base URL '{base}': {e}"
-                    ))
+                    VegaFusionError::specification(format!("Invalid base URL '{base}': {e}"))
                 })?;
                 let resolved = base_url.join(url).map_err(|e| {
                     VegaFusionError::specification(format!(
@@ -521,7 +526,10 @@ mod tests {
     fn test_normalize_base_url_existing_directory_adds_trailing_slash() {
         let tempdir = tempfile::tempdir().unwrap();
         let result = normalize_base_url(tempdir.path().to_str().unwrap().to_string()).unwrap();
-        assert!(result.ends_with('/'), "expected trailing slash, got {result}");
+        assert!(
+            result.ends_with('/'),
+            "expected trailing slash, got {result}"
+        );
     }
 
     #[test]
@@ -645,14 +653,23 @@ mod tests {
     #[test]
     fn test_is_url_allowed_prefix() {
         let patterns = vec![normalize_allowed_base_url("https://example.com/data/").unwrap()];
-        assert!(is_url_allowed("https://example.com/data/cars.json", &patterns));
-        assert!(!is_url_allowed("https://example.com/other/cars.json", &patterns));
+        assert!(is_url_allowed(
+            "https://example.com/data/cars.json",
+            &patterns
+        ));
+        assert!(!is_url_allowed(
+            "https://example.com/other/cars.json",
+            &patterns
+        ));
     }
 
     #[test]
     fn test_is_url_allowed_wildcard_host() {
         let patterns = vec![normalize_allowed_base_url("https://*.example.com/data/").unwrap()];
-        assert!(is_url_allowed("https://example.com/data/cars.json", &patterns));
+        assert!(is_url_allowed(
+            "https://example.com/data/cars.json",
+            &patterns
+        ));
         assert!(is_url_allowed(
             "https://cdn.example.com/data/cars.json",
             &patterns
@@ -661,7 +678,10 @@ mod tests {
             "https://example.com.evil.com/data/cars.json",
             &patterns
         ));
-        assert!(!is_url_allowed("https://cdn.example.com/other/cars.json", &patterns));
+        assert!(!is_url_allowed(
+            "https://cdn.example.com/other/cars.json",
+            &patterns
+        ));
     }
 
     #[test]
@@ -674,7 +694,10 @@ mod tests {
         std::fs::write(&file_path, "{}").unwrap();
 
         let patterns = vec![normalize_allowed_base_url(root.path().to_str().unwrap()).unwrap()];
-        assert!(is_url_allowed(&format!("file://{}", file_path.display()), &patterns));
+        assert!(is_url_allowed(
+            &format!("file://{}", file_path.display()),
+            &patterns
+        ));
     }
 
     #[test]
@@ -688,7 +711,10 @@ mod tests {
         let file_path = allowed.join("../outside/data.json");
 
         let patterns = vec![normalize_allowed_base_url(allowed.to_str().unwrap()).unwrap()];
-        assert!(!is_url_allowed(&format!("file://{}", file_path.display()), &patterns));
+        assert!(!is_url_allowed(
+            &format!("file://{}", file_path.display()),
+            &patterns
+        ));
     }
 
     #[test]

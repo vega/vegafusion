@@ -18,7 +18,9 @@ def test_runtime_exposes_url_policy_properties() -> None:
     assert rt.allowed_base_urls == ["https://example.com/data/"]
 
 
-def test_runtime_passes_url_policy_to_embedded_runtime(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_runtime_passes_url_policy_to_embedded_runtime(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     calls: list[dict[str, object]] = []
 
     class FakeRuntime:

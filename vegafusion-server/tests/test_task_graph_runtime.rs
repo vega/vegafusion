@@ -105,7 +105,10 @@ async fn spawn_server(extra_args: &[String]) -> (ServerProcess, String) {
     let address = format!("http://127.0.0.1:{port}");
 
     for _ in 0..60 {
-        if VegaFusionRuntimeClient::connect(address.clone()).await.is_ok() {
+        if VegaFusionRuntimeClient::connect(address.clone())
+            .await
+            .is_ok()
+        {
             return (ServerProcess { child }, address);
         }
         sleep(Duration::from_millis(100)).await;
@@ -189,12 +192,10 @@ async fn try_it_from_spec() {
         request: Some(query_request::Request::TaskGraphValues(
             TaskGraphValueRequest {
                 task_graph: Some(graph),
-                indices: vec![
-                    mapping
-                        .get(&(Variable::new_signal("my_extent"), Vec::new()))
-                        .cloned()
-                        .unwrap(),
-                ],
+                indices: vec![mapping
+                    .get(&(Variable::new_signal("my_extent"), Vec::new()))
+                    .cloned()
+                    .unwrap()],
                 inline_datasets: vec![],
             },
         )),

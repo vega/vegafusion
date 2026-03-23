@@ -125,7 +125,9 @@ fn parse_base_url(
             } else if let Ok(s) = obj.extract::<String>() {
                 Ok(BaseUrlSetting::Custom(s))
             } else {
-                Err(PyValueError::new_err("base_url must be a str, bool, or None"))
+                Err(PyValueError::new_err(
+                    "base_url must be a str, bool, or None",
+                ))
             }
         }
     }

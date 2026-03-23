@@ -249,8 +249,10 @@ class VegaFusionRuntime:
     def _ensure_not_using_grpc_for_url_policy_change(self) -> None:
         if self._grpc_url is not None:
             raise ValueError(
-                "Cannot change base_url or allowed_base_urls while using a gRPC runtime. "
-                "Configure these on the vegafusion-server process instead."
+                "Cannot change base_url or allowed_base_urls "
+                "while using a gRPC runtime. "
+                "Configure these on the vegafusion-server "
+                "process instead."
             )
 
     @property
@@ -308,8 +310,10 @@ class VegaFusionRuntime:
             )
         if self._has_non_default_url_policy():
             raise ValueError(
-                "Cannot use grpc_connect with local base_url or allowed_base_urls settings. "
-                "Configure URL policy on the vegafusion-server process instead."
+                "Cannot use grpc_connect with local "
+                "base_url or allowed_base_urls settings. "
+                "Configure URL policy on the "
+                "vegafusion-server process instead."
             )
 
         from vegafusion._vegafusion import PyVegaFusionRuntime
