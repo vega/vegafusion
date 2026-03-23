@@ -2,7 +2,9 @@
 The VegaFusion Runtime can run as a [gRPC](https://grpc.io/) service, which makes it possible for multiple clients to connect to the same runtime, and share a cache (See [How it Works](../about/how_it_works) for more details). This also makes it possible for the Runtime to reside on a different host than the client.
 
 :::{warning}
-VegaFusion's gRPC server does not currently support authentication, and chart specifications may reference the local file system of the machine running the server. It is not currently recommended to use VegaFusion server with untrusted Vega specifications unless other measures are taken to isolate the service.
+VegaFusion's gRPC server does not currently support authentication. If you use it with untrusted Vega specifications, lock down the server process with `--no-allowed-urls`, `--allowed-base-url`, `--base-url`, or `--no-base-url`, and apply any additional isolation your deployment requires.
+
+URL policy is enforced against the initial resolved URL only. VegaFusion does not re-check redirect destinations after a fetch begins.
 :::
 
 ## VegaFusion Server
@@ -16,6 +18,15 @@ The server may then be launched using a particular port as follows:
 
 ```
 vegafusion-server --port 50051
+```
+
+The server process owns URL resolution and access policy for all gRPC clients. For example:
+
+```
+vegafusion-server \
+  --port 50051 \
+  --base-url https://cdn.jsdelivr.net/npm/vega-datasets@v2.9.0/ \
+  --allowed-base-url https://cdn.jsdelivr.net/
 ```
 
 ## Python

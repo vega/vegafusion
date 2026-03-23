@@ -2,7 +2,7 @@ use crate::{
     data::dataset::VegaFusionDataset,
     planning::{
         apply_pre_transform::apply_pre_transform_datasets,
-        plan::SpecPlan,
+        plan::{PlannerConfig, SpecPlan},
         stitch::CommPlan,
         watch::{ExportUpdate, ExportUpdateJSON, ExportUpdateNamespace},
     },
@@ -66,7 +66,7 @@ impl ChartState {
             .map(|(k, ds)| (k.clone(), ds.fingerprint()))
             .collect::<HashMap<_, _>>();
 
-        let plan = SpecPlan::try_new(&spec, &Default::default())?;
+        let plan = SpecPlan::try_new(&spec, &PlannerConfig::default())?;
 
         let task_scope = plan
             .server_spec

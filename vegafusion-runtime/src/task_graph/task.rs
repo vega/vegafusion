@@ -7,16 +7,25 @@ use vegafusion_core::data::dataset::VegaFusionDataset;
 use vegafusion_core::error::Result;
 use vegafusion_core::proto::gen::tasks::task::TaskKind;
 use vegafusion_core::proto::gen::tasks::Task;
+use vegafusion_core::runtime::AllowedBaseUrlPattern;
 use vegafusion_core::task_graph::task_value::TaskValue;
+
+/// Ambient context available to all tasks during evaluation.
+#[derive(Clone)]
+pub struct TaskContext {
+    pub tz_config: Option<RuntimeTzConfig>,
+    pub inline_datasets: HashMap<String, VegaFusionDataset>,
+    pub pipeline: ResolverPipeline,
+    pub base_url: Option<String>,
+    pub allowed_base_urls: Option<Vec<AllowedBaseUrlPattern>>,
+}
 
 #[async_trait]
 pub trait TaskCall {
     async fn eval(
         &self,
         values: &[TaskValue],
-        tz_config: &Option<RuntimeTzConfig>,
-        inline_datasets: HashMap<String, VegaFusionDataset>,
-        pipeline: ResolverPipeline,
+        ctx: &TaskContext,
     ) -> Result<(TaskValue, Vec<TaskValue>)>;
 }
 
@@ -25,28 +34,14 @@ impl TaskCall for Task {
     async fn eval(
         &self,
         values: &[TaskValue],
-        tz_config: &Option<RuntimeTzConfig>,
-        inline_datasets: HashMap<String, VegaFusionDataset>,
-        pipeline: ResolverPipeline,
+        ctx: &TaskContext,
     ) -> Result<(TaskValue, Vec<TaskValue>)> {
         match self.task_kind() {
             TaskKind::Value(value) => Ok((value.try_into()?, Default::default())),
-            TaskKind::DataUrl(task) => {
-                task.eval(values, tz_config, inline_datasets, pipeline)
-                    .await
-            }
-            TaskKind::DataValues(task) => {
-                task.eval(values, tz_config, inline_datasets, pipeline)
-                    .await
-            }
-            TaskKind::DataSource(task) => {
-                task.eval(values, tz_config, inline_datasets, pipeline)
-                    .await
-            }
-            TaskKind::Signal(task) => {
-                task.eval(values, tz_config, inline_datasets, pipeline)
-                    .await
-            }
+            TaskKind::DataUrl(task) => task.eval(values, ctx).await,
+            TaskKind::DataValues(task) => task.eval(values, ctx).await,
+            TaskKind::DataSource(task) => task.eval(values, ctx).await,
+            TaskKind::Signal(task) => task.eval(values, ctx).await,
         }
     }
 }

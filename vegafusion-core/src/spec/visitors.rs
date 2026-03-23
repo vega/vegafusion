@@ -165,27 +165,30 @@ impl ChartVisitor for MakeTasksVisitor<'_> {
         };
 
         let task = if let Some(url) = &data.url {
-            let mut proto_url = match url {
-                StringOrSignalSpec::String(url) => Url::String(url.clone()),
+            let proto_url = match url {
+                StringOrSignalSpec::String(url) => {
+                    // Store raw URL string — resolution happens at eval time
+                    let mut proto_url = Url::String(url.clone());
+
+                    // Append fingerprint to URL that references an inline dataset
+                    if let Url::String(url_str) = &proto_url {
+                        if let Some(inline_name) = extract_inline_dataset(url_str) {
+                            let inline_name = inline_name.trim().to_string();
+                            if let Some(fingerprint) = self.dataset_fingerprints.get(&inline_name) {
+                                proto_url = Url::String(format!("{url_str}#{fingerprint}"));
+                            } else {
+                                let fingerprint = random::<u64>();
+                                proto_url = Url::String(format!("{url_str}#{fingerprint}"));
+                            }
+                        }
+                    }
+                    proto_url
+                }
                 StringOrSignalSpec::Signal(expr) => {
                     let url_expr = parse(&expr.signal)?;
                     Url::Expr(url_expr)
                 }
             };
-
-            // Append fingerprint to URL that references an inline dataset
-            if let Url::String(url) = &proto_url {
-                if let Some(inline_name) = extract_inline_dataset(url) {
-                    let inline_name = inline_name.trim().to_string();
-                    if let Some(fingerprint) = self.dataset_fingerprints.get(&inline_name) {
-                        proto_url = Url::String(format!("{url}#{fingerprint}"));
-                    } else {
-                        // Unknown fingerprint, use random id to break cache
-                        let fingerprint = random::<u64>();
-                        proto_url = Url::String(format!("{url}#{fingerprint}"));
-                    }
-                }
-            }
 
             Task::new_data_url(
                 data_var,

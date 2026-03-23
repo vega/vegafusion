@@ -2,13 +2,13 @@ use crate::data::pipeline::ResolverPipeline;
 use crate::expression::compiler::compile;
 use crate::expression::compiler::config::CompilationConfig;
 use crate::expression::compiler::utils::ExprHelpers;
-use crate::task_graph::task::TaskCall;
+use crate::task_graph::task::{TaskCall, TaskContext};
 use std::borrow::Cow;
 
 use async_trait::async_trait;
 
 use datafusion_expr::{lit, Expr};
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 use std::path::Path;
 use std::sync::Arc;
 use vegafusion_core::data::dataset::VegaFusionDataset;
@@ -24,12 +24,13 @@ use datafusion_common::config::TableOptions;
 use datafusion_functions::expr_fn::make_date;
 
 use vegafusion_common::data::scalar::{ScalarValue, ScalarValueHelpers};
-use vegafusion_common::error::{Result, ResultWithContext, VegaFusionError};
+use vegafusion_common::error::{Result, ResultWithContext, ToExternalError, VegaFusionError};
 
 use vegafusion_core::proto::gen::tasks::data_url_task::Url;
 use vegafusion_core::proto::gen::tasks::scan_url_format;
 use vegafusion_core::proto::gen::tasks::scan_url_format::Parse;
 use vegafusion_core::proto::gen::tasks::{DataSourceTask, DataUrlTask, DataValuesTask};
+use vegafusion_core::runtime::{check_url_allowed, file_url_to_path, path_to_file_url};
 use vegafusion_core::task_graph::task::{InputVariable, TaskDependencies};
 use vegafusion_core::task_graph::task_value::TaskValue;
 
@@ -54,24 +55,26 @@ use object_store::{http::HttpBuilder, ClientOptions};
 use tokio::io::AsyncReadExt;
 
 #[cfg(feature = "parquet")]
-use {datafusion::prelude::ParquetReadOptions, vegafusion_common::error::ToExternalError};
+use datafusion::prelude::ParquetReadOptions;
 
 #[cfg(target_arch = "wasm32")]
 use object_store_wasm::HttpStore;
 
-/// If no user resolvers are configured, eagerly materialize a `TaskValue::Plan`
-/// into a `TaskValue::Table` via DataFusion execution. Passthrough otherwise.
+/// Eagerly materialize a `TaskValue::Plan` into a `TaskValue::Table` when safe:
+/// either all resolvers support Arrow tables, or the plan has no external table
+/// nodes that a resolver would need to intercept. Otherwise keep it lazy.
 async fn maybe_materialize_plan(
     task_value: TaskValue,
     pipeline: &ResolverPipeline,
 ) -> Result<TaskValue> {
-    if !pipeline.has_user_resolvers() {
-        if let TaskValue::Plan(plan) = task_value {
+    if let TaskValue::Plan(plan) = task_value {
+        if pipeline.should_materialize(&plan) {
             let table = DataFrame::new(pipeline.ctx().state(), plan)
                 .collect_to_table()
                 .await?;
             return Ok(TaskValue::Table(table));
         }
+        return Ok(TaskValue::Plan(plan));
     }
     Ok(task_value)
 }
@@ -122,22 +125,25 @@ impl TaskCall for DataUrlTask {
     async fn eval(
         &self,
         values: &[TaskValue],
-        tz_config: &Option<RuntimeTzConfig>,
-        inline_datasets: HashMap<String, VegaFusionDataset>,
-        pipeline: ResolverPipeline,
+        ctx: &TaskContext,
     ) -> Result<(TaskValue, Vec<TaskValue>)> {
-        let ctx = Arc::new(pipeline.ctx().clone());
+        let session_ctx = Arc::new(ctx.pipeline.ctx().clone());
         // Build compilation config for url signal (if any) and transforms (if any)
-        let config =
-            build_compilation_config(&self.input_vars(), values, tz_config, pipeline.clone());
+        let config = build_compilation_config(
+            &self.input_vars(),
+            values,
+            &ctx.tz_config,
+            ctx.pipeline.clone(),
+        );
 
-        // Build url string
+        // Build url string — resolve at eval time for both static and signal URLs
         let url = match self.url.as_ref().unwrap() {
-            Url::String(url) => url.clone(),
+            Url::String(url) => vegafusion_core::runtime::resolve_url(url, &ctx.base_url)?,
             Url::Expr(expr) => {
                 let compiled = compile(expr, &config, None).await?;
                 let url_scalar = compiled.eval_to_scalar()?;
-                url_scalar.to_scalar_string()?
+                let raw_url = url_scalar.to_scalar_string()?;
+                vegafusion_core::runtime::resolve_url(&raw_url, &ctx.base_url)?
             }
         };
 
@@ -145,70 +151,56 @@ impl TaskCall for DataUrlTask {
         let url_parts: Vec<&str> = url.splitn(2, '#').collect();
         let url = url_parts.first().cloned().unwrap_or(&url).to_string();
 
-        // Handle references to vega default datasets (e.g. "data/us-10m.json")
-        let url = check_builtin_dataset(url);
-
         // Load data from URL
         let parse = self.format_type.as_ref().and_then(|fmt| fmt.parse.clone());
         let file_type = self.format_type.as_ref().and_then(|fmt| fmt.r#type.clone());
 
         // Vega-Lite sets unspecified file types to "json", so we don't want this to take
         // precedence over file extension
-        let file_type = if file_type == Some("json".to_string()) {
+        let format_type = if file_type == Some("json".to_string()) {
             None
         } else {
-            file_type.as_deref()
+            file_type
         };
 
         let inline_name = extract_inline_dataset(&url).map(|name| name.trim().to_string());
         let inline_dataset_info: Option<&VegaFusionDataset> = inline_name
             .as_ref()
-            .and_then(|name| inline_datasets.get(name));
+            .and_then(|name| ctx.inline_datasets.get(name));
+
+        if inline_name.is_none() {
+            check_url_allowed(&url, &ctx.allowed_base_urls)?;
+        }
 
         let df = if let Some(inline_name) = &inline_name {
             if let Some(inline_dataset) = inline_dataset_info {
                 match inline_dataset {
                     VegaFusionDataset::Table { table, .. } => {
                         let table = table.clone().with_ordering()?;
-                        ctx.vegafusion_table(table).await?
+                        session_ctx.vegafusion_table(table).await?
                     }
                     VegaFusionDataset::Plan { plan } => {
-                        DataFrame::new(ctx.state(), plan.clone()).with_index()?
+                        DataFrame::new(session_ctx.state(), plan.clone()).with_index()?
                     }
                 }
-            } else if let Ok(df) = ctx.table(inline_name).await {
+            } else if let Ok(df) = session_ctx.table(inline_name).await {
                 df
             } else {
                 return Err(VegaFusionError::internal(format!(
                     "No inline dataset named {inline_name}"
                 )));
             }
-        } else if file_type == Some("csv") || (file_type.is_none() && url.ends_with(".csv")) {
-            read_csv(&url, &parse, ctx.clone(), false).await?
-        } else if file_type == Some("tsv") || (file_type.is_none() && url.ends_with(".tsv")) {
-            read_csv(&url, &parse, ctx.clone(), true).await?
-        } else if file_type == Some("json") || (file_type.is_none() && url.ends_with(".json")) {
-            read_json(&url, ctx.clone()).await?
-        } else if file_type == Some("arrow")
-            || (file_type.is_none() && (url.ends_with(".arrow") || url.ends_with(".feather")))
-        {
-            read_arrow(&url, ctx.clone()).await?
-        } else if file_type == Some("parquet")
-            || (file_type.is_none() && (url.ends_with(".parquet")))
-        {
-            cfg_if! {
-                if #[cfg(any(feature = "parquet"))] {
-                    read_parquet(&url, ctx.clone()).await?
-                } else {
+        } else {
+            // Construct ParsedUrl and dispatch to pipeline.scan_url()
+            let parsed_url = build_parsed_url(&url, format_type.as_deref(), parse.clone())?;
+            match ctx.pipeline.scan_url(&parsed_url).await? {
+                Some(plan) => DataFrame::new(session_ctx.state(), plan),
+                None => {
                     return Err(VegaFusionError::internal(format!(
-                        "Enable parquet support by enabling the `parquet` feature flag"
-                    )))
+                        "No resolver handled URL: {url}"
+                    )));
                 }
             }
-        } else {
-            return Err(VegaFusionError::internal(format!(
-                "Invalid url file extension {url}"
-            )));
         };
 
         // Ensure there is an ordering column present
@@ -235,108 +227,66 @@ impl TaskCall for DataUrlTask {
         // Return value based on whether inline dataset was used
         let task_value = if let Some(inline_dataset) = inline_dataset_info {
             let task_value = result_df.to_task_value(inline_dataset).await?;
-            maybe_materialize_plan(task_value, &pipeline).await?
+            maybe_materialize_plan(task_value, &ctx.pipeline).await?
         } else {
-            TaskValue::Table(result_df.collect_to_table().await?)
+            // URL-sourced data: use Plan when user resolvers exist for lazy evaluation
+            let task_value = TaskValue::Plan(result_df.logical_plan().clone());
+            maybe_materialize_plan(task_value, &ctx.pipeline).await?
         };
 
         Ok((task_value, output_values))
     }
 }
 
-lazy_static! {
-    static ref BUILT_IN_DATASETS: HashSet<&'static str> = vec![
-        "7zip.png",
-        "airports.csv",
-        "annual-precip.json",
-        "anscombe.json",
-        "barley.json",
-        "birdstrikes.csv",
-        "budget.json",
-        "budgets.json",
-        "burtin.json",
-        "cars.json",
-        "co2-concentration.csv",
-        "countries.json",
-        "crimea.json",
-        "disasters.csv",
-        "driving.json",
-        "earthquakes.json",
-        "ffox.png",
-        "flare-dependencies.json",
-        "flare.json",
-        "flights-10k.json",
-        "flights-200k.arrow",
-        "flights-200k.json",
-        "flights-20k.json",
-        "flights-2k.json",
-        "flights-3m.csv",
-        "flights-5k.json",
-        "flights-airport.csv",
-        "football.json",
-        "gapminder-health-income.csv",
-        "gapminder.json",
-        "gimp.png",
-        "github.csv",
-        "income.json",
-        "iowa-electricity.csv",
-        "jobs.json",
-        "la-riots.csv",
-        "londonBoroughs.json",
-        "londonCentroids.json",
-        "londonTubeLines.json",
-        "lookup_groups.csv",
-        "lookup_people.csv",
-        "miserables.json",
-        "monarchs.json",
-        "movies.json",
-        "normal-2d.json",
-        "obesity.json",
-        "ohlc.json",
-        "penguins.json",
-        "platformer-terrain.json",
-        "points.json",
-        "political-contributions.json",
-        "population_engineers_hurricanes.csv",
-        "population.json",
-        "seattle-weather.csv",
-        "seattle-weather-hourly-normals.csv",
-        "sp500-2000.csv",
-        "sp500.csv",
-        "stocks.csv",
-        "udistrict.json",
-        "unemployment-across-industries.json",
-        "unemployment.tsv",
-        "uniform-2d.json",
-        "us-10m.json",
-        "us-employment.csv",
-        "us-state-capitals.json",
-        "volcano.json",
-        "weather.csv",
-        "weather.json",
-        "wheat.json",
-        "windvectors.csv",
-        "world-110m.json",
-        "zipcodes.csv",
-    ]
-    .into_iter()
-    .collect();
+/// Construct a `ParsedUrl` from a fully-resolved URL string and optional format type.
+fn build_parsed_url(
+    url: &str,
+    format_type: Option<&str>,
+    parse: Option<Parse>,
+) -> Result<vegafusion_core::runtime::ParsedUrl> {
+    let parsed = url::Url::parse(url)
+        .map_err(|e| VegaFusionError::internal(format!("Failed to parse URL '{url}': {e}")))?;
+
+    let extension = std::path::Path::new(parsed.path())
+        .extension()
+        .and_then(|ext| ext.to_str())
+        .map(|s| s.to_string());
+
+    let query_params: Vec<(String, String)> = parsed
+        .query_pairs()
+        .map(|(k, v)| (k.to_string(), v.to_string()))
+        .collect();
+
+    Ok(vegafusion_core::runtime::ParsedUrl {
+        url: url.to_string(),
+        scheme: parsed.scheme().to_string(),
+        host: parsed.host_str().map(|s| s.to_string()),
+        path: parsed.path().to_string(),
+        query_params,
+        extension,
+        format_type: format_type.map(|s| s.to_string()),
+        parse,
+    })
 }
 
-const DATASET_BASE: &str = "https://raw.githubusercontent.com/vega/vega-datasets";
-const DATASET_TAG: &str = "v2.3.0";
+#[cfg(feature = "http")]
+async fn fetch_http_bytes(url: &str) -> Result<Vec<u8>> {
+    let client = reqwest::Client::new();
+    let response = client
+        .get(url)
+        .send()
+        .await
+        .external(format!("Failed to fetch URL: {url}"))?;
 
-fn check_builtin_dataset(url: String) -> String {
-    if let Some(dataset) = url.strip_prefix("data/") {
-        let path = std::path::Path::new(&url);
-        if !path.exists() && BUILT_IN_DATASETS.contains(dataset) {
-            format!("{DATASET_BASE}/{DATASET_TAG}/data/{dataset}")
-        } else {
-            url
-        }
-    } else {
-        url
-    }
+    let response = response
+        .error_for_status()
+        .external(format!("Failed to fetch URL: {url}"))?;
+
+    Ok(response
+        .bytes()
+        .await
+        .external("Failed to read response bytes")?
+        .to_vec())
 }
 
 /// After processing, all datetime columns are converted to Timestamptz and Date32
@@ -485,11 +435,9 @@ impl TaskCall for DataValuesTask {
     async fn eval(
         &self,
         values: &[TaskValue],
-        tz_config: &Option<RuntimeTzConfig>,
-        _inline_datasets: HashMap<String, VegaFusionDataset>,
-        pipeline: ResolverPipeline,
+        ctx: &TaskContext,
     ) -> Result<(TaskValue, Vec<TaskValue>)> {
-        let ctx = Arc::new(pipeline.ctx().clone());
+        let session_ctx = Arc::new(ctx.pipeline.ctx().clone());
         // Deserialize data into table
         let values_table = VegaFusionTable::from_ipc_bytes(&self.values)?;
         if values_table.schema.fields.is_empty() {
@@ -523,11 +471,15 @@ impl TaskCall for DataValuesTask {
         {
             let transform_pipeline = self.pipeline.as_ref().unwrap();
 
-            let config =
-                build_compilation_config(&self.input_vars(), values, tz_config, pipeline.clone());
+            let config = build_compilation_config(
+                &self.input_vars(),
+                values,
+                &ctx.tz_config,
+                ctx.pipeline.clone(),
+            );
 
             // Process datetime columns
-            let df = ctx.vegafusion_table(values_table).await?;
+            let df = session_ctx.vegafusion_table(values_table).await?;
             let sql_df = process_datetimes(&parse, df, &config.tz_config).await?;
 
             let (df, output_values) = transform_pipeline.eval_sql(sql_df, &config).await?;
@@ -535,8 +487,8 @@ impl TaskCall for DataValuesTask {
             (table, output_values)
         } else {
             // No transforms
-            let values_df = ctx.vegafusion_table(values_table).await?;
-            let values_df: DataFrame = process_datetimes(&parse, values_df, tz_config).await?;
+            let values_df = session_ctx.vegafusion_table(values_table).await?;
+            let values_df: DataFrame = process_datetimes(&parse, values_df, &ctx.tz_config).await?;
             (
                 values_df.drop_index()?.collect_to_table().await?,
                 Vec::new(),
@@ -554,13 +506,12 @@ impl TaskCall for DataSourceTask {
     async fn eval(
         &self,
         values: &[TaskValue],
-        tz_config: &Option<RuntimeTzConfig>,
-        _inline_datasets: HashMap<String, VegaFusionDataset>,
-        pipeline: ResolverPipeline,
+        ctx: &TaskContext,
     ) -> Result<(TaskValue, Vec<TaskValue>)> {
-        let ctx = Arc::new(pipeline.ctx().clone());
+        let session_ctx = Arc::new(ctx.pipeline.ctx().clone());
         let input_vars = self.input_vars();
-        let mut config = build_compilation_config(&input_vars, values, tz_config, pipeline.clone());
+        let mut config =
+            build_compilation_config(&input_vars, values, &ctx.tz_config, ctx.pipeline.clone());
 
         // Remove source dataset from config
         let source_dataset = config.data_scope.remove(&self.source).with_context(|| {
@@ -580,7 +531,7 @@ impl TaskCall for DataSourceTask {
             match source_dataset {
                 VegaFusionDataset::Plan { plan } => {
                     let task_value =
-                        maybe_materialize_plan(TaskValue::Plan(plan), &pipeline).await?;
+                        maybe_materialize_plan(TaskValue::Plan(plan), &ctx.pipeline).await?;
                     return Ok((task_value, Vec::new()));
                 }
                 VegaFusionDataset::Table { table, .. } => {
@@ -591,8 +542,10 @@ impl TaskCall for DataSourceTask {
         }
 
         let source_df = match &source_dataset {
-            VegaFusionDataset::Table { table, .. } => ctx.vegafusion_table(table.clone()).await?,
-            VegaFusionDataset::Plan { plan } => DataFrame::new(ctx.state(), plan.clone()),
+            VegaFusionDataset::Table { table, .. } => {
+                session_ctx.vegafusion_table(table.clone()).await?
+            }
+            VegaFusionDataset::Plan { plan } => DataFrame::new(session_ctx.state(), plan.clone()),
         };
 
         let source_df = source_df.with_index()?;
@@ -601,7 +554,7 @@ impl TaskCall for DataSourceTask {
         let (df, output_values) = transform_pipeline.eval_sql(source_df, &config).await?;
         let df = df.drop_index()?;
         let task_value = df.to_task_value(&source_dataset).await?;
-        let task_value = maybe_materialize_plan(task_value, &pipeline).await?;
+        let task_value = maybe_materialize_plan(task_value, &ctx.pipeline).await?;
         Ok((task_value, output_values))
     }
 }
@@ -642,18 +595,8 @@ async fn read_csv_with_reqwest(
     is_tsv: bool,
     ext: &str,
 ) -> Result<DataFrame> {
-    // Fetch CSV content using reqwest
-    let client = reqwest::Client::new();
-    let response = client
-        .get(url)
-        .send()
-        .await
-        .external(format!("Failed to fetch URL: {url}"))?;
-
-    let text = response
-        .text()
-        .await
-        .external("Failed to read response as text")?;
+    let bytes = fetch_http_bytes(url).await?;
+    let text: Cow<str> = String::from_utf8_lossy(&bytes);
 
     // Create a temporary file to store the CSV content
     use std::io::Write;
@@ -664,7 +607,7 @@ async fn read_csv_with_reqwest(
     temp_file.sync_all()?;
 
     // Read the CSV from the temporary file
-    let temp_url = format!("file://{}", temp_path.display());
+    let temp_url = path_to_file_url(temp_path.to_str().unwrap())?;
 
     // Build CSV options
     let mut csv_opts = if is_tsv {
@@ -696,7 +639,7 @@ async fn read_csv_with_reqwest(
     ctx.vegafusion_table(table).await
 }
 
-async fn read_csv(
+pub(crate) async fn read_csv(
     url: &str,
     parse: &Option<Parse>,
     ctx: Arc<SessionContext>,
@@ -736,7 +679,7 @@ async fn read_csv(
 }
 
 /// Build final schema by combining the input and inferred schemas
-async fn build_csv_schema(
+pub(crate) async fn build_csv_schema(
     csv_opts: &CsvReadOptions<'_>,
     parse: &Option<Parse>,
     uri: impl Into<String>,
@@ -798,84 +741,82 @@ async fn build_csv_schema(
     Ok(Schema::new(new_fields))
 }
 
-async fn read_json(url: &str, ctx: Arc<SessionContext>) -> Result<DataFrame> {
-    let value: serde_json::Value =
-        if let Some(base_url) = maybe_register_object_stores_for_url(&ctx, url)? {
-            // Create single use object store that points directly to file
-            let store = ctx.runtime_env().object_store(&base_url)?;
-            let child_url = url.strip_prefix(&base_url.to_string()).unwrap();
-            match store.get(&child_url.into()).await {
-                Ok(get_res) => {
-                    let bytes = get_res.bytes().await?.to_vec();
-                    let text: Cow<str> = String::from_utf8_lossy(&bytes);
-                    serde_json::from_str(text.as_ref())?
-                }
-                Err(e) => {
-                    cfg_if::cfg_if! {
-                        if #[cfg(feature="http")] {
-                            if url.starts_with("http://") || url.starts_with("https://") {
-                                // Fallback to direct reqwest implementation. This is needed in some cases because
-                                // the object-store http implementation has stricter requirements on what the
-                                // server provides. For example the content-length header is required.
-                                let client = reqwest::Client::new();
-                                let response = client
-                                    .get(url)
-                                    .send()
-                                    .await
-                                    .external(format!("Failed to fetch URL: {url}"))?;
-
-                                let text = response
-                                    .text()
-                                    .await
-                                    .external("Failed to read response as text")?;
-                                serde_json::from_str(&text)?
-                            } else {
-                                return Err(VegaFusionError::from(e));
-                            }
+async fn read_json_via_store_or_file(
+    url: &str,
+    ctx: Arc<SessionContext>,
+) -> Result<serde_json::Value> {
+    if let Some(base_url) = maybe_register_object_stores_for_url(&ctx, url)? {
+        // Create single use object store that points directly to file
+        let store = ctx.runtime_env().object_store(&base_url)?;
+        let child_url = url.strip_prefix(&base_url.to_string()).unwrap();
+        match store.get(&child_url.into()).await {
+            Ok(get_res) => {
+                let bytes = get_res.bytes().await?.to_vec();
+                let text: Cow<str> = String::from_utf8_lossy(&bytes);
+                Ok(serde_json::from_str(text.as_ref())?)
+            }
+            Err(e) => {
+                cfg_if::cfg_if! {
+                    if #[cfg(feature="http")] {
+                        if url.starts_with("http://") || url.starts_with("https://") {
+                            let bytes = fetch_http_bytes(url).await?;
+                            Ok(serde_json::from_slice(&bytes)?)
                         } else {
-                            return Err(VegaFusionError::from(e));
+                            Err(VegaFusionError::from(e))
                         }
+                    } else {
+                        Err(VegaFusionError::from(e))
                     }
                 }
             }
-        } else {
-            cfg_if::cfg_if! {
-                if #[cfg(feature="fs")] {
-                    // Assume local file
-                    let mut file = tokio::fs::File::open(url)
-                        .await
-                        .external(format!("Failed to open as local file: {url}"))?;
-
-                    let mut json_str = String::new();
-                    file.read_to_string(&mut json_str)
-                        .await
-                        .external("Failed to read file contents to string")?;
-
-                    serde_json::from_str(&json_str)?
+        }
+    } else {
+        cfg_if::cfg_if! {
+            if #[cfg(feature="fs")] {
+                let local_path = if url.starts_with("file://") {
+                    file_url_to_path(url)?
                 } else {
-                    return Err(VegaFusionError::internal(
-                        "The `fs` feature flag must be enabled for file system support"
-                    ));
-                }
+                    std::path::PathBuf::from(url)
+                };
+
+                let mut file = tokio::fs::File::open(&local_path)
+                    .await
+                    .external(format!("Failed to open as local file: {}", local_path.display()))?;
+
+                let mut json_str = String::new();
+                file.read_to_string(&mut json_str)
+                    .await
+                    .external("Failed to read file contents to string")?;
+
+                Ok(serde_json::from_str(&json_str)?)
+            } else {
+                Err(VegaFusionError::internal(
+                    "The `fs` feature flag must be enabled for file system support"
+                ))
             }
-        };
+        }
+    }
+}
+
+pub(crate) async fn read_json(url: &str, ctx: Arc<SessionContext>) -> Result<DataFrame> {
+    let value: serde_json::Value = read_json_via_store_or_file(url, ctx.clone()).await?;
 
     let table = VegaFusionTable::from_json(&value)?.with_ordering()?;
     ctx.vegafusion_table(table).await
 }
 
-async fn read_arrow(url: &str, ctx: Arc<SessionContext>) -> Result<DataFrame> {
+pub(crate) async fn read_arrow(url: &str, ctx: Arc<SessionContext>) -> Result<DataFrame> {
     maybe_register_object_stores_for_url(&ctx, url)?;
     Ok(ctx.read_arrow(url, ArrowReadOptions::default()).await?)
 }
 
 #[cfg(feature = "parquet")]
-async fn read_parquet(url: &str, ctx: Arc<SessionContext>) -> Result<DataFrame> {
+pub(crate) async fn read_parquet(url: &str, ctx: Arc<SessionContext>) -> Result<DataFrame> {
     maybe_register_object_stores_for_url(&ctx, url)?;
     Ok(ctx.read_parquet(url, ParquetReadOptions::default()).await?)
 }
 
-fn maybe_register_object_stores_for_url(
+pub(crate) fn maybe_register_object_stores_for_url(
     ctx: &SessionContext,
     url: &str,
 ) -> Result<Option<ObjectStoreUrl>> {
@@ -886,10 +827,11 @@ fn maybe_register_object_stores_for_url(
             if let Some(path) = url.strip_prefix(prefix) {
                 let Some((root, _)) = path.split_once('/') else {
                     return Err(VegaFusionError::specification(format!(
-                        "Invalid https URL: {url}"
+                        "Invalid {prefix} URL: {url}"
                     )));
                 };
-                let base_url_str = format!("https://{root}");
+                let scheme = prefix.trim_end_matches("://");
+                let base_url_str = format!("{scheme}://{root}");
                 let base_url = url::Url::parse(&base_url_str)?;
 
                 // Register store for url if not already registered

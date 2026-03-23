@@ -8,7 +8,7 @@ use datafusion::catalog::TableProvider;
 use datafusion::datasource::TableType;
 use datafusion::physical_plan::ExecutionPlan;
 use datafusion_common::{plan_err, Result};
-use datafusion_expr::Expr;
+use datafusion_expr::{Expr, TableProviderFilterPushDown};
 use serde_json::Value;
 use vegafusion_common::arrow::datatypes::SchemaRef;
 
@@ -22,33 +22,22 @@ use vegafusion_common::arrow::datatypes::SchemaRef;
 /// Optionally carries arbitrary JSON metadata in [`Self::metadata`],
 /// which is serialized into `custom_table_data` by [`super::codec::VegaFusionCodec`].
 pub struct ExternalTableProvider {
+    scheme: String,
     schema: SchemaRef,
-    protocol: Option<String>,
-    source: Option<String>,
     metadata: Value,
 }
 
 impl ExternalTableProvider {
-    pub fn new(schema: SchemaRef, protocol: Option<String>, metadata: Value) -> Self {
+    pub fn new(scheme: String, schema: SchemaRef, metadata: Value) -> Self {
         Self {
+            scheme,
             schema,
-            protocol,
-            source: None,
             metadata,
         }
     }
 
-    pub fn with_source(mut self, source: Option<String>) -> Self {
-        self.source = source;
-        self
-    }
-
-    pub fn protocol(&self) -> Option<&str> {
-        self.protocol.as_deref()
-    }
-
-    pub fn source(&self) -> Option<&str> {
-        self.source.as_deref()
+    pub fn scheme(&self) -> &str {
+        &self.scheme
     }
 
     pub fn metadata(&self) -> &Value {
@@ -59,8 +48,7 @@ impl ExternalTableProvider {
 impl Debug for ExternalTableProvider {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("ExternalTableProvider")
-            .field("protocol", &self.protocol)
-            .field("source", &self.source)
+            .field("scheme", &self.scheme)
             .field("schema", &self.schema)
             .field("metadata", &self.metadata)
             .finish()
@@ -81,6 +69,16 @@ impl TableProvider for ExternalTableProvider {
         TableType::Base
     }
 
+    fn supports_filters_pushdown(
+        &self,
+        filters: &[&Expr],
+    ) -> Result<Vec<TableProviderFilterPushDown>> {
+        // Report Inexact so DataFusion pushes filters into the TableScan
+        // (where resolve_table can access them) while still re-applying
+        // them on the output for correctness.
+        Ok(vec![TableProviderFilterPushDown::Inexact; filters.len()])
+    }
+
     async fn scan(
         &self,
         _state: &dyn Session,
@@ -88,9 +86,9 @@ impl TableProvider for ExternalTableProvider {
         _filters: &[Expr],
         _limit: Option<usize>,
     ) -> Result<Arc<dyn ExecutionPlan>> {
-        let protocol = self.protocol().unwrap_or("unknown");
+        let scheme = self.scheme();
         plan_err!(
-            "ExternalTableProvider (protocol: {protocol}) cannot be executed directly. \
+            "ExternalTableProvider (scheme: {scheme}) cannot be executed directly. \
              This table represents an external data source that must be resolved \
              before execution. Set a PlanResolver on the VegaFusionRuntime to \
              handle external table references."

@@ -19,9 +19,12 @@ use vegafusion_core::proto::gen::tasks::{
 use vegafusion_core::runtime::VegaFusionRuntimeTrait;
 use vegafusion_core::spec::chart::ChartSpec;
 use vegafusion_core::task_graph::graph::ScopedVariable;
-use vegafusion_runtime::task_graph::runtime::{decode_inline_datasets, VegaFusionRuntime};
+use vegafusion_runtime::data::pipeline::BaseUrlSetting;
+use vegafusion_runtime::task_graph::runtime::{
+    decode_inline_datasets, VegaFusionRuntime, VegaFusionRuntimeOpts,
+};
 
-use clap::Parser;
+use clap::{ArgAction, Parser};
 use regex::Regex;
 use vegafusion_core::proto::gen::pretransform::{
     PreTransformExtractDataset, PreTransformExtractRequest, PreTransformExtractResponse,
@@ -347,6 +350,22 @@ struct Args {
     /// Include compatibility with gRPC-Web
     #[clap(long, num_args = 0)]
     pub web: bool,
+
+    /// Base URL for resolving relative data URLs
+    #[clap(long, conflicts_with = "no_base_url")]
+    pub base_url: Option<String>,
+
+    /// Disable base URL resolution for relative data URLs
+    #[clap(long, action = ArgAction::SetTrue, conflicts_with = "base_url")]
+    pub no_base_url: bool,
+
+    /// Allowlist entry for external data access. Repeat for multiple entries.
+    #[clap(long = "allowed-base-url", action = ArgAction::Append, conflicts_with = "no_allowed_urls")]
+    pub allowed_base_url: Vec<String>,
+
+    /// Disable all external data access
+    #[clap(long, action = ArgAction::SetTrue, conflicts_with = "allowed_base_url")]
+    pub no_allowed_urls: bool,
 }
 
 fn main() -> Result<(), VegaFusionError> {
@@ -368,16 +387,35 @@ fn main() -> Result<(), VegaFusionError> {
         None
     };
 
+    let base_url = if args.no_base_url {
+        BaseUrlSetting::Disabled
+    } else if let Some(base_url) = args.base_url.clone() {
+        BaseUrlSetting::Custom(base_url)
+    } else {
+        BaseUrlSetting::Default
+    };
+
+    let allowed_base_urls = if args.no_allowed_urls {
+        Some(vec![])
+    } else if args.allowed_base_url.is_empty() {
+        None
+    } else {
+        Some(args.allowed_base_url.clone())
+    };
+
     let tokio_runtime = tokio::runtime::Builder::new_multi_thread()
         .enable_all()
         .thread_stack_size(TOKIO_THREAD_STACK_SIZE)
         .build()
         .expect("Failed to create tokio runtime");
 
-    let tg_runtime = VegaFusionRuntime::new(
-        Some(VegaFusionCache::new(Some(args.capacity), memory_limit)),
-        Vec::new(),
-    );
+    let tg_runtime = VegaFusionRuntime::new(VegaFusionRuntimeOpts {
+        cache: Some(VegaFusionCache::new(Some(args.capacity), memory_limit)),
+        base_url,
+        allowed_base_urls,
+        ..Default::default()
+    })
+    .expect("Failed to create VegaFusionRuntime");
 
     tokio_runtime.block_on(async move {
         grpc_server(grpc_address, tg_runtime.clone(), args.web)

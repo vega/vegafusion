@@ -4,8 +4,6 @@ package tasks;
 import "expression.proto";
 import "transforms.proto";
 
-// ## Materialized Task Value
-// Represents a fully materialized (computed) task value, either a scalar or table
 message MaterializedTaskValue {
   oneof data {
   /*
@@ -184,3 +182,4 @@ message InlineDataset {
     InlineDatasetPlan plan = 2;
   }
 }
+

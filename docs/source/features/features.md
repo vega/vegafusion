@@ -13,6 +13,7 @@ transform_spec
 transform_extract
 chart_state
 inline_datasets
+plan_resolver
 grpc
 embed
 jupyter_widget

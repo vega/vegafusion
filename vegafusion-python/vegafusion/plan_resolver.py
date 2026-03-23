@@ -12,13 +12,14 @@ logger = logging.getLogger(__name__)
 _PROTOBUF_INSTALL_HINT = (
     "The 'protobuf' package is required for plan-level resolvers "
     "(resolve_plan / resolve_plan_proto) and related utilities "
-    "(inline_table_scan_node, unparse_to_sql). "
+    "(inline_table_scan_node, unparse_to_sql, unparse_expr_to_sql). "
     "Install it with: pip install vegafusion[plan-resolver]"
 )
 
 if TYPE_CHECKING:
     from vegafusion.dataset import ExternalDataset
     from vegafusion.proto.datafusion_pb2 import (
+        LogicalExprNode,  # type: ignore[attr-defined]
         LogicalPlanNode,  # type: ignore[attr-defined]
     )
 
@@ -46,10 +47,15 @@ ResolutionResult = Union[Table, ResolvedPlan]
 class PlanResolver:
     """Base class for plan resolvers.
 
-    Override one of these (checked in priority order):
+    Override one of these (simplest first):
 
-    1. ``resolve_table`` — provide data for each external table independently
-    2. ``resolve_plan_proto`` / ``resolve_plan`` — full control over resolution
+    - ``resolve_table``: return data for each external table independently.
+      The default ``resolve_plan`` walks the plan and calls this for every
+      ``ExternalTableProvider`` node.
+    - ``resolve_plan_proto`` / ``resolve_plan``: receive the entire logical
+      plan. Overriding this supersedes ``resolve_table`` since the runtime
+      calls ``resolve_plan`` directly; ``resolve_table`` is only reached
+      via the default implementation.
 
     For ``resolve_plan``, override either the ``_proto`` variant (raw bytes) or
     the non-``_proto`` variant (deserialized ``LogicalPlanNode``). The ``_proto``
@@ -75,12 +81,59 @@ class PlanResolver:
     callbacks run on the main thread. Set to False for backends with
     thread-affine connections (e.g. DuckDB in-memory databases)."""
 
+    supports_arrow_tables: bool = False
+    """Whether this resolver can efficiently consume in-memory Arrow tables.
+    When all resolvers in the pipeline return True, the runtime may eagerly
+    materialize LogicalPlans into tables. When False, data is kept as lazy
+    plans so resolvers that need plan-level access can intercept them."""
+
+    def scan_url_proto(self, parsed_url: dict[str, Any]) -> bytes | None:
+        """Handle a URL during the scan phase (raw bytes variant).
+
+        The default implementation delegates to :meth:`scan_url` which works
+        with deserialized ``LogicalPlanNode`` messages.
+
+        Args:
+            parsed_url: Dict with keys ``url``, ``scheme``, ``host``, ``path``,
+                ``query_params``, ``extension``, ``format_type``.
+
+        Returns:
+            Serialized ``LogicalPlanNode`` bytes, or None to pass to the next
+            resolver.
+        """
+        result = self.scan_url(parsed_url)
+        if result is None:
+            return None
+        if isinstance(result, bytes):
+            return result
+        # It's a LogicalPlanNode proto message
+        return result.SerializeToString()
+
+    def scan_url(self, parsed_url: dict[str, Any]) -> LogicalPlanNode | bytes | None:
+        """Handle a URL during the scan phase.
+
+        Override to claim URLs by returning a ``LogicalPlanNode`` or raw bytes.
+        Use :func:`external_table_scan_node` to build ``ExternalTableProvider``
+        plan nodes that will later be resolved by :meth:`resolve_plan`.
+
+        Args:
+            parsed_url: Dict with keys ``url``, ``scheme``, ``host``, ``path``,
+                ``query_params``, ``extension``, ``format_type``.
+
+        Returns:
+            A ``LogicalPlanNode``, raw bytes, or None to pass to the next
+            resolver.
+        """
+        return None
+
     def resolve_table(
         self,
         name: str,
+        scheme: str,
         schema: Schema,
-        metadata: dict[str, Any],
+        metadata: dict[str, Any] | None = None,
         projected_columns: list[str] | None = None,
+        filters: list[Any] | None = None,
     ) -> Table:
         """Provide data for an external table reference.
 
@@ -88,10 +141,18 @@ class PlanResolver:
 
         Args:
             name: Table name from the plan.
+            scheme: URL scheme identifier (e.g. ``"spark"``,
+                ``"snowflake"``).
             schema: Full schema of the external table.
             metadata: JSON metadata dict from ExternalTableProvider.
             projected_columns: Column names DataFusion actually needs.
                 None if no projection (all columns needed).
+            filters: Pushed-down filter predicates from DataFusion as
+                ``LogicalExprNode`` protobuf messages, already split into
+                a conjunction (individual expressions from AND). These are
+                hints — resolvers may apply some, all, or none. DataFusion
+                re-applies all filters on the output regardless. Use
+                :func:`unparse_expr_to_sql` to convert to SQL strings.
 
         Returns:
             An Arrow-compatible table (arro3, PyArrow, etc.).
@@ -106,7 +167,20 @@ class PlanResolver:
         """Resolve a plan given raw protobuf bytes.
 
         The default implementation deserializes into a
-        LogicalPlanNode and calls resolve_plan().
+        ``LogicalPlanNode`` and delegates to :meth:`resolve_plan`.
+
+        Override this (instead of ``resolve_plan``) when you only need
+        the serialized bytes, e.g. to pass them directly to
+        :func:`unparse_to_sql` without a deserialization round-trip.
+
+        Args:
+            plan_bytes: Serialized ``LogicalPlanNode`` protobuf bytes.
+            datasets: Dict mapping table names to :class:`ExternalDataset`
+                instances for every ``ExternalTableProvider`` in the plan.
+
+        Returns:
+            An Arrow-compatible table (full execution) or a
+            :class:`ResolvedPlan` (plan rewriting with sidecar data).
         """
         try:
             from vegafusion.proto.datafusion_pb2 import (
@@ -133,12 +207,24 @@ class PlanResolver:
         logical_plan: LogicalPlanNode,
         datasets: dict[str, ExternalDataset],
     ) -> ResolutionResult:
-        """Resolve a plan given a deserialized LogicalPlanNode.
+        """Resolve a plan given a deserialized ``LogicalPlanNode``.
 
-        The default implementation walks the plan tree looking for
-        CustomTableScanNode nodes that correspond to ExternalTableProvider
-        entries. For each, it calls resolve_table() and replaces the node
-        with an inline_table_scan_node.
+        The default implementation walks the plan tree, finds
+        ``ExternalTableProvider`` nodes, calls :meth:`resolve_table` for
+        each, and replaces them with :func:`inline_table_scan_node` markers.
+
+        Override this for full control over plan rewriting, e.g.
+        to transpile the plan to SQL and execute it remotely.
+
+        Args:
+            logical_plan: Deserialized ``LogicalPlanNode`` protobuf message.
+            datasets: Dict mapping table names to :class:`ExternalDataset`
+                instances for every ``ExternalTableProvider`` in the plan.
+
+        Returns:
+            An Arrow-compatible table (for full execution by the resolver)
+            or a :class:`ResolvedPlan` (rewritten plan with sidecar Arrow
+            data for DataFusion to execute).
         """
         sidecar: dict[str, Table] = {}
         self._resolve_external_tables(logical_plan, datasets, sidecar)
@@ -178,11 +264,15 @@ class PlanResolver:
                             table_name,
                         )
 
+                filters = list(inner.filters) if inner.filters else None
+
                 table_data = self.resolve_table(
                     name=table_name,
+                    scheme=dataset.scheme,
                     schema=dataset.schema,
                     metadata=metadata,
                     projected_columns=projected_columns,
+                    filters=filters,
                 )
 
                 replacement = inline_table_scan_node(
@@ -295,6 +385,48 @@ def inline_table_scan_node(
     return node
 
 
+def external_table_scan_node(
+    table_name: str,
+    scheme: str,
+    schema: Schema,
+    metadata: dict[str, Any] | None = None,
+) -> LogicalPlanNode:
+    """Build a LogicalPlanNode for an external table scan.
+
+    Use this in :meth:`PlanResolver.scan_url` implementations to create
+    ``ExternalTableProvider`` plan nodes that will later be resolved by
+    :meth:`PlanResolver.resolve_plan`.
+
+    Args:
+        table_name: Name for the table in the plan.
+        scheme: Scheme identifier (e.g. ``"spark"``).
+        schema: Arrow schema (arro3.core.Schema) — required for logical planning.
+        metadata: Optional JSON-serializable dict of metadata.
+
+    Returns:
+        A deserialized LogicalPlanNode protobuf message.
+    """
+    from vegafusion._vegafusion import external_table_scan_node as _native
+
+    try:
+        from vegafusion.proto.datafusion_pb2 import (
+            LogicalPlanNode,  # type: ignore[attr-defined]
+        )
+    except ImportError as e:
+        raise ImportError(_PROTOBUF_INSTALL_HINT) from e
+
+    node = LogicalPlanNode()
+    node.ParseFromString(
+        _native(
+            table_name=table_name,
+            scheme=scheme,
+            schema=schema,
+            metadata=metadata,
+        )
+    )
+    return node
+
+
 def unparse_to_sql(
     plan: bytes | LogicalPlanNode,
     dialect: str = "default",
@@ -317,3 +449,39 @@ def unparse_to_sql(
     if not isinstance(plan, bytes):
         plan = plan.SerializeToString()
     return str(_native(plan, dialect))
+
+
+def unparse_expr_to_sql(
+    exprs: LogicalExprNode | bytes | list[LogicalExprNode | bytes],
+    dialect: str = "default",
+) -> str:
+    """Convert filter expression(s) to a SQL string.
+
+    Accepts a single ``LogicalExprNode`` protobuf message or a list of them.
+    Multiple expressions are joined with ``AND``.
+
+    This is useful for converting the ``filters`` parameter of
+    :meth:`PlanResolver.resolve_table` into a SQL WHERE clause that can
+    be passed to external data sources.
+
+    Args:
+        exprs: A single ``LogicalExprNode`` or a list of them.
+        dialect: SQL dialect. One of ``"default"``, ``"postgres"``,
+            ``"mysql"``, ``"sqlite"``, ``"duckdb"``, ``"bigquery"``.
+
+    Returns:
+        The SQL string representation of the expression(s).
+    """
+    from vegafusion._vegafusion import unparse_expr_to_sql as _native
+
+    if not isinstance(exprs, list):
+        exprs = [exprs]
+
+    expr_bytes = []
+    for expr in exprs:
+        if isinstance(expr, bytes):
+            expr_bytes.append(expr)
+        else:
+            expr_bytes.append(expr.SerializeToString())
+
+    return str(_native(expr_bytes, dialect))

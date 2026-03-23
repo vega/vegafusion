@@ -62,12 +62,9 @@ impl LogicalExtensionCodec for VegaFusionCodec {
         _ctx: &datafusion::execution::TaskContext,
     ) -> Result<Arc<dyn TableProvider>> {
         if buf.is_empty() {
-            // Backward compatibility: empty buf treated as ExternalTableProvider
-            return Ok(Arc::new(ExternalTableProvider::new(
-                schema,
-                None,
-                Value::Null,
-            )));
+            return Err(DataFusionError::Plan(
+                "Empty custom_table_data buffer — expected JSON envelope".to_string(),
+            ));
         }
 
         let envelope: Value = serde_json::from_slice(buf).map_err(|e| {
@@ -76,18 +73,20 @@ impl LogicalExtensionCodec for VegaFusionCodec {
 
         match envelope.get("type").and_then(|t| t.as_str()) {
             Some("external") => {
-                let protocol = envelope
-                    .get("protocol")
+                let scheme = envelope
+                    .get("scheme")
                     .and_then(|v| v.as_str())
-                    .map(|s| s.to_string());
-                let source = envelope
-                    .get("source")
-                    .and_then(|v| v.as_str())
-                    .map(|s| s.to_string());
+                    .ok_or_else(|| {
+                        DataFusionError::Plan(
+                            "ExternalTableProvider envelope missing required 'scheme' field"
+                                .to_string(),
+                        )
+                    })?
+                    .to_string();
                 let metadata = envelope.get("metadata").cloned().unwrap_or(Value::Null);
-                Ok(Arc::new(
-                    ExternalTableProvider::new(schema, protocol, metadata).with_source(source),
-                ))
+                Ok(Arc::new(ExternalTableProvider::new(
+                    scheme, schema, metadata,
+                )))
             }
             Some("inline") => {
                 let name = envelope
@@ -117,11 +116,9 @@ impl LogicalExtensionCodec for VegaFusionCodec {
             Some(other) => Err(DataFusionError::Plan(format!(
                 "Unknown table provider type in envelope: '{other}'"
             ))),
-            None => {
-                // No "type" field — treat as legacy ExternalTableProvider where
-                // the entire JSON value is the metadata
-                Ok(Arc::new(ExternalTableProvider::new(schema, None, envelope)))
-            }
+            None => Err(DataFusionError::Plan(
+                "Table provider envelope missing required 'type' field".to_string(),
+            )),
         }
     }
 
@@ -132,14 +129,11 @@ impl LogicalExtensionCodec for VegaFusionCodec {
         buf: &mut Vec<u8>,
     ) -> Result<()> {
         if let Some(ext) = node.as_any().downcast_ref::<ExternalTableProvider>() {
-            let mut envelope = serde_json::json!({
+            let envelope = serde_json::json!({
                 "type": "external",
-                "protocol": ext.protocol(),
+                "scheme": ext.scheme(),
                 "metadata": ext.metadata(),
             });
-            if let Some(source) = ext.source() {
-                envelope["source"] = serde_json::Value::String(source.to_string());
-            }
             let json_bytes = serde_json::to_vec(&envelope).map_err(|e| {
                 DataFusionError::Plan(format!(
                     "Failed to encode ExternalTableProvider envelope: {e}"

@@ -1,7 +1,8 @@
 use crate::data::pipeline::ResolverPipeline;
+use crate::data::plan_resolver::PlanResolver;
 use crate::datafusion::context::make_datafusion_context;
 use crate::task_graph::cache::VegaFusionCache;
-use crate::task_graph::task::TaskCall;
+use crate::task_graph::task::{TaskCall, TaskContext};
 use crate::task_graph::timezone::RuntimeTzConfig;
 use async_recursion::async_recursion;
 use cfg_if::cfg_if;
@@ -18,8 +19,8 @@ use vegafusion_core::proto::gen::tasks::inline_dataset::Dataset;
 use vegafusion_core::proto::gen::tasks::{
     task::TaskKind, InlineDataset, InlineDatasetTable, NodeValueIndex, TaskGraph,
 };
-use vegafusion_core::runtime::PlanResolver;
 use vegafusion_core::runtime::VegaFusionRuntimeTrait;
+use vegafusion_core::runtime::{normalize_allowed_base_urls, AllowedBaseUrlPattern};
 use vegafusion_core::task_graph::task_value::{MaterializedTaskValue, NamedTaskValue, TaskValue};
 
 #[cfg(feature = "proto")]
@@ -33,19 +34,47 @@ use {
 
 type CacheValue = (TaskValue, Vec<TaskValue>);
 
+use crate::data::pipeline::{resolve_base_url, BaseUrlSetting};
+
+pub struct VegaFusionRuntimeOpts {
+    pub plan_resolvers: Vec<Arc<dyn PlanResolver>>,
+    pub base_url: BaseUrlSetting,
+    pub allowed_base_urls: Option<Vec<String>>,
+    pub cache: Option<VegaFusionCache>,
+}
+
+impl Default for VegaFusionRuntimeOpts {
+    fn default() -> Self {
+        Self {
+            plan_resolvers: Vec::new(),
+            base_url: BaseUrlSetting::Default,
+            allowed_base_urls: None,
+            cache: None,
+        }
+    }
+}
+
 #[derive(Clone)]
 pub struct VegaFusionRuntime {
     pub cache: VegaFusionCache,
     pub pipeline: ResolverPipeline,
+    pub base_url: Option<String>,
+    pub allowed_base_urls: Option<Vec<AllowedBaseUrlPattern>>,
 }
 
 impl VegaFusionRuntime {
-    pub fn new(cache: Option<VegaFusionCache>, plan_resolvers: Vec<Arc<dyn PlanResolver>>) -> Self {
+    pub fn new(opts: VegaFusionRuntimeOpts) -> vegafusion_core::error::Result<Self> {
         let ctx = Arc::new(make_datafusion_context());
-        Self {
-            cache: cache.unwrap_or_else(|| VegaFusionCache::new(Some(32), None)),
-            pipeline: ResolverPipeline::new(plan_resolvers, ctx),
-        }
+        let base_url = resolve_base_url(&opts.base_url)?;
+        let allowed_base_urls = normalize_allowed_base_urls(opts.allowed_base_urls)?;
+        Ok(Self {
+            cache: opts
+                .cache
+                .unwrap_or_else(|| VegaFusionCache::new(Some(32), None)),
+            pipeline: ResolverPipeline::new(opts.plan_resolvers, ctx),
+            base_url,
+            allowed_base_urls,
+        })
     }
 
     pub async fn get_node_value(
@@ -56,13 +85,18 @@ impl VegaFusionRuntime {
     ) -> Result<TaskValue> {
         // We shouldn't panic inside get_or_compute_node_value, but since this may be used
         // in a server context, wrap in catch_unwind just in case.
-        let pipeline = self.pipeline.clone();
+        let task_ctx = TaskContext {
+            tz_config: None, // overridden per-task from task.tz_config
+            inline_datasets,
+            pipeline: self.pipeline.clone(),
+            base_url: self.base_url.clone(),
+            allowed_base_urls: self.allowed_base_urls.clone(),
+        };
         let node_value = AssertUnwindSafe(get_or_compute_node_value(
             task_graph,
             node_value_index.node_index as usize,
             self.cache.clone(),
-            inline_datasets,
-            pipeline,
+            task_ctx,
         ))
         .catch_unwind()
         .await;
@@ -84,7 +118,7 @@ impl VegaFusionRuntime {
 
 impl Default for VegaFusionRuntime {
     fn default() -> Self {
-        Self::new(None, Vec::new())
+        Self::new(VegaFusionRuntimeOpts::default()).expect("default opts should not fail")
     }
 }
 
@@ -163,8 +197,7 @@ async fn get_or_compute_node_value(
     task_graph: Arc<TaskGraph>,
     node_index: usize,
     cache: VegaFusionCache,
-    inline_datasets: HashMap<String, VegaFusionDataset>,
-    pipeline: ResolverPipeline,
+    task_ctx: TaskContext,
 ) -> Result<CacheValue> {
     // Get the cache key for requested node
     let node = task_graph.node(node_index).unwrap();
@@ -195,8 +228,7 @@ async fn get_or_compute_node_value(
                     task_graph.clone(),
                     input_node_index,
                     cloned_cache.clone(),
-                    inline_datasets.clone(),
-                    pipeline.clone(),
+                    task_ctx.clone(),
                 );
 
                 cfg_if! {
@@ -244,8 +276,12 @@ async fn get_or_compute_node_value(
                 })
                 .collect::<Result<Vec<_>>>()?;
 
-            task.eval(&input_values, &tz_config, inline_datasets, pipeline)
-                .await
+            // Override tz_config from task
+            let task_ctx = TaskContext {
+                tz_config,
+                ..task_ctx
+            };
+            task.eval(&input_values, &task_ctx).await
         };
 
         // get or construct from cache

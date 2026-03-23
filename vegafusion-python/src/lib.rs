@@ -20,7 +20,7 @@ use vegafusion_core::proto::gen::pretransform::{
 use vegafusion_core::proto::gen::tasks::{TzConfig, Variable};
 use vegafusion_runtime::task_graph::GrpcVegaFusionRuntime;
 
-use vegafusion_runtime::task_graph::runtime::VegaFusionRuntime;
+use vegafusion_runtime::task_graph::runtime::{VegaFusionRuntime, VegaFusionRuntimeOpts};
 
 use env_logger::{Builder, Target};
 use serde_json::json;
@@ -32,7 +32,8 @@ use vegafusion_core::task_graph::graph::ScopedVariable;
 use vegafusion_core::task_graph::task_value::MaterializedTaskValue;
 use vegafusion_runtime::tokio_runtime::TOKIO_THREAD_STACK_SIZE;
 
-use vegafusion_core::runtime::{PlanResolver, VegaFusionRuntimeTrait};
+use vegafusion_core::runtime::VegaFusionRuntimeTrait;
+use vegafusion_runtime::data::plan_resolver::PlanResolver;
 use vegafusion_runtime::task_graph::cache::VegaFusionCache;
 
 use crate::chart_state::PyChartState;
@@ -66,8 +67,12 @@ impl PyVegaFusionRuntime {
         worker_threads: Option<i32>,
         resolvers: Vec<Arc<dyn PlanResolver>>,
         use_current_thread: bool,
+        base_url: Option<&Bound<PyAny>>,
+        allowed_base_urls: Option<Vec<String>>,
     ) -> PyResult<Self> {
         initialize_logging();
+
+        let base_url_setting = parse_base_url(base_url)?;
 
         let tokio_runtime_connection = if use_current_thread {
             tokio::runtime::Builder::new_current_thread()
@@ -88,23 +93,56 @@ impl PyVegaFusionRuntime {
         };
 
         Ok(Self {
-            runtime: Arc::new(VegaFusionRuntime::new(
-                Some(VegaFusionCache::new(max_capacity, memory_limit)),
-                resolvers,
-            )),
+            runtime: Arc::new(VegaFusionRuntime::new(VegaFusionRuntimeOpts {
+                cache: Some(VegaFusionCache::new(max_capacity, memory_limit)),
+                plan_resolvers: resolvers,
+                base_url: base_url_setting,
+                allowed_base_urls,
+            })?),
             tokio_runtime: Arc::new(tokio_runtime_connection),
         })
+    }
+}
+
+/// Parse Python `base_url` argument into `BaseUrlSetting`.
+///
+/// - `None` or `True` -> `BaseUrlSetting::Default` (CDN)
+/// - `str`            -> `BaseUrlSetting::Custom(s)`
+/// - `False`          -> `BaseUrlSetting::Disabled`
+fn parse_base_url(
+    value: Option<&Bound<PyAny>>,
+) -> PyResult<vegafusion_runtime::data::pipeline::BaseUrlSetting> {
+    use vegafusion_runtime::data::pipeline::BaseUrlSetting;
+    match value {
+        None => Ok(BaseUrlSetting::Default),
+        Some(obj) => {
+            if let Ok(b) = obj.extract::<bool>() {
+                if b {
+                    Ok(BaseUrlSetting::Default)
+                } else {
+                    Ok(BaseUrlSetting::Disabled)
+                }
+            } else if let Ok(s) = obj.extract::<String>() {
+                Ok(BaseUrlSetting::Custom(s))
+            } else {
+                Err(PyValueError::new_err(
+                    "base_url must be a str, bool, or None",
+                ))
+            }
+        }
     }
 }
 
 #[pymethods]
 impl PyVegaFusionRuntime {
     #[staticmethod]
-    #[pyo3(signature = (max_capacity=None, memory_limit=None, worker_threads=None))]
+    #[pyo3(signature = (max_capacity=None, memory_limit=None, worker_threads=None, base_url=None, allowed_base_urls=None))]
     pub fn new_embedded(
         max_capacity: Option<usize>,
         memory_limit: Option<usize>,
         worker_threads: Option<i32>,
+        base_url: Option<&Bound<PyAny>>,
+        allowed_base_urls: Option<Vec<String>>,
     ) -> PyResult<Self> {
         Self::build_with_resolvers(
             max_capacity,
@@ -112,16 +150,20 @@ impl PyVegaFusionRuntime {
             worker_threads,
             Vec::new(),
             false,
+            base_url,
+            allowed_base_urls,
         )
     }
 
     #[staticmethod]
-    #[pyo3(signature = (py_resolvers, max_capacity=None, memory_limit=None, worker_threads=None))]
+    #[pyo3(signature = (py_resolvers, max_capacity=None, memory_limit=None, worker_threads=None, base_url=None, allowed_base_urls=None))]
     pub fn new_with_resolvers(
         py_resolvers: Vec<Py<PyAny>>,
         max_capacity: Option<usize>,
         memory_limit: Option<usize>,
         worker_threads: Option<i32>,
+        base_url: Option<&Bound<PyAny>>,
+        allowed_base_urls: Option<Vec<String>>,
     ) -> PyResult<Self> {
         let py_resolvers: Vec<crate::plan_resolver::PyPlanResolver> = py_resolvers
             .into_iter()
@@ -141,6 +183,8 @@ impl PyVegaFusionRuntime {
             worker_threads,
             resolvers,
             use_current_thread,
+            base_url,
+            allowed_base_urls,
         )
     }
 
@@ -585,6 +629,68 @@ pub fn inline_table_scan_node(name: String, schema: pyo3_arrow::PySchema) -> PyR
     Ok(bytes.to_vec())
 }
 
+/// Build a LogicalPlanNode protobuf (as bytes) for an external table scan.
+///
+/// Use this in `scan_url` implementations to create ExternalTableProvider plan
+/// nodes that will later be resolved by `resolve_plan`.
+///
+/// Args:
+///     table_name: Name for the table in the plan.
+///     scheme: Scheme identifier (e.g. "spark").
+///     schema: Arrow schema (arro3.core.Schema) — required for logical planning.
+///     metadata: Optional JSON-serializable dict of metadata.
+///
+/// Returns:
+///     bytes: Serialized LogicalPlanNode protobuf.
+#[pyfunction]
+#[pyo3(signature = (table_name, scheme, schema, metadata=None))]
+pub fn external_table_scan_node(
+    table_name: String,
+    scheme: String,
+    schema: pyo3_arrow::PySchema,
+    metadata: Option<&Bound<'_, pyo3::types::PyAny>>,
+) -> PyResult<Vec<u8>> {
+    use datafusion::datasource::provider_as_source;
+    use datafusion_proto::bytes::logical_plan_to_bytes_with_extension_codec;
+    use vegafusion_common::datafusion_expr::LogicalPlanBuilder;
+    use vegafusion_runtime::data::codec::VegaFusionCodec;
+    use vegafusion_runtime::data::external_table::ExternalTableProvider;
+
+    let arrow_schema = schema.into_inner();
+
+    let metadata_value: serde_json::Value = match metadata {
+        Some(obj) => pythonize::depythonize(obj).map_err(|e| {
+            pyo3::exceptions::PyValueError::new_err(format!("Failed to convert metadata dict: {e}"))
+        })?,
+        None => serde_json::Value::Object(serde_json::Map::new()),
+    };
+
+    let provider = Arc::new(ExternalTableProvider::new(
+        scheme,
+        arrow_schema,
+        metadata_value,
+    ));
+    let table_source = provider_as_source(provider);
+
+    let plan = LogicalPlanBuilder::scan(&table_name, table_source, None)
+        .map_err(|e| {
+            pyo3::exceptions::PyValueError::new_err(format!("Failed to build scan plan: {e}"))
+        })?
+        .build()
+        .map_err(|e| {
+            pyo3::exceptions::PyValueError::new_err(format!("Failed to build plan: {e}"))
+        })?;
+
+    let codec = VegaFusionCodec::new();
+    let bytes = logical_plan_to_bytes_with_extension_codec(&plan, &codec).map_err(|e| {
+        pyo3::exceptions::PyValueError::new_err(format!(
+            "Failed to serialize external table plan: {e}"
+        ))
+    })?;
+
+    Ok(bytes.to_vec())
+}
+
 /// A Python module implemented in Rust. The name of this function must match
 /// the `lib.name` setting in the `Cargo.toml`, else Python will not be able to
 /// import the module.
@@ -597,7 +703,9 @@ fn _vegafusion(_py: Python, m: &Bound<PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(get_virtual_memory, m)?)?;
     m.add_function(wrap_pyfunction!(get_cpu_count, m)?)?;
     m.add_function(wrap_pyfunction!(inline_table_scan_node, m)?)?;
+    m.add_function(wrap_pyfunction!(external_table_scan_node, m)?)?;
     m.add_function(wrap_pyfunction!(unparse::unparse_plan_to_sql, m)?)?;
+    m.add_function(wrap_pyfunction!(unparse::unparse_expr_to_sql, m)?)?;
     m.add("__version__", env!("CARGO_PKG_VERSION"))?;
     Ok(())
 }

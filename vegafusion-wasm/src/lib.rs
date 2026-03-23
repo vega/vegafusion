@@ -446,6 +446,7 @@ pub async fn vegafusion_embed(
                 js_sys::JSON::stringify(&e).unwrap()
             ))
         })?;
+
         Box::new(QueryFnVegaFusionRuntime::new(query_fn))
     };
 

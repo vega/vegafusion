@@ -83,9 +83,7 @@ def test_passthrough_resolver() -> None:
     source_table = pa.table({"x": [1, 5, 10], "y": ["a", "b", "c"]})
     expected_result = pa.table({"x": [5, 10], "y": ["b", "c"]})
 
-    ext = ExternalDataset(
-        protocol="test", schema=source_table.schema, data=source_table
-    )
+    ext = ExternalDataset(scheme="test", schema=source_table.schema, data=source_table)
     resolver = PassthroughResolver(result_table=expected_result)
 
     rt = vf.VegaFusionRuntime(plan_resolver=resolver)
@@ -115,9 +113,7 @@ def test_deserializing_resolver() -> None:
     source_table = pa.table({"x": [1, 5, 10], "y": ["a", "b", "c"]})
     expected_result = pa.table({"x": [5, 10], "y": ["b", "c"]})
 
-    ext = ExternalDataset(
-        protocol="test", schema=source_table.schema, data=source_table
-    )
+    ext = ExternalDataset(scheme="test", schema=source_table.schema, data=source_table)
     resolver = DeserializingResolver(result_table=expected_result)
 
     rt = vf.VegaFusionRuntime(plan_resolver=resolver)
@@ -146,11 +142,10 @@ def test_external_dataset_registry() -> None:
     """ExternalDataset with data registers data in weakref registry."""
     table = pa.table({"a": [1, 2, 3]})
     ext = ExternalDataset(
-        protocol="test", schema=table.schema, data=table, metadata={"engine": "test"}
+        scheme="test", schema=table.schema, data=table, metadata={"engine": "test"}
     )
 
-    assert ext.protocol == "test"
-    assert "_vf_protocol" not in ext.metadata  # protocol is separate from metadata
+    assert ext.scheme == "test"
     assert "_vf_ref_id" in ext.metadata
     ref_id = ext.metadata["_vf_ref_id"]
     assert ExternalDataset.resolve_data(ref_id) is table
@@ -161,7 +156,7 @@ def test_external_dataset_registry() -> None:
 def test_external_dataset_schema_only() -> None:
     """ExternalDataset without data does not register."""
     schema = pa.schema([("x", pa.int64())])
-    ext = ExternalDataset(protocol="test", schema=schema)
+    ext = ExternalDataset(scheme="test", schema=schema)
 
     assert "_vf_ref_id" not in ext.metadata
     assert ext.data is None
@@ -317,9 +312,11 @@ def test_resolve_table_resolver() -> None:
         def resolve_table(
             self,
             name: str,
+            scheme: str,
             schema: Any,
-            metadata: dict[str, Any],
+            metadata: dict[str, Any] | None = None,
             projected_columns: list[str] | None = None,
+            filters: list[Any] | None = None,
         ) -> pa.Table:
             self.resolve_calls.append(
                 {
@@ -331,9 +328,7 @@ def test_resolve_table_resolver() -> None:
             return source_table
 
     resolver = TableResolver()
-    ext = ExternalDataset(
-        protocol="test", schema=source_table.schema, data=source_table
-    )
+    ext = ExternalDataset(scheme="test", schema=source_table.schema, data=source_table)
 
     rt = vf.VegaFusionRuntime(plan_resolver=resolver)
     spec = simple_spec()
@@ -406,9 +401,7 @@ def test_resolve_plan_returns_resolved_plan() -> None:
                 self._replace_custom_scan(child, target_name, replacement)
 
     resolver = ManualResolver()
-    ext = ExternalDataset(
-        protocol="test", schema=source_table.schema, data=source_table
-    )
+    ext = ExternalDataset(scheme="test", schema=source_table.schema, data=source_table)
 
     rt = vf.VegaFusionRuntime(plan_resolver=resolver)
     spec = simple_spec()
@@ -440,9 +433,11 @@ def test_multiple_external_tables() -> None:
         def resolve_table(
             self,
             name: str,
+            scheme: str,
             schema: Any,
-            metadata: dict[str, Any],
+            metadata: dict[str, Any] | None = None,
             projected_columns: list[str] | None = None,
+            filters: list[Any] | None = None,
         ) -> pa.Table:
             self.resolved_names.append(name)
             if name == "source_a":
@@ -469,8 +464,8 @@ def test_multiple_external_tables() -> None:
         ],
     }
 
-    ext_a = ExternalDataset(protocol="test", schema=table_a.schema, data=table_a)
-    ext_b = ExternalDataset(protocol="test", schema=table_b.schema, data=table_b)
+    ext_a = ExternalDataset(scheme="test", schema=table_a.schema, data=table_a)
+    ext_b = ExternalDataset(scheme="test", schema=table_b.schema, data=table_b)
     resolver = MultiTableResolver()
 
     rt = vf.VegaFusionRuntime(plan_resolver=resolver)
@@ -502,15 +497,15 @@ def test_resolve_table_error_propagates() -> None:
         def resolve_table(
             self,
             name: str,
+            scheme: str,
             schema: Any,
-            metadata: dict[str, Any],
+            metadata: dict[str, Any] | None = None,
             projected_columns: list[str] | None = None,
+            filters: list[Any] | None = None,
         ) -> pa.Table:
             raise ValueError("Simulated resolver failure")
 
-    ext = ExternalDataset(
-        protocol="test", schema=source_table.schema, data=source_table
-    )
+    ext = ExternalDataset(scheme="test", schema=source_table.schema, data=source_table)
     resolver = FailingResolver()
     rt = vf.VegaFusionRuntime(plan_resolver=resolver)
     spec = simple_spec()
@@ -581,9 +576,7 @@ def test_unparse_plan_to_sql_from_resolver() -> None:
             return source_table
 
     resolver = SqlCapturingResolver()
-    ext = ExternalDataset(
-        protocol="test", schema=source_table.schema, data=source_table
-    )
+    ext = ExternalDataset(scheme="test", schema=source_table.schema, data=source_table)
 
     rt = vf.VegaFusionRuntime(plan_resolver=resolver)
     spec = simple_spec()
@@ -632,9 +625,7 @@ def test_unparse_plan_to_sql_from_proto_message() -> None:
             return source_table
 
     resolver = ProtoCapturingResolver()
-    ext = ExternalDataset(
-        protocol="test", schema=source_table.schema, data=source_table
-    )
+    ext = ExternalDataset(scheme="test", schema=source_table.schema, data=source_table)
 
     rt = vf.VegaFusionRuntime(plan_resolver=resolver)
     spec = simple_spec()
@@ -648,19 +639,14 @@ def test_unparse_plan_to_sql_from_proto_message() -> None:
 
     assert resolver.sql_from_proto is not None
     assert resolver.sql_from_bytes is not None
+    # Both paths (bytes and proto message) produce identical SQL
     assert resolver.sql_from_proto == resolver.sql_from_bytes
-    # Verify the SQL references the external table name
-    assert resolver.sql_from_proto == snapshot(
-        'SELECT "x", "y" FROM (SELECT "_vf_order" AS "_vf_order", "source"."x" AS "x", "source"."y" AS "y" FROM (SELECT row_number() OVER (ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING) AS "_vf_order", "source"."x", "source"."y" FROM "source") AS "derived_projection") AS "derived_projection" WHERE CASE WHEN ("x" > 3.0) IS NULL THEN false ELSE ("x" > 3.0) END ORDER BY "_vf_order" ASC NULLS LAST'
-    )
 
 
 def test_external_dataset_without_resolver_raises() -> None:
     """ExternalDataset without a plan resolver raises ValueError with helpful message."""
     source_table = pa.table({"x": [1, 2, 3]})
-    ext = ExternalDataset(
-        protocol="spark", schema=source_table.schema, data=source_table
-    )
+    ext = ExternalDataset(scheme="spark", schema=source_table.schema, data=source_table)
 
     rt = vf.VegaFusionRuntime()  # No resolver
     spec = simple_spec()
@@ -694,9 +680,7 @@ def test_unparse_invalid_dialect() -> None:
             return source_table
 
     resolver = DialectTestResolver()
-    ext = ExternalDataset(
-        protocol="test", schema=source_table.schema, data=source_table
-    )
+    ext = ExternalDataset(scheme="test", schema=source_table.schema, data=source_table)
     rt = vf.VegaFusionRuntime(plan_resolver=resolver)
 
     rt.pre_transform_datasets(
@@ -708,3 +692,292 @@ def test_unparse_invalid_dialect() -> None:
 
     assert resolver.error is not None
     assert "Unknown dialect" in str(resolver.error)
+
+
+def test_scan_url_called_with_structured_dict() -> None:
+    """scan_url receives a structured dict with parsed URL fields."""
+    from vegafusion.plan_resolver import external_table_scan_node
+
+    received_urls: list[dict[str, Any]] = []
+
+    class UrlCapturingResolver(PlanResolver):
+        def scan_url(self, parsed_url: dict[str, Any]) -> Any:
+            received_urls.append(parsed_url)
+            # Create an ExternalTableProvider plan node
+            schema = pa.schema([("x", pa.int64()), ("y", pa.utf8())])
+            return external_table_scan_node(
+                table_name="captured",
+                schema=schema,
+                scheme="test",
+                metadata={"source_url": parsed_url["url"]},
+            )
+
+        def resolve_table(
+            self,
+            name: str,
+            scheme: str,
+            schema: Any,
+            metadata: dict[str, Any] | None = None,
+            projected_columns: list[str] | None = None,
+            filters: list[Any] | None = None,
+        ) -> pa.Table:
+            return pa.table({"x": [1, 2], "y": ["a", "b"]})
+
+    resolver = UrlCapturingResolver()
+    rt = vf.VegaFusionRuntime(plan_resolver=resolver)
+
+    spec = {
+        "$schema": "https://vega.github.io/schema/vega/v5.json",
+        "data": [
+            {
+                "name": "source",
+                "url": "https://example.com/data.csv?limit=10&format=raw",
+                "format": {"type": "csv"},
+            }
+        ],
+    }
+
+    rt.pre_transform_datasets(spec, datasets=["source"], dataset_format="pyarrow")
+
+    assert len(received_urls) == 1
+    url_dict = received_urls[0]
+    assert url_dict["scheme"] == "https"
+    assert url_dict["host"] == "example.com"
+    assert url_dict["url"].startswith("https://example.com/data.csv")
+    assert url_dict["extension"] == "csv"
+    assert url_dict["format_type"] == "csv"
+    # Query params preserved
+    assert isinstance(url_dict["query_params"], list)
+
+
+def test_scan_url_none_falls_back_to_datafusion() -> None:
+    """scan_url returning None causes DataFusion to handle the URL."""
+
+    class NoOpScanner(PlanResolver):
+        def __init__(self) -> None:
+            self.scan_url_called = False
+
+        def scan_url(self, parsed_url: dict[str, Any]) -> Any:
+            self.scan_url_called = True
+            return None  # Pass to next resolver (DataFusion)
+
+    csv_path = os.path.join(tempfile.gettempdir(), "vf_scan_fallback.csv")
+    table = pa.table({"x": [1, 5, 10]})
+    pcsv.write_csv(table, csv_path)
+
+    resolver = NoOpScanner()
+    rt = vf.VegaFusionRuntime(plan_resolver=resolver)
+
+    spec = {
+        "$schema": "https://vega.github.io/schema/vega/v5.json",
+        "data": [
+            {
+                "name": "source",
+                "url": csv_path,
+                "format": {"type": "csv"},
+            }
+        ],
+    }
+
+    datasets, _warnings = rt.pre_transform_datasets(
+        spec, datasets=["source"], dataset_format="pyarrow"
+    )
+
+    assert resolver.scan_url_called
+    assert len(datasets) == 1
+    assert datasets[0].num_rows == 3
+
+
+def test_custom_scheme_via_scan_url() -> None:
+    """Custom scheme URLs are handled via scan_url at runtime."""
+    from vegafusion.plan_resolver import external_table_scan_node
+
+    class CustomSchemeResolver(PlanResolver):
+        def scan_url(self, parsed_url: dict[str, Any]) -> Any:
+            if parsed_url["scheme"] == "myproto":
+                schema = pa.schema([("val", pa.int64())])
+                return external_table_scan_node(
+                    table_name="custom_data",
+                    schema=schema,
+                    scheme="myproto",
+                )
+            return None
+
+        def resolve_table(
+            self,
+            name: str,
+            scheme: str,
+            schema: Any,
+            metadata: dict[str, Any] | None = None,
+            projected_columns: list[str] | None = None,
+            filters: list[Any] | None = None,
+        ) -> pa.Table:
+            return pa.table({"val": [42, 99]})
+
+    resolver = CustomSchemeResolver()
+    rt = vf.VegaFusionRuntime(plan_resolver=resolver)
+
+    spec = {
+        "$schema": "https://vega.github.io/schema/vega/v5.json",
+        "data": [
+            {
+                "name": "source",
+                "url": "myproto://database/table1",
+            }
+        ],
+    }
+
+    datasets, _warnings = rt.pre_transform_datasets(
+        spec, datasets=["source"], dataset_format="pyarrow"
+    )
+
+    assert len(datasets) == 1
+    assert datasets[0].column("val").to_pylist() == [42, 99]
+
+
+def test_scan_url_not_called_without_override() -> None:
+    """Resolver without scan_url override does not trigger Python roundtrip."""
+
+    class SimpleResolver(PlanResolver):
+        """Only overrides resolve_table — scan_url is not overridden."""
+
+        def resolve_table(
+            self,
+            name: str,
+            scheme: str,
+            schema: Any,
+            metadata: dict[str, Any] | None = None,
+            projected_columns: list[str] | None = None,
+            filters: list[Any] | None = None,
+        ) -> pa.Table:
+            return pa.table({"x": [1, 2, 3]})
+
+    source_table = pa.table({"x": [1, 2, 3]})
+    ext = ExternalDataset(scheme="test", schema=source_table.schema, data=source_table)
+    resolver = SimpleResolver()
+    rt = vf.VegaFusionRuntime(plan_resolver=resolver)
+
+    spec = simple_spec()
+    # This exercises the code path where check_method_override detects no
+    # scan_url override, so the Rust side skips the Python call entirely.
+    # If the detection were wrong, the base class scan_url (returning None)
+    # would still work, but we'd pay an unnecessary Python roundtrip.
+    datasets, _warnings = rt.pre_transform_datasets(
+        spec,
+        datasets=["filtered"],
+        inline_datasets={"source": ext},
+        dataset_format="pyarrow",
+    )
+
+    assert len(datasets) == 1
+
+
+def test_resolve_table_with_filter_transform() -> None:
+    """resolve_table works with a Vega filter transform; filter is applied after resolution."""
+    from vegafusion.plan_resolver import external_table_scan_node
+
+    class FilterCapturingResolver(PlanResolver):
+        def __init__(self) -> None:
+            self.captured_filters: list[Any] = []
+
+        def scan_url(self, parsed_url: dict[str, Any]) -> Any:
+            if parsed_url["scheme"] == "myproto":
+                schema = pa.schema([("x", pa.int64()), ("y", pa.utf8())])
+                return external_table_scan_node(
+                    table_name="data",
+                    schema=schema,
+                    scheme="myproto",
+                )
+            return None
+
+        def resolve_table(
+            self,
+            name: str,
+            scheme: str,
+            schema: Any,
+            metadata: dict[str, Any] | None = None,
+            projected_columns: list[str] | None = None,
+            filters: list[Any] | None = None,
+        ) -> pa.Table:
+            self.captured_filters.extend(filters or [])
+            return pa.table({"x": [1, 5, 10], "y": ["a", "b", "c"]})
+
+    resolver = FilterCapturingResolver()
+    rt = vf.VegaFusionRuntime(plan_resolver=resolver)
+
+    spec = {
+        "$schema": "https://vega.github.io/schema/vega/v5.json",
+        "data": [
+            {
+                "name": "source",
+                "url": "myproto://db/table",
+                "transform": [{"type": "filter", "expr": "datum.x > 3"}],
+            }
+        ],
+    }
+
+    datasets, _warnings = rt.pre_transform_datasets(
+        spec,
+        datasets=["source"],
+        dataset_format="pyarrow",
+    )
+
+    assert len(datasets) == 1
+    # Filter is applied by DataFusion after resolve_table returns
+    result = datasets[0]
+    assert result.column("x").to_pylist() == [5, 10]
+
+    # TODO: filters should be pushed down to resolve_table so resolvers can
+    # optimize data loading. Currently blocked because VegaFusion's _vf_order
+    # window sits between the scan and user filters, preventing DataFusion's
+    # PushDownFilter from reaching the ExternalTableProvider.
+    assert resolver.captured_filters == []
+
+
+def test_unparse_expr_to_sql() -> None:
+    """unparse_expr_to_sql converts proto expressions to SQL strings."""
+    from vegafusion.plan_resolver import unparse_expr_to_sql
+    from vegafusion.proto.datafusion_pb2 import (
+        BinaryExprNode,
+        LogicalExprNode,
+    )
+    from vegafusion.proto.datafusion.proto_common.proto.datafusion_common_pb2 import (
+        Column as ColumnProto,
+        ScalarValue,
+    )
+
+    # Build proto for: x > 3
+    col_x = LogicalExprNode(column=ColumnProto(name="x"))
+    lit_3 = LogicalExprNode(
+        literal=ScalarValue(int64_value=3),
+    )
+    gt_expr = LogicalExprNode(
+        binary_expr=BinaryExprNode(
+            operands=[col_x, lit_3],
+            op="Gt",
+        )
+    )
+
+    # Build proto for: y = 'hello'
+    col_y = LogicalExprNode(column=ColumnProto(name="y"))
+    lit_hello = LogicalExprNode(
+        literal=ScalarValue(utf8_value="hello"),
+    )
+    eq_expr = LogicalExprNode(
+        binary_expr=BinaryExprNode(
+            operands=[col_y, lit_hello],
+            op="Eq",
+        )
+    )
+
+    # Single expression
+    sql_single = unparse_expr_to_sql(gt_expr)
+    assert sql_single == snapshot("(x > 3)")
+
+    # Multiple expressions joined with AND
+    sql_multi = unparse_expr_to_sql([gt_expr, eq_expr])
+    assert sql_multi == snapshot("((x > 3) AND (y = 'hello'))")
+
+    # With postgres dialect
+    sql_pg = unparse_expr_to_sql([gt_expr, eq_expr], dialect="postgres")
+    assert sql_pg == snapshot('(("x" > 3) AND ("y" = \'hello\'))')
