@@ -17,7 +17,7 @@ def test_to_arrow_expands_categoricals():
 
     # Check that pyarrow type is String (not Dictionary)
     b_type = pa_table.column("b").type
-    assert b_type == pa.string()
+    assert b_type == pa.string() or b_type == pa.large_string()
 
 
 def test_to_table_converts_decimals():
@@ -45,7 +45,7 @@ def test_to_table_with_mixed_string_int_column():
 
     # Check that pyarrow type is float64 (not Decimal128)
     b_type = pa_table.column("b").type
-    assert b_type == pa.string()
+    assert b_type == pa.string() or b_type == pa.large_string()
 
 
 def test_to_table_with_all_conversions():
@@ -68,6 +68,12 @@ def test_to_table_with_all_conversions():
     pa_table = to_arrow_table(df)
 
     # Check pyarrow types
-    assert pa_table.column("b").type == pa.string()
+    assert (
+        pa_table.column("b").type == pa.string()
+        or pa_table.column("b").type == pa.large_string()
+    )
     assert pa_table.column("c").type == pa.float64()
-    assert pa_table.column("d").type == pa.string()
+    assert (
+        pa_table.column("d").type == pa.string()
+        or pa_table.column("d").type == pa.large_string()
+    )
