@@ -25,8 +25,8 @@ fn test_window_row_number_without_fields() {
                 "ops": ["row_number"],
                 "as": ["rank"],
                 "sort": {
-                    "field": ["IMDB Rating"],
-                    "order": ["descending"]
+                    "field": ["IMDB Rating", "Title"],
+                    "order": ["descending", "ascending"]
                 }
             },
             {
