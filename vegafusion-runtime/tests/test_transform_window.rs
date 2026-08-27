@@ -7,8 +7,50 @@ use util::datasets::vega_json_dataset;
 use util::equality::TablesEqualConfig;
 
 use rstest::rstest;
+use serde_json::json;
 use vegafusion_core::spec::transform::aggregate::AggregateOpSpec;
 use vegafusion_core::spec::transform::TransformSpec;
+
+#[test]
+fn test_window_row_number_without_fields() {
+    let dataset = vega_json_dataset("movies");
+    let transform_specs: Vec<TransformSpec> = serde_json::from_value(json!(
+        [
+            {
+                "type": "filter",
+                "expr": "isValid(datum['Title']) && isValid(datum['IMDB Rating'])"
+            },
+            {
+                "type": "window",
+                "ops": ["row_number"],
+                "as": ["rank"],
+                "sort": {
+                    "field": ["IMDB Rating", "Title"],
+                    "order": ["descending", "ascending"]
+                }
+            },
+            {
+                "type": "project",
+                "fields": ["Title", "IMDB Rating", "rank"]
+            },
+            {
+                "type": "collect",
+                "sort": {
+                    "field": ["rank"],
+                    "order": ["ascending"]
+                }
+            }
+        ]
+    ))
+    .unwrap();
+
+    check_transform_evaluation(
+        &dataset,
+        transform_specs.as_slice(),
+        &Default::default(),
+        &Default::default(),
+    );
+}
 
 // For some reason this test is especially slow on Windows on CI.
 // Skip for now.

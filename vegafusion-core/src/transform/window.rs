@@ -49,11 +49,14 @@ impl Window {
         };
 
         // Process fields (Convert null/None to empty string)
-        let fields: Vec<_> = transform
+        let mut fields: Vec<_> = transform
             .fields
             .iter()
             .map(|f| f.as_ref().map(|f| f.field()).unwrap_or_default())
             .collect();
+        if fields.is_empty() {
+            fields.resize(transform.ops.len(), String::new());
+        }
 
         // Process groupby
         let groupby: Vec<_> = transform
@@ -159,3 +162,32 @@ impl Window {
 }
 
 impl TransformDependencies for Window {}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::spec::transform::TransformSpec;
+    use serde_json::json;
+
+    #[test]
+    fn omitted_fields_default_to_one_empty_field_per_op() {
+        let transform_specs: Vec<TransformSpec> = serde_json::from_value(json!(
+            [
+                {
+                    "type": "window",
+                    "ops": ["row_number"],
+                    "as": ["rank"]
+                }
+            ]
+        ))
+        .unwrap();
+
+        let TransformSpec::Window(spec) = &transform_specs[0] else {
+            panic!("expected window transform");
+        };
+        assert!(spec.fields.is_empty());
+
+        let window = Window::try_new(spec).unwrap();
+        assert_eq!(window.fields, vec![""]);
+    }
+}

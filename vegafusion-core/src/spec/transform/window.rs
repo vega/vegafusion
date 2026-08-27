@@ -19,6 +19,7 @@ pub struct WindowTransformSpec {
 
     pub ops: Vec<WindowTransformOpSpec>,
 
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub fields: Vec<Option<Field>>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
